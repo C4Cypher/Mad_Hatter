@@ -12,7 +12,7 @@
 %-----------------------------------------------------------------------------%
 
 
-:- module mh_term.
+:- module mh_term. 
 
 :- interface.
 
@@ -75,6 +75,9 @@
 :- type number =< mh_ground 
 --->	int(int)
 ;		float(float).
+
+:- inst number_int ---> int(ground).
+:- inst number_float ---> float(ground).
 
 :- inst ground_functor
 ---> 	f(ground, list(ground_term)).
