@@ -6,7 +6,17 @@
 % Public License - see the file COPYING.LIB in the Mercury distribution.
 %-----------------------------------------------------------------------------%
 % 
-% File: mh_world.m
+% File: mh_state.m
 % Main author: C4Cypher.
 % Stability: low.
 %-----------------------------------------------------------------------------%
+
+:- module mh_state.m
+
+:- interface.
+:- import_module mh_term.
+
+
+
+
+

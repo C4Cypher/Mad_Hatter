@@ -6,13 +6,18 @@
 % Public License - see the file COPYING.LIB in the Mercury distribution.
 %-----------------------------------------------------------------------------%
 % 
-% File: mh_world_def.m
+% File: mh_schema.m
 % Main author: C4Cypher.
 % Stability: low.
 %-----------------------------------------------------------------------------%
 
-:- module mh_world_def.
+:- module mh_schema.m
 
 :- interface.
+:- import_module mh_term.
 
-:- type mh_world_def.
+:- type schema.
+
+:- func init_schema = schema.
+:- pred init_schema(schema::out) is det.
+

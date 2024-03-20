@@ -22,12 +22,17 @@
 
 :- import_module set.
 :- import_module list.
+:- import_module univ.
 
 :- type mh_type
 --->	entity
 ;		number
-; 		enum(set(symbol))
-;		functor(symbol, list(mh_type)).
+;		symbol
+; 		enum_symbol(set(symbol))
+;		string
+;		functor(symbol, list(mh_type))
+;		univ.
+
 
 :- type functor_signature =< mh_type ---> functor(symbol, list(mh_type)).
 
@@ -42,7 +47,9 @@
 ;		int(int)
 ;		float(float)
 ; 		symbol(symbol)
-;		f(symbol, list(mh_term)).
+;		string(string)
+;		f(symbol, list(mh_term))
+;		univ(univ).
 
 :- inst var
 ---> 	var(ground)
@@ -60,19 +67,35 @@
 ---> 	entity(ground)
 ;		int(ground)
 ;		float(ground)
-;		symbol(ground)
-;		f(ground, list(ground_term)).
+; 		symbol(ground)
+;		string(ground)
+;		f(ground, list(ground))
+;		univ(ground).
 
 :- type mh_ground =< mh_term
 ---> 	entity(entity_id)
 ;		int(int)
 ;		float(float)
-;		symbol(symbol)
-;		f(symbol, list(mh_ground)).
+; 		symbol(symbol)
+;		string(string)
+;		f(symbol, list(mh_ground))
+;		univ(univ).
 
 :- type entity =< mh_ground ---> entity(id(entity)).
 
-:- type number =< mh_ground 
+:- inst numeric_term
+--->	var(ground)
+;		named_var(ground)
+;		int(ground)
+;		float(ground).
+
+:- type numeric_term =< mh_term
+---> 	var(id(var))
+;		named_var(symbol)
+;		int(int)
+;		float(float).
+
+:- type number =< numeric_term
 --->	int(int)
 ;		float(float).
 
@@ -82,7 +105,7 @@
 :- inst ground_functor
 ---> 	f(ground, list(ground_term)).
 
-:- type ground_functor =< functor 
+:- type mh_ground_functor =< functor 
 ---> 	f(symbol, list(mh_ground)).
 
 %-----------------------------------------------------------------------------%
