@@ -45,9 +45,10 @@
 :- pred nondet_union(set(T), set(T), set(T)).
 :- mode nondet_union(in, in, in) is semidet.
 :- mode nondet_union(in, in, out) is det.
-:- mode nondet_union(out, out, in) is nondet.
 :- mode nondet_union(in, out, in) is nondet.
-:- mode nondet_union(out, in, out) is nondet.
+:- mode nondet_union(out, in, in) is nondet.
+:- mode nondet_union(out, out, in) is multi.
+
 
 
 
@@ -92,11 +93,43 @@ list_subset(Ys, [_ | Xs]) :- list_subset(Ys, Xs).
 
 :- pragma promise_equivalent_clauses(nondet_union/3).
 
+nondet_union(A::in, B::in, C::in) :- union(A, B, C).
 nondet_union(A::in, B::in, C::out) :- union(A, B, C).
 
+nondet_union(init::out, init::out, init::in).
+nondet_union(A::out, init::out, A::in).
+nondet_union(init::out, B::out, B::in).
 
-	% subunion(Left, Right, A, B) 
-:- pred subunion(set(T), set(T), set(T), set(T))
+nondet_union(As::out, Bs::out, Cs::in) :-
+	C = to_sorted_list(Cs),
+	table_subset(A, C),
+	table_subset(B, C),
+	merge_and_remove_dups(A, B, C),
+	As = list_to_set(A),
+	Bs = list_to_set(B).
+	
+nondet_union(As::out, Bs::in, Cs::in) :-
+	subset(Bs, Cs),
+	C = to_sorted_list(Cs),
+	table_subset(A, C),
+	merge_and_remove_dups(A, to_sorted_list(Bs), C),
+	As = list_to_set(A).
+	
+nondet_union(As::in, Bs::out, Cs::in) :- nondet_union(Bs, As, Cs).
+
+
+	
+:- pred table_subset(list(T)::out, list(T)::in) is nondet.
+
+%:- pragma minimal_model(table_subset/2).
+
+table_subset(Sub, Super) :- list_subset(Sub, Super).
+
+
+
+	
+
+
 
 
 	
