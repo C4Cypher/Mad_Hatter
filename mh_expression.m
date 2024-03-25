@@ -99,6 +99,18 @@ where equality is unify_expressions, comparison is compare_expressions.
 ;		greater_than(term_expression, term_expression)
 ;		less_than(term_expression, term_expression).
 
+:- pred expression_is_logical_expression(expression::in) is semidet.
+:- pred expression_to_logical_expression(expression::in, 
+	logical_expression::out) is semidet.
+
+:- pred coerce_logical_expression(expression, logical_expression).
+:- mode coerce_logical_expression(in, out) is semidet.
+:- mode coerce_logical_expression(out, in) is det.
+
+:- func coerce_logical_expression(expression) = logical_expression.
+:- mode coerce_logical_expression(in) = out is semidet.
+:- mode coerce_logical_expression(out) = in is det.
+
 %-----------------------------------------------------------------------------%
 
 :- inst negation ---> negation(logical_expression).
@@ -115,6 +127,16 @@ where equality is unify_expressions, comparison is compare_expressions.
 :- func coerce_negation(expression) = negation.
 :- mode coerce_negation(in) = out is semidet.
 :- mode coerce_negation(out) = in is det.
+
+:- pred negate_expression(logical_expression, logical_expression).
+:- mode negate_expression(in, in) is semidet.
+:- mode negate_expression(in, out) is det.
+:- mode negate_expression(out, in) is det.
+
+:- func negate_expression(logical_expression) = logical_expression.
+:- mode negate_expression(in) = in is semidet.
+:- mode negate_expression(in) = out is det.
+:- mode negate_expression(out) = in is det.
 
 :- inst not_negation
 --->	predicate(ground)
@@ -493,8 +515,98 @@ compare_expressions(Result, X, Y) :-
 % p(A) = p(A)		
 permutation(predicate(A), predicate(A)).
 
+%-----------------------------------------------------------------------------%
+
 % -p(A) = -p(A)
 permutation(negated_predicate(A), negated_predicate(A)).
+
+%-----------------------------------------------------------------------------%
+% Identities
+
+% true = true
+permutation(mh_true, mh_true).
+ 
+% false = false
+permutation(mh_false, mh_false).
+
+% conj(A) = conj(A).
+permutation(conjunction(A), conjunction(A)).
+
+% and(A, B) = and(A, B)
+permutation(and(A, B), and(A, B)).
+
+% and(A, B) = and(B, A).
+permutation(and(A, B), and(B, A)).
+
+% disj(A) = disj(A).
+permutation(disjunction(A), disjunction(A)).
+
+% or(A, B) = or(A, B)
+permutation(or(A, B), or(A, B)).
+
+% or(A, B) = or(B, A).
+permutation(or(A, B), or(B, A)).
+
+% not(A) = not(A).
+permutation(negation(A), negation(A)).
+
+% xor(A, B) = xor(A, B)
+permutation(xor(A, B), xor(A, B)).
+
+% xor(A, B) = xor(B, A)
+permutation(xor(A, B), xor(B, A)).
+
+% A :- B = A :- B
+permutation(implies(A, B), implies(A, B))).
+
+% (A = B) = (A = B)
+permutation(equal(A, B), equal(A, B)).
+
+% (A = B) = (B = A)
+permutation(equal(A, B), equal(B, A)).
+
+% (A != B) = (A != B)
+permutation(inequal(A, B), inequal(A, B).
+
+% (A != B) = (B != A)
+permutation(inequal(A, B), inequal(B, A).
+
+% A > B = A > B
+permutation(greater_than(A, B), greater_than(A, B)).
+
+% A < B = A < B
+permutation(less_than(A, B), less_than(A, B)).
+
+% A = A
+permutation(term(A), term(A)).
+
+% sum(A) = sum(A)
+permutation(sum(A), sum(A)).
+
+% A + B = A + B
+permutation(add(A, B), add(A, B)).
+
+% A + B = B + A
+permutation(add(A, B), add(B, A)).
+
+% A - B = A - B
+permutation(subtract(A, B), subtract(A, B)).
+
+% product(A) = product(A)
+permutation(product(A), product(A)).
+
+% A * B = A * B
+permutation(multiply(A, B), multiply(A, B)).
+
+% A * B = B * A
+permutation(multiply(A, B), multiply(B, A)).
+
+% A / B = A / B
+permutation(divide(A, B), divide(A, B)).
+
+
+%-----------------------------------------------------------------------------%
+% Negated predicates
  
 % -p(A) = not p(A)
 permutation(negated_predicate(A), negation(predicate(A)).
@@ -508,11 +620,8 @@ permutation(predicate(A), negation(negated_predicate(A)).
 % not -p(A) = p(A)
 permutation(negation(negated_predicate(A), predicate(A)).
 
-% true = true
-permutation(mh_true, mh_true).
- 
-% false = false
-permutation(mh_false, mh_false).
+%-----------------------------------------------------------------------------%
+% Conjunction transformations
 
 % A = conj([A])
 permutation(A, conjunction(C)) :- 
@@ -522,41 +631,39 @@ permutation(A, conjunction(C)) :-
 permutation(conjunction(C), A) :- 
 	coerce_negation(A, B), singleton_set(B, C).
 
-% conj(A) = conj(A).
-permutation(conjunction(A), conjunction(A)).
-
-% and(A, B) = and(A, B)
-permutation(and(A, B), and(A, B)).
-
-% and(A, B) = and(B, A).
-permutation(and(A, B), and(B, A)).
-
 % and(A, B) = conj([A, B]).
 permutation(and(A, B), conjunction(C)) :- 
 
-	expression_is_not_conjunction(A, X),
+	coerce_conjunction(A, X),
 	(
 		% and(A, B) = conj([A, B]).
-		expression_is_not_conjunction(B, Y),
+		coerce_not_conjunction(B, Y),
 		singleton_set(X, As),
 		singleton_set(Y, Bs),
 		nondet_union(As, Bs, C)
 	;
 		% and(A, conj(B)) = insert(A, B).
-		expression_is_conjunction(B, negation(Y)),
+		coerce_conjunction(B, negation(Y)),
 		nondet_insert(X, Y, C)
 	)
 ;
-	expression_is_conjunction(A, conjunction(X)),
+	coerce_conjunction(A, conjunction(X)),
 	(
 		% and(conj(A), B) = insert(B, A).
-		expression_is_not_conjunction(B, Y),
+		coerce_not_conjunction(B, Y),
 		nondet_insert(Y, X, C)
 	;
 		% and(conj(A), conj(B)) = union(A, B).
-		expression_is_conjunction(B, conjunction(Y)),
+		coerce_conjunction(B, conjunction(Y)),
 		nondet_union(X, Y, C)
 	).
+	
+% and(A, B) = conj([A, B]).
+permutation(conjunction(A), and(B, C)) :- 
+	permutation(and(B, C), conjunction(A)). 
+	
+%-----------------------------------------------------------------------------%
+% Disjunction transformations
 	
 % A = disj([A])
 permutation(A, disjunction(C)) :- 
@@ -566,64 +673,43 @@ permutation(A, disjunction(C)) :-
 permutation(disjunction(C), A) :- 
 	coerce_disjunction(A, B), singleton_set(B, C).
 
-% disj(A) = disj(A).
-permutation(disjunction(A), disjunction(A)).
+% or(A, B) = disj([A, B]).
+permutation(or(A, B), disjunction(C)) :- 
 
-% and(A, B) = and(A, B)
-permutation(and(A, B), and(A, B)).
-
-% and(A, B) = and(B, A).
-permutation(and(A, B), and(B, A)).
-
-% and(A, B) = disj([A, B]).
-permutation(and(A, B), disjunction(C)) :- 
-
-	expression_is_not_disjunction(A, X),
+	coerce_not_disjunction(A, X),
 	(
-		% and(A, B) = disj([A, B]).
-		expression_is_not_disjunction(B, Y),
+		% or(A, B) = disj([A, B]).
+		coerce_not_disjunction(B, Y),
 		singleton_set(X, As),
 		singleton_set(Y, Bs),
 		nondet_union(As, Bs, C)
 	;
-		% and(A, disj(B)) = insert(A, B).
-		expression_is_disjunction(B, disjunction(Y)),
+		% or(A, disj(B)) = insert(A, B).
+		coerce_disjunction(B, disjunction(Y)),
 		nondet_insert(X, Y, C)
 	)
 ;
-	expression_is_disjunction(A, disjunction(X)),
+	coerce_disjunction(A, disjunction(X)),
 	(
-		% and(disj(A), B) = insert(B, A).
-		expression_is_not_disjunction(B, Y),
+		% or(disj(A), B) = insert(B, A).
+		coerce_not_disjunction(B, Y),
 		nondet_insert(Y, X, C)
 	;
-		% and(disj(A), disj(B)) = union(A, B).
-		expression_is_disjunction(B, disjunction(Y)),
+		% or(disj(A), disj(B)) = union(A, B).
+		coerce_disjunction(B, disjunction(Y)),
 		nondet_union(X, Y, C)
 	).
 	
+% and(A, B) = conj([A, B]).
+permutation(disjunction(A), or(B, C)) :- 
+	permutation(or(B, C), disjunction(A)). 
 	
 
-	
-	
-			
-			
-		
-	
-	
-	
-:- type expression
---->	predicate(functor)
-;		negated_predicate(functor)
+%-----------------------------------------------------------------------------%
+% Exclusive OR
 
-;		mh_true
-;		mh_false
 
-;		negation(set(not_negation))
-; 		and(logical_expression, logical_expression)
-
-;		disjunction(set(not_disjunction))
-;		or(logical_expression, logical_expression)
+	
 
 ;		xor(logical_expression, logical_expression)
 ;		negation(logical_expression)
@@ -647,12 +733,29 @@ where equality is unify_expressions, comparison is compare_expressions.
 
 %-----------------------------------------------------------------------------%
 
+expression_is_logical_expression(_::in(logical_expression)).
+expression_to_logical_expression(LogiExpr::in(logical_expression), 
+	coerce(LogiExpr)::out).
+
+:- promise_equivalent_clauses(coerce_logical_expression/2).
+coerce_logical_expression(LogiExpr::in(logical_expression), 
+	coerce(LogiExpr)::out).
+coerce_logical_expression(LogiExpr::out, LogiExpr::in).
+
+coerce_logical_expression(Conj) = Expr :- 
+	coerce_logical_expression(Conj, Expr).
+
+
+
+%-----------------------------------------------------------------------------%
+
+
 expression_is_negation(_::in(negation)).
 expression_to_negation(Negation::in(negation), coerce(Negation)::out).
 
 :- promise_equivalent_clauses(coerce_negation/2).
 coerce_negation(Negation::in(negation), coerce(Negation)::out).
-coerce_negation(Negation::out, Negation)::in).
+coerce_negation(Negation::out, Negation::in).
 
 coerce_negation(Conj) = Expr :- coerce_negation(Conj, Expr).
 
@@ -662,10 +765,18 @@ expression_to_not_negation(NotNegation::in(not_negation),
 	
 :- promise_equivalent_clauses(coerce_not_negation/2).
 coerce_not_negation(NotNeg::in(not_negation), coerce(NotNeg)::out).
-coerce_not_negation(NotNeg::out, NotNeg)::in).
+coerce_not_negation(NotNeg::out, NotNeg::in).
 
 coerce_not_negation(NotNeg) = Expr :- 
 	coerce_not_negation(NotNeg, Expr).
+
+negate_expression(A, negation(B)) :- 
+	coerce_logical_expression(X, A),
+	coerce_not_negation(X, B).
+	
+negate_expression(negation(A), B) :- 
+	coerce_logical_expression(X, B),
+	coerce_not_negation(X, A).
 
 %-----------------------------------------------------------------------------%
 
@@ -684,7 +795,7 @@ expression_to_not_conjunction(NotConjunction::in(not_conjunction),
 	
 :- promise_equivalent_clauses(coerce_not_conjunction/2).
 coerce_not_conjunction(NotConj::in(not_conjunction), coerce(NotConj)::out).
-coerce_not_conjunction(NotConj::out, NotConj)::in).
+coerce_not_conjunction(NotConj::out, NotConj::in).
 
 coerce_not_conjunction(NotConj) = Expr :- 
 	coerce_not_conjunction(NotConj, Expr).
@@ -696,7 +807,7 @@ expression_to_disjunction(Disjunction::in(disjunction), coerce(Disjunction)).
 
 :- promise_equivalent_clauses(coerce_disjunction/2).
 coerce_disjunction(Disj::in(disjunction), coerce(Disj)::out).
-coerce_disjunction(Disj::out, Disj)::in).
+coerce_disjunction(Disj::out, Disj::in).
 
 coerce_disjunction(Disj) = Expr :- 
 	coerce_disjunction(Disj, Expr).
@@ -707,7 +818,7 @@ expression_to_not_disjunction(NotDisjunction::in(not_disjunction),
 	
 :- promise_equivalent_clauses(coerce_not_disjunction/2).
 coerce_not_disjunction(NotDisj::in(not_disjunction), coerce(NotDisj)::out).
-coerce_not_disjunction(NotDisj::out, NotDisj)::in).
+coerce_not_disjunction(NotDisj::out, NotDisj::in).
 
 coerce_not_disjunction(NotDisj) = Expr :- 
 	coerce_not_disjunction(NotDisj, Expr).
@@ -719,7 +830,7 @@ expression_to_addition(Addition::in(addition), coerce(Addition)).
 
 :- promise_equivalent_clauses(coerce_addition/2).
 coerce_addition(Addition::in(addition), coerce(Addition)::out).
-coerce_addition(Addition::out, Addition)::in).
+coerce_addition(Addition::out, Addition::in).
 
 coerce_addition(Addn) = Expr :- coerce_addition(Addn, Expr).
 
@@ -729,7 +840,7 @@ expression_to_not_addition(NotAddition::in(not_addition),
 	
 :- promise_equivalent_clauses(coerce_not_addition/2).
 coerce_not_addition(NotAddn::in(not_addition), coerce(NotAddn)::out).
-coerce_not_addition(NotAddn::out, NotAddn)::in).
+coerce_not_addition(NotAddn::out, NotAddn::in).
 
 coerce_not_addition(NotAddn) = Expr :- 
 	coerce_not_addition(NotAddn, Expr).
@@ -742,7 +853,7 @@ expression_to_multiplication(Multi::in(multiplication), coerce(Multi)).
 
 :- promise_equivalent_clauses(coerce_multiplication/2).
 coerce_multiplication(Multi::in(multiplication), coerce(Multi)::out).
-coerce_multiplication(Multi::out, Multi)::in).
+coerce_multiplication(Multi::out, Multi::in).
 
 coerce_multiplication(Addn) = Expr :- coerce_multiplication(Addn, Expr).
 
@@ -753,7 +864,7 @@ expression_to_not_multiplication(NotMulti::in(not_multiplication),
 :- promise_equivalent_clauses(coerce_not_multiplication/2).
 coerce_not_multiplication(NotMulti::in(not_multiplication), 
 	coerce(NotMulti)::out).
-coerce_not_multiplication(NotMulti::out, NotMulti)::in).
+coerce_not_multiplication(NotMulti::out, NotMulti::in).
 
 coerce_not_multiplication(NotMulti) = Expr :- 
 	coerce_not_multiplication(NotMulti, Expr).
