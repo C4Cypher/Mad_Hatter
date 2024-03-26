@@ -770,6 +770,7 @@ coerce_not_negation(NotNeg::out, NotNeg::in).
 coerce_not_negation(NotNeg) = Expr :- 
 	coerce_not_negation(NotNeg, Expr).
 
+/* This implementation casts to expression as a midstep, inneficient
 negate_expression(A, negation(B)) :- 
 	coerce_logical_expression(X, A),
 	coerce_not_negation(X, B).
@@ -777,6 +778,19 @@ negate_expression(A, negation(B)) :-
 negate_expression(negation(A), B) :- 
 	coerce_logical_expression(X, B),
 	coerce_not_negation(X, A).
+*/
+
+:- promise_equivalent_clauses(negate_expression/2).
+
+negate_expression(A::in(not_negation), negation(A)::in).
+negate_expression(negation(A)::in, A::in(not_negation)).
+
+
+negate_expression(A::in(not_negation), negation(coerce(A))::out).
+negate_expression(negation(A)::in, A::out).
+
+neggate_expression(A::out, negation(A)::in).
+negate_expression(negation(coerce(A))::out, A::in(not_negation)).
 
 %-----------------------------------------------------------------------------%
 
