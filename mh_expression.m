@@ -42,7 +42,9 @@
 ;		equal(term_expression, term_expression)
 ;		inequal(term_expression, term_expression)
 ;		greater_than(term_expression, term_expression)
+;		greater_than_or_equal(term_expression, term_expression)
 ;		less_than(term_expression, term_expression)
+;		less_than_or_equal(term_expression, term_expression)
 
 ;		term(mh_term) 
 
@@ -79,7 +81,9 @@ where equality is unify_expressions, comparison is compare_expressions.
 ;		equal(ground, ground)
 ;		inequal(ground, ground)
 ;		greater_than(ground, ground)
-;		less_than(ground, ground).
+;		greater_than_or_equal(ground, ground)
+;		less_than(ground, ground)
+;		less_than_or_equal(ground, ground).
 
 :- type logical_expression =< expression
 --->	predicate(functor)
@@ -103,7 +107,9 @@ where equality is unify_expressions, comparison is compare_expressions.
 ;		equal(term_expression, term_expression)
 ;		inequal(term_expression, term_expression)
 ;		greater_than(term_expression, term_expression)
-;		less_than(term_expression, term_expression).
+;		greater_than_or_equal(term_expression, term_expression)
+;		less_than(term_expression, term_expression)
+;		less_than_or_equal(term_expression, term_expression).
 
 :- pred expression_is_logical_expression(expression::in) is semidet.
 :- pred expression_to_logical_expression(expression::in, 
@@ -134,15 +140,7 @@ where equality is unify_expressions, comparison is compare_expressions.
 :- mode coerce_negation(in) = out is semidet.
 :- mode coerce_negation(out) = in is det.
 
-:- pred negate_expression(logical_expression, logical_expression).
-:- mode negate_expression(in, in) is semidet.
-:- mode negate_expression(in, out) is det.
-:- mode negate_expression(out, in) is det.
 
-:- func negate_expression(logical_expression) = logical_expression.
-:- mode negate_expression(in) = in is semidet.
-:- mode negate_expression(in) = out is det.
-:- mode negate_expression(out) = in is det.
 
 :- inst not_negation
 --->	predicate(ground)
@@ -164,7 +162,9 @@ where equality is unify_expressions, comparison is compare_expressions.
 ;		equal(ground, ground)
 ;		inequal(ground, ground)
 ;		greater_than(ground, ground)
-;		less_than(ground, ground).
+;		greater_than_or_equal(ground, ground)
+;		less_than(ground, ground)
+;		less_than_or_equal(ground, ground).
 
 :- type not_negation =< logical_expression
 --->	predicate(functor)
@@ -186,7 +186,9 @@ where equality is unify_expressions, comparison is compare_expressions.
 ;		equal(term_expression, term_expression)
 ;		inequal(term_expression, term_expression)
 ;		greater_than(term_expression, term_expression)
-;		less_than(term_expression, term_expression).
+;		greater_than_or_equal(term_expression, term_expression)
+;		less_than(term_expression, term_expression)
+;		less_than_or_equal(term_expression, term_expression).
 
 :- pred expression_is_not_negation(expression::in) is semidet.
 :- pred expression_to_not_negation(expression::in, negation::out) 
@@ -242,7 +244,9 @@ where equality is unify_expressions, comparison is compare_expressions.
 ;		equal(ground, ground)
 ;		inequal(ground, ground)
 ;		greater_than(ground, ground)
-;		less_than(ground, ground).
+;		greater_than_or_equal(ground, ground)
+;		less_than(ground, ground)
+;		less_than_or_equal(ground, ground).
 
 :- type not_conjunction =< logical_expression
 --->	predicate(functor)
@@ -263,7 +267,9 @@ where equality is unify_expressions, comparison is compare_expressions.
 ;		equal(term_expression, term_expression)
 ;		inequal(term_expression, term_expression)
 ;		greater_than(term_expression, term_expression)
-;		less_than(term_expression, term_expression).
+;		greater_than_or_equal(term_expression, term_expression)
+;		less_than(term_expression, term_expression)
+;		less_than_or_equal(term_expression, term_expression).
 
 :- pred expression_is_not_conjunction(expression::in) is semidet.
 :- pred expression_to_not_conjuction(expression::in, conjunction::out) 
@@ -314,7 +320,9 @@ where equality is unify_expressions, comparison is compare_expressions.
 ;		equal(ground, ground)
 ;		inequal(ground, ground)
 ;		greater_than(ground, ground)
-;		less_than(ground, ground).
+;		greater_than_or_equal(ground, ground)
+;		less_than(ground, ground)
+;		less_than_or_equal(ground, ground).
 
 :- type not_disjunction =< logical_expression
 --->	predicate(functor)
@@ -335,7 +343,9 @@ where equality is unify_expressions, comparison is compare_expressions.
 ;		equal(term_expression, term_expression)
 ;		inequal(term_expression, term_expression)
 ;		greater_than(term_expression, term_expression)
-;		less_than(term_expression, term_expression).
+;		greater_than_or_equal(term_expression, term_expression)
+;		less_than(term_expression, term_expression)
+;		less_than_or_equal(term_expression, term_expression).
 
 :- pred expression_is_not_disjunction(expression::in) is semidet.
 :- pred expression_to_not_conjuction(expression::in, disjunction::out) 
@@ -505,9 +515,24 @@ where equality is unify_expressions, comparison is compare_expressions.
 :- pred compare_expressions(comparison_result::uo, 
 	expression::in, expression::in) is det.
 	
+:- pred identity(expression, expression).
+:- mode identity(in, in) is semidet.
+:- mode identity(in, out) is det.
+:- mode identity(out, in) is det.
+	
 :- pred permutation(expression, expression).
 :- mode permutation(in, out) is multi.
 :- mode permutation(out, in) is multi.
+
+:- pred negate_expression(logical_expression, logical_expression).
+:- mode negate_expression(in, in) is semidet.
+:- mode negate_expression(in, out) is det.
+:- mode negate_expression(out, in) is det.
+
+:- func negate_expression(logical_expression) = logical_expression.
+:- mode negate_expression(in) = in is semidet.
+:- mode negate_expression(in) = out is det.
+:- mode negate_expression(out) = in is det.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -525,110 +550,115 @@ compare_expressions(Result, X, Y) :-
 	else
 		compare(Result, X, Y).
 
-%-----------------------------------------------------------------------------%		
+		
+
+%-----------------------------------------------------------------------------%
+% Identity
+
+% p(A) = p(A)		
+identity(predicate(A), predicate(A)).
+
+
+% -p(A) = -p(A)
+identity(negated_predicate(A), negated_predicate(A)).
+
+% true = true
+identity(mh_true, mh_true).
+ 
+% false = false
+identity(mh_false, mh_false).
+
+% conj(A) = conj(A).
+identity(conjunction(A), conjunction(A)).
+
+% and(A, B) = and(A, B)
+identity(and(A, B), and(A, B)).
+
+% disj(A) = disj(A).
+identity(disjunction(A), disjunction(A)).
+
+% or(A, B) = or(A, B)
+identity(or(A, B), or(A, B)).
+
+% not(A) = not(A).
+identity(negation(A), negation(A)).
+
+% xor(A, B) = xor(A, B)
+identity(xor(A, B), xor(A, B)).
+
+% A :- B = A :- B
+identity(implication(A, B), implication(A, B))).
+
+% A <-> B = A <-> B
+identity(iff(A, B), iff(A, B)).
+
+% (A = B) = (A = B)
+identity(equal(A, B), equal(A, B)).
+
+% (A != B) = (A != B)
+identity(inequal(A, B), inequal(A, B).
+
+% A > B = A > B
+identity(greater_than(A, B), greater_than(A, B)).
+
+% A => B = A => B
+identity(greater_than_or_equal(A, B), greater_than_or_equal(A, B)).
+	
+% A < B = A < B
+identity(less_than(A, B), less_than(A, B)).
+
+% A =< B = A =< B
+identity(greater_than_or_equal(A, B), greater_than_or_equal(A, B)).
+
+% A = A
+identity(term(A), term(A)).
+
+% sum(A) = sum(A)
+identity(sum(A), sum(A)).
+
+% A + B = A + B
+identity(add(A, B), add(A, B)).
+
+% A - B = A - B
+identity(subtract(A, B), subtract(A, B)).
+
+% product(A) = product(A)
+identity(product(A), product(A)).
+
+% A * B = A * B
+identity(multiply(A, B), multiply(A, B)).
+
+% A / B = A / B
+permutation(divide(A, B), divide(A, B)).
+
 %-----------------------------------------------------------------------------%
 % Permutation
 
 :- pragma promise_equivalent_clauses(permutation/2).
 
-%-----------------------------------------------------------------------------%
-% Identities
-
-% p(A) = p(A)		
-permutation(predicate(A), predicate(A)).
-
-
-% -p(A) = -p(A)
-permutation(negated_predicate(A), negated_predicate(A)).
-
-% true = true
-permutation(mh_true, mh_true).
- 
-% false = false
-permutation(mh_false, mh_false).
-
-% conj(A) = conj(A).
-permutation(conjunction(A), conjunction(A)).
-
-% and(A, B) = and(A, B)
-permutation(and(A, B), and(A, B)).
-
 % and(A, B) = and(B, A).
 permutation(and(A, B), and(B, A)).
-
-% disj(A) = disj(A).
-permutation(disjunction(A), disjunction(A)).
-
-% or(A, B) = or(A, B)
-permutation(or(A, B), or(A, B)).
 
 % or(A, B) = or(B, A).
 permutation(or(A, B), or(B, A)).
 
-% not(A) = not(A).
-permutation(negation(A), negation(A)).
-
-% xor(A, B) = xor(A, B)
-permutation(xor(A, B), xor(A, B)).
-
 % xor(A, B) = xor(B, A)
 permutation(xor(A, B), xor(B, A)).
 
-% A :- B = A :- B
-permutation(implication(A, B), implication(A, B))).
-
-% A <-> B = A <-> B
-permutation(iff(A, B), iff(A, B).
-
 % A <-> B = B <-> A
-permutation(iff(A, B), iff(B, A).
-
-
-% (A = B) = (A = B)
-permutation(equal(A, B), equal(A, B)).
+permutation(iff(A, B), iff(B, A)).
 
 % (A = B) = (B = A)
 permutation(equal(A, B), equal(B, A)).
 
-% (A != B) = (A != B)
-permutation(inequal(A, B), inequal(A, B).
-
 % (A != B) = (B != A)
 permutation(inequal(A, B), inequal(B, A).
-
-% A > B = A > B
-permutation(greater_than(A, B), greater_than(A, B)).
-
-% A < B = A < B
-permutation(less_than(A, B), less_than(A, B)).
-
-% A = A
-permutation(term(A), term(A)).
-
-% sum(A) = sum(A)
-permutation(sum(A), sum(A)).
-
-% A + B = A + B
-permutation(add(A, B), add(A, B)).
 
 % A + B = B + A
 permutation(add(A, B), add(B, A)).
 
-% A - B = A - B
-permutation(subtract(A, B), subtract(A, B)).
-
-% product(A) = product(A)
-permutation(product(A), product(A)).
-
-% A * B = A * B
-permutation(multiply(A, B), multiply(A, B)).
-
 % A * B = B * A
 permutation(multiply(A, B), multiply(B, A)).
-
-% A / B = A / B
-permutation(divide(A, B), divide(A, B)).
-
 
 %-----------------------------------------------------------------------------%
 % Negated predicates
