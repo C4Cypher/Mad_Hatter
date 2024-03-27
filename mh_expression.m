@@ -27,13 +27,13 @@
 ;		mh_true
 ;		mh_false
 
-;		conjunction(set(not_conjunction))
-; 		and(not_conjunction, not_conjunction)
+;		conjunction(set(logical_expression))
+; 		and(logical_expression, logical_expression)
 
-;		disjunction(set(not_disjunction))
-;		or(not_disjunction, not_disjunction)
+;		disjunction(set(logical_expression))
+;		or(logical_expression, logical_expression)
 
-;		negation(not_negation)
+;		negation(logical_expression)
 
 ;		xor(logical_expression, logical_expression)
 ;		implication(logical_expression, logical_expression)
@@ -46,12 +46,12 @@
 
 ;		term(mh_term) 
 
-;		sum(set(not_addition))
-;		add(not_addition, not_addition)
+;		sum(set(numeric_expression))
+;		add(numeric_expression, numeric_expression)
 ;		subtract(numeric_expression, numeric_expression)
 
-;		product(set(not_multiplication))
-;		multiply(not_multiplication, not_multiplication)
+;		product(set(numeric_expression))
+;		multiply(numeric_expression, numeric_expression)
 ;		divide(numeric_expression, numeric_expression) 
 where equality is unify_expressions, comparison is compare_expressions.
 
@@ -88,13 +88,13 @@ where equality is unify_expressions, comparison is compare_expressions.
 ;		mh_true
 ;		mh_false
 
-;		conjunction(set(not_conjunction))
-; 		and(not_conjunction, not_conjunction)
+;		conjunction(set(logical_expression))
+; 		and(logical_expression, logical_expression)
 
-;		disjunction(set(not_disjunction))
-;		or(not_disjunction, not_disjunction)
+;		disjunction(set(logical_expression))
+;		or(logical_expression, logical_expression)
 
-;		negation(not_negation)
+;		negation(logical_expression)
 
 ;		xor(logical_expression, logical_expression)
 ;		implication(logical_expression, logical_expression)
@@ -121,7 +121,7 @@ where equality is unify_expressions, comparison is compare_expressions.
 
 :- inst negation ---> negation(ground).
 
-:- type negation =< logical_expression ---> negation(not_negation).
+:- type negation =< logical_expression ---> negation(logical_expression).
 
 :- pred expression_is_negation(expression::in) is semidet.
 :- pred expression_to_negation(expression::in, negation::out) is semidet.
@@ -173,11 +173,11 @@ where equality is unify_expressions, comparison is compare_expressions.
 ;		mh_true
 ;		mh_false
 
-;		conjunction(set(not_conjunction))
-; 		and(not_conjunction, not_conjunction)
+;		conjunction(set(logical_expression))
+; 		and(logical_expression, logical_expression)
 
-;		disjunction(set(not_disjunction))
-;		or(not_disjunction, not_disjunction)
+;		disjunction(set(logical_expression))
+;		or(logical_expression, logical_expression)
 
 ;		xor(logical_expression, logical_expression)
 ;		implication(logical_expression, logical_expression)
@@ -210,7 +210,7 @@ where equality is unify_expressions, comparison is compare_expressions.
 
 :- type conjunction =< logical_expression
 --->		conjunction(set(not_conjunction))
-; 			and(not_conjunction, not_conjunction).
+; 			and(logical_expression, logical_expression).
 
 :- pred expression_is_conjunction(expression::in) is semidet.
 :- pred expression_to_conjuction(expression::in, conjunction::out) is semidet.
@@ -251,10 +251,10 @@ where equality is unify_expressions, comparison is compare_expressions.
 ;		mh_true
 ;		mh_false
 
-;		disjunction(set(not_disjunction))
-;		or(not_disjunction, not_disjunction)
+;		disjunction(set(logical_expression))
+;		or(logical_expression, logical_expression)
 
-;		negation(not_negation)
+;		negation(logical_expression)
 
 ;		xor(logical_expression, logical_expression)
 ;		implication(logical_expression, logical_expression)
@@ -284,8 +284,8 @@ where equality is unify_expressions, comparison is compare_expressions.
 ; 			or(ground, ground).
 
 :- type disjunction =< logical_expression
---->		disjunction(set(not_disjunction))
-; 			or(not_disjunction, not_disjunction).
+--->		disjunction(set(logical_expression))
+; 			or(logical_expression, logical_expression).
 
 :- pred expression_is_disjunction(expression::in) is semidet.
 :- pred expression_to_conjuction(expression::in, disjunction::out) is semidet.
@@ -323,10 +323,10 @@ where equality is unify_expressions, comparison is compare_expressions.
 ;		mh_true
 ;		mh_false
 
-;		conjunction(set(not_conjunction))
-; 		and(not_conjunction, not_conjunction)
+;		conjunction(set(logical_expression))
+; 		and(logical_expression, logical_expression)
 
-;		negation(not_negation)
+;		negation(logical_expression)
 
 ;		xor(logical_expression, logical_expression)
 ;		implication(logical_expression, logical_expression)
@@ -367,11 +367,11 @@ where equality is unify_expressions, comparison is compare_expressions.
 :- type term_expression =< expression
 --->	term(mh_term) 
 
-;		sum(set(not_addition))
-;		add(not_addition, not_addition)
+;		sum(set(numeric_expression))
+;		add(numeric_expression, numeric_expression)
 ;		subtract(numeric_expression, numeric_expression)
 
-;		product(set(not_multiplication))
+;		product(set(numeric_expression))
 ;		multiply(numeric_expression, numeric_expression)
 ;		divide(numeric_expression, numeric_expression).
 
@@ -392,12 +392,12 @@ where equality is unify_expressions, comparison is compare_expressions.
 :- type numeric_expression =< term_expression
 --->	term(numeric_term) 
 
-;		sum(set(not_addition))
-;		add(not_addition, not_addition)
+;		sum(set(numeric_expression))
+;		add(numeric_expression, numeric_expression)
 ;		subtract(numeric_expression, numeric_expression)
 
-;		product(set(not_multiplication))
-;		multiply(not_multiplication, not_multiplication)
+;		product(set(numeric_expression))
+;		multiply(numeric_expression, numeric_expression)
 ;		divide(numeric_expression, numeric_expression). 
 %-----------------------------------------------------------------------------%
 
@@ -406,8 +406,8 @@ where equality is unify_expressions, comparison is compare_expressions.
 ; 			add(ground, ground).
 
 :- type addition =< numeric_expression
---->	sum(set(not_addition))
-; 		add(not_addition, not_addition).
+--->	sum(set(numeric_expression))
+; 		add(numeric_expression, numeric_expression).
 
 :- pred expression_is_addition(expression::in) is semidet.
 :- pred expression_to_addition(expression::in, addition::out) is semidet.
@@ -430,8 +430,8 @@ where equality is unify_expressions, comparison is compare_expressions.
 :- type not_addition =< numeric_expression
 --->	subtract(numeric_expression, numeric_expression)
 
-;		product(set(not_multiplication))
-;		multiply(not_multiplication, not_multiplication)
+;		product(set(numeric_expression))
+;		multiply(numeric_expression, numeric_expression)
 ;		divide(numeric_expression, numeric_expression).
 
 :- pred expression_is_not_addition(expression::in) is semidet.
@@ -454,8 +454,8 @@ where equality is unify_expressions, comparison is compare_expressions.
 ;		multiply(ground, ground).
 
 :- type multiplication =< numeric_expression
---->	product(set(not_multiplication))
-;		multiply(not_multiplication, not_multiplication).
+--->	product(set(numeric_expression))
+;		multiply(numeric_expression, numeric_expression).
 
 :- pred expression_is_multiplication(expression::in) is semidet.
 :- pred expression_to_multiplication(expression::in, multiplication::out) 
@@ -477,8 +477,8 @@ where equality is unify_expressions, comparison is compare_expressions.
 ;		divide(ground, ground).
 
 :- type not_multiplication
---->	sum(set(not_addition))
-;		add(not_addition, not_addition)
+--->	sum(set(numeric_expression))
+;		add(numeric_expression, numeric_expression)
 ;		subtract(numeric_expression, numeric_expression)
 
 ;		divide(numeric_expression, numeric_expression).
@@ -525,9 +525,11 @@ compare_expressions(Result, X, Y) :-
 	else
 		compare(Result, X, Y).
 
-		
+%-----------------------------------------------------------------------------%		
+%-----------------------------------------------------------------------------%
+% Permutation
 
-
+:- pragma promise_equivalent_clauses(permutation/2).
 
 %-----------------------------------------------------------------------------%
 % Identities
@@ -743,11 +745,11 @@ permutation
 
 ;		term(mh_term) 
 
-;		sum(set(not_addition))
+;		sum(set(numeric_expression))
 ;		add(numeric_expression, numeric_expression)
 ;		subtract(numeric_expression, numeric_expression)
 
-;		product(set(not_multiplication))
+;		product(set(numeric_expression))
 ;		multiply(numeric_expression, numeric_expression)
 ;		divide(numeric_expression, numeric_expression) 
 where equality is unify_expressions, comparison is compare_expressions.
