@@ -126,6 +126,8 @@ where equality is unify_expressions, comparison is compare_expressions.
 
 :- inst negation ---> negation(ground).
 
+:- inst negation(T) ---> negation(T).
+
 :- type negation =< logical_expression ---> negation(logical_expression).
 
 :- pred expression_is_negation(expression::in) is semidet.
@@ -209,6 +211,10 @@ where equality is unify_expressions, comparison is compare_expressions.
  --->		conjunction(ground)
 ; 			and(ground, ground).
 
+:- inst conjunction(T)
+--->		conjunction(list(T))
+;			and(T, T).
+
 :- type conjunction =< logical_expression
 --->		conjunction(list(logical_expression))
 ; 			and(logical_expression, logical_expression).
@@ -287,6 +293,10 @@ where equality is unify_expressions, comparison is compare_expressions.
 :- inst disjunction 
  --->		disjunction(ground)
 ; 			or(ground, ground).
+
+:- inst disjunction(T)
+ --->		disjunction(list(T))
+; 			or(T, T).
 
 :- type disjunction =< logical_expression
 --->		disjunction(list(logical_expression))
@@ -372,6 +382,17 @@ where equality is unify_expressions, comparison is compare_expressions.
 ;		product(ground)
 ;		multiply(ground, ground)
 ;		divide(ground, ground).
+
+:- inst term_expression(T)
+--->	term(T) 
+
+;		sum(list(T))
+;		add(T, T)
+;		subtract(T, T)
+
+;		product(list(T))
+;		multiply(T, T)
+;		divide(T, T).
 
 :- type term_expression =< expression
 --->	term(mh_term) 
@@ -634,6 +655,8 @@ permutation(divide(A, B), divide(A, B)).
 % Permutation
 
 :- pragma promise_equivalent_clauses(permutation/2).
+:- pragma does_not_terminate(permutation/2).
+
 
 % and(A, B) = and(B, A).
 permutation(and(A, B), and(B, A)).
