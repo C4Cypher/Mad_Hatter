@@ -28,14 +28,16 @@
 ;		mh_false
 
 ;		conjunction(set(not_conjunction))
-; 		and(logical_expression, logical_expression)
+; 		and(not_conjunction, not_conjunction)
 
 ;		disjunction(set(not_disjunction))
-;		or(logical_expression, logical_expression)
+;		or(not_disjunction, not_disjunction)
+
+;		negation(not_negation)
 
 ;		xor(logical_expression, logical_expression)
-;		negation(not_negation)
 ;		implication(logical_expression, logical_expression)
+;		iff(logical_expression, logical_expression)
 
 ;		equal(term_expression, term_expression)
 ;		inequal(term_expression, term_expression)
@@ -45,11 +47,11 @@
 ;		term(mh_term) 
 
 ;		sum(set(not_addition))
-;		add(numeric_expression, numeric_expression)
+;		add(not_addition, not_addition)
 ;		subtract(numeric_expression, numeric_expression)
 
 ;		product(set(not_multiplication))
-;		multiply(numeric_expression, numeric_expression)
+;		multiply(not_multiplication, not_multiplication)
 ;		divide(numeric_expression, numeric_expression) 
 where equality is unify_expressions, comparison is compare_expressions.
 
@@ -68,9 +70,11 @@ where equality is unify_expressions, comparison is compare_expressions.
 ;		disjunction(ground)
 ;		or(ground, ground)
 
-;		xor(ground, ground)
 ;		negation(ground)
+
+;		xor(ground, ground)
 ;		implication(ground, ground)
+;		iff(ground, ground)
 
 ;		equal(ground, ground)
 ;		inequal(ground, ground)
@@ -85,14 +89,16 @@ where equality is unify_expressions, comparison is compare_expressions.
 ;		mh_false
 
 ;		conjunction(set(not_conjunction))
-; 		and(logical_expression, logical_expression)
+; 		and(not_conjunction, not_conjunction)
 
 ;		disjunction(set(not_disjunction))
-;		or(logical_expression, logical_expression)
+;		or(not_disjunction, not_disjunction)
+
+;		negation(not_negation)
 
 ;		xor(logical_expression, logical_expression)
-;		negation(not_negation)
 ;		implication(logical_expression, logical_expression)
+;		iff(logical_expression, logical_expression)
 
 ;		equal(term_expression, term_expression)
 ;		inequal(term_expression, term_expression)
@@ -113,9 +119,9 @@ where equality is unify_expressions, comparison is compare_expressions.
 
 %-----------------------------------------------------------------------------%
 
-:- inst negation ---> negation(logical_expression).
+:- inst negation ---> negation(ground).
 
-:- type negation =< logical_expression ---> negation(logical_expression).
+:- type negation =< logical_expression ---> negation(not_negation).
 
 :- pred expression_is_negation(expression::in) is semidet.
 :- pred expression_to_negation(expression::in, negation::out) is semidet.
@@ -153,6 +159,7 @@ where equality is unify_expressions, comparison is compare_expressions.
 
 ;		xor(ground, ground)
 ;		implication(ground, ground)
+;		iff(ground, ground)
 
 ;		equal(ground, ground)
 ;		inequal(ground, ground)
@@ -167,13 +174,14 @@ where equality is unify_expressions, comparison is compare_expressions.
 ;		mh_false
 
 ;		conjunction(set(not_conjunction))
-; 		and(logical_expression, logical_expression)
+; 		and(not_conjunction, not_conjunction)
 
 ;		disjunction(set(not_disjunction))
-;		or(logical_expression, logical_expression)
+;		or(not_disjunction, not_disjunction)
 
 ;		xor(logical_expression, logical_expression)
 ;		implication(logical_expression, logical_expression)
+;		iff(logical_expression, logical_expression)
 
 ;		equal(term_expression, term_expression)
 ;		inequal(term_expression, term_expression)
@@ -202,7 +210,7 @@ where equality is unify_expressions, comparison is compare_expressions.
 
 :- type conjunction =< logical_expression
 --->		conjunction(set(not_conjunction))
-; 			and(logical_expression, logical_expression).
+; 			and(not_conjunction, not_conjunction).
 
 :- pred expression_is_conjunction(expression::in) is semidet.
 :- pred expression_to_conjuction(expression::in, conjunction::out) is semidet.
@@ -225,9 +233,11 @@ where equality is unify_expressions, comparison is compare_expressions.
 ;		disjunction(ground)
 ;		or(ground, ground)
 
-;		xor(ground, ground)
 ;		negation(ground)
-;		if(ground, ground)
+
+;		xor(ground, ground)
+;		implication(ground, ground)
+;		iff(ground, ground)
 
 ;		equal(ground, ground)
 ;		inequal(ground, ground)
@@ -242,11 +252,13 @@ where equality is unify_expressions, comparison is compare_expressions.
 ;		mh_false
 
 ;		disjunction(set(not_disjunction))
-;		or(logical_expression, logical_expression)
+;		or(not_disjunction, not_disjunction)
+
+;		negation(not_negation)
 
 ;		xor(logical_expression, logical_expression)
-;		negation(logical_expression)
-;		implication(logical_expression, logical_expression).
+;		implication(logical_expression, logical_expression)
+;		iff(logical_expression, logical_expression)
 
 ;		equal(term_expression, term_expression)
 ;		inequal(term_expression, term_expression)
@@ -273,7 +285,7 @@ where equality is unify_expressions, comparison is compare_expressions.
 
 :- type disjunction =< logical_expression
 --->		disjunction(set(not_disjunction))
-; 			or(logical_expression, logical_expression).
+; 			or(not_disjunction, not_disjunction).
 
 :- pred expression_is_disjunction(expression::in) is semidet.
 :- pred expression_to_conjuction(expression::in, disjunction::out) is semidet.
@@ -293,9 +305,11 @@ where equality is unify_expressions, comparison is compare_expressions.
 ;		conjunction(ground)
 ;		and(ground, ground)
 
-;		xor(ground, ground)
 ;		negation(ground)
-;		if(ground, ground)
+
+;		xor(ground, ground)
+;		implication(ground, ground)
+;		iff(ground, ground)
 
 ;		equal(ground, ground)
 ;		inequal(ground, ground)
@@ -310,11 +324,13 @@ where equality is unify_expressions, comparison is compare_expressions.
 ;		mh_false
 
 ;		conjunction(set(not_conjunction))
-; 		and(logical_expression, logical_expression)
+; 		and(not_conjunction, not_conjunction)
 
-; 		xor(logical_expression, logical_expression)
-;		negation(logical_expression)
-;		implication(logical_expression, logical_expression).
+;		negation(not_negation)
+
+;		xor(logical_expression, logical_expression)
+;		implication(logical_expression, logical_expression)
+;		iff(logical_expression, logical_expression)
 
 ;		equal(term_expression, term_expression)
 ;		inequal(term_expression, term_expression)
@@ -352,7 +368,7 @@ where equality is unify_expressions, comparison is compare_expressions.
 --->	term(mh_term) 
 
 ;		sum(set(not_addition))
-;		add(numeric_expression, numeric_expression)
+;		add(not_addition, not_addition)
 ;		subtract(numeric_expression, numeric_expression)
 
 ;		product(set(not_multiplication))
@@ -365,23 +381,23 @@ where equality is unify_expressions, comparison is compare_expressions.
 :- inst numeric_expression
 --->	term(numeric_term) 
 
-;		sum(set(not_addition))
-;		add(numeric_expression, numeric_expression)
-;		subtract(numeric_expression, numeric_expression)
+;		sum(ground)
+;		add(ground, ground)
+;		subtract(ground, ground)
 
-;		product(set(not_multiplication))
-;		multiply(numeric_expression, numeric_expression)
-;		divide(numeric_expression, numeric_expression). 
+;		product(ground)
+;		multiply(ground, ground)
+;		divide(ground, ground). 
 
 :- type numeric_expression =< term_expression
 --->	term(numeric_term) 
 
 ;		sum(set(not_addition))
-;		add(numeric_expression, numeric_expression)
+;		add(not_addition, not_addition)
 ;		subtract(numeric_expression, numeric_expression)
 
 ;		product(set(not_multiplication))
-;		multiply(numeric_expression, numeric_expression)
+;		multiply(not_multiplication, not_multiplication)
 ;		divide(numeric_expression, numeric_expression). 
 %-----------------------------------------------------------------------------%
 
@@ -391,7 +407,7 @@ where equality is unify_expressions, comparison is compare_expressions.
 
 :- type addition =< numeric_expression
 --->	sum(set(not_addition))
-; 		add(numeric_expression, numeric_expression).
+; 		add(not_addition, not_addition).
 
 :- pred expression_is_addition(expression::in) is semidet.
 :- pred expression_to_addition(expression::in, addition::out) is semidet.
@@ -415,7 +431,7 @@ where equality is unify_expressions, comparison is compare_expressions.
 --->	subtract(numeric_expression, numeric_expression)
 
 ;		product(set(not_multiplication))
-;		multiply(numeric_expression, numeric_expression)
+;		multiply(not_multiplication, not_multiplication)
 ;		divide(numeric_expression, numeric_expression).
 
 :- pred expression_is_not_addition(expression::in) is semidet.
@@ -439,7 +455,7 @@ where equality is unify_expressions, comparison is compare_expressions.
 
 :- type multiplication =< numeric_expression
 --->	product(set(not_multiplication))
-;		multiply(numeric_expression, numeric_expression).
+;		multiply(not_multiplication, not_multiplication).
 
 :- pred expression_is_multiplication(expression::in) is semidet.
 :- pred expression_to_multiplication(expression::in, multiplication::out) 
@@ -461,8 +477,8 @@ where equality is unify_expressions, comparison is compare_expressions.
 ;		divide(ground, ground).
 
 :- type not_multiplication
---->	sum(set(not_multiplication))
-;		add(numeric_expression, numeric_expression)
+--->	sum(set(not_addition))
+;		add(not_addition, not_addition)
 ;		subtract(numeric_expression, numeric_expression)
 
 ;		divide(numeric_expression, numeric_expression).
@@ -509,19 +525,19 @@ compare_expressions(Result, X, Y) :-
 	else
 		compare(Result, X, Y).
 
-%-----------------------------------------------------------------------------%
 		
+
+
+
+%-----------------------------------------------------------------------------%
+% Identities
 
 % p(A) = p(A)		
 permutation(predicate(A), predicate(A)).
 
-%-----------------------------------------------------------------------------%
 
 % -p(A) = -p(A)
 permutation(negated_predicate(A), negated_predicate(A)).
-
-%-----------------------------------------------------------------------------%
-% Identities
 
 % true = true
 permutation(mh_true, mh_true).
@@ -557,7 +573,14 @@ permutation(xor(A, B), xor(A, B)).
 permutation(xor(A, B), xor(B, A)).
 
 % A :- B = A :- B
-permutation(implies(A, B), implies(A, B))).
+permutation(implication(A, B), implication(A, B))).
+
+% A <-> B = A <-> B
+permutation(iff(A, B), iff(A, B).
+
+% A <-> B = B <-> A
+permutation(iff(A, B), iff(B, A).
+
 
 % (A = B) = (A = B)
 permutation(equal(A, B), equal(A, B)).
@@ -632,32 +655,11 @@ permutation(conjunction(C), A) :-
 	coerce_negation(A, B), singleton_set(B, C).
 
 % and(A, B) = conj([A, B]).
-permutation(and(A, B), conjunction(C)) :- 
+permutation(and(A, B), conjunction(C)) :-
+	singleton_set(A, As),
+	singleton_set(B, Bs),
+	multi_union(As, Bs, C).
 
-	coerce_conjunction(A, X),
-	(
-		% and(A, B) = conj([A, B]).
-		coerce_not_conjunction(B, Y),
-		singleton_set(X, As),
-		singleton_set(Y, Bs),
-		nondet_union(As, Bs, C)
-	;
-		% and(A, conj(B)) = insert(A, B).
-		coerce_conjunction(B, negation(Y)),
-		nondet_insert(X, Y, C)
-	)
-;
-	coerce_conjunction(A, conjunction(X)),
-	(
-		% and(conj(A), B) = insert(B, A).
-		coerce_not_conjunction(B, Y),
-		nondet_insert(Y, X, C)
-	;
-		% and(conj(A), conj(B)) = union(A, B).
-		coerce_conjunction(B, conjunction(Y)),
-		nondet_union(X, Y, C)
-	).
-	
 % and(A, B) = conj([A, B]).
 permutation(conjunction(A), and(B, C)) :- 
 	permutation(and(B, C), conjunction(A)). 
@@ -675,38 +677,57 @@ permutation(disjunction(C), A) :-
 
 % or(A, B) = disj([A, B]).
 permutation(or(A, B), disjunction(C)) :- 
-
-	coerce_not_disjunction(A, X),
-	(
-		% or(A, B) = disj([A, B]).
-		coerce_not_disjunction(B, Y),
-		singleton_set(X, As),
-		singleton_set(Y, Bs),
-		nondet_union(As, Bs, C)
-	;
-		% or(A, disj(B)) = insert(A, B).
-		coerce_disjunction(B, disjunction(Y)),
-		nondet_insert(X, Y, C)
-	)
-;
-	coerce_disjunction(A, disjunction(X)),
-	(
-		% or(disj(A), B) = insert(B, A).
-		coerce_not_disjunction(B, Y),
-		nondet_insert(Y, X, C)
-	;
-		% or(disj(A), disj(B)) = union(A, B).
-		coerce_disjunction(B, disjunction(Y)),
-		nondet_union(X, Y, C)
-	).
+	singleton_set(A, As),
+	singleton_set(B, Bs),
+	multi_union(As, Bs, C).
 	
 % and(A, B) = conj([A, B]).
 permutation(disjunction(A), or(B, C)) :- 
 	permutation(or(B, C), disjunction(A)). 
-	
 
 %-----------------------------------------------------------------------------%
-% Exclusive OR
+% De Morgan's laws
+
+% not and(A, B) = or(not A, not B)
+permutation(negation(conjunction(A)), disjunction(B)) :-
+	negate_set_members(A, B). % TODO TEST May result in type conversion errors 
+
+% or(not A, not B) = not and(A, B)
+permutation(disjunction(A), negation(conjunction(B))) :-
+	negate_set_members(A, B).
+	
+% not or(A, B) = and(not A, not B)
+permutation(negation(disjunction(A)), conjunction(B)) :-
+	negate_set_members(A, B). 
+	
+% and(not A, not B) = not or(A, B)
+permutation(conjunction(A), negation(disjunction(B))) :-
+	negate_set_members(A, B).
+
+
+
+
+:- pred negate_set_members(set(logical_expression), set(logical_expression)).
+:- mode negate_set_members(in, out) is det.
+:- mode negate_set_members(out, in) is det.
+
+:- promise_equivalent_clauses(negate_set_members/2).
+
+
+negate_set_members(A::in, B::out) :-
+	map(negate_expression, A, B).
+	
+negate_set_members(A::out, B::in) :- negate_set_members(B, A).
+
+
+
+
+
+%-----------------------------------------------------------------------------%
+% Exclusive OR transformation
+
+% xor(A, B) = or(
+permutation
 
 
 	
@@ -732,6 +753,7 @@ permutation(disjunction(A), or(B, C)) :-
 where equality is unify_expressions, comparison is compare_expressions.
 
 %-----------------------------------------------------------------------------%
+% logical_expression conversions
 
 expression_is_logical_expression(_::in(logical_expression)).
 expression_to_logical_expression(LogiExpr::in(logical_expression), 
@@ -748,7 +770,7 @@ coerce_logical_expression(Conj) = Expr :-
 
 
 %-----------------------------------------------------------------------------%
-
+% negation conversions
 
 expression_is_negation(_::in(negation)).
 expression_to_negation(Negation::in(negation), coerce(Negation)::out).
@@ -780,10 +802,11 @@ negate_expression(negation(A)::in, A::in(not_negation)).
 negate_expression(A::in(not_negation), negation(coerce(A))::out).
 negate_expression(negation(A)::in, A::out).
 
-neggate_expression(A::out, negation(A)::in).
+negate_expression(A::out, negation(A)::in).
 negate_expression(negation(coerce(A))::out, A::in(not_negation)).
 
 %-----------------------------------------------------------------------------%
+% conjunction conversions
 
 expression_is_conjunction(_::in(conjunction)).
 expression_to_conjunction(Conjunction::in(conjunction), coerce(Conjunction)::out).
@@ -806,6 +829,7 @@ coerce_not_conjunction(NotConj) = Expr :-
 	coerce_not_conjunction(NotConj, Expr).
 	
 %-----------------------------------------------------------------------------%
+% disjunction conversions
 
 expression_is_disjunction(_::in(disjunction)).
 expression_to_disjunction(Disjunction::in(disjunction), coerce(Disjunction)).
@@ -829,6 +853,7 @@ coerce_not_disjunction(NotDisj) = Expr :-
 	coerce_not_disjunction(NotDisj, Expr).
 	
 %-----------------------------------------------------------------------------%
+% addition conversions
 	
 expression_is_addition(_::in(addition)).
 expression_to_addition(Addition::in(addition), coerce(Addition)).
@@ -852,6 +877,7 @@ coerce_not_addition(NotAddn) = Expr :-
 
 
 %-----------------------------------------------------------------------------%
+% multiplication conversions
 	
 expression_is_multiplication(_::in(multiplication)).
 expression_to_multiplication(Multi::in(multiplication), coerce(Multi)).
