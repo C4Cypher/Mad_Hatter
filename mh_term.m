@@ -69,7 +69,7 @@
 ;		float(ground)
 ; 		symbol(ground)
 ;		string(ground)
-;		f(ground, list(ground))
+;		f(ground, list(ground_term))
 ;		univ(ground).
 
 :- type mh_ground =< mh_term
@@ -87,13 +87,15 @@
 --->	var(ground)
 ;		named_var(ground)
 ;		int(ground)
-;		float(ground).
+;		float(ground)
+;		f(ground, ground).
 
 :- type numeric_term =< mh_term
 ---> 	var(id(var))
 ;		named_var(symbol)
 ;		int(int)
-;		float(float).
+;		float(float)
+;		f(symbol, list(mh_term)).
 
 :- type number =< numeric_term
 --->	int(int)
