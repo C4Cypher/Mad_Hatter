@@ -554,12 +554,65 @@ where equality is unify_expressions, comparison is compare_expressions.
 :- mode negation_of(in) = out is det.
 :- mode negation_of(out) = in is det.
 
+:- pred flatten(expression, expression).
+:- mode flatten(in, out) is det.
+:- mode flatten(out, in) is multi.
+
+:- func flatten(expression) = expression.
+:- mode flatten(in) = out is det.
+:- mode flatten(out) = in is multi.
+
+:- pred flatten_list(list(expression), list(expression)).
+:- mode flatten(in, out) is det.
+:- mode flatten(out, in) is multi.
+
+:- func flatten_list(list(expression)) = list(expression).
+:- mode flatten_list(in) = out is det.
+:- mode flatten_list(out) = in is multi.
+
+:- pred flatten_logic(logical_expression, logical_expression).
+:- mode flatten_logic(in, out) is det.
+:- mode flatten_logic(out, in) is multi.
+
+:- func flatten_logic(logical_expression) = logical_expression.
+:- mode flatten_logic(in) = out is det.
+:- mode flatten_logic(out) = in is multi.
+
+:- pred flatten_logic_list(list(logical_expression), 
+	list(logical_expression)).
+:- mode flatten_logic_list(in, out) is det.
+:- mode flatten_logic_list(out, in) is multi.
+
+:- func flatten_logic_list(list(logical_expression))
+	= list(logical_expression).
+:- mode flatten_logic_list(in) = out is det.
+:- mode flatten_logic_list(out) = in is multi.
+
+:- pred flatten_terms(term_expression, term_expression).
+:- mode flatten_terms(in, out) is det.
+:- mode flatten_terms(out, in) is multi.
+
+:- func flatten_terms(term_expression) = term_expression.
+:- mode flatten_terms(in) = out is det.
+:- mode flatten_terms(out) = in is multi.
+
+
+
+:- pred flatten_math(numeric_expression, numeric_expression).
+:- mode flatten_math(in, out) is det.
+:- mode flatten_math(out, in) is multi.
+
+:- func flatten_math(numeric_expression) = numeric_expression.
+:- mode flatten_math(in) = out is det.
+:- mode flatten_math(out) = in is multi.
+
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
 :- implementation.
 
-:- import_module set_util.m.
+:- import_module list_util.
+:- import_module require.
 
 
 unify_expressions(X, Y) :- permutation(X, Y).
@@ -569,270 +622,7 @@ compare_expressions(Result, X, Y) :-
 		Result = (=)
 	else
 		compare(Result, X, Y).
-
 		
-
-%-----------------------------------------------------------------------------%
-% Identity
-
-% p(A) = p(A)		
-identity(predicate(A), predicate(A)).
-
-
-% -p(A) = -p(A)
-identity(negated_predicate(A), negated_predicate(A)).
-
-% true = true
-identity(mh_true, mh_true).
- 
-% false = false
-identity(mh_false, mh_false).
-
-% conj(A) = conj(A).
-identity(conjunction(A), conjunction(A)).
-
-% and(A, B) = and(A, B)
-identity(and(A, B), and(A, B)).
-
-% disj(A) = disj(A).
-identity(disjunction(A), disjunction(A)).
-
-% or(A, B) = or(A, B)
-identity(or(A, B), or(A, B)).
-
-% not(A) = not(A).
-identity(negation(A), negation(A)).
-
-% xor(A, B) = xor(A, B)
-identity(xor(A, B), xor(A, B)).
-
-% A :- B = A :- B
-identity(implication(A, B), implication(A, B))).
-
-% A <-> B = A <-> B
-identity(iff(A, B), iff(A, B)).
-
-% (A = B) = (A = B)
-identity(equal(A, B), equal(A, B)).
-
-% (A != B) = (A != B)
-identity(inequal(A, B), inequal(A, B).
-
-% A > B = A > B
-identity(greater_than(A, B), greater_than(A, B)).
-
-% A => B = A => B
-identity(greater_than_or_equal(A, B), greater_than_or_equal(A, B)).
-	
-% A < B = A < B
-identity(less_than(A, B), less_than(A, B)).
-
-% A =< B = A =< B
-identity(greater_than_or_equal(A, B), greater_than_or_equal(A, B)).
-
-% A = A
-identity(term(A), term(A)).
-
-% sum(A) = sum(A)
-identity(sum(A), sum(A)).
-
-% A + B = A + B
-identity(add(A, B), add(A, B)).
-
-% A - B = A - B
-identity(subtract(A, B), subtract(A, B)).
-
-% product(A) = product(A)
-identity(product(A), product(A)).
-
-% A * B = A * B
-identity(multiply(A, B), multiply(A, B)).
-
-% A / B = A / B
-permutation(divide(A, B), divide(A, B)).
-
-%-----------------------------------------------------------------------------%
-% Permutation
-
-:- pragma promise_equivalent_clauses(permutation/2).
-:- pragma does_not_terminate(permutation/2).
-
-
-% and(A, B) = and(B, A).
-permutation(and(A, B), and(B, A)).
-
-% or(A, B) = or(B, A).
-permutation(or(A, B), or(B, A)).
-
-% xor(A, B) = xor(B, A)
-permutation(xor(A, B), xor(B, A)).
-
-% A <-> B = B <-> A
-permutation(iff(A, B), iff(B, A)).
-
-% (A = B) = (B = A)
-permutation(equal(A, B), equal(B, A)).
-
-% (A != B) = (B != A)
-permutation(inequal(A, B), inequal(B, A).
-
-% A + B = B + A
-permutation(add(A, B), add(B, A)).
-
-% A * B = B * A
-permutation(multiply(A, B), multiply(B, A)).
-
-%-----------------------------------------------------------------------------%
-% Negated predicates
- 
-% -p(A) = not p(A)
-permutation(negated_predicate(A), negation(predicate(A)).
-
-% not p(A) = -p(A)
-permutation(negation(predicate(A)), negated_predicate(A)).
-
-% p(A) = not -p(A)
-permutation(predicate(A), negation(negated_predicate(A)).
-
-% not -p(A) = p(A)
-permutation(negation(negated_predicate(A), predicate(A)).
-
-%-----------------------------------------------------------------------------%
-% Conjunction transformations
-
-% A = conj([A])
-permutation(A, conjunction(C)) :- 
-	coerce_not_conjunction(A, B),  singleton_set(B, C).
- 
-% conj([A]) = A
-permutation(conjunction(C), A) :- 
-	coerce_negation(A, B), singleton_set(B, C).
-
-% and(A, B) = conj([A, B]).
-permutation(and(A, B), conjunction(C)) :-
-	singleton_set(A, As),
-	singleton_set(B, Bs),
-	multi_union(As, Bs, C).
-
-% and(A, B) = conj([A, B]).
-permutation(conjunction(A), and(B, C)) :- 
-	permutation(and(B, C), conjunction(A)). 
-
-% and(A, B) = conj([A, B]).	
-permutation(and(A, B), conjunction(C)) :- 
-
-	coerce_conjunction(A, X),
-	(
-		% and(A, B) = conj([A, B]).
-		coerce_not_conjunction(B, Y),
-		singleton_set(X, As),
-		singleton_set(Y, Bs),
-		nondet_union(As, Bs, C)
-	;
-		% and(A, conj(B)) = insert(A, B).
-		coerce_conjunction(B, negation(Y)),
-		nondet_insert(X, Y, C)
-	)
-;
-	coerce_conjunction(A, conjunction(X)),
-	(
-		% and(conj(A), B) = insert(B, A).
-		coerce_not_conjunction(B, Y),
-		nondet_insert(Y, X, C)
-	;
-		% and(conj(A), conj(B)) = union(A, B).
-		coerce_conjunction(B, conjunction(Y)),
-		nondet_union(X, Y, C)
-	).
-	
-%-----------------------------------------------------------------------------%
-% Disjunction transformations
-	
-% A = disj([A])
-permutation(A, disjunction(C)) :- 
-	coerce_not_disjunction(A, B),  singleton_set(B, C).
- 
-% disj([A]) = A
-permutation(disjunction(C), A) :- 
-	coerce_disjunction(A, B), singleton_set(B, C).
-
-% or(A, B) = disj([A, B]).
-permutation(or(A, B), disjunction(C)) :- 
-	singleton_set(A, As),
-	singleton_set(B, Bs),
-	multi_union(As, Bs, C).
-	
-% and(A, B) = conj([A, B]).
-permutation(disjunction(A), or(B, C)) :- 
-	permutation(or(B, C), disjunction(A)). 
-
-%-----------------------------------------------------------------------------%
-% De Morgan's laws
-
-% not and(A, B) = or(not A, not B)
-permutation(negation(conjunction(A)), disjunction(B)) :-
-	negate_set_members(A, B). % TODO TEST May result in type conversion errors 
-
-% or(not A, not B) = not and(A, B)
-permutation(disjunction(A), negation(conjunction(B))) :-
-	negate_set_members(A, B).
-	
-% not or(A, B) = and(not A, not B)
-permutation(negation(disjunction(A)), conjunction(B)) :-
-	negate_set_members(A, B). 
-	
-% and(not A, not B) = not or(A, B)
-permutation(conjunction(A), negation(disjunction(B))) :-
-	negate_set_members(A, B).
-
-
-
-
-:- pred negate_set_members(set(logical_expression), set(logical_expression)).
-:- mode negate_set_members(in, out) is det.
-:- mode negate_set_members(out, in) is det.
-
-:- promise_equivalent_clauses(negate_set_members/2).
-
-
-negate_set_members(A::in, B::out) :-
-	map(negation, A, B).
-	
-negate_set_members(A::out, B::in) :- negate_set_members(B, A).
-
-
-
-
-
-%-----------------------------------------------------------------------------%
-% Exclusive OR transformation
-
-% xor(A, B) = or(
-permutation
-
-
-	
-
-;		xor(logical_expression, logical_expression)
-;		negation(logical_expression)
-;		implication(logical_expression, logical_expression)
-
-;		equal(term_expression, term_expression)
-;		inequal(term_expression, term_expression)
-;		greater_than(term_expression, term_expression)
-;		less_than(term_expression, term_expression)
-
-;		term(mh_term) 
-
-;		set(list(numeric_expression))
-;		add(numeric_expression, numeric_expression)
-;		subtract(numeric_expression, numeric_expression)
-
-;		product(list(numeric_expression))
-;		multiply(numeric_expression, numeric_expression)
-;		divide(numeric_expression, numeric_expression) 
-where equality is unify_expressions, comparison is compare_expressions.
-
 %-----------------------------------------------------------------------------%
 % logical_expression conversions
 
@@ -982,3 +772,292 @@ coerce_not_multiplication(NotMulti::out, NotMulti::in).
 
 coerce_not_multiplication(NotMulti) = Expr :- 
 	coerce_not_multiplication(NotMulti, Expr).
+
+		
+
+%-----------------------------------------------------------------------------%
+% Identity
+
+% p(A) = p(A)		
+identity(predicate(A), predicate(A)).
+
+
+% -p(A) = -p(A)
+identity(negated_predicate(A), negated_predicate(A)).
+
+% true = true
+identity(mh_true, mh_true).
+ 
+% false = false
+identity(mh_false, mh_false).
+
+% conj(A) = conj(A).
+identity(conjunction(A), conjunction(A)).
+
+% and(A, B) = and(A, B)
+identity(and(A, B), and(A, B)).
+
+% disj(A) = disj(A).
+identity(disjunction(A), disjunction(A)).
+
+% or(A, B) = or(A, B)
+identity(or(A, B), or(A, B)).
+
+% not(A) = not(A).
+identity(negation(A), negation(A)).
+
+% xor(A, B) = xor(A, B)
+identity(xor(A, B), xor(A, B)).
+
+% A :- B = A :- B
+identity(implication(A, B), implication(A, B))).
+
+% A <-> B = A <-> B
+identity(iff(A, B), iff(A, B)).
+
+% (A = B) = (A = B)
+identity(equal(A, B), equal(A, B)).
+
+% (A != B) = (A != B)
+identity(inequal(A, B), inequal(A, B).
+
+% A > B = A > B
+identity(greater_than(A, B), greater_than(A, B)).
+
+% A => B = A => B
+identity(greater_than_or_equal(A, B), greater_than_or_equal(A, B)).
+	
+% A < B = A < B
+identity(less_than(A, B), less_than(A, B)).
+
+% A =< B = A =< B
+identity(greater_than_or_equal(A, B), greater_than_or_equal(A, B)).
+
+% A = A
+identity(term(A), term(A)).
+
+% sum(A) = sum(A)
+identity(sum(A), sum(A)).
+
+% A + B = A + B
+identity(add(A, B), add(A, B)).
+
+% A - B = A - B
+identity(subtract(A, B), subtract(A, B)).
+
+% product(A) = product(A)
+identity(product(A), product(A)).
+
+% A * B = A * B
+identity(multiply(A, B), multiply(A, B)).
+
+% A / B = A / B
+permutation(divide(A, B), divide(A, B)).
+
+%-----------------------------------------------------------------------------%
+% Permutation
+
+:- pragma promise_equivalent_clauses(permutation/2).
+:- pragma does_not_terminate(permutation/2).
+
+% A = A
+permutation(A, B) :- identity(A, B).
+
+% and(A, B) = and(B, A).
+permutation(and(A, B), and(B, A)).
+
+% or(A, B) = or(B, A).
+permutation(or(A, B), or(B, A)).
+
+% xor(A, B) = xor(B, A)
+permutation(xor(A, B), xor(B, A)).
+
+% A <-> B = B <-> A
+permutation(iff(A, B), iff(B, A)).
+
+% (A = B) = (B = A)
+permutation(equal(A, B), equal(B, A)).
+
+% (A != B) = (B != A)
+permutation(inequal(A, B), inequal(B, A).
+
+% A + B = B + A
+permutation(add(A, B), add(B, A)).
+
+% A * B = B * A
+permutation(multiply(A, B), multiply(B, A)).
+
+%-----------------------------------------------------------------------------%
+% Negated predicates
+ 
+% -p(A) = not p(A)
+permutation(negated_predicate(A), negation(predicate(A)).
+
+% not p(A) = -p(A)
+permutation(negation(predicate(A)), negated_predicate(A)).
+
+% p(A) = not -p(A)
+permutation(predicate(A), negation(negated_predicate(A)).
+
+% not -p(A) = p(A)
+permutation(negation(negated_predicate(A), predicate(A)).
+
+%-----------------------------------------------------------------------------%
+% Conjunction transformations
+
+% A = conj([A])
+permutation(A, conjunction([A])).
+ 
+% conj([A]) = A
+permutation(conjunction([A]), A).
+
+% and(A, B) = conj([A, B]).
+permutation(and(A, B), conjunction(C)) :- 
+	permutation(conjunction([A, B]), conjunction(C)).
+
+%  conj([A, B]) = and(A, B).
+permutation(conjunction(A), and(B, C)) :- 
+	permutation(and(B, C), conjunction(A)). 
+
+% conj([B, A]) = conj([A, B]).	
+permutation(conjunction(A), conjunction(B)) :- 
+
+	
+	).
+	
+%-----------------------------------------------------------------------------%
+% Disjunction transformations
+	
+% A = disj([A])
+permutation(A, disjunction(C)) :- 
+	coerce_not_disjunction(A, B),  singleton_set(B, C).
+ 
+% disj([A]) = A
+permutation(disjunction(C), A) :- 
+	coerce_disjunction(A, B), singleton_set(B, C).
+
+% or(A, B) = disj([A, B]).
+permutation(or(A, B), disjunction(C)) :- 
+	singleton_set(A, As),
+	singleton_set(B, Bs),
+	multi_union(As, Bs, C).
+	
+% and(A, B) = conj([A, B]).
+permutation(disjunction(A), or(B, C)) :- 
+	permutation(or(B, C), disjunction(A)). 
+
+%-----------------------------------------------------------------------------%
+% De Morgan's laws
+
+% not and(A, B) = or(not A, not B)
+permutation(negation(conjunction(A)), disjunction(B)) :-
+	negate_set_members(A, B). % TODO TEST May result in type conversion errors 
+
+% or(not A, not B) = not and(A, B)
+permutation(disjunction(A), negation(conjunction(B))) :-
+	negate_set_members(A, B).
+	
+% not or(A, B) = and(not A, not B)
+permutation(negation(disjunction(A)), conjunction(B)) :-
+	negate_set_members(A, B). 
+	
+% and(not A, not B) = not or(A, B)
+permutation(conjunction(A), negation(disjunction(B))) :-
+	negate_set_members(A, B).
+
+
+
+
+:- pred negate_set_members(set(logical_expression), set(logical_expression)).
+:- mode negate_set_members(in, out) is det.
+:- mode negate_set_members(out, in) is det.
+
+:- promise_equivalent_clauses(negate_set_members/2).
+
+
+negate_set_members(A::in, B::out) :-
+	map(negation, A, B).
+	
+negate_set_members(A::out, B::in) :- negate_set_members(B, A).
+
+
+
+
+
+%-----------------------------------------------------------------------------%
+% Exclusive OR transformation
+
+% xor(A, B) = or(
+permutation
+
+
+	
+
+;		xor(logical_expression, logical_expression)
+;		negation(logical_expression)
+;		implication(logical_expression, logical_expression)
+
+;		equal(term_expression, term_expression)
+;		inequal(term_expression, term_expression)
+;		greater_than(term_expression, term_expression)
+;		less_than(term_expression, term_expression)
+
+;		term(mh_term) 
+
+;		set(list(numeric_expression))
+;		add(numeric_expression, numeric_expression)
+;		subtract(numeric_expression, numeric_expression)
+
+;		product(list(numeric_expression))
+;		multiply(numeric_expression, numeric_expression)
+;		divide(numeric_expression, numeric_expression) 
+where equality is unify_expressions, comparison is compare_expressions.
+
+%-----------------------------------------------------------------------------%	
+% Flatten
+
+
+flatten(_, _) :- sorry($module, $pred, 
+	"Need to finish flatten_logic and flatten_terms").
+
+flatten(Expr) = Flat :- flatten(Expr, Flat).
+
+
+
+flatten_logic(Expr::in, Flat::out) :- 
+		Expr = Flat = mh_true
+;
+		Expr = Flat = predicate(_)
+;
+		Expr = Flat = negated_predicate(_)
+;
+		Expr = conjunction(Conjunction),
+		Flat = conjunction(flatten_conjunction(Conjunction))
+;
+	
+	
+
+flatten_logic(Expr) = Flat :- flatten_logic(Expr, Flat).
+
+:- promise_equivalent_clauses(flatten_conjunction/1).
+
+:- func flatten_conjunction(list(logical_expression)) = 
+	list(logical_expression).
+:- mode flatten_conjunction(in) = out is det.
+:- mode flatten_conjunction(out) = in is multi.
+
+flatten_conjunction
+
+
+
+
+% see if the type system will let me get away with this without coercion
+flatten_terms(Expr, Flat) :- 
+	flatten_math(Expr, Flat). 
+
+flatten_terms(Expr) = Flat :- flatten_logic(Expr, Flat).
+
+flatten_math(_, _) :- sorry($module, $pred, 
+	"Need to finish flatten_terms").
+
+flatten_math(Expr) = Flat :- flatten(Expr, Flat).
