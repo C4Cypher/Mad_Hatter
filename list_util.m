@@ -63,16 +63,16 @@ nondet_union([], B, B).
 nondet_union(A, B, C) :-
 	table_subset(A, C),
 	table_subset(B, C),
-	all [X] member(X, C), ( member(X, A) ; member(X, B) ).
-	
-nondet_union(As::out, Bs::in, Cs::in) :-
-	subset(Bs, Cs),
-	C = to_sorted_list(Cs),
-	table_subset(A, C),
-	merge_and_delete_dups(A, to_sorted_list(Bs), C),
-	As = list_to_list(A).
+	check_if_union(C, A, B).
 
 
+:- pred check_if_union(list(T), list(T), list(T)).
+:- mode check_if_union(in, in, in) is semidet.
+
+check_if_union([], _, _).
+check_if_union([X | Xs], A, B) :-
+    ( if member(X, A) then true else member(X, B) ), 
+    nondet_union_loop(Xs, A, B).
 
 	
 
