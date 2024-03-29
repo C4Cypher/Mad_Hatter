@@ -539,20 +539,28 @@ where equality is unify_expressions, comparison is compare_expressions.
 :- mode identity(in, in) is semidet.
 :- mode identity(in, out) is det.
 :- mode identity(out, in) is det.
+
+/* WARNING: permutation/2 produces ALL possible combinations of expressions
+	including double negation, demorgan's law, duplicates compound expressions
+	( A and A = A and A and A).  IT WILL NOT TERMINATE. Do not call 
+	permutation/2 outside of a committed choice context 
+	(cc_multi or cc_nondet) */
 	
 :- pred permutation(expression, expression).
 :- mode permutation(in, out) is multi.
 :- mode permutation(out, in) is multi.
 
 :- pred negation(logical_expression, logical_expression).
-:- mode negation(in, in) is semidet.
 :- mode negation(in, out) is det.
 :- mode negation(out, in) is det.
 
 :- func negation_of(logical_expression) = logical_expression.
-:- mode negation_of(in) = in is semidet.
 :- mode negation_of(in) = out is det.
 :- mode negation_of(out) = in is det.
+
+:- pred negate_list(list(logical_expression), list(logical_expression)).
+:- mode negate_list(in, out) is det.
+:- mode negate_list(out, in) is det.
 
 :- pred flatten(expression, expression).
 :- mode flatten(in, out) is det.
@@ -588,23 +596,23 @@ where equality is unify_expressions, comparison is compare_expressions.
 :- mode flatten_logic_list(in) = out is det.
 :- mode flatten_logic_list(out) = in is multi.
 
-:- pred flatten_terms(term_expression, term_expression).
-:- mode flatten_terms(in, out) is det.
-:- mode flatten_terms(out, in) is multi.
+:- pred flatten_term_expression(term_expression, term_expression).
+:- mode flatten_term_expression(in, out) is det.
+:- mode flatten_term_expression(out, in) is multi.
 
-:- func flatten_terms(term_expression) = term_expression.
-:- mode flatten_terms(in) = out is det.
-:- mode flatten_terms(out) = in is multi.
+:- func flatten_term_expression(term_expression) = term_expression.
+:- mode flatten_term_expression(in) = out is det.
+:- mode flatten_term_expression(out) = in is multi.
 
 
 
-:- pred flatten_math(numeric_expression, numeric_expression).
-:- mode flatten_math(in, out) is det.
-:- mode flatten_math(out, in) is multi.
+:- pred flatten_numeric_expression(numeric_expression, numeric_expression).
+:- mode flatten_numeric_expression(in, out) is det.
+:- mode flatten_numeric_expression(out, in) is multi.
 
-:- func flatten_math(numeric_expression) = numeric_expression.
-:- mode flatten_math(in) = out is det.
-:- mode flatten_math(out) = in is multi.
+:- func flatten_numeric_expression(numeric_expression) = numeric_expression.
+:- mode flatten_numeric_expression(in) = out is det.
+:- mode flatten_numeric_expression(out) = in is multi.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -664,25 +672,24 @@ coerce_not_negation(NotNeg) = Expr :-
 	coerce_not_negation(NotNeg, Expr).
 
 
-:- promise_equivalent_clauses(negation/2).
+negation(A, negation(A)).
+negation(negation(A), A).
 
-negation(A::in(not_negation), negation(A)::in).
-negation(negation(A)::in, A::in(not_negation)).
-
-
-negation(A::in(not_negation), negation(coerce(A))::out).
-negation(negation(A)::in, A::out).
-
-negation(A::out, negation(A)::in).
-negation(negation(coerce(A))::out, A::in(not_negation)).
 
 negation_of(A) = B :- negation(A, B).
+
+negate_list([], []).
+
+negate_list([ X | A], [ negation_of(X) | B]) :- negate_list(A, B).
+
+negate_list(A) = B :- negate_list(A, B).
 
 %-----------------------------------------------------------------------------%
 % conjunction conversions
 
 expression_is_conjunction(_::in(conjunction)).
-expression_to_conjunction(Conjunction::in(conjunction), coerce(Conjunction)::out).
+expression_to_conjunction(Conjunction::in(conjunction), 
+	coerce(Conjunction)::out).
 
 :- promise_equivalent_clauses(coerce_conjunction/2).
 coerce_conjunction(Conjunction::in(conjunction), coerce(Conjunction)::out).
@@ -905,8 +912,6 @@ permutation(negation(negated_predicate(A), predicate(A)).
 %-----------------------------------------------------------------------------%
 % Conjunction transformations
 
-
-
 % and(A, B) = conj([A, B]).
 permutation(and(A, B), conjunction(C)) :- 
 	permutation(conjunction([A, B]), conjunction(C)).
@@ -924,86 +929,80 @@ permutation(conjunction(A), conjunction(B)) :-
 		multi_remove_dups(B, A);
 		unify_unordered(A, B).
 		
-
-	
 %-----------------------------------------------------------------------------%
 % Disjunction transformations
 	
-% A = disj([A])
-permutation(A, disjunction(C)) :- 
-	coerce_not_disjunction(A, B),  singleton_set(B, C).
- 
-% disj([A]) = A
-permutation(disjunction(C), A) :- 
-	coerce_disjunction(A, B), singleton_set(B, C).
-
 % or(A, B) = disj([A, B]).
 permutation(or(A, B), disjunction(C)) :- 
-	singleton_set(A, As),
-	singleton_set(B, Bs),
-	multi_union(As, Bs, C).
-	
-% and(A, B) = conj([A, B]).
+	permutation(disjunction([A, B]), disjunction(C)).
+
+%  disj([A, B]) = or(A, B).
 permutation(disjunction(A), or(B, C)) :- 
 	permutation(or(B, C), disjunction(A)). 
+
+% disj([B, A]) = disj([A, B]).	
+permutation(disjunction(A), disjunction(B)) :- 
+		A = B;
+		A = flatten_disjunction(B);
+		flatten_disjunction(A) = B;
+		multi_remove_dups(A, B);
+		multi_remove_dups(B, A);
+		unify_unordered(A, B).
 
 %-----------------------------------------------------------------------------%
 % De Morgan's laws
 
 % not and(A, B) = or(not A, not B)
 permutation(negation(conjunction(A)), disjunction(B)) :-
-	negate_set_members(A, B). % TODO TEST May result in type conversion errors 
+	negate_list(A, B). 
 
 % or(not A, not B) = not and(A, B)
 permutation(disjunction(A), negation(conjunction(B))) :-
-	negate_set_members(A, B).
+	negate_list(A, B).
 	
 % not or(A, B) = and(not A, not B)
 permutation(negation(disjunction(A)), conjunction(B)) :-
-	negate_set_members(A, B). 
+	negate_list(A, B). 
 	
 % and(not A, not B) = not or(A, B)
 permutation(conjunction(A), negation(disjunction(B))) :-
-	negate_set_members(A, B).
-
-
-
-
-:- pred negate_set_members(set(logical_expression), set(logical_expression)).
-:- mode negate_set_members(in, out) is det.
-:- mode negate_set_members(out, in) is det.
-
-:- promise_equivalent_clauses(negate_set_members/2).
-
-
-negate_set_members(A::in, B::out) :-
-	map(negation, A, B).
+	negate_list(A, B).
 	
-negate_set_members(A::out, B::in) :- negate_set_members(B, A).
+%-----------------------------------------------------------------------------%
+% Double negation transformations
 
+% A = not not A
+permutation(A, negation(negation(A))).
 
-
-
+% not not A = A
+permutation(negation(negation(A)), A).
 
 %-----------------------------------------------------------------------------%
 % Exclusive OR transformation
 
-% xor(A, B) = or(
-permutation
+% xor(A, B) = or(and(A, not B), and(not A, B)).
+permutation(xor(A, B), or(and(A, negation_of(B)), and(negation_of(A), B))).
 
+% xor(A, B) = and(or(A, B), or(not A, not B)).
+permutation(xor(A, B), and(or(A, B), or(negation_of(A), negation_of(B)))).
 
+% xor(A, B) = and(or(A, B), not and(A, B)).
+permutation(xor(A, B), and(or(A, B), negation(and(A, B)))).
+
+%-----------------------------------------------------------------------------%
+% Implication transformation
 	
+% if(A, B) = not(A) or B  
+permutation(implication(A, B), or(negation_of(A), B)).
 
-;		xor(logical_expression, logical_expression)
-;		negation(logical_expression)
-;		implication(logical_expression, logical_expression)
+%-----------------------------------------------------------------------------%
+% Biconditional transformation
 
-;		equal(term_expression, term_expression)
-;		inequal(term_expression, term_expression)
-;		greater_than(term_expression, term_expression)
-;		less_than(term_expression, term_expression)
+% iff(A, B) = and(or(not A, B), or(not B, A))
+permutation(iff(A, B), and(or(negation_of(A), B), or(negation_of(B), A))).
 
-;		term(mh_term) 
+
+
 
 ;		sum(list(numeric_expression))
 ;		add(numeric_expression, numeric_expression)
@@ -1013,6 +1012,45 @@ permutation
 ;		multiply(numeric_expression, numeric_expression)
 ;		divide(numeric_expression, numeric_expression) 
 where equality is unify_expressions, comparison is compare_expressions.
+
+%-----------------------------------------------------------------------------%
+% Addition transformations
+
+% add(A, B) = sum([A, B]).
+permutation(add(A, B), sum(C)) :- 
+	permutation(sum([A, B]), sum(C)).
+
+%  sum([A, B]) = add(A, B).
+permutation(sum(A), add(B, C)) :- 
+	permutation(add(B, C), sum(A)). 
+
+% sum([B, A]) = sum([A, B]).	
+permutation(sum(A), sum(B)) :- 
+		A = B;
+		A = flatten_sum(B);
+		flatten_sum(A) = B;
+		unify_unordered(A, B).
+		
+%-----------------------------------------------------------------------------%
+% Multiplication transformations
+
+% multiply(A, B) = product([A, B]).
+permutation(multiply(A, B), product(C)) :- 
+	permutation(product([A, B]), product(C)).
+
+%  product([A, B]) = multiply(A, B).
+permutation(product(A), multiply(B, C)) :- 
+	permutation(multiply(B, C), product(A)). 
+
+% product([B, A]) = product([A, B]).	
+permutation(product(A), product(B)) :- 
+		A = B;
+		A = flatten_product(B);
+		flatten_product(A) = B;
+		unify_unordered(A, B).
+
+
+
 
 %-----------------------------------------------------------------------------%	
 % Flatten
@@ -1071,7 +1109,8 @@ flatten(Expr, Flat) :-
 		Flat = sum(flatten_sum([A, B])
 	;
 		Expr = subtract(A, B)
-		Flat = subtract(flatten_math(A), flatten_math(B))
+		Flat = subtract(flatten_numeric_expression(A), 
+			flatten_numeric_expression(B))
 	;
 		Expr = product(Product)
 		Flat = product(flatten_product(Product))
@@ -1080,7 +1119,7 @@ flatten(Expr, Flat) :-
 		Flat = product(flatten_product([A, B]))
 	;
 		Expr = divide(A, B)
-		Flat = divide(flatten_terms(A), flatten_terms(B))
+		Flat = divide(flatten_term_expression(A), flatten_term_expression(B))
 	).
 
 flatten(Expr) = Flat :- flatten(Expr, Flat).
@@ -1120,22 +1159,26 @@ flatten_logic(Expr, Flat) :-
 		Flat = iff(flatten_logic(A), flatten_logic(B))
 	;
 		Expr = equal(A, B)
-		Flat = equal(flatten_terms(A), flatten_terms(B))
+		Flat = equal(flatten_term_expression(A), flatten_term_expression(B))
 	;
 		Expr = inequal(A, B)
-		Flat = inequal(flatten_terms(A), flatten_terms(B))
+		Flat = inequal(flatten_term_expression(A), flatten_term_expression(B))
 	;
 		Expr = greater_than(A, B)
-		Flat = greater_than(flatten_terms(A), flatten_terms(B))
+		Flat = greater_than(flatten_term_expression(A), 
+			flatten_term_expression(B))
 	;
 		Expr = greater_than_or_equal(A, B)
-		Flat = greater_than_or_equal(flatten_terms(A), flatten_terms(B))
+		Flat = greater_than_or_equal(flatten_term_expression(A), 
+			flatten_term_expression(B))
 	;
 		Expr = less_than(A, B)
-		Flat = less_than(flatten_terms(A), flatten_terms(B))
+		Flat = less_than(flatten_term_expression(A), 
+			flatten_term_expression(B))
 	;
 		Expr = less_than_or_equal(A, B)
-		Flat = less_than_or_equal(flatten_terms(A), flatten_terms(B))
+		Flat = less_than_or_equal(flatten_term_expression(A), 
+			flatten_term_expression(B))
 	).
 		
 
@@ -1183,7 +1226,7 @@ flatten_logic(Expr) = Flat :- flatten_logic(Expr, Flat).
 
 
 % see if the type system will let me get away with this without coercion
-flatten_terms(Expr, Flat) :- 
+flatten_term_expression(Expr, Flat) :- 
 	require_compete_switch [Expr] (
 		Expr = Flat = term(_)
 	;
@@ -1194,7 +1237,8 @@ flatten_terms(Expr, Flat) :-
 		Flat = sum(flatten_sum([A, B])
 	;
 		Expr = subtract(A, B)
-		Flat = subtract(flatten_math(A), flatten_math(B))
+		Flat = subtract(flatten_numeric_expression(A), 
+			flatten_numeric_expression(B))
 	;
 		Expr = product(Product)
 		Flat = product(flatten_product(Product))
@@ -1203,12 +1247,13 @@ flatten_terms(Expr, Flat) :-
 		Flat = product(flatten_product([A, B]))
 	;
 		Expr = divide(A, B)
-		Flat = divide(flatten_math(A), flatten_math(B))
+		Flat = divide(flatten_numeric_expression(A), 
+			flatten_numeric_expression(B))
 	).
 
-flatten_terms(Expr) = Flat :- flatten_terms(Expr, Flat).
+flatten_term_expression(Expr) = Flat :- flatten_term_expression(Expr, Flat).
 
-flatten_math(Expr, Flat) :- 
+flatten_numeric_expression(Expr, Flat) :- 
 	require_compete_switch [Expr] (
 		Expr = Flat = term(_)
 	;
@@ -1219,7 +1264,8 @@ flatten_math(Expr, Flat) :-
 		Flat = sum(flatten_sum([A, B])
 	;
 		Expr = subtract(A, B)
-		Flat = subtract(flatten_math(A), flatten_math(B))
+		Flat = subtract(flatten_numeric_expression(A), 
+			flatten_numeric_expression(B))
 	;
 		Expr = product(Product)
 		Flat = product(flatten_product(Product))
@@ -1228,10 +1274,12 @@ flatten_math(Expr, Flat) :-
 		Flat = product(flatten_product([A, B]))
 	;
 		Expr = divide(A, B)
-		Flat = divide(flatten_math(A), flatten_math(B))
+		Flat = divide(flatten_numeric_expression(A), 
+			flatten_numeric_expression(B))
 	).
 	
-flatten_math(Expr) = Flat :- flatten_math(Expr, Flat).
+flatten_numeric_expression(Expr) = Flat :- 
+	flatten_numeric_expression(Expr, Flat).
 
 
 :- func flatten_sum(list(term_expression)) 
@@ -1247,7 +1295,7 @@ flatten_sum([S | Ss]) =  F :-
 	F = append(flatten_sum(X), flatten_sum(Ss))
 ;
 	S /= sum(_),
-	F = [ flatten_terms(S) | flatten_sum(Ss) ].
+	F = [ flatten_term_expression(S) | flatten_sum(Ss) ].
 	
 	
 :- func flatten_product(list(term_expression)) 
@@ -1263,4 +1311,4 @@ flatten_product([P | Ps]) =  F :-
 	F = append(flatten_product(X), flatten_product(Ps))
 ;
 	P /= product(_),
-	F = [ flatten_terms(P) | flatten_product(Cs) ].
+	F = [ flatten_term_expression(P) | flatten_product(Cs) ].
