@@ -920,11 +920,12 @@ permutation(conjunction(A), conjunction(B)) :-
 		A = B;
 		A = flatten_conjunction(B);
 		flatten_conjunction(A) = B;
-
+		unify_unordered(A, B);
+		multi_remove_dups(A, B);
+		multi_remove_dups(B, A).
+		
 	
-	).
-	
-% A = conj([A]) Not sure of the intended consequences of this, may be redundant
+% A = conj([A]) Redundant with flatten
 
 %permutation(A, conjunction([A])).
  
