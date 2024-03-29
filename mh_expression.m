@@ -47,7 +47,7 @@
 
 ;		term(mh_term) 
 
-;		set(list(numeric_expression))
+;		sum(list(numeric_expression))
 ;		add(numeric_expression, numeric_expression)
 ;		subtract(numeric_expression, numeric_expression)
 
@@ -397,7 +397,7 @@ where equality is unify_expressions, comparison is compare_expressions.
 :- type term_expression =< expression
 --->	term(mh_term) 
 
-;		set(list(numeric_expression))
+;		sum(list(numeric_expression))
 ;		add(numeric_expression, numeric_expression)
 ;		subtract(numeric_expression, numeric_expression)
 
@@ -422,7 +422,7 @@ where equality is unify_expressions, comparison is compare_expressions.
 :- type numeric_expression =< term_expression
 --->	term(numeric_term) 
 
-;		set(list(numeric_expression))
+;		sum(list(numeric_expression))
 ;		add(numeric_expression, numeric_expression)
 ;		subtract(numeric_expression, numeric_expression)
 
@@ -436,7 +436,7 @@ where equality is unify_expressions, comparison is compare_expressions.
 ; 			add(ground, ground).
 
 :- type addition =< numeric_expression
---->	set(list(numeric_expression))
+--->	sum(list(numeric_expression))
 ; 		add(numeric_expression, numeric_expression).
 
 :- pred expression_is_addition(expression::in) is semidet.
@@ -507,7 +507,7 @@ where equality is unify_expressions, comparison is compare_expressions.
 ;		divide(ground, ground).
 
 :- type not_multiplication
---->	set(list(numeric_expression))
+--->	sum(list(numeric_expression))
 ;		add(numeric_expression, numeric_expression)
 ;		subtract(numeric_expression, numeric_expression)
 
@@ -905,11 +905,7 @@ permutation(negation(negated_predicate(A), predicate(A)).
 %-----------------------------------------------------------------------------%
 % Conjunction transformations
 
-% A = conj([A])
-permutation(A, conjunction([A])).
- 
-% conj([A]) = A
-permutation(conjunction([A]), A).
+
 
 % and(A, B) = conj([A, B]).
 permutation(and(A, B), conjunction(C)) :- 
@@ -924,6 +920,12 @@ permutation(conjunction(A), conjunction(B)) :-
 
 	
 	).
+	
+% A = conj([A])
+permutation(A, conjunction([A])).
+ 
+% conj([A]) = A
+permutation(conjunction([A]), A).
 	
 %-----------------------------------------------------------------------------%
 % Disjunction transformations
@@ -1004,7 +1006,7 @@ permutation
 
 ;		term(mh_term) 
 
-;		set(list(numeric_expression))
+;		sum(list(numeric_expression))
 ;		add(numeric_expression, numeric_expression)
 ;		subtract(numeric_expression, numeric_expression)
 
@@ -1017,47 +1019,249 @@ where equality is unify_expressions, comparison is compare_expressions.
 % Flatten
 
 
-flatten(_, _) :- sorry($module, $pred, 
-	"Need to finish flatten_logic and flatten_terms").
+flatten(Expr, Flat) :-
+	require_compete_switch [Expr] (
+		Expr = Flat = mh_true
+	;
+		Expr = Flat = predicate(_)
+	;
+		Expr = Flat = negated_predicate(_)
+	;
+		Expr = conjunction(Conjunction),
+		Flat = conjunction(flatten_conjunction(Conjunction))
+	;
+		Expr = and(A, B),
+		Flat = conjunction(flatten_conjunction([A, B]))
+	;
+		Expr = disjunction(Disjunction),
+		Flat = disjunction(flatten_disjunction(Disjunction))
+	;
+		Expr = or(A, B),
+		Flat = disjunction(flatten_disjunction([A, B])
+	;
+		Expr = negation(X),
+		Flat = negation(flatten_logic(X))
+	;
+		Expr = xor(A, B),
+		Flat = xor(flatten_logic(A), flatten_logic(B))
+	;
+		Expr = implication(A, B),
+		Flat = implication(flatten_logic(A), flatten_logic(B))
+	;
+		Expr = iff(A, B),
+		Flat = iff(flatten_logic(A), flatten_logic(B))
+	;
+		Expr = Flat = equal(_, _)
+	;
+		Expr = Flat = inequal(_, _)
+	;
+		Expr = Flat = greater_than(_, _)
+	;
+		Expr = Flat = greater_than_or_equal(_, _)
+	;
+		Expr = Flat = less_than(_, _)
+	;
+		Expr = Flat = less_than_or_equal(_, _)
+	;
+		Expr = Flat = term(_)
+	;
+		Expr = sum(Sum)
+		Flat = sum(flatten_sum(Sum))
+	;
+		Expr = add(A, B)
+		Flat = sum(flatten_sum([A, B])
+	;
+		Expr = subtract(A, B)
+		Flat = subtract(flatten_math(A), flatten_math(B))
+	;
+		Expr = product(Product)
+		Flat = product(flatten_product(Product))
+	;
+		Expr = multiply(A, B)
+		Flat = product(flatten_product([A, B]))
+	;
+		Expr = divide(A, B)
+		Flat = divide(flatten_terms(A), flatten_terms(B))
+	).
 
 flatten(Expr) = Flat :- flatten(Expr, Flat).
 
 
 
-flatten_logic(Expr::in, Flat::out) :- 
+flatten_logic(Expr, Flat) :- 
+	require_compete_switch [Expr] (
 		Expr = Flat = mh_true
-;
+	;
 		Expr = Flat = predicate(_)
-;
+	;
 		Expr = Flat = negated_predicate(_)
-;
+	;
 		Expr = conjunction(Conjunction),
 		Flat = conjunction(flatten_conjunction(Conjunction))
-;
+	;
+		Expr = and(A, B),
+		Flat = conjunction(flatten_conjunction([A, B]))
+	;
+		Expr = disjunction(Disjunction),
+		Flat = disjunction(flatten_disjunction(Disjunction))
+	;
+		Expr = or(A, B),
+		Flat = disjunction(flatten_disjunction([A, B])
+	;
+		Expr = negation(X),
+		Flat = negation(flatten_logic(X))
+	;
+		Expr = xor(A, B),
+		Flat = xor(flatten_logic(A), flatten_logic(B))
+	;
+		Expr = implication(A, B),
+		Flat = implication(flatten_logic(A), flatten_logic(B))
+	;
+		Expr = iff(A, B),
+		Flat = iff(flatten_logic(A), flatten_logic(B))
+	;
+		Expr = equal(A, B)
+		Flat = equal(flatten_terms(A), flatten_terms(B))
+	;
+		Expr = inequal(A, B)
+		Flat = inequal(flatten_terms(A), flatten_terms(B))
+	;
+		Expr = greater_than(A, B)
+		Flat = greater_than(flatten_terms(A), flatten_terms(B))
+	;
+		Expr = greater_than_or_equal(A, B)
+		Flat = greater_than_or_equal(flatten_terms(A), flatten_terms(B))
+	;
+		Expr = less_than(A, B)
+		Flat = less_than(flatten_terms(A), flatten_terms(B))
+	;
+		Expr = less_than_or_equal(A, B)
+		Flat = less_than_or_equal(flatten_terms(A), flatten_terms(B))
+	).
+		
+
+:- func flatten_conjunction(list(logical_expression)) 
+	= list(logical_expression).
 	
+:- mode flatten_conjunction(in) = out is det.
+:- mode flatten_conjunction(out) = in is multi.
+
+flatten_conjunction([]) = [].
+
+flatten_conjunction([C | Cs]) =  F :-
+	C = conjunction(X), 
+	F = append(flatten_conjunction(X), flatten_conjunction(Cs))
+;
+	C /= conjunction(_),
+	F = [ flatten_logic(C) | flatten_conjunction(Cs) ].
 	
 
 flatten_logic(Expr) = Flat :- flatten_logic(Expr, Flat).
 
-:- promise_equivalent_clauses(flatten_conjunction/1).
+:- func flatten_disjunction(list(logical_expression)) 
+	= list(logical_expression).
+	
+:- mode flatten_disjunction(in) = out is det.
+:- mode flatten_disjunction(out) = in is multi.
 
-:- func flatten_conjunction(list(logical_expression)) = 
-	list(logical_expression).
-:- mode flatten_conjunction(in) = out is det.
-:- mode flatten_conjunction(out) = in is multi.
+flatten_disjunction([]) = [].
 
-flatten_conjunction
+flatten_disjunction([D | Ds]) =  F :-
+	D = disjunction(X),  
+	F = append(flatten_disjunction(X), flatten_disjunction(Cs)
+;
+	D /= disjunction(_),
+	F = [ flatten_logic(C) | flatten_disjunction(Cs) ].
+	
+
+flatten_logic(Expr) = Flat :- flatten_logic(Expr, Flat).
+
+
+
+
 
 
 
 
 % see if the type system will let me get away with this without coercion
 flatten_terms(Expr, Flat) :- 
-	flatten_math(Expr, Flat). 
+	require_compete_switch [Expr] (
+		Expr = Flat = term(_)
+	;
+		Expr = sum(Sum)
+		Flat = sum(flatten_sum(Sum))
+	;
+		Expr = add(A, B)
+		Flat = sum(flatten_sum([A, B])
+	;
+		Expr = subtract(A, B)
+		Flat = subtract(flatten_math(A), flatten_math(B))
+	;
+		Expr = product(Product)
+		Flat = product(flatten_product(Product))
+	;
+		Expr = multiply(A, B)
+		Flat = product(flatten_product([A, B]))
+	;
+		Expr = divide(A, B)
+		Flat = divide(flatten_math(A), flatten_math(B))
+	).
 
-flatten_terms(Expr) = Flat :- flatten_logic(Expr, Flat).
+flatten_terms(Expr) = Flat :- flatten_terms(Expr, Flat).
 
-flatten_math(_, _) :- sorry($module, $pred, 
-	"Need to finish flatten_terms").
+flatten_math(Expr, Flat) :- 
+	require_compete_switch [Expr] (
+		Expr = Flat = term(_)
+	;
+		Expr = sum(Sum)
+		Flat = sum(flatten_sum(Sum))
+	;
+		Expr = add(A, B)
+		Flat = sum(flatten_sum([A, B])
+	;
+		Expr = subtract(A, B)
+		Flat = subtract(flatten_math(A), flatten_math(B))
+	;
+		Expr = product(Product)
+		Flat = product(flatten_product(Product))
+	;
+		Expr = multiply(A, B)
+		Flat = product(flatten_product([A, B]))
+	;
+		Expr = divide(A, B)
+		Flat = divide(flatten_math(A), flatten_math(B))
+	).
+	
+flatten_math(Expr) = Flat :- flatten_math(Expr, Flat).
 
-flatten_math(Expr) = Flat :- flatten(Expr, Flat).
+
+:- func flatten_sum(list(term_expression)) 
+	= list(term_expression).
+	
+:- mode flatten_sum(in) = out is det.
+:- mode flatten_sum(out) = in is multi.
+
+flatten_sum([]) = [].
+
+flatten_sum([S | Ss]) =  F :-
+	S = sum(X), 
+	F = append(flatten_sum(X), flatten_sum(Ss))
+;
+	S /= sum(_),
+	F = [ flatten_terms(S) | flatten_sum(Ss) ].
+	
+	
+:- func flatten_product(list(term_expression)) 
+	= list(term_expression).
+	
+:- mode flatten_product(in) = out is det.
+:- mode flatten_product(out) = in is multi.
+
+flatten_product([]) = [].
+
+flatten_product([P | Ps]) =  F :-
+	P = product(X), 
+	F = append(flatten_product(X), flatten_product(Ps))
+;
+	P /= product(_),
+	F = [ flatten_terms(P) | flatten_product(Cs) ].
