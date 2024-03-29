@@ -920,17 +920,11 @@ permutation(conjunction(A), conjunction(B)) :-
 		A = B;
 		A = flatten_conjunction(B);
 		flatten_conjunction(A) = B;
-		unify_unordered(A, B);
 		multi_remove_dups(A, B);
-		multi_remove_dups(B, A).
+		multi_remove_dups(B, A);
+		unify_unordered(A, B).
 		
-	
-% A = conj([A]) Redundant with flatten
 
-%permutation(A, conjunction([A])).
- 
-% conj([A]) = A
-%permutation(conjunction([A]), A).
 	
 %-----------------------------------------------------------------------------%
 % Disjunction transformations
