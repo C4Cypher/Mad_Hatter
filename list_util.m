@@ -48,6 +48,11 @@
 :- promise all [A, B] ( unify_unordered(A) = B <=> unify_unordered(B) = A ).
 
 
+:- pred multi_multi_remove_dups(list(T), list(T)).
+:- mode multi_multi_remove_dups(in, out) is det.
+:- mode multi_multi_remove_dups(out, in) is multi.
+
+
 
 
 %-----------------------------------------------------------------------------%
@@ -97,6 +102,29 @@ unify_unordered([A | As], Bs) :-
 	unify_unordered(As, Remainder).
 
 unify_unordered(A) = B :- unify_unordered(A, B).
+
+%-----------------------------------------------------------------------------%
+
+multi_remove_dups(Xs) = FilteredXs :-
+    multi_remove_dups(Xs, FilteredXs).
+
+multi_remove_dups(Xs, FilteredXs) :-
+    multi_remove_dups_loop(Xs, set_tree234.init, FilteredXs).
+
+:- pred multi_remove_dups_loop(list(T), set_tree234(T), list(T)).
+:- mode multi_remove_dups_loop(in, in, out) is det.
+:- mode multi_remove_dups_loop(out, in, in) is multi.
+
+multi_remove_dups_loop([], _SoFar, []).
+multi_remove_dups_loop([X | Xs], SoFar0, FilteredXs) :-
+    (   set_tree234.member(SoFar0, X),
+        multi_remove_dups_loop(Xs, SoFar0, FilteredXs)
+    ;
+		not set_tree234.member(SoFar0, X),
+        set_tree234.insert(X, SoFar0, SoFar),
+        multi_remove_dups_loop(Xs, SoFar, FilteredXsTail),
+        FilteredXs = [X | FilteredXsTail]
+    ).
 
 	
 
