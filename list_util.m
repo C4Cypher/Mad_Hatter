@@ -33,6 +33,20 @@
 :- mode nondet_union(out, in, in) is nondet.
 :- mode nondet_union(out, out, in) is multi.
 
+:- pred unify_unordered(list(T), list(T)).
+:- mode unify_unordered(in, in) is semidet.
+:- mode unify_unordered(in, out) is multi.
+:- mode unify_unordered(out, in) is multi.
+
+:- promise all [A, B] ( unify_unordered(A, B) <=> unify_unordered(B, A) ).
+
+:- func unify_unordered(list(T)) = list(T).
+:- mode unify_unordered(in) = in is semidet.
+:- mode unify_unordered(in) = out is multi.
+:- mode unify_unordered(out) = in is multi.
+
+:- promise all [A, B] ( unify_unordered(A) = B <=> unify_unordered(B) = A ).
+
 
 
 
@@ -73,6 +87,16 @@ check_if_union([], _, _).
 check_if_union([X | Xs], A, B) :-
     ( if member(X, A) then true else member(X, B) ), 
     nondet_union_loop(Xs, A, B).
+	
+%-----------------------------------------------------------------------------%	
+
+unify_unordered([], []).
+
+unify_unordered([A | As], Bs) :-
+	delete(Bs, A, Remainder),
+	unify_unordered(As, Remainder).
+
+unify_unordered(A) = B :- unify_unordered(A, B).
 
 	
 
