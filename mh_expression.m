@@ -917,15 +917,19 @@ permutation(conjunction(A), and(B, C)) :-
 
 % conj([B, A]) = conj([A, B]).	
 permutation(conjunction(A), conjunction(B)) :- 
+		A = B;
+		A = flatten_conjunction(B);
+		flatten_conjunction(A) = B;
 
 	
 	).
 	
-% A = conj([A])
-permutation(A, conjunction([A])).
+% A = conj([A]) Not sure of the intended consequences of this, may be redundant
+
+%permutation(A, conjunction([A])).
  
 % conj([A]) = A
-permutation(conjunction([A]), A).
+%permutation(conjunction([A]), A).
 	
 %-----------------------------------------------------------------------------%
 % Disjunction transformations
