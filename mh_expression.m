@@ -220,7 +220,7 @@ where equality is unify_expressions, comparison is compare_expressions.
 ; 			and(logical_expression, logical_expression).
 
 :- pred expression_is_conjunction(expression::in) is semidet.
-:- pred expression_to_conjuction(expression::in, conjunction::out) is semidet.
+:- pred expression_to_conjunction(expression::in, conjunction::out) is semidet.
 
 :- pred coerce_conjunction(expression, conjunction).
 :- mode coerce_conjunction(in, out) is semidet.
@@ -277,7 +277,7 @@ where equality is unify_expressions, comparison is compare_expressions.
 ;		less_than_or_equal(term_expression, term_expression).
 
 :- pred expression_is_not_conjunction(expression::in) is semidet.
-:- pred expression_to_not_conjuction(expression::in, conjunction::out) 
+:- pred expression_to_not_conjunction(expression::in, conjunction::out) 
 	is semidet.
 	
 :- pred coerce_not_conjunction(expression, not_conjunction).
@@ -303,7 +303,7 @@ where equality is unify_expressions, comparison is compare_expressions.
 ; 			or(logical_expression, logical_expression).
 
 :- pred expression_is_disjunction(expression::in) is semidet.
-:- pred expression_to_conjuction(expression::in, disjunction::out) is semidet.
+:- pred expression_to_disjunction(expression::in, disjunction::out) is semidet.
 
 :- pred coerce_disjunction(expression, disjunction).
 :- mode coerce_disjunction(in, out) is semidet.
@@ -357,7 +357,7 @@ where equality is unify_expressions, comparison is compare_expressions.
 ;		less_than_or_equal(term_expression, term_expression).
 
 :- pred expression_is_not_disjunction(expression::in) is semidet.
-:- pred expression_to_not_conjuction(expression::in, disjunction::out) 
+:- pred expression_to_not_disjunction(expression::in, disjunction::out) 
 	is semidet.
 	
 :- pred coerce_not_disjunction(expression, not_disjunction).
@@ -499,7 +499,7 @@ where equality is unify_expressions, comparison is compare_expressions.
 :- mode coerce_multiplication(in) = out is semidet.
 :- mode coerce_multiplication(out) = in is det.
 
-:- inst not_multiplication.
+:- inst not_multiplication
 --->	sum(ground)
 ;		add(ground, ground)
 ;		subtract(ground, ground)
@@ -622,8 +622,17 @@ where equality is unify_expressions, comparison is compare_expressions.
 :- import_module list_util.
 :- import_module require.
 
+:- pragma promise_equivalent_clauses(unify_expressions/2).
 
 unify_expressions(X, Y) :- permutation(X, Y).
+
+unify_expressions(conjunction(A)::in, conjunction(B)::in) :-
+	sort_and_remove_dups(flatten_conjunction(A), C),
+	sort_and_remove_dups(flatten_conjunction(B), C).
+	
+unify_expressions(disjunction(A)::in, disjunction(B)::in) :-
+	sort_and_remove_dups(flatten_disjunction(A), C),
+	sort_and_remove_dups(flatten_disjunction(B), C).
 
 compare_expressions(Result, X, Y) :-
 	if permutation(X, Y) then
@@ -638,7 +647,7 @@ expression_is_logical_expression(_::in(logical_expression)).
 expression_to_logical_expression(LogiExpr::in(logical_expression), 
 	coerce(LogiExpr)::out).
 
-:- promise_equivalent_clauses(coerce_logical_expression/2).
+:- pragma promise_equivalent_clauses(coerce_logical_expression/2).
 coerce_logical_expression(LogiExpr::in(logical_expression), 
 	coerce(LogiExpr)::out).
 coerce_logical_expression(LogiExpr::out, LogiExpr::in).
@@ -654,7 +663,7 @@ coerce_logical_expression(Conj) = Expr :-
 expression_is_negation(_::in(negation)).
 expression_to_negation(Negation::in(negation), coerce(Negation)::out).
 
-:- promise_equivalent_clauses(coerce_negation/2).
+:- pragma promise_equivalent_clauses(coerce_negation/2).
 coerce_negation(Negation::in(negation), coerce(Negation)::out).
 coerce_negation(Negation::out, Negation::in).
 
@@ -664,7 +673,7 @@ expression_is_not_negation(_::in(not_negation)).
 expression_to_not_negation(NotNegation::in(not_negation), 
 	coerce(NotNegation)).
 	
-:- promise_equivalent_clauses(coerce_not_negation/2).
+:- pragma promise_equivalent_clauses(coerce_not_negation/2).
 coerce_not_negation(NotNeg::in(not_negation), coerce(NotNeg)::out).
 coerce_not_negation(NotNeg::out, NotNeg::in).
 
@@ -687,13 +696,15 @@ negate_list(A) = B :- negate_list(A, B).
 %-----------------------------------------------------------------------------%
 % conjunction conversions
 
-expression_is_conjunction(_::in(conjunction)).
-expression_to_conjunction(Conjunction::in(conjunction), 
-	coerce(Conjunction)::out).
+expression_is_conjunction(conjununction(_)).
+expression_is_conjunction(and(_, _)).
 
-:- promise_equivalent_clauses(coerce_conjunction/2).
+expression_to_conjunction(conjunction(A), coerce(conjunction(A))).
+expression_to_conjunction(and(A, B), coerce(and(A,B))).
+
+:- pragma promise_equivalent_clauses(coerce_conjunction/2).
 coerce_conjunction(Conjunction::in(conjunction), coerce(Conjunction)::out).
-coerce_conjunction(Conjunction::out, Conjunction)::in).
+coerce_conjunction(Conjunction::out, Conjunction::in).
 
 coerce_conjunction(Conj) = Expr :- coerce_conjunction(Conj, Expr).
 
@@ -701,7 +712,7 @@ expression_is_not_conjunction(_::in(not_conjunction)).
 expression_to_not_conjunction(NotConjunction::in(not_conjunction), 
 	coerce(NotConjunction)).
 	
-:- promise_equivalent_clauses(coerce_not_conjunction/2).
+:- pragma promise_equivalent_clauses(coerce_not_conjunction/2).
 coerce_not_conjunction(NotConj::in(not_conjunction), coerce(NotConj)::out).
 coerce_not_conjunction(NotConj::out, NotConj::in).
 
@@ -711,10 +722,13 @@ coerce_not_conjunction(NotConj) = Expr :-
 %-----------------------------------------------------------------------------%
 % disjunction conversions
 
-expression_is_disjunction(_::in(disjunction)).
-expression_to_disjunction(Disjunction::in(disjunction), coerce(Disjunction)).
+expression_is_disjunction(disjunction(_)).
+expression_is_disjunction(or(_, _)).
 
-:- promise_equivalent_clauses(coerce_disjunction/2).
+expression_to_disjunction(disjunction(A), coerce(disjunction(A))).
+expression_to_disjunction(and(A, B), coerce(and(A, B))).
+
+:- pragma promise_equivalent_clauses(coerce_disjunction/2).
 coerce_disjunction(Disj::in(disjunction), coerce(Disj)::out).
 coerce_disjunction(Disj::out, Disj::in).
 
@@ -725,7 +739,7 @@ expression_is_not_disjunction(_::in(not_disjunction)).
 expression_to_not_disjunction(NotDisjunction::in(not_disjunction), 
 	coerce(NotDisjunction)).
 	
-:- promise_equivalent_clauses(coerce_not_disjunction/2).
+:- pragma promise_equivalent_clauses(coerce_not_disjunction/2).
 coerce_not_disjunction(NotDisj::in(not_disjunction), coerce(NotDisj)::out).
 coerce_not_disjunction(NotDisj::out, NotDisj::in).
 
@@ -738,7 +752,7 @@ coerce_not_disjunction(NotDisj) = Expr :-
 expression_is_addition(_::in(addition)).
 expression_to_addition(Addition::in(addition), coerce(Addition)).
 
-:- promise_equivalent_clauses(coerce_addition/2).
+:- pragma promise_equivalent_clauses(coerce_addition/2).
 coerce_addition(Addition::in(addition), coerce(Addition)::out).
 coerce_addition(Addition::out, Addition::in).
 
@@ -748,7 +762,7 @@ expression_is_not_addition(_::in(not_addition)).
 expression_to_not_addition(NotAddition::in(not_addition), 
 	coerce(NotAddition)).
 	
-:- promise_equivalent_clauses(coerce_not_addition/2).
+:- pragma promise_equivalent_clauses(coerce_not_addition/2).
 coerce_not_addition(NotAddn::in(not_addition), coerce(NotAddn)::out).
 coerce_not_addition(NotAddn::out, NotAddn::in).
 
@@ -762,7 +776,7 @@ coerce_not_addition(NotAddn) = Expr :-
 expression_is_multiplication(_::in(multiplication)).
 expression_to_multiplication(Multi::in(multiplication), coerce(Multi)).
 
-:- promise_equivalent_clauses(coerce_multiplication/2).
+:- pragma promise_equivalent_clauses(coerce_multiplication/2).
 coerce_multiplication(Multi::in(multiplication), coerce(Multi)::out).
 coerce_multiplication(Multi::out, Multi::in).
 
@@ -772,7 +786,7 @@ expression_is_not_multiplication(_::in(not_multiplication)).
 expression_to_not_multiplication(NotMulti::in(not_multiplication), 
 	coerce(NotMulti)).
 	
-:- promise_equivalent_clauses(coerce_not_multiplication/2).
+:- pragma promise_equivalent_clauses(coerce_not_multiplication/2).
 coerce_not_multiplication(NotMulti::in(not_multiplication), 
 	coerce(NotMulti)::out).
 coerce_not_multiplication(NotMulti::out, NotMulti::in).
@@ -817,7 +831,7 @@ identity(negation(A), negation(A)).
 identity(xor(A, B), xor(A, B)).
 
 % A :- B = A :- B
-identity(implication(A, B), implication(A, B))).
+identity(implication(A, B), implication(A, B)).
 
 % A <-> B = A <-> B
 identity(iff(A, B), iff(A, B)).
@@ -826,7 +840,7 @@ identity(iff(A, B), iff(A, B)).
 identity(equal(A, B), equal(A, B)).
 
 % (A != B) = (A != B)
-identity(inequal(A, B), inequal(A, B).
+identity(inequal(A, B), inequal(A, B)).
 
 % A > B = A > B
 identity(greater_than(A, B), greater_than(A, B)).
@@ -886,7 +900,7 @@ permutation(iff(A, B), iff(B, A)).
 permutation(equal(A, B), equal(B, A)).
 
 % (A != B) = (B != A)
-permutation(inequal(A, B), inequal(B, A).
+permutation(inequal(A, B), inequal(B, A)).
 
 % A + B = B + A
 permutation(add(A, B), add(B, A)).
@@ -898,16 +912,16 @@ permutation(multiply(A, B), multiply(B, A)).
 % Negated predicates
  
 % -p(A) = not p(A)
-permutation(negated_predicate(A), negation(predicate(A)).
+permutation(negated_predicate(A), negation(predicate(A))).
 
 % not p(A) = -p(A)
 permutation(negation(predicate(A)), negated_predicate(A)).
 
 % p(A) = not -p(A)
-permutation(predicate(A), negation(negated_predicate(A)).
+permutation(predicate(A), negation(negated_predicate(A))).
 
 % not -p(A) = p(A)
-permutation(negation(negated_predicate(A), predicate(A)).
+permutation(negation(negated_predicate(A), predicate(A))).
 
 %-----------------------------------------------------------------------------%
 % Conjunction transformations
@@ -925,8 +939,6 @@ permutation(conjunction(A), conjunction(B)) :-
 		A = B;
 		A = flatten_conjunction(B);
 		flatten_conjunction(A) = B;
-		multi_remove_dups(A, B);
-		multi_remove_dups(B, A);
 		unify_unordered(A, B).
 		
 %-----------------------------------------------------------------------------%
@@ -945,8 +957,6 @@ permutation(disjunction(A), disjunction(B)) :-
 		A = B;
 		A = flatten_disjunction(B);
 		flatten_disjunction(A) = B;
-		multi_remove_dups(A, B);
-		multi_remove_dups(B, A);
 		unify_unordered(A, B).
 
 %-----------------------------------------------------------------------------%
@@ -972,10 +982,10 @@ permutation(conjunction(A), negation(disjunction(B))) :-
 % Double negation transformations
 
 % A = not not A
-permutation(A, negation(negation(A))).
+permutation(A, negation(negation(A))) :- A \= negation(_).
 
 % not not A = A
-permutation(negation(negation(A)), A).
+permutation(negation(negation(A)), A) :- A \= negation(_).
 
 %-----------------------------------------------------------------------------%
 % Exclusive OR transformation
@@ -1001,17 +1011,6 @@ permutation(implication(A, B), or(negation_of(A), B)).
 % iff(A, B) = and(or(not A, B), or(not B, A))
 permutation(iff(A, B), and(or(negation_of(A), B), or(negation_of(B), A))).
 
-
-
-
-;		sum(list(numeric_expression))
-;		add(numeric_expression, numeric_expression)
-;		subtract(numeric_expression, numeric_expression)
-
-;		product(list(numeric_expression))
-;		multiply(numeric_expression, numeric_expression)
-;		divide(numeric_expression, numeric_expression) 
-where equality is unify_expressions, comparison is compare_expressions.
 
 %-----------------------------------------------------------------------------%
 % Addition transformations
@@ -1050,19 +1049,24 @@ permutation(product(A), product(B)) :-
 		unify_unordered(A, B).
 
 
-
+% End permutation/2
+%-----------------------------------------------------------------------------%
 
 %-----------------------------------------------------------------------------%	
 % Flatten
 
 
 flatten(Expr, Flat) :-
-	require_compete_switch [Expr] (
-		Expr = Flat = mh_true
+	 
+	(
+		Expr = mh_true,
+		Flat = mh_true
 	;
-		Expr = Flat = predicate(_)
+		Expr = predicate(A),
+		Flat = predicate(A)
 	;
-		Expr = Flat = negated_predicate(_)
+		Expr = negated_predicate(A),
+		Flat = negated_predicate(A)
 	;
 		Expr = conjunction(Conjunction),
 		Flat = conjunction(flatten_conjunction(Conjunction))
@@ -1074,10 +1078,13 @@ flatten(Expr, Flat) :-
 		Flat = disjunction(flatten_disjunction(Disjunction))
 	;
 		Expr = or(A, B),
-		Flat = disjunction(flatten_disjunction([A, B])
+		Flat = disjunction(flatten_disjunction([A, B]))
 	;
-		Expr = negation(X),
+		Expr = negation(X), not(X = negation(_)),
 		Flat = negation(flatten_logic(X))
+	;
+		Expr = negation(negation(X)),
+		Flat = flatten_logic(X)
 	;
 		Expr = xor(A, B),
 		Flat = xor(flatten_logic(A), flatten_logic(B))
@@ -1088,51 +1095,71 @@ flatten(Expr, Flat) :-
 		Expr = iff(A, B),
 		Flat = iff(flatten_logic(A), flatten_logic(B))
 	;
-		Expr = Flat = equal(_, _)
+		Expr = equal(A, B),
+		Flat = equal(flatten_term_expression(A), flatten_term_expression(B))
 	;
-		Expr = Flat = inequal(_, _)
+		Expr = equal(A, B) ,
+		Flat = inequal(flatten_term_expression(A), flatten_term_expression(B))
 	;
-		Expr = Flat = greater_than(_, _)
+		Expr = greater_than(A, B),
+		Flat = greater_than(flatten_term_expression(A), 
+			flatten_term_expression(B))
 	;
-		Expr = Flat = greater_than_or_equal(_, _)
+		Expr = greater_than_or_equal(A, B),
+		Flat = greater_than_or_equal(flatten_term_expression(A), 
+			flatten_term_expression(B))
 	;
-		Expr = Flat = less_than(_, _)
+		Expr = less_than(A, B),
+		Flat = less_than(flatten_term_expression(A), 
+			flatten_term_expression(B))
 	;
-		Expr = Flat = less_than_or_equal(_, _)
+		Expr = less_than_or_equal(A, B),
+		Flat = less_than_or_equal(flatten_term_expression(A), 
+			flatten_term_expression(B))
 	;
-		Expr = Flat = term(_)
+		Expr = term(A),
+		Flat = term(A)
 	;
-		Expr = sum(Sum)
+		Expr = sum(Sum),
 		Flat = sum(flatten_sum(Sum))
 	;
-		Expr = add(A, B)
-		Flat = sum(flatten_sum([A, B])
+		Expr = add(A, B),
+		Flat = sum(flatten_sum([A, B]))
 	;
-		Expr = subtract(A, B)
+		Expr = subtract(A, B),
 		Flat = subtract(flatten_numeric_expression(A), 
 			flatten_numeric_expression(B))
 	;
-		Expr = product(Product)
+		Expr = product(Product),
 		Flat = product(flatten_product(Product))
 	;
-		Expr = multiply(A, B)
+		Expr = multiply(A, B),
 		Flat = product(flatten_product([A, B]))
 	;
-		Expr = divide(A, B)
+		Expr = divide(A, B),
 		Flat = divide(flatten_term_expression(A), flatten_term_expression(B))
 	).
 
 flatten(Expr) = Flat :- flatten(Expr, Flat).
 
+flatten_list([], []).
 
+flatten_list([X | Xs], [ flatten(X) | flatten_list(Xs)] ).
+
+flatten_list(X) = Y :- flatten_list(X, Y).
+	
 
 flatten_logic(Expr, Flat) :- 
-	require_compete_switch [Expr] (
-		Expr = Flat = mh_true
+	 
+	(
+		Expr = mh_true,
+		Flat = mh_true
 	;
-		Expr = Flat = predicate(_)
+		Expr = predicate(A),
+		Flat = predicate(A)
 	;
-		Expr = Flat = negated_predicate(_)
+		Expr = negated_predicate(A),
+		Flat = negated_predicate(A)
 	;
 		Expr = conjunction(Conjunction),
 		Flat = conjunction(flatten_conjunction(Conjunction))
@@ -1144,10 +1171,13 @@ flatten_logic(Expr, Flat) :-
 		Flat = disjunction(flatten_disjunction(Disjunction))
 	;
 		Expr = or(A, B),
-		Flat = disjunction(flatten_disjunction([A, B])
+		Flat = disjunction(flatten_disjunction([A, B]))
 	;
-		Expr = negation(X),
+		Expr = negation(X), not(X = negation(_)),
 		Flat = negation(flatten_logic(X))
+	;
+		Expr = negation(negation(X)),
+		Flat = flatten_logic(X)
 	;
 		Expr = xor(A, B),
 		Flat = xor(flatten_logic(A), flatten_logic(B))
@@ -1158,25 +1188,25 @@ flatten_logic(Expr, Flat) :-
 		Expr = iff(A, B),
 		Flat = iff(flatten_logic(A), flatten_logic(B))
 	;
-		Expr = equal(A, B)
+		Expr = equal(A, B),
 		Flat = equal(flatten_term_expression(A), flatten_term_expression(B))
 	;
-		Expr = inequal(A, B)
+		Expr = inequal(A, B),
 		Flat = inequal(flatten_term_expression(A), flatten_term_expression(B))
 	;
-		Expr = greater_than(A, B)
+		Expr = greater_than(A, B),
 		Flat = greater_than(flatten_term_expression(A), 
 			flatten_term_expression(B))
 	;
-		Expr = greater_than_or_equal(A, B)
+		Expr = greater_than_or_equal(A, B),
 		Flat = greater_than_or_equal(flatten_term_expression(A), 
 			flatten_term_expression(B))
 	;
-		Expr = less_than(A, B)
+		Expr = less_than(A, B),
 		Flat = less_than(flatten_term_expression(A), 
 			flatten_term_expression(B))
 	;
-		Expr = less_than_or_equal(A, B)
+		Expr = less_than_or_equal(A, B),
 		Flat = less_than_or_equal(flatten_term_expression(A), 
 			flatten_term_expression(B))
 	).
@@ -1194,7 +1224,7 @@ flatten_conjunction([C | Cs]) =  F :-
 	C = conjunction(X), 
 	F = append(flatten_conjunction(X), flatten_conjunction(Cs))
 ;
-	C /= conjunction(_),
+	C \= conjunction(_),
 	F = [ flatten_logic(C) | flatten_conjunction(Cs) ].
 	
 
@@ -1210,9 +1240,9 @@ flatten_disjunction([]) = [].
 
 flatten_disjunction([D | Ds]) =  F :-
 	D = disjunction(X),  
-	F = append(flatten_disjunction(X), flatten_disjunction(Cs)
+	F = append(flatten_disjunction(X), flatten_disjunction(Cs))
 ;
-	D /= disjunction(_),
+	D \= disjunction(_),
 	F = [ flatten_logic(C) | flatten_disjunction(Cs) ].
 	
 
@@ -1227,26 +1257,28 @@ flatten_logic(Expr) = Flat :- flatten_logic(Expr, Flat).
 
 % see if the type system will let me get away with this without coercion
 flatten_term_expression(Expr, Flat) :- 
-	require_compete_switch [Expr] (
-		Expr = Flat = term(_)
+	 
+	(
+		Expr = term(A),
+		Flat = term(A)
 	;
-		Expr = sum(Sum)
+		Expr = sum(Sum),
 		Flat = sum(flatten_sum(Sum))
 	;
-		Expr = add(A, B)
-		Flat = sum(flatten_sum([A, B])
+		Expr = add(A, B),
+		Flat = sum(flatten_sum([A, B]))
 	;
-		Expr = subtract(A, B)
+		Expr = subtract(A, B),
 		Flat = subtract(flatten_numeric_expression(A), 
 			flatten_numeric_expression(B))
 	;
-		Expr = product(Product)
+		Expr = product(Product),
 		Flat = product(flatten_product(Product))
 	;
-		Expr = multiply(A, B)
+		Expr = multiply(A, B),
 		Flat = product(flatten_product([A, B]))
 	;
-		Expr = divide(A, B)
+		Expr = divide(A, B),
 		Flat = divide(flatten_numeric_expression(A), 
 			flatten_numeric_expression(B))
 	).
@@ -1254,26 +1286,28 @@ flatten_term_expression(Expr, Flat) :-
 flatten_term_expression(Expr) = Flat :- flatten_term_expression(Expr, Flat).
 
 flatten_numeric_expression(Expr, Flat) :- 
-	require_compete_switch [Expr] (
-		Expr = Flat = term(_)
+	 
+	(
+		Expr = term(A),
+		Flat = term(A)
 	;
-		Expr = sum(Sum)
+		Expr = sum(Sum),
 		Flat = sum(flatten_sum(Sum))
 	;
-		Expr = add(A, B)
-		Flat = sum(flatten_sum([A, B])
+		Expr = add(A, B),
+		Flat = sum(flatten_sum([A, B]))
 	;
-		Expr = subtract(A, B)
+		Expr = subtract(A, B),
 		Flat = subtract(flatten_numeric_expression(A), 
 			flatten_numeric_expression(B))
 	;
-		Expr = product(Product)
+		Expr = product(Product),
 		Flat = product(flatten_product(Product))
 	;
-		Expr = multiply(A, B)
+		Expr = multiply(A, B),
 		Flat = product(flatten_product([A, B]))
 	;
-		Expr = divide(A, B)
+		Expr = divide(A, B),
 		Flat = divide(flatten_numeric_expression(A), 
 			flatten_numeric_expression(B))
 	).
@@ -1294,7 +1328,7 @@ flatten_sum([S | Ss]) =  F :-
 	S = sum(X), 
 	F = append(flatten_sum(X), flatten_sum(Ss))
 ;
-	S /= sum(_),
+	S \= sum(_),
 	F = [ flatten_term_expression(S) | flatten_sum(Ss) ].
 	
 	
@@ -1310,5 +1344,5 @@ flatten_product([P | Ps]) =  F :-
 	P = product(X), 
 	F = append(flatten_product(X), flatten_product(Ps))
 ;
-	P /= product(_),
+	P \= product(_),
 	F = [ flatten_term_expression(P) | flatten_product(Cs) ].
