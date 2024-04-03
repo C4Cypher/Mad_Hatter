@@ -53,7 +53,7 @@
 
 ;		product(list(numeric_expression))
 ;		multiply(numeric_expression, numeric_expression)
-;		divide(numeric_expression, numeric_expression) 
+;		divide(numeric_expression, numeric_expression)
 where equality is unify_expressions, comparison is compare_expressions.
 
 %-----------------------------------------------------------------------------%
@@ -564,9 +564,9 @@ where equality is unify_expressions, comparison is compare_expressions.
 	expression::in, expression::in) is det.
 	
 :- pred identity(expression, expression).
-:- mode identity(in, in) is semidet.
-:- mode identity(in, out) is det.
-:- mode identity(out, in) is det.
+:- mode identity(in, in) is cc_nondet.
+:- mode identity(in, out) is cc_multi.
+:- mode identity(out, in) is cc_multi.
 
 /* WARNING: permutation/2 produces ALL possible combinations of expressions
 	including double negation, demorgan's law, duplicates compound expressions
@@ -944,6 +944,86 @@ coerce_not_multiplication(NotMulti) = Expr :-
 %-----------------------------------------------------------------------------%
 % Identity
 
+identity(A, B) :-
+	A = predicate(X),
+	B = predicate(X)
+;
+	A = negated_predicate(X),
+	B = negated_predicate(X)
+;
+	A = mh_true,
+	B = mh_true
+;
+	A = mh_false,
+	B = mh_false
+;
+	A = conjunction(X),
+	B = conjunction(X)
+;
+	A = and(X, Y),
+	B = and(X, Y)
+;
+	A = disjunction(X),
+	B = disjunction(X)
+;
+	A = or(X, Y),
+	B = or(X, Y)
+;
+	A = negation(X),
+	B = negation(X)
+;
+	A = xor(X, Y),
+	B = xor(X, Y)
+; 
+	A = implication(X, Y),
+	B = implication(X, Y)
+;
+	A = iff(X, Y),
+	B = iff(X, Y)
+;
+	A = equal(X, Y),
+	B = equal(X, Y)
+;
+	A = inequal(X, Y),
+	B = inequal(X, Y)
+;
+	A = greater_than(X, Y),
+	B = greater_than(X, Y)
+;
+	A = greater_than_or_equal(X, Y),
+	B = greater_than_or_equal(X, Y)
+;
+	A = less_than(X, Y),
+	B = less_than(X, Y)
+;
+	A = less_than_or_equal(X, Y),
+	B = less_than_or_equal(X, Y)
+;
+	A = term(X),
+	B = term(X)
+;
+	A = sum(X),
+	B = sum(X)
+;
+	A = add(X, Y),
+	B = add(X, Y)
+;
+	A = subtract(X, Y),
+	B = subtract(X, Y)
+;
+	A = product(X),
+	B = product(X)
+;
+	A = multiply(X, Y),
+	B = multiply(X, Y)
+;
+	A = divide(X, Y),
+	B = divide(X, Y).
+	
+
+/* Determinism checking doesn't like multiple clauses, 
+	let's try a stricter switch
+
 % p(A) = p(A)		
 identity(predicate(A), predicate(A)).
 
@@ -1019,6 +1099,8 @@ identity(multiply(A, B), multiply(A, B)).
 
 % A / B = A / B
 identity(divide(A, B), divide(A, B)).
+
+*/
 
 %-----------------------------------------------------------------------------%
 % Permutation
