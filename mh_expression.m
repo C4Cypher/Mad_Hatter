@@ -53,8 +53,7 @@
 
 ;		product(list(numeric_expression))
 ;		multiply(numeric_expression, numeric_expression)
-;		divide(numeric_expression, numeric_expression)
-where equality is unify_expressions, comparison is compare_expressions.
+;		divide(numeric_expression, numeric_expression).
 
 %-----------------------------------------------------------------------------%
 
@@ -564,7 +563,7 @@ where equality is unify_expressions, comparison is compare_expressions.
 	expression::in, expression::in) is det.
 	
 :- pred identity(expression, expression).
-:- mode identity(in, in) is cc_nondet.
+:- mode identity(in, in) is semidet.
 :- mode identity(in, out) is cc_multi.
 :- mode identity(out, in) is cc_multi.
 
@@ -742,9 +741,16 @@ coerce_not_negation(coerce(NotNeg)::out, NotNeg::in).
 
 coerce_not_negation(NotNeg) = Expr :- coerce_not_negation(NotNeg, Expr).
 
+:- pragma promise_equivalent_clauses(negation/2).
 
-negation(A, negation(A)).
-negation(negation(A), A).
+negation(A::in, B::out) :- 
+	if expression_is_negation(coerce(A)) then
+		A = negation(X),
+		B = X
+	else
+		B = negation(A).
+
+negation(A::out, B::in) :- negation(B, A).
 
 
 negation_of(A) = B :- negation(A, B).
