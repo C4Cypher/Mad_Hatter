@@ -142,66 +142,6 @@
 
 
 
-:- inst not_negation
---->	predicate(ground)
-;		negated_predicate(ground)
-
-;		mh_true
-;		mh_false
-
-;		conjunction(ground)
-; 		and(ground, ground)
-
-;		disjunction(ground)
-;		or(ground, ground)
-
-;		xor(ground, ground)
-;		implication(ground, ground)
-;		iff(ground, ground)
-
-;		equal(ground, ground)
-;		inequal(ground, ground)
-;		greater_than(ground, ground)
-;		greater_than_or_equal(ground, ground)
-;		less_than(ground, ground)
-;		less_than_or_equal(ground, ground).
-
-:- type not_negation =< logical_expression
---->	predicate(functor)
-;		negated_predicate(functor)
-
-;		mh_true
-;		mh_false
-
-;		conjunction(list(logical_expression))
-; 		and(logical_expression, logical_expression)
-
-;		disjunction(list(logical_expression))
-;		or(logical_expression, logical_expression)
-
-;		xor(logical_expression, logical_expression)
-;		implication(logical_expression, logical_expression)
-;		iff(logical_expression, logical_expression)
-
-;		equal(term_expression, term_expression)
-;		inequal(term_expression, term_expression)
-;		greater_than(term_expression, term_expression)
-;		greater_than_or_equal(term_expression, term_expression)
-;		less_than(term_expression, term_expression)
-;		less_than_or_equal(term_expression, term_expression).
-
-:- pred expression_is_not_negation(expression::in) is semidet.
-:- pred expression_to_not_negation(expression::in, negation::out) 
-	is semidet.
-	
-:- pred coerce_not_negation(expression, not_negation).
-:- mode coerce_not_negation(in, out) is semidet.
-:- mode coerce_not_negation(out, in) is det.
-
-:- func coerce_not_negation(expression) = not_negation.
-:- mode coerce_not_negation(in) = out is semidet.
-:- mode coerce_not_negation(out) = in is det.
-
 
 %-----------------------------------------------------------------------------%
 
@@ -230,63 +170,8 @@
 :- mode coerce_conjunction(in) = out is semidet.
 :- mode coerce_conjunction(out) = in is det.
 
-:- inst not_conjunction
---->	predicate(ground)
-;		negated_predicate(ground)
 
-;		mh_true
-;		mh_false
 
-;		disjunction(ground)
-;		or(ground, ground)
-
-;		negation(ground)
-
-;		xor(ground, ground)
-;		implication(ground, ground)
-;		iff(ground, ground)
-
-;		equal(ground, ground)
-;		inequal(ground, ground)
-;		greater_than(ground, ground)
-;		greater_than_or_equal(ground, ground)
-;		less_than(ground, ground)
-;		less_than_or_equal(ground, ground).
-
-:- type not_conjunction =< logical_expression
---->	predicate(functor)
-;		negated_predicate(functor)
-
-;		mh_true
-;		mh_false
-
-;		disjunction(list(logical_expression))
-;		or(logical_expression, logical_expression)
-
-;		negation(logical_expression)
-
-;		xor(logical_expression, logical_expression)
-;		implication(logical_expression, logical_expression)
-;		iff(logical_expression, logical_expression)
-
-;		equal(term_expression, term_expression)
-;		inequal(term_expression, term_expression)
-;		greater_than(term_expression, term_expression)
-;		greater_than_or_equal(term_expression, term_expression)
-;		less_than(term_expression, term_expression)
-;		less_than_or_equal(term_expression, term_expression).
-
-:- pred expression_is_not_conjunction(expression::in) is semidet.
-:- pred expression_to_not_conjunction(expression::in, conjunction::out) 
-	is cc_nondet.
-	
-:- pred coerce_not_conjunction(expression, not_conjunction).
-:- mode coerce_not_conjunction(in, out) is semidet.
-:- mode coerce_not_conjunction(out, in) is det.
-
-:- func coerce_not_conjunction(expression) = not_conjunction.
-:- mode coerce_not_conjunction(in) = out is semidet.
-:- mode coerce_not_conjunction(out) = in is det.
 
 
 %-----------------------------------------------------------------------------%
@@ -314,60 +199,10 @@
 :- mode coerce_disjunction(in) = out is semidet.
 :- mode coerce_disjunction(out) = in is det.
 
-:- inst not_disjunction
---->	predicate(ground)
-;		negated_predicate(ground)
 
-;		conjunction(ground)
-;		and(ground, ground)
 
-;		negation(ground)
-
-;		xor(ground, ground)
-;		implication(ground, ground)
-;		iff(ground, ground)
-
-;		equal(ground, ground)
-;		inequal(ground, ground)
-;		greater_than(ground, ground)
-;		greater_than_or_equal(ground, ground)
-;		less_than(ground, ground)
-;		less_than_or_equal(ground, ground).
-
-:- type not_disjunction =< logical_expression
---->	predicate(functor)
-;		negated_predicate(functor)
-
-;		mh_true
-;		mh_false
-
-;		conjunction(list(logical_expression))
-; 		and(logical_expression, logical_expression)
-
-;		negation(logical_expression)
-
-;		xor(logical_expression, logical_expression)
-;		implication(logical_expression, logical_expression)
-;		iff(logical_expression, logical_expression)
-
-;		equal(term_expression, term_expression)
-;		inequal(term_expression, term_expression)
-;		greater_than(term_expression, term_expression)
-;		greater_than_or_equal(term_expression, term_expression)
-;		less_than(term_expression, term_expression)
-;		less_than_or_equal(term_expression, term_expression).
-
-:- pred expression_is_not_disjunction(expression::in) is semidet.
-:- pred expression_to_not_disjunction(expression::in, disjunction::out) 
-	is semidet.
 	
-:- pred coerce_not_disjunction(expression, not_disjunction).
-:- mode coerce_not_disjunction(in, out) is semidet.
-:- mode coerce_not_disjunction(out, in) is det.
 
-:- func coerce_not_disjunction(expression) = not_disjunction.
-:- mode coerce_not_disjunction(in) = out is semidet.
-:- mode coerce_not_disjunction(out) = in is det.
 
 %-----------------------------------------------------------------------------%
 
@@ -475,31 +310,7 @@
 :- mode coerce_addition(in) = out is semidet.
 :- mode coerce_addition(out) = in is det.
 
-:- inst not_addition
---->	term(ground)
-;		subtract(ground, ground)
-;		product(ground)
-;		multiply(ground, ground)
-;		divide(ground, ground).
 
-:- type not_addition =< term_expression
---->	term(mh_term)
-;		subtract(numeric_expression, numeric_expression)
-;		product(list(numeric_expression))
-;		multiply(numeric_expression, numeric_expression)
-;		divide(numeric_expression, numeric_expression).
-
-:- pred expression_is_not_addition(expression::in) is semidet.
-:- pred expression_to_not_addition(expression::in, addition::out) 
-	is semidet.
-	
-:- pred coerce_not_addition(expression, not_addition).
-:- mode coerce_not_addition(in, out) is semidet.
-:- mode coerce_not_addition(out, in) is det.
-
-:- func coerce_not_addition(expression) = not_addition.
-:- mode coerce_not_addition(in) = out is semidet.
-:- mode coerce_not_addition(out) = in is det.
 
 
 %-----------------------------------------------------------------------------%
@@ -524,55 +335,10 @@
 :- mode coerce_multiplication(in) = out is semidet.
 :- mode coerce_multiplication(out) = in is det.
 
-:- inst not_multiplication
---->	term(ground)
-;		sum(ground)
-;		add(ground, ground)
-;		subtract(ground, ground)
 
-;		divide(ground, ground).
-
-:- type not_multiplication =< term_expression
---->	term(mh_term)
-;		sum(list(numeric_expression))
-;		add(numeric_expression, numeric_expression)
-;		subtract(numeric_expression, numeric_expression)
-
-;		divide(numeric_expression, numeric_expression).
-
-:- pred expression_is_not_multiplication(expression::in) is semidet.
-:- pred expression_to_not_multiplication(expression::in, multiplication::out) 
-	is semidet.
-	
-:- pred coerce_not_multiplication(expression, not_multiplication).
-:- mode coerce_not_multiplication(in, out) is semidet.
-:- mode coerce_not_multiplication(out, in) is det.
-
-:- func coerce_not_multiplication(expression) = not_multiplication.
-:- mode coerce_not_multiplication(in) = out is semidet.
-:- mode coerce_not_multiplication(out) = in is det.
 
 %-----------------------------------------------------------------------------%
 
-:- pred unify_expressions(expression, expression).
-:- mode unify_expressions(in, in) is semidet.
-:- mode unify_expressions(in, out) is cc_multi.
-:- mode unify_expressions(out, in) is cc_multi.
-
-:- pred compare_expressions(comparison_result::uo, 
-	expression::in, expression::in) is det.
-	
-:- pred identity(expression, expression).
-:- mode identity(in, in) is semidet.
-:- mode identity(in, out) is cc_multi.
-:- mode identity(out, in) is cc_multi.
-
-/* WARNING: permutation/2 produces ALL possible combinations of expressions
-	including double negation, demorgan's law, duplicates compound expressions
-	( A and A = A and A and A).  IT WILL NOT TERMINATE. Do not call 
-	permutation/2 outside of a committed choice context 
-	(cc_multi or cc_nondet) */
-	
 :- pred permutation(expression, expression).
 :- mode permutation(in, out) is multi.
 :- mode permutation(out, in) is multi.
@@ -653,23 +419,7 @@
 :- import_module list_util.
 :- import_module require.
 
-:- pragma promise_equivalent_clauses(unify_expressions/2).
 
-unify_expressions(X, Y) :- permutation(X, Y).
-
-unify_expressions(conjunction(A)::in, conjunction(B)::in) :-
-	sort_and_remove_dups(flatten_conjunction(A), C),
-	sort_and_remove_dups(flatten_conjunction(B), C).
-	
-unify_expressions(disjunction(A)::in, disjunction(B)::in) :-
-	sort_and_remove_dups(flatten_disjunction(A), C),
-	sort_and_remove_dups(flatten_disjunction(B), C).
-
-compare_expressions(Result, X, Y) :-
-	if permutation(X, Y) then
-		Result = (=)
-	else
-		compare(Result, X, Y).
 		
 %-----------------------------------------------------------------------------%
 % logical_expression conversions
@@ -724,24 +474,8 @@ coerce_negation(coerce(Negation)::out, Negation::in).
 
 coerce_negation(Negation) = Expr :- coerce_negation(Negation, Expr).
 
-expression_is_not_negation(NotNeg) :- 
-	expression_is_logical_expression(NotNeg), 
-	not expression_is_negation(NotNeg).
+expression_is_not_negation(NotNeg) :- not expression_is_negation(NotNeg).
 
-expression_to_not_negation(NotNeg, coerce(NotNeg)) :- 
-	expression_is_not_negation(NotNeg).
-
-:- pragma promise_equivalent_clauses(coerce_not_negation/2).
-
-coerce_not_negation(NotNeg::in, coerce(NotNeg)::out) :- 
-	expression_is_not_negation(NotNeg).
-	
-coerce_not_negation(coerce(NotNeg)::out, NotNeg::in).
-
-
-coerce_not_negation(NotNeg) = Expr :- coerce_not_negation(NotNeg, Expr).
-
-:- pragma promise_equivalent_clauses(negation/2).
 
 negation(A::in, B::out) :- 
 	if expression_is_negation(coerce(A)) then
@@ -780,22 +514,6 @@ coerce_conjunction(coerce(Conj)::out, Conj::in).
 
 coerce_conjunction(Conj) = Expr :- coerce_conjunction(Conj, Expr).
 
-expression_is_not_conjunction(NotConj) :-
-	expression_is_logical_expression(NotConj),
-	not expression_is_conjunction(NotConj).
-
-expression_to_not_conjunction(NotConj, coerce(NotConj))
-	:- expression_is_not_conjunction(NotConj).
-	
-:- pragma promise_equivalent_clauses(coerce_not_conjunction/2).
-
-coerce_not_conjunction(NotConj::in, coerce(NotConj)::out) :-
-	expression_is_not_conjunction(NotConj)
-	.
-coerce_not_conjunction(coerce(NotConj)::out, NotConj::in).
-
-coerce_not_conjunction(NotConj) = Expr :- 
-	coerce_not_conjunction(NotConj, Expr).
 	
 %-----------------------------------------------------------------------------%
 % disjunction conversions
@@ -813,22 +531,6 @@ coerce_disjunction(coerce(Disj)::out, Disj::in).
 coerce_disjunction(Disj) = Expr :- 
 	coerce_disjunction(Disj, Expr).
 
-expression_is_not_disjunction(NotDisj) :-
-	expression_is_logical_expression(NotDisj),
-	not expression_is_disjunction(NotDisj).
-	
-expression_to_not_disjunction(NotDisj, coerce(NotDisj)) :-
-	expression_is_not_disjunction(NotDisj).
-	
-:- pragma promise_equivalent_clauses(coerce_not_disjunction/2).
-coerce_not_disjunction(NotDisj::in, coerce(NotDisj)::out) :-
-	expression_is_not_disjunction(NotDisj).
-	
-coerce_not_disjunction(coerce(NotDisj)::out, NotDisj::in).
-
-coerce_not_disjunction(NotDisj) = Expr :- 
-	coerce_not_disjunction(NotDisj, Expr).
-	
 %-----------------------------------------------------------------------------%
 % term expression conversions
 
@@ -895,21 +597,7 @@ coerce_addition(coerce(Addition)::out, Addition::in).
 
 coerce_addition(Addn) = Expr :- coerce_addition(Addn, Expr).
 
-expression_is_not_addition(NotAddn) :- 
-	expression_is_term_expression(NotAddn),
-	not expression_is_addition(NotAddn).
-	
-expression_to_not_addition(NotAddn,	coerce(NotAddn)) :-
-	expression_is_not_addition(NotAddn).
-	
-:- pragma promise_equivalent_clauses(coerce_not_addition/2).
-coerce_not_addition(NotAddn::in, coerce(NotAddn)::out) :-
-	expression_is_not_addition(NotAddn).
-	
-coerce_not_addition(coerce(NotAddn)::out, NotAddn::in).
 
-coerce_not_addition(NotAddn) = Expr :- 
-	coerce_not_addition(NotAddn, Expr).
 
 
 %-----------------------------------------------------------------------------%
@@ -929,193 +617,12 @@ coerce_multiplication(coerce(Multi)::out, Multi::in).
 
 coerce_multiplication(Multi) = Expr :- coerce_multiplication(Multi, Expr).
 
-expression_is_not_multiplication(NotMulti) :- 
-	expression_is_term_expression(NotMulti),
-	not expression_is_multiplication(NotMulti).
 	
-expression_to_not_multiplication(NotMulti, coerce(NotMulti)) :-
-	expression_is_not_multiplication(NotMulti).
-	
-:- pragma promise_equivalent_clauses(coerce_not_multiplication/2).
-coerce_not_multiplication(NotMulti::in, coerce(NotMulti)::out) :-
-	expression_is_not_multiplication(NotMulti).
-	
-coerce_not_multiplication(coerce(NotMulti)::out, NotMulti::in).
-
-coerce_not_multiplication(NotMulti) = Expr :- 
-	coerce_not_multiplication(NotMulti, Expr).
-
-		
-
-%-----------------------------------------------------------------------------%
-% Identity
-
-identity(A, B) :-
-	A = predicate(X),
-	B = predicate(X)
-;
-	A = negated_predicate(X),
-	B = negated_predicate(X)
-;
-	A = mh_true,
-	B = mh_true
-;
-	A = mh_false,
-	B = mh_false
-;
-	A = conjunction(X),
-	B = conjunction(X)
-;
-	A = and(X, Y),
-	B = and(X, Y)
-;
-	A = disjunction(X),
-	B = disjunction(X)
-;
-	A = or(X, Y),
-	B = or(X, Y)
-;
-	A = negation(X),
-	B = negation(X)
-;
-	A = xor(X, Y),
-	B = xor(X, Y)
-; 
-	A = implication(X, Y),
-	B = implication(X, Y)
-;
-	A = iff(X, Y),
-	B = iff(X, Y)
-;
-	A = equal(X, Y),
-	B = equal(X, Y)
-;
-	A = inequal(X, Y),
-	B = inequal(X, Y)
-;
-	A = greater_than(X, Y),
-	B = greater_than(X, Y)
-;
-	A = greater_than_or_equal(X, Y),
-	B = greater_than_or_equal(X, Y)
-;
-	A = less_than(X, Y),
-	B = less_than(X, Y)
-;
-	A = less_than_or_equal(X, Y),
-	B = less_than_or_equal(X, Y)
-;
-	A = term(X),
-	B = term(X)
-;
-	A = sum(X),
-	B = sum(X)
-;
-	A = add(X, Y),
-	B = add(X, Y)
-;
-	A = subtract(X, Y),
-	B = subtract(X, Y)
-;
-	A = product(X),
-	B = product(X)
-;
-	A = multiply(X, Y),
-	B = multiply(X, Y)
-;
-	A = divide(X, Y),
-	B = divide(X, Y).
-	
-
-/* Determinism checking doesn't like multiple clauses, 
-	let's try a stricter switch
-
-% p(A) = p(A)		
-identity(predicate(A), predicate(A)).
-
-
-% -p(A) = -p(A)
-identity(negated_predicate(A), negated_predicate(A)).
-
-% true = true
-identity(mh_true, mh_true).
- 
-% false = false
-identity(mh_false, mh_false).
-
-% conj(A) = conj(A).
-identity(conjunction(A), conjunction(A)).
-
-% and(A, B) = and(A, B)
-identity(and(A, B), and(A, B)).
-
-% disj(A) = disj(A).
-identity(disjunction(A), disjunction(A)).
-
-% or(A, B) = or(A, B)
-identity(or(A, B), or(A, B)).
-
-% not(A) = not(A).
-identity(negation(A), negation(A)).
-
-% xor(A, B) = xor(A, B)
-identity(xor(A, B), xor(A, B)).
-
-% A :- B = A :- B
-identity(implication(A, B), implication(A, B)).
-
-% A <-> B = A <-> B
-identity(iff(A, B), iff(A, B)).
-
-% (A = B) = (A = B)
-identity(equal(A, B), equal(A, B)).
-
-% (A != B) = (A != B)
-identity(inequal(A, B), inequal(A, B)).
-
-% A > B = A > B
-identity(greater_than(A, B), greater_than(A, B)).
-
-% A => B = A => B
-identity(greater_than_or_equal(A, B), greater_than_or_equal(A, B)).
-	
-% A < B = A < B
-identity(less_than(A, B), less_than(A, B)).
-
-% A =< B = A =< B
-identity(less_than_or_equal(A, B), less_than_or_equal(A, B)).
-
-% A = A
-identity(term(A), term(A)).
-
-% sum(A) = sum(A)
-identity(sum(A), sum(A)).
-
-% A + B = A + B
-identity(add(A, B), add(A, B)).
-
-% A - B = A - B
-identity(subtract(A, B), subtract(A, B)).
-
-% product(A) = product(A)
-identity(product(A), product(A)).
-
-% A * B = A * B
-identity(multiply(A, B), multiply(A, B)).
-
-% A / B = A / B
-identity(divide(A, B), divide(A, B)).
-
-*/
 
 %-----------------------------------------------------------------------------%
 % Permutation
 
 :- pragma promise_equivalent_clauses(permutation/2).
-:- pragma does_not_terminate(permutation/2).
-
-% A = A
-permutation(A, B) :- identity(A, B).
 
 % and(A, B) = and(B, A).
 permutation(and(A, B), and(B, A)).
@@ -1169,10 +676,7 @@ permutation(conjunction(A), and(B, C)) :-
 
 % conj([B, A]) = conj([A, B]).	
 permutation(conjunction(A), conjunction(B)) :- 
-		A = B;
-		A = flatten_conjunction(B);
-		flatten_conjunction(A) = B;
-		unify_unordered(A, B).
+	unify_unordered(flatten_conjunction(A), flatten_conjunction(B)).
 		
 %-----------------------------------------------------------------------------%
 % Disjunction transformations
@@ -1187,10 +691,7 @@ permutation(disjunction(A), or(B, C)) :-
 
 % disj([B, A]) = disj([A, B]).	
 permutation(disjunction(A), disjunction(B)) :- 
-		A = B;
-		A = flatten_disjunction(B);
-		flatten_disjunction(A) = B;
-		unify_unordered(A, B).
+	unify_unordered(flatten_disjunction(A), flatten_disjunction(B)).
 
 %-----------------------------------------------------------------------------%
 % De Morgan's laws
@@ -1214,6 +715,8 @@ permutation(conjunction(A), negation(disjunction(B))) :-
 %-----------------------------------------------------------------------------%
 % Double negation transformations
 
+/* Permutation will not terminate with this implementation of double negation
+
 % A = not not A
 permutation(A::in, negation(negation(B))::out) :- 
 	expression_is_not_negation(A),
@@ -1227,6 +730,8 @@ permutation(negation(negation(A))::in, coerce(A)::out).
 permutation(negation(negation(A))::out, B::in) :- 
 	expression_is_not_negation(B),
 	coerce_logical_expression(B, A).
+	
+*/
 
 %-----------------------------------------------------------------------------%
 % Exclusive OR transformation
@@ -1266,10 +771,7 @@ permutation(sum(A), add(B, C)) :-
 
 % sum([B, A]) = sum([A, B]).	
 permutation(sum(A), sum(B)) :- 
-		A = B;
-		A = flatten_sum(B);
-		flatten_sum(A) = B;
-		unify_unordered(A, B).
+	unify_unordered(flatten_sum(A), flatten_sum(B)).
 		
 %-----------------------------------------------------------------------------%
 % Multiplication transformations
@@ -1284,10 +786,7 @@ permutation(product(A), multiply(B, C)) :-
 
 % product([B, A]) = product([A, B]).	
 permutation(product(A), product(B)) :- 
-		A = B;
-		A = flatten_product(B);
-		flatten_product(A) = B;
-		unify_unordered(A, B).
+	unify_unordered(flatten_product(A), flatten_product(B)).
 
 
 % End permutation/2
