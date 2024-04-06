@@ -90,6 +90,11 @@
 ;		float(ground)
 ;		f(ground, ground).
 
+:- inst not_numeric_term
+--->	symbol(ground)
+;		string(ground)
+;		univ(ground).
+
 :- type numeric_term =< mh_term
 ---> 	var(id(var))
 ;		named_var(symbol)
