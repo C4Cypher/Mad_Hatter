@@ -62,6 +62,8 @@ unify_unordered([A | As], Bs) :-
 	delete(Bs, A, Remainder),
 	unify_unordered(As, Remainder).
 	
+unify_unordered(A, B) :- unify_unordered(B, A).
+	
 
 
 %-----------------------------------------------------------------------------%
