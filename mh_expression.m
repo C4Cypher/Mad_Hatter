@@ -38,8 +38,8 @@
 ;		implication(logical_expression, logical_expression)
 ;		iff(logical_expression, logical_expression)
 
-;		equal(term_expression, term_expression)
-;		inequal(term_expression, term_expression)
+;		equal(expression, expression)
+;		inequal(expression, expression)
 ;		greater_than(term_expression, term_expression)
 ;		greater_than_or_equal(term_expression, term_expression)
 ;		less_than(term_expression, term_expression)
@@ -103,8 +103,8 @@
 ;		implication(logical_expression, logical_expression)
 ;		iff(logical_expression, logical_expression)
 
-;		equal(term_expression, term_expression)
-;		inequal(term_expression, term_expression)
+;		equal(expression, expression)
+;		inequal(expression, expression)
 ;		greater_than(term_expression, term_expression)
 ;		greater_than_or_equal(term_expression, term_expression)
 ;		less_than(term_expression, term_expression)
@@ -1118,10 +1118,10 @@ flatten(Expr, Flat) :-
 		Flat = iff(flatten_logic(A), flatten_logic(B))
 	;
 		Expr = equal(A, B),
-		Flat = equal(flatten_term_expression(A), flatten_term_expression(B))
+		Flat = equal(flatten(A), flatten(B))
 	;
 		Expr = inequal(A, B),
-		Flat = inequal(flatten_term_expression(A), flatten_term_expression(B))
+		Flat = inequal(flatten(A), flatten(B))
 	;
 		Expr = greater_than(A, B),
 		Flat = greater_than(flatten_term_expression(A), 
@@ -1212,10 +1212,10 @@ flatten_logic(Expr, Flat) :-
 		Flat = iff(flatten_logic(A), flatten_logic(B))
 	;
 		Expr = equal(A, B),
-		Flat = equal(flatten_term_expression(A), flatten_term_expression(B))
+		Flat = equal(flatten(A), flatten(B))
 	;
 		Expr = inequal(A, B),
-		Flat = inequal(flatten_term_expression(A), flatten_term_expression(B))
+		Flat = inequal(flatten(A), flatten(B))
 	;
 		Expr = greater_than(A, B),
 		Flat = greater_than(flatten_term_expression(A), 
