@@ -55,7 +55,6 @@
 ;		multiply(numeric_expression, numeric_expression)
 ;		divide(numeric_expression, numeric_expression).
 
-
 %-----------------------------------------------------------------------------%
 
 :- inst logical_expression
@@ -529,9 +528,15 @@
 
 %-----------------------------------------------------------------------------%
 
+:- pred identity(expression, expression).
+:- mode identity(in, out) is det.
+:- mode identity(out, in) is det.
+
 :- pred permutation(expression, expression).
 :- mode permutation(in, out) is multi.
 :- mode permutation(out, in) is multi.
+:- mode permutation(in, out) is cc_multi.
+:- mode permutation(out, in) is cc_multi.
 
 :- pred negation(logical_expression, logical_expression).
 :- mode negation(in, out) is det.
@@ -549,6 +554,9 @@
 :- mode negate_list(in) = out is det.
 :- mode negate_list(out) = in is det.
 
+%-----------------------------------------------------------------------------%
+% Flatten operations
+
 :- pred flatten(expression, expression).
 :- mode flatten(in, out) is det.
 
@@ -559,13 +567,11 @@
 :- mode flatten_list(in, out) is det.
 
 :- func flatten_list(list(expression)) = list(expression).
-:- mode flatten_list(in) = out is det.
 
 :- pred flatten_logic(logical_expression, logical_expression).
 :- mode flatten_logic(in, out) is det.
 
 :- func flatten_logic(logical_expression) = logical_expression.
-:- mode flatten_logic(in) = out is det.
 
 :- pred flatten_logic_list(list(logical_expression), 
 	list(logical_expression)).
@@ -595,6 +601,8 @@
 :- import_module list_util.
 :- import_module require.
 
+%-----------------------------------------------------------------------------%
+% Expression unification and comparison
 
 		
 %-----------------------------------------------------------------------------%
@@ -798,80 +806,86 @@ coerce_multiplication(Multi) = Expr :- coerce_multiplication(Multi, Expr).
 % Identities
 
 % p(A) = p(A)		
-permutation(predicate(A), predicate(A)).
+identity(predicate(A), predicate(A)).
 
 
 % -p(A) = -p(A)
-permutation(negated_predicate(A), negated_predicate(A)).
+identity(negated_predicate(A), negated_predicate(A)).
 
 % true = true
-permutation(mh_true, mh_true).
+identity(mh_true, mh_true).
  
 % false = false
-permutation(mh_false, mh_false).
+identity(mh_false, mh_false).
 
 % conj(A) = conj(A).
-permutation(disjunction(A), disjunction(A)).
+identity(conjunction(A), conjunction(A)).
 
 % and(A, B) = and(A, B)
-permutation(and(A, B), and(A, B)).
+identity(and(A, B), and(A, B)).
 
 % disj(A) = disj(A).
-permutation(disjunction(A), disjunction(A)).
+identity(disjunction(A), disjunction(A)).
 
 % or(A, B) = or(A, B)
-permutation(or(A, B), or(A, B)).
+identity(or(A, B), or(A, B)).
 
 % not(A) = not(A).
-permutation(negation(A), negation(A)).
+identity(negation(A), negation(A)).
 
 % xor(A, B) = xor(A, B)
-permutation(xor(A, B), xor(A, B)).
+identity(xor(A, B), xor(A, B)).
 
 % A :- B = A :- B
-permutation(implication(A, B), implication(A, B)).
+identity(implication(A, B), implication(A, B)).
 
 % A <-> B = A <-> B
-permutation(iff(A, B), iff(A, B)).
+identity(iff(A, B), iff(A, B)).
 
 % (A = B) = (A = B)
-permutation(equal(A, B), equal(A, B)).
+identity(equal(A, B), equal(A, B)).
 
 % (A != B) = (A != B)
-permutation(inequal(A, B), inequal(A, B)).
+identity(inequal(A, B), inequal(A, B)).
 
 % A > B = A > B
-permutation(greater_than(A, B), greater_than(A, B)).
+identity(greater_than(A, B), greater_than(A, B)).
 
 % A => B = A => B
-permutation(greater_than_or_equal(A, B), greater_than_or_equal(A, B)).
+identity(greater_than_or_equal(A, B), greater_than_or_equal(A, B)).
 	
 % A < B = A < B
-permutation(less_than(A, B), less_than(A, B)).
+identity(less_than(A, B), less_than(A, B)).
 
 % A =< B = A =< B
-permutation(less_than_or_equal(A, B), less_than_or_equal(A, B)).
+identity(less_than_or_equal(A, B), less_than_or_equal(A, B)).
 
 % A = A
-permutation(term(A), term(A)).
+identity(term(A), term(A)).
 
 % sum(A) = sum(A)
-permutation(sum(A), sum(A)).
+identity(sum(A), sum(A)).
 
 % A + B = A + B
-permutation(add(A, B), add(A, B)).
+identity(add(A, B), add(A, B)).
 
 % A - B = A - B
-permutation(subtract(A, B), subtract(A, B)).
+identity(subtract(A, B), subtract(A, B)).
 
 % product(A) = product(A)
-permutation(product(A), product(A)).
+identity(product(A), product(A)).
 
 % A * B = A * B
-permutation(multiply(A, B), multiply(A, B)).
+identity(multiply(A, B), multiply(A, B)).
 
 % A / B = A / B
-permutation(divide(A, B), divide(A, B)).
+identity(divide(A, B), divide(A, B)).
+
+% A = A
+permutation(A, B) :- identity(A, B).
+
+%-----------------------------------------------------------------------------%
+% Inverse identities
 
 % and(A, B) = and(B, A).
 permutation(and(A, B), and(B, A)).
@@ -896,7 +910,6 @@ permutation(add(A, B), add(B, A)).
 
 % A * B = B * A
 permutation(multiply(A, B), multiply(B, A)).
-
 
 %-----------------------------------------------------------------------------%
 % Negated predicates
@@ -927,7 +940,72 @@ permutation(conjunction([A, B]), and(B, A)).
 
 % conj([B, A]) = conj([A, B]).	
 permutation(conjunction(A), conjunction(B)) :- 
-	unify_unordered(A, B).
+	unify_conjunctions(A, B).
+
+/* A predicate I wrote to unify lists with the same members in any order
+unify_unordered([], []).
+
+unify_unordered([A | As], Bs) :-
+	delete(Bs, A, Remainder),
+	unify_unordered(As, Remainder).
+*/
+
+
+:- pred unify_conjunctions(list(logical_expression), list(logical_expression)).
+:- mode unify_conjunctions(in, in) is semidet.
+:- mode unify_conjunctions(in, out) is multi.
+:- mode unify_conjunctions(out, in) is multi.
+:- mode unify_conjunctions(in, out) is cc_multi.
+:- mode unify_conjunctions(out, in) is cc_multi.
+
+unify_conjunctions([], []).
+
+unify_conjunctions([A | As], Bs) :-
+	remove_conjunct(Bs, A, Remainder),
+	unify_conjunctions(As, Remainder).
+	
+unify_conjunctions(A, B) :- unify_conjunctions(B, A).
+	
+:- promise all [A, B] 
+	( unify_conjunctions(A, B) <=> unify_conjunctions(B, A) ).
+
+/* list.m implementation of delete
+delete([X | Xs], ToDelete, Xs) :-
+    X = ToDelete.
+delete([X | Xs], ToDelete, [X | DXs]) :-
+    list.delete(Xs, ToDelete, DXs).
+*/
+
+:- pred remove_conjunct(list(logical_expression), logical_expression, 
+	list(logical_expression)).
+:- mode remove_conjunct(in, in, in) is semidet.
+:- mode remove_conjunct(in, in, out) is nondet.
+:- mode remove_conjunct(in, out, out) is nondet.
+:- mode remove_conjunct(out, in, in) is multi.
+
+
+
+
+remove_conjunct([A | As], X, B) :-
+	% If the first element of the list A is a conjunction, remove X from the
+	% conjunction
+	 	A = conjunction(SubConj),
+		remove_conjunct(SubConj, X, NewSubConj),
+		B = [conjunction(NewSubConj) | As]
+	; 
+	% Same, but with and/2 constructor
+		A = and(X, Y),
+		remove_conjunct(B, X, B1),
+		remove_conjunct(B1, Y, As)
+	;
+	% If not, remove the element from B
+		X = A,
+		B = As
+	;
+	% Alteratively, traverse to the next element on the list
+		B = [A | Bs],
+		remove_conjunct(As, X, Bs).
+		
 
 	
 %-----------------------------------------------------------------------------%
@@ -944,6 +1022,7 @@ permutation(disjunction([A, B]), or(B, A)).
 % disj([B, A]) = disj([A, B]).	
 permutation(disjunction(A), disjunction(B)) :- 
 	unify_unordered(A, B).
+	
 
 
 %-----------------------------------------------------------------------------%
@@ -972,18 +1051,10 @@ permutation(disjunction(A), negation(disjunction(B))) :-
 /* Permutation will not terminate with this implementation of double negation
 
 % A = not not A
-permutation(A::in, negation(negation(B))::out) :- 
-	is_not_negation(A),
-	coerce_logical_expression(A, B).
-	
-permutation(coerce(A)::out, negation(negation(A))::in).
+permutation(coerce_logical_expression(A), negation(negation(A))).
 
 % not not A = A
-permutation(negation(negation(A))::in, coerce(A)::out).
-
-permutation(negation(negation(A))::out, B::in) :- 
-	is_not_negation(B),
-	coerce_logical_expression(B, A).
+permutation(negation(negation(A)), coerce_logical_expression(A)).
 	
 */
 
