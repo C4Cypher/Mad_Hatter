@@ -950,13 +950,10 @@ unify_unordered([A | As], Bs) :-
 	unify_unordered(As, Remainder).
 */
 
-
 :- pred unify_conjunctions(list(logical_expression), list(logical_expression)).
 :- mode unify_conjunctions(in, in) is semidet.
 :- mode unify_conjunctions(in, out) is multi.
 :- mode unify_conjunctions(out, in) is multi.
-:- mode unify_conjunctions(in, out) is cc_multi.
-:- mode unify_conjunctions(out, in) is cc_multi.
 
 unify_conjunctions([], []).
 
@@ -982,9 +979,6 @@ delete([X | Xs], ToDelete, [X | DXs]) :-
 :- mode remove_conjunct(in, in, out) is nondet.
 :- mode remove_conjunct(in, out, out) is nondet.
 :- mode remove_conjunct(out, in, in) is multi.
-
-
-
 
 remove_conjunct([A | As], X, B) :-
 	% If the first element of the list A is a conjunction, remove X from the
@@ -1023,7 +1017,48 @@ permutation(disjunction([A, B]), or(B, A)).
 permutation(disjunction(A), disjunction(B)) :- 
 	unify_unordered(A, B).
 	
+:- pred unify_disjunctions(list(logical_expression), list(logical_expression)).
+:- mode unify_disjunctions(in, in) is semidet.
+:- mode unify_disjunctions(in, out) is multi.
+:- mode unify_disjunctions(out, in) is multi.
 
+unify_disjunctions([], []).
+
+unify_disjunctions([A | As], Bs) :-
+	remove_disjunct(Bs, A, Remainder),
+	unify_disjunctions(As, Remainder).
+	
+unify_disjunctions(A, B) :- unify_disjunctions(B, A).
+	
+:- promise all [A, B] 
+	( unify_disjunctions(A, B) <=> unify_disjunctions(B, A) ).
+
+:- pred remove_disjunct(list(logical_expression), logical_expression, 
+	list(logical_expression)).
+:- mode remove_disjunct(in, in, in) is semidet.
+:- mode remove_disjunct(in, in, out) is nondet.
+:- mode remove_disjunct(in, out, out) is nondet.
+:- mode remove_disjunct(out, in, in) is multi.
+
+remove_disjunct([A | As], X, B) :-
+	% If the first element of the list A is a disjunction, remove X from the
+	% disjunction
+	 	A = disjunction(SubDisj),
+		remove_disjunct(SubDisj, X, NewSubDisj),
+		B = [disjunction(NewSubDisj) | As]
+	; 
+	% Same, but with or/2 constructor
+		A = or(X, Y),
+		remove_disjunct(B, X, B1),
+		remove_disjunct(B1, Y, As)
+	;
+	% If not, remove the element from B
+		X = A,
+		B = As
+	;
+	% Alteratively, traverse to the next element on the list
+		B = [A | Bs],
+		remove_disjunct(As, X, Bs).
 
 %-----------------------------------------------------------------------------%
 % De Morgan's laws
