@@ -22,7 +22,6 @@
 
 :- type mh_type
 --->	free
-;		named(symbol, mh_type)
 ;		union(set(mh_type))
 ;		entity
 ;		number
@@ -48,7 +47,8 @@
 
 
 :- type mh_data_type =< mh_type
---->	entity
+--->	union(set(mh_data_type))
+;		entity
 ;		number
 ;		enum(set(symbol))
 ;		symbol
