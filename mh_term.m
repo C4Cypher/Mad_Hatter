@@ -19,22 +19,14 @@
 :- import_module mh_symbol.
 :- import_module mh_identifier.
 :- import_module mh_var.
+:- import_module mh_type.
+:- import_module mh_relation.
 
 :- import_module set.
 :- import_module list.
 :- import_module univ.
 
-:- type mh_type
---->	entity
-;		number
-;		symbol
-; 		enum_symbol(set(symbol))
-;		string
-;		functor(symbol, list(mh_type))
-;		univ.
 
-
-:- type functor_signature =< mh_type ---> functor(symbol, list(mh_type)).
 
 :- type entity_id == id(entity).
 :- type var_id == id(var).
@@ -48,28 +40,38 @@
 ;		float(float)
 ; 		symbol(symbol)
 ;		string(string)
-;		f(symbol, list(mh_term))
+;		functor(symbol, relation)
 ;		univ(univ).
+
+
 
 :- inst var
 ---> 	var(ground)
 ;		named_var(ground).
 
+:- inst var(I)
+---> 	var(I)
+;		named_var(I).
+
 :- type var =< mh_term 
----> 	var(id(var))
+---> 	var(var_id)
 ;		named_var(symbol).
 
-:- type functor =< mh_term ---> f(symbol, list(mh_term)).
+:- inst functor ---> functor(ground, ground).
+
+:- inst functor(I) ---> functor(ground, relation(I)).
+
+:- type functor =< mh_term ---> functor(symbol, relation).
 
 
 
-:- inst ground_term
+:- inst mh_ground
 ---> 	entity(ground)
 ;		int(ground)
 ;		float(ground)
 ; 		symbol(ground)
 ;		string(ground)
-;		f(ground, list(ground_term))
+;		functor(ground, ground_relation)
 ;		univ(ground).
 
 :- type mh_ground =< mh_term
@@ -78,7 +80,7 @@
 ;		float(float)
 ; 		symbol(symbol)
 ;		string(string)
-;		f(symbol, list(mh_ground))
+;		functor(symbol, ground_relation)
 ;		univ(univ).
 
 :- type entity =< mh_ground ---> entity(id(entity)).
@@ -88,19 +90,31 @@
 ;		named_var(ground)
 ;		int(ground)
 ;		float(ground)
-;		f(ground, ground).
+;		functor(ground, ground).
+
+:- inst numeric_term(I)
+--->	var(I)
+;		named_var(I)
+;		int(I)
+;		float(I)
+;		functor(I, relation(I)).
 
 :- inst not_numeric_term
 --->	symbol(ground)
 ;		string(ground)
 ;		univ(ground).
 
+:- inst not_numeric_term(I)
+--->	symbol(I)
+;		string(I)
+;		univ(I).
+
 :- type numeric_term =< mh_term
 ---> 	var(id(var))
 ;		named_var(symbol)
 ;		int(int)
 ;		float(float)
-;		f(symbol, list(mh_term)).
+;		functor(symbol, relation).
 
 :- type number =< numeric_term
 --->	int(int)
@@ -109,11 +123,7 @@
 :- inst number_int ---> int(ground).
 :- inst number_float ---> float(ground).
 
-:- inst ground_functor
----> 	f(ground, list(ground_term)).
 
-:- type mh_ground_functor =< functor 
----> 	f(symbol, list(mh_ground)).
 
 %-----------------------------------------------------------------------------%
 

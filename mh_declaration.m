@@ -6,20 +6,21 @@
 % Public License - see the file COPYING.LIB in the Mercury distribution.
 %-----------------------------------------------------------------------------%
 % 
-% File: mh_schema.m
+% File: mh_declaration.m
 % Main author: C4Cypher.
 % Stability: low.
 %-----------------------------------------------------------------------------%
 
-:- module mh_schema.m
+:- module mh_declaration.
 
 :- interface.
+
+:- import_module mh_symbol.
 :- import_module mh_term.
-
-:- type schema.
-
-:- func init_schema = schema.
-:- pred init_schema(schema::out) is det.
+:- import_module mh_expression.
 
 
-
+:- type declaration
+--->	type_def(symbol, mh_type)
+;		state_var(predicate_signature)
+;		some [T] state_relation(predicate_signature, T =< relation(T)). 

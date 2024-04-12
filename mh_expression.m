@@ -55,6 +55,7 @@
 ;		multiply(numeric_expression, numeric_expression)
 ;		divide(numeric_expression, numeric_expression).
 
+
 %-----------------------------------------------------------------------------%
 
 :- inst logical_expression
@@ -82,6 +83,32 @@
 ;		greater_than_or_equal(ground, ground)
 ;		less_than(ground, ground)
 ;		less_than_or_equal(ground, ground).
+
+:- inst logical_expression(I)
+--->	predicate(I)
+;		negated_predicate(I)
+
+;		mh_true
+;		mh_false
+
+;		conjunction(I)
+; 		and(I, I)
+
+;		disjunction(I)
+;		or(I, I)
+
+;		negation(I)
+
+;		xor(I, I)
+;		implication(I, I)
+;		iff(I, I)
+
+;		equal(I, I)
+;		inequal(I, I)
+;		greater_than(I, I)
+;		greater_than_or_equal(I, I)
+;		less_than(I, I)
+;		less_than_or_equal(I, I).
 
 :- type logical_expression =< expression
 --->	predicate(functor)
@@ -121,12 +148,32 @@
 :- mode coerce_logical_expression(in) = out is semidet.
 :- mode coerce_logical_expression(out) = in is det.
 
+%-----------------------------------------------------------------------------%
+
+:- inst atom 	---> predicate(ground).
+:- inst atom(I)	---> predicate(I).
+
+:- type atom =< logical_expression ---> predicate(functor).
+
+:- inst literal 
+--->	predicate(ground)
+;		negated_predicate(ground).
+
+:- inst literal(I)
+--->	predicate(I)
+;		negated_predicate(I).
+
+:- type literal =< logical_expression
+--->	predicate(functor)
+;		negated_predicate(functor).
+
+
 
 %-----------------------------------------------------------------------------%
 
 :- inst negation ---> negation(ground).
 
-:- inst negation(T) ---> negation(T).
+:- inst negation(I) ---> negation(T).
 
 :- inst not_negation
 --->	predicate(ground)
@@ -183,9 +230,9 @@
  --->		conjunction(ground)
 ; 			and(ground, ground).
 
-:- inst conjunction(T)
---->		conjunction(list(T))
-;			and(T, T).
+:- inst conjunction(I)
+--->		conjunction(list(I))
+;			and(I, I).
 
 :- inst not_conjunction
 --->	predicate(ground)
@@ -242,9 +289,9 @@
  --->		disjunction(ground)
 ; 			or(ground, ground).
 
-:- inst disjunction(T)
- --->		disjunction(list(T))
-; 			or(T, T).
+:- inst disjunction(I)
+ --->		disjunction(list(I))
+; 			or(I, I).
 
 :- inst not_disjunction
 --->	predicate(ground)
@@ -311,16 +358,16 @@
 ;		multiply(ground, ground)
 ;		divide(ground, ground).
 
-:- inst term_expression(T)
---->	term(T) 
+:- inst term_expression(I)
+--->	term(I) 
 
-;		sum(list(T))
-;		add(T, T)
-;		subtract(T, T)
+;		sum(list(I))
+;		add(I, I)
+;		subtract(I, I)
 
-;		product(list(T))
-;		multiply(T, T)
-;		divide(T, T).
+;		product(list(I))
+;		multiply(I, I)
+;		divide(I, I).
 
 :- type term_expression =< expression
 --->	term(mh_term) 
@@ -358,6 +405,17 @@
 ;		product(ground)
 ;		multiply(ground, ground)
 ;		divide(ground, ground). 
+
+:- inst numeric_expression(I)
+--->	term(numeric_term(I)) 
+
+;		sum(I)
+;		add(I, I)
+;		subtract(I, I)
+
+;		product(I)
+;		multiply(I, I)
+;		divide(I, I). 
 
 :- inst not_numeric_expression
 --->	predicate(ground)
@@ -739,7 +797,7 @@ is_numeric_expression(NumExp) :-
 	NumExp = term(named_var(_));
 	NumExp = term(int(_));
 	NumExp = term(float(_));
-	NumExp = term(f(_, _));
+	NumExp = term(functor(_, _));
 	is_addition(NumExp);
 	NumExp = subtract(_, _);
 	is_multiplication(NumExp);
@@ -749,7 +807,7 @@ to_numeric_expression(term(var(X))) = term(var(X)).
 to_numeric_expression(term(named_var(X))) = term(named_var(X)).
 to_numeric_expression(term(int(X))) = term(int(X)).
 to_numeric_expression(term(float(X))) = term(float(X)).
-to_numeric_expression(term(f(X, Y))) = term(f(X, Y)).
+to_numeric_expression(term(functor(X, Y))) = term(functor(X, Y)).
 to_numeric_expression(sum(X)) = sum(X).
 to_numeric_expression(add(X, Y)) = add(X, Y).
 to_numeric_expression(subtract(X, Y)) = subtract(X, Y).
