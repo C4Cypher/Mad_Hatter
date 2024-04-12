@@ -22,9 +22,9 @@
 
 :- type relation == array(mh_term).
 
-:- inst relation ---> relation(ground).
+:- inst relation == relation(ground).
 
-:- inst relation(I) ---> array(I).
+:- inst relation(I) == array(I).
 
 :- func relation(list(mh_term)) = relation.
 :- mode relation(in) = out is det.
@@ -35,7 +35,7 @@
 
 :- inst ground_relation == relation(mh_ground).
 
-:- func ground_relation(list(mh_ground)) = relation.
+:- func ground_relation(list(mh_ground)) = ground_relation.
 :- mode ground_relation(in) = out is det.
 :- mode ground_relation(out) = in is det.
 
@@ -61,7 +61,7 @@
 	
 	%Create an empty data structure to be populated
 	func init_relation = T, 
-	mode init_relation = uo,
+	mode init_relation = uo is det,
 
 	pred assert_relation(ground_relation, T, T, relation_outcome),
 	mode assert_relation(in, in, out, out) is det,
@@ -72,18 +72,19 @@
 	mode retract_relation(in, di, uo, out) is det,
 	
 	pred query_relation(T, relation, relation),
-	mode query_relation(in, in, out) is nondet,
-	mode query_relation(in, in(ground_relation), out) is semidet ].
+	mode query_relation(in, in, out) is nondet ].
 
 
 :- implementation.
 
 :- pragma promise_equivalent_clauses(relation/1).
 
-relation(List::in) = array(List)::out.
+relation(List::in) = (array(List)::out).
 
-relation(from_list(Relation)::out) = Relation::in.
+relation(to_list(Relation)::out) = (Relation::in).
 
-ground_relation(List::in) = array(List)::out.
+:- pragma promise_equivalent_clauses(ground_relation/1).
 
-ground_relation(from_list(Relation)::out) = Relation::in.
+ground_relation(List::in) = (array(List)::out).
+
+ground_relation(to_list(Relation)::out) = (Relation::in).

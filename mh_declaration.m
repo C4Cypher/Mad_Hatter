@@ -23,4 +23,4 @@
 :- type declaration
 --->	type_def(symbol, mh_type)
 ;		state_var(predicate_signature)
-;		some [T] state_relation(predicate_signature, T =< relation(T)). 
+;		some [T] state_relation(predicate_signature, T =< relation_state(T)). 
