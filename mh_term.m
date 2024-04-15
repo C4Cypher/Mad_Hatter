@@ -21,6 +21,7 @@
 :- import_module mh_var.
 :- import_module mh_type.
 :- import_module mh_relation.
+:- import_module mh_function.
 
 :- import_module set.
 :- import_module list.
@@ -40,7 +41,10 @@
 ;		float(float)
 ; 		symbol(symbol)
 ;		string(string)
+;		type(mh_type)
 ;		functor(symbol, relation)
+;		function(mh_function)
+;		closure(mh_function, relation)
 ;		univ(univ).
 
 
@@ -59,20 +63,11 @@
 
 :- inst functor ---> functor(ground, ground).
 
-:- inst functor(I) ---> functor(ground, relation(I)).
-
 :- type functor =< mh_term ---> functor(symbol, relation).
 
 
 
-:- inst mh_ground
----> 	entity(ground)
-;		int(ground)
-;		float(ground)
-; 		symbol(ground)
-;		string(ground)
-;		functor(ground, ground_relation)
-;		univ(ground).
+
 
 :- type mh_ground =< mh_term
 ---> 	entity(entity_id)
@@ -80,10 +75,25 @@
 ;		float(float)
 ; 		symbol(symbol)
 ;		string(string)
+;		type(mh_type)
 ;		functor(symbol, ground_relation)
+;		function(mh_function)
+;		closure(mh_function, ground_relation)
 ;		univ(univ).
 
 :- type entity =< mh_ground ---> entity(id(entity)).
+
+% 	Values that are not only semantically ground, but can be stored in state 
+%	and can be serialized
+
+:- type mh_stval =< mh_ground
+---> 	entity(entity_id)
+;		int(int)
+;		float(float)
+; 		symbol(symbol)
+;		string(string)
+;		type(mh_type)
+;		functor(symbol, ground_relation).
 
 :- inst numeric_term
 --->	var(ground)
@@ -92,22 +102,14 @@
 ;		float(ground)
 ;		functor(ground, ground).
 
-:- inst numeric_term(I)
---->	var(I)
-;		named_var(I)
-;		int(I)
-;		float(I)
-;		functor(I, relation(I)).
+
 
 :- inst not_numeric_term
 --->	symbol(ground)
 ;		string(ground)
 ;		univ(ground).
 
-:- inst not_numeric_term(I)
---->	symbol(I)
-;		string(I)
-;		univ(I).
+
 
 :- type numeric_term =< mh_term
 ---> 	var(id(var))
