@@ -18,26 +18,30 @@
 :- import_module mh_term.
 
 :- import_module list.
-:- import_module array.
 
-:- type relation == array(mh_term).
+%-----------------------------------------------------------------------------%
 
-:- inst relation == relation(ground).
+:- type relation(T).
 
-:- inst relation(I) == array(I).
+:- type relation == relation(mh_term).
 
-:- func relation(list(mh_term)) = relation.
+:- type ground_relation == relation(mh_ground).
+
+:- type state_relation == relation(mh_stval).
+
+
+:- func relation(list(T)) = relation(T).
 :- mode relation(in) = out is det.
 :- mode relation(out) = in is det.
 
+%-----------------------------------------------------------------------------%
 
-:- type ground_relation == array(mh_ground).
+:- type argument
+--->	arg(int)
+;		arg(int, argument).
 
-:- inst ground_relation == relation(mh_ground).
 
-:- func ground_relation(list(mh_ground)) = ground_relation.
-:- mode ground_relation(in) = out is det.
-:- mode ground_relation(out) = in is det.
+%-----------------------------------------------------------------------------%
 
 /* 	Different data structures behave differently when information in them
 	changes. A new key value pair assigned to a map may remove an already
@@ -48,14 +52,14 @@
 	retracted. */
 	
 :- type relation_outcome
---->	now_true(ground_relation)
-;		now_false(ground_relation)
+--->	now_true(state_relation)
+;		now_false(state_relation)
 ;		now_all(list(atomic_relation_outcome))
 ;		failed(string).	% Structure unmodified, reason provided in string.
 
 :- type atomic_relation_outcome =< relation_outcome
---->	now_true(ground_relation)
-;		now_false(ground_relation).
+--->	now_true(state_relation)
+;		now_false(state_relation).
 
 :- typeclass relation_state(T) where [
 	
@@ -63,28 +67,33 @@
 	func init_relation = T, 
 	mode init_relation = uo is det,
 
-	pred assert_relation(ground_relation, T, T, relation_outcome),
+	pred assert_relation(state_relation, T, T, relation_outcome),
 	mode assert_relation(in, in, out, out) is det,
 	mode assert_relation(in, di, uo, out) is det,
 	
-	pred retract_relation(ground_relation, T, T, relation_outcome),
+	pred retract_relation(state_relation, T, T, relation_outcome),
 	mode retract_relation(in, in, out, out) is det,
 	mode retract_relation(in, di, uo, out) is det,
 	
 	pred query_relation(T, relation, relation),
-	mode query_relation(in, in, out) is nondet ].
+	mode query_relation(in, in, out) is nondet,
+
+	pred query_relation(T, state_relation),
+	mode query_relation(in, in) is semidet,
+	mode query_relation(in, out) is nondet
+	].
 
 
 :- implementation.
+
+
+:- import_module array.
+
+:- type relation(T) == array(T).
+
 
 :- pragma promise_equivalent_clauses(relation/1).
 
 relation(List::in) = (array(List)::out).
 
 relation(to_list(Relation)::out) = (Relation::in).
-
-:- pragma promise_equivalent_clauses(ground_relation/1).
-
-ground_relation(List::in) = (array(List)::out).
-
-ground_relation(to_list(Relation)::out) = (Relation::in).
