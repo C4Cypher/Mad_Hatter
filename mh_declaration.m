@@ -26,15 +26,19 @@
 
 :- type declaration
 --->	type_def(symbol, mh_type)
+;		data_type(data_signature)
 ;		state_var(predicate_signature)
-;		state_relation(predicate_signature,	(some[T] func = T::uo is det) ). 
-;		primitive_predicate(
-			predicate_signature, 
+;		state_relation(predicate_signature,	(some[T] func = T::uo is det) )
+ 
+;		primitive_predicate( predicate_signature, 
 			(pred(relation::in, relation::out) is nondet) )
-;		primitive_predicate(
-			predicate_signature,
+			
+;		primitive_predicate( predicate_signature,
 			(pred(relation::in, relation::out) is nondet),
 			promise_binds ).
+
+;		primitive_function( function_signature,
+			(func(ground_relation) = mh_term is semidet) ).
 			
 /* 	promises that if the given elements of a relation are ground, 
 	the resulting elements of the output will be ground */
