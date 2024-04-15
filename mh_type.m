@@ -22,6 +22,7 @@
 
 :- type mh_type
 --->	free
+;		type(symbol)
 ;		union(set(mh_type))
 ;		entity
 ;		number
