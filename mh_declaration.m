@@ -28,7 +28,7 @@
 --->	type_def(symbol, mh_type)
 ;		data_type(data_signature)
 ;		state_var(predicate_signature)
-;		state_relation(predicate_signature,	(some[T] func = T::uo is det) )
+;		state_relation(predicate_signature,	   )
  
 ;		primitive_predicate( predicate_signature, 
 			(pred(relation::in, relation::out) is nondet) )
