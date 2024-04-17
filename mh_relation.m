@@ -37,8 +37,8 @@
 %-----------------------------------------------------------------------------%
 
 :- type argument
---->	arg(int)
-;		arg(int, argument).
+	--->	arg(int)
+	;		arg(int, argument).
 
 
 %-----------------------------------------------------------------------------%
@@ -52,14 +52,14 @@
 	retracted. */
 	
 :- type relation_outcome
---->	now_true(state_relation)
-;		now_false(state_relation)
-;		now_all(list(atomic_relation_outcome))
-;		failed(string).	% Structure unmodified, reason provided in string.
+	--->	now_true(state_relation)
+	;		now_false(state_relation)
+	;		now_all(list(atomic_relation_outcome))
+	;		failed(string).	% Structure unmodified, reason provided in string.
 
 :- type atomic_relation_outcome =< relation_outcome
---->	now_true(state_relation)
-;		now_false(state_relation).
+	--->	now_true(state_relation)
+	;		now_false(state_relation).
 
 :- typeclass relation_state(T) where [
 	

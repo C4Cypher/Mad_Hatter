@@ -34,32 +34,32 @@
 
 
 :- type mh_term 
---->	var(var_id)
-;		named_var(symbol)
-;		entity(entity_id)
-;		int(int)
-;		float(float)
-; 		symbol(symbol)
-;		string(string)
-;		type(mh_type)
-;		functor(symbol, relation)
-;		function(mh_function)
-;		closure(mh_function, relation)
-;		univ(univ).
+	--->	var(var_id)
+	;		named_var(symbol)
+	;		entity(entity_id)
+	;		int(int)
+	;		float(float)
+	; 		symbol(symbol)
+	;		string(string)
+	;		type(mh_type)
+	;		functor(symbol, relation)
+	;		function(mh_function)
+	;		closure(mh_function, relation)
+	;		univ(univ).
 
 
 
 :- inst var
----> 	var(ground)
-;		named_var(ground).
+	---> 	var(ground)
+	;		named_var(ground).
 
 :- inst var(I)
----> 	var(I)
-;		named_var(I).
+	---> 	var(I)
+	;		named_var(I).
 
 :- type var =< mh_term 
----> 	var(var_id)
-;		named_var(symbol).
+	---> 	var(var_id)
+	;		named_var(symbol).
 
 :- inst functor ---> functor(ground, ground).
 
@@ -70,16 +70,16 @@
 
 
 :- type mh_ground =< mh_term
----> 	entity(entity_id)
-;		int(int)
-;		float(float)
-; 		symbol(symbol)
-;		string(string)
-;		type(mh_type)
-;		functor(symbol, ground_relation)
-;		function(mh_function)
-;		closure(mh_function, ground_relation)
-;		univ(univ).
+	---> 	entity(entity_id)
+	;		int(int)
+	;		float(float)
+	; 		symbol(symbol)
+	;		string(string)
+	;		type(mh_type)
+	;		functor(symbol, ground_relation)
+	;		function(mh_function)
+	;		closure(mh_function, ground_relation)
+	;		univ(univ).
 
 :- type entity =< mh_ground ---> entity(id(entity)).
 
@@ -87,40 +87,40 @@
 %	and can be serialized
 
 :- type mh_stval =< mh_ground
----> 	entity(entity_id)
-;		int(int)
-;		float(float)
-; 		symbol(symbol)
-;		string(string)
-;		type(mh_type)
-;		functor(symbol, ground_relation).
+	---> 	entity(entity_id)
+	;		int(int)
+	;		float(float)
+	; 		symbol(symbol)
+	;		string(string)
+	;		type(mh_type)
+	;		functor(symbol, ground_relation).
 
 :- inst numeric_term
---->	var(ground)
-;		named_var(ground)
-;		int(ground)
-;		float(ground)
-;		functor(ground, ground).
+	--->	var(ground)
+	;		named_var(ground)
+	;		int(ground)
+	;		float(ground)
+	;		functor(ground, ground).
 
 
 
 :- inst not_numeric_term
---->	symbol(ground)
-;		string(ground)
-;		univ(ground).
+	--->	symbol(ground)
+	;		string(ground)
+	;		univ(ground).
 
 
 
 :- type numeric_term =< mh_term
----> 	var(id(var))
-;		named_var(symbol)
-;		int(int)
-;		float(float)
-;		functor(symbol, relation).
+	---> 	var(id(var))
+	;		named_var(symbol)
+	;		int(int)
+	;		float(float)
+	;		functor(symbol, relation).
 
 :- type number =< numeric_term
---->	int(int)
-;		float(float).
+	--->	int(int)
+	;		float(float).
 
 :- inst number_int ---> int(ground).
 :- inst number_float ---> float(ground).

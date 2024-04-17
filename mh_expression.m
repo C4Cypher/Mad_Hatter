@@ -20,121 +20,121 @@
 :- import_module list.
 
 :- type expression
---->	predicate(functor)
-;		negated_predicate(functor)
+	--->	predicate(functor)
+	;		negated_predicate(functor)
 
-;		mh_true
-;		mh_false
+	;		mh_true
+	;		mh_false
 
-;		conjunction(list(logical_expression))
-; 		and(logical_expression, logical_expression)
+	;		conjunction(list(logical_expression))
+	; 		and(logical_expression, logical_expression)
 
-;		disjunction(list(logical_expression))
-;		or(logical_expression, logical_expression)
+	;		disjunction(list(logical_expression))
+	;		or(logical_expression, logical_expression)
 
-;		negation(logical_expression)
+	;		negation(logical_expression)
 
-;		xor(logical_expression, logical_expression)
-;		implication(logical_expression, logical_expression)
-;		iff(logical_expression, logical_expression)
+	;		xor(logical_expression, logical_expression)
+	;		implication(logical_expression, logical_expression)
+	;		iff(logical_expression, logical_expression)
 
-;		equal(expression, expression)
-;		inequal(expression, expression)
-;		greater_than(term_expression, term_expression)
-;		greater_than_or_equal(term_expression, term_expression)
-;		less_than(term_expression, term_expression)
-;		less_than_or_equal(term_expression, term_expression)
+	;		equal(expression, expression)
+	;		inequal(expression, expression)
+	;		greater_than(term_expression, term_expression)
+	;		greater_than_or_equal(term_expression, term_expression)
+	;		less_than(term_expression, term_expression)
+	;		less_than_or_equal(term_expression, term_expression)
 
-;		term(mh_term) 
+	;		term(mh_term) 
 
-;		sum(list(numeric_expression))
-;		add(numeric_expression, numeric_expression)
-;		subtract(numeric_expression, numeric_expression)
+	;		sum(list(numeric_expression))
+	;		add(numeric_expression, numeric_expression)
+	;		subtract(numeric_expression, numeric_expression)
 
-;		product(list(numeric_expression))
-;		multiply(numeric_expression, numeric_expression)
-;		divide(numeric_expression, numeric_expression).
+	;		product(list(numeric_expression))
+	;		multiply(numeric_expression, numeric_expression)
+	;		divide(numeric_expression, numeric_expression).
 
 
 %-----------------------------------------------------------------------------%
 
 :- inst logical_expression
---->	predicate(ground)
-;		negated_predicate(ground)
+	--->	predicate(ground)
+	;		negated_predicate(ground)
 
-;		mh_true
-;		mh_false
+	;		mh_true
+	;		mh_false
 
-;		conjunction(ground)
-; 		and(ground, ground)
+	;		conjunction(ground)
+	; 		and(ground, ground)
 
-;		disjunction(ground)
-;		or(ground, ground)
+	;		disjunction(ground)
+	;		or(ground, ground)
 
-;		negation(ground)
+	;		negation(ground)
 
-;		xor(ground, ground)
-;		implication(ground, ground)
-;		iff(ground, ground)
+	;		xor(ground, ground)
+	;		implication(ground, ground)
+	;		iff(ground, ground)
 
-;		equal(ground, ground)
-;		inequal(ground, ground)
-;		greater_than(ground, ground)
-;		greater_than_or_equal(ground, ground)
-;		less_than(ground, ground)
-;		less_than_or_equal(ground, ground).
+	;		equal(ground, ground)
+	;		inequal(ground, ground)
+	;		greater_than(ground, ground)
+	;		greater_than_or_equal(ground, ground)
+	;		less_than(ground, ground)
+	;		less_than_or_equal(ground, ground).
 
 :- inst logical_expression(I)
---->	predicate(I)
-;		negated_predicate(I)
+	--->	predicate(I)
+	;		negated_predicate(I)
 
-;		mh_true
-;		mh_false
+	;		mh_true
+	;		mh_false
 
-;		conjunction(I)
-; 		and(I, I)
+	;		conjunction(I)
+	; 		and(I, I)
 
-;		disjunction(I)
-;		or(I, I)
+	;		disjunction(I)
+	;		or(I, I)
 
-;		negation(I)
+	;		negation(I)
 
-;		xor(I, I)
-;		implication(I, I)
-;		iff(I, I)
+	;		xor(I, I)
+	;		implication(I, I)
+	;		iff(I, I)
 
-;		equal(I, I)
-;		inequal(I, I)
-;		greater_than(I, I)
-;		greater_than_or_equal(I, I)
-;		less_than(I, I)
-;		less_than_or_equal(I, I).
+	;		equal(I, I)
+	;		inequal(I, I)
+	;		greater_than(I, I)
+	;		greater_than_or_equal(I, I)
+	;		less_than(I, I)
+	;		less_than_or_equal(I, I).
 
 :- type logical_expression =< expression
---->	predicate(functor)
-;		negated_predicate(functor)
+	--->	predicate(functor)
+	;		negated_predicate(functor)
 
-;		mh_true
-;		mh_false
+	;		mh_true
+	;		mh_false
 
-;		conjunction(list(logical_expression))
-; 		and(logical_expression, logical_expression)
+	;		conjunction(list(logical_expression))
+	; 		and(logical_expression, logical_expression)
 
-;		disjunction(list(logical_expression))
-;		or(logical_expression, logical_expression)
+	;		disjunction(list(logical_expression))
+	;		or(logical_expression, logical_expression)
 
-;		negation(logical_expression)
+	;		negation(logical_expression)
 
-;		xor(logical_expression, logical_expression)
-;		implication(logical_expression, logical_expression)
-;		iff(logical_expression, logical_expression)
+	;		xor(logical_expression, logical_expression)
+	;		implication(logical_expression, logical_expression)
+	;		iff(logical_expression, logical_expression)
 
-;		equal(expression, expression)
-;		inequal(expression, expression)
-;		greater_than(term_expression, term_expression)
-;		greater_than_or_equal(term_expression, term_expression)
-;		less_than(term_expression, term_expression)
-;		less_than_or_equal(term_expression, term_expression).
+	;		equal(expression, expression)
+	;		inequal(expression, expression)
+	;		greater_than(term_expression, term_expression)
+	;		greater_than_or_equal(term_expression, term_expression)
+	;		less_than(term_expression, term_expression)
+	;		less_than_or_equal(term_expression, term_expression).
 
 :- pred is_logical_expression(expression::in) is semidet.
 
@@ -156,16 +156,16 @@
 :- type atom =< logical_expression ---> predicate(functor).
 
 :- inst literal 
---->	predicate(ground)
-;		negated_predicate(ground).
+	--->	predicate(ground)
+	;		negated_predicate(ground).
 
 :- inst literal(I)
---->	predicate(I)
-;		negated_predicate(I).
+	--->	predicate(I)
+	;		negated_predicate(I).
 
 :- type literal =< logical_expression
---->	predicate(functor)
-;		negated_predicate(functor).
+	--->	predicate(functor)
+	;		negated_predicate(functor).
 
 
 
@@ -176,38 +176,38 @@
 :- inst negation(I) ---> negation(T).
 
 :- inst not_negation
---->	predicate(ground)
-;		negated_predicate(ground)
+	--->	predicate(ground)
+	;		negated_predicate(ground)
 
-;		mh_true
-;		mh_false
+	;		mh_true
+	;		mh_false
 
-;		conjunction(ground)
-; 		and(ground, ground)
+	;		conjunction(ground)
+	; 		and(ground, ground)
 
-;		disjunction(ground)
-;		or(ground, ground)
+	;		disjunction(ground)
+	;		or(ground, ground)
 
-;		xor(ground, ground)
-;		implication(ground, ground)
-;		iff(ground, ground)
+	;		xor(ground, ground)
+	;		implication(ground, ground)
+	;		iff(ground, ground)
 
-;		equal(ground, ground)
-;		inequal(ground, ground)
-;		greater_than(ground, ground)
-;		greater_than_or_equal(ground, ground)
-;		less_than(ground, ground)
-;		less_than_or_equal(ground, ground)
+	;		equal(ground, ground)
+	;		inequal(ground, ground)
+	;		greater_than(ground, ground)
+	;		greater_than_or_equal(ground, ground)
+	;		less_than(ground, ground)
+	;		less_than_or_equal(ground, ground)
 
-;		term(ground) 
+	;		term(ground) 
 
-;		sum(ground)
-;		add(ground, ground)
-;		subtract(ground, ground)
+	;		sum(ground)
+	;		add(ground, ground)
+	;		subtract(ground, ground)
 
-;		product(ground)
-;		multiply(ground, ground)
-;		divide(ground, ground).
+	;		product(ground)
+	;		multiply(ground, ground)
+	;		divide(ground, ground).
 
 :- type negation =< logical_expression ---> negation(logical_expression).
 
@@ -227,49 +227,49 @@
 %-----------------------------------------------------------------------------%
 
 :- inst conjunction 
- --->		conjunction(ground)
-; 			and(ground, ground).
+	 --->		conjunction(ground)
+	; 			and(ground, ground).
 
 :- inst conjunction(I)
---->		conjunction(list(I))
-;			and(I, I).
+	--->		conjunction(list(I))
+	;			and(I, I).
 
 :- inst not_conjunction
---->	predicate(ground)
-;		negated_predicate(ground)
+	--->	predicate(ground)
+	;		negated_predicate(ground)
 
-;		mh_true
-;		mh_false
+	;		mh_true
+	;		mh_false
 
-;		disjunction(ground)
-;		or(ground, ground)
+	;		disjunction(ground)
+	;		or(ground, ground)
 
-;		negation(ground)
+	;		negation(ground)
 
-;		xor(ground, ground)
-;		implication(ground, ground)
-;		iff(ground, ground)
+	;		xor(ground, ground)
+	;		implication(ground, ground)
+	;		iff(ground, ground)
 
-;		equal(ground, ground)
-;		inequal(ground, ground)
-;		greater_than(ground, ground)
-;		greater_than_or_equal(ground, ground)
-;		less_than(ground, ground)
-;		less_than_or_equal(ground, ground)
+	;		equal(ground, ground)
+	;		inequal(ground, ground)
+	;		greater_than(ground, ground)
+	;		greater_than_or_equal(ground, ground)
+	;		less_than(ground, ground)
+	;		less_than_or_equal(ground, ground)
 
-;		term(ground) 
+	;		term(ground) 
 
-;		sum(ground)
-;		add(ground, ground)
-;		subtract(ground, ground)
+	;		sum(ground)
+	;		add(ground, ground)
+	;		subtract(ground, ground)
 
-;		product(ground)
-;		multiply(ground, ground)
-;		divide(ground, ground).
+	;		product(ground)
+	;		multiply(ground, ground)
+	;		divide(ground, ground).
 
 :- type conjunction =< logical_expression
---->		conjunction(list(logical_expression))
-; 			and(logical_expression, logical_expression).
+	--->		conjunction(list(logical_expression))
+	; 			and(logical_expression, logical_expression).
 
 :- pred is_conjunction(expression::in) is semidet.
 
@@ -286,49 +286,49 @@
 
 %-----------------------------------------------------------------------------%
 :- inst disjunction 
- --->		disjunction(ground)
-; 			or(ground, ground).
+	 --->		disjunction(ground)
+	; 			or(ground, ground).
 
 :- inst disjunction(I)
- --->		disjunction(list(I))
-; 			or(I, I).
+	 --->		disjunction(list(I))
+	; 			or(I, I).
 
 :- inst not_disjunction
---->	predicate(ground)
-;		negated_predicate(ground)
+	--->	predicate(ground)
+	;		negated_predicate(ground)
 
-;		mh_true
-;		mh_false
+	;		mh_true
+	;		mh_false
 
-;		conjunction(ground)
-; 		and(ground, ground)
+	;		conjunction(ground)
+	; 		and(ground, ground)
 
-;		negation(ground)
+	;		negation(ground)
 
-;		xor(ground, ground)
-;		implication(ground, ground)
-;		iff(ground, ground)
+	;		xor(ground, ground)
+	;		implication(ground, ground)
+	;		iff(ground, ground)
 
-;		equal(ground, ground)
-;		inequal(ground, ground)
-;		greater_than(ground, ground)
-;		greater_than_or_equal(ground, ground)
-;		less_than(ground, ground)
-;		less_than_or_equal(ground, ground)
+	;		equal(ground, ground)
+	;		inequal(ground, ground)
+	;		greater_than(ground, ground)
+	;		greater_than_or_equal(ground, ground)
+	;		less_than(ground, ground)
+	;		less_than_or_equal(ground, ground)
 
-;		term(ground) 
+	;		term(ground) 
 
-;		sum(ground)
-;		add(ground, ground)
-;		subtract(ground, ground)
+	;		sum(ground)
+	;		add(ground, ground)
+	;		subtract(ground, ground)
 
-;		product(ground)
-;		multiply(ground, ground)
-;		divide(ground, ground).
+	;		product(ground)
+	;		multiply(ground, ground)
+	;		divide(ground, ground).
 
 :- type disjunction =< logical_expression
---->		disjunction(list(logical_expression))
-; 			or(logical_expression, logical_expression).
+	--->		disjunction(list(logical_expression))
+	; 			or(logical_expression, logical_expression).
 
 :- pred is_disjunction(expression::in) is semidet.
 
@@ -348,37 +348,37 @@
 % Term expression is the complement of logical_expression
 
 :- inst term_expression  
---->	term(ground) 
+	--->	term(ground) 
 
-;		sum(ground)
-;		add(ground, ground)
-;		subtract(ground, ground)
+	;		sum(ground)
+	;		add(ground, ground)
+	;		subtract(ground, ground)
 
-;		product(ground)
-;		multiply(ground, ground)
-;		divide(ground, ground).
+	;		product(ground)
+	;		multiply(ground, ground)
+	;		divide(ground, ground).
 
 :- inst term_expression(I)
---->	term(I) 
+	--->	term(I) 
 
-;		sum(list(I))
-;		add(I, I)
-;		subtract(I, I)
+	;		sum(list(I))
+	;		add(I, I)
+	;		subtract(I, I)
 
-;		product(list(I))
-;		multiply(I, I)
-;		divide(I, I).
+	;		product(list(I))
+	;		multiply(I, I)
+	;		divide(I, I).
 
 :- type term_expression =< expression
---->	term(mh_term) 
+	--->	term(mh_term) 
 
-;		sum(list(numeric_expression))
-;		add(numeric_expression, numeric_expression)
-;		subtract(numeric_expression, numeric_expression)
+	;		sum(list(numeric_expression))
+	;		add(numeric_expression, numeric_expression)
+	;		subtract(numeric_expression, numeric_expression)
 
-;		product(list(numeric_expression))
-;		multiply(numeric_expression, numeric_expression)
-;		divide(numeric_expression, numeric_expression).
+	;		product(list(numeric_expression))
+	;		multiply(numeric_expression, numeric_expression)
+	;		divide(numeric_expression, numeric_expression).
 
 :- pred is_term_expression(expression::in) is semidet.
 
@@ -396,65 +396,65 @@
 
 
 :- inst numeric_expression
---->	term(numeric_term) 
+	--->	term(numeric_term) 
 
-;		sum(ground)
-;		add(ground, ground)
-;		subtract(ground, ground)
+	;		sum(ground)
+	;		add(ground, ground)
+	;		subtract(ground, ground)
 
-;		product(ground)
-;		multiply(ground, ground)
-;		divide(ground, ground). 
+	;		product(ground)
+	;		multiply(ground, ground)
+	;		divide(ground, ground). 
 
 :- inst numeric_expression(I)
---->	term(numeric_term(I)) 
+	--->	term(numeric_term(I)) 
 
-;		sum(I)
-;		add(I, I)
-;		subtract(I, I)
+	;		sum(I)
+	;		add(I, I)
+	;		subtract(I, I)
 
-;		product(I)
-;		multiply(I, I)
-;		divide(I, I). 
+	;		product(I)
+	;		multiply(I, I)
+	;		divide(I, I). 
 
 :- inst not_numeric_expression
---->	predicate(ground)
-;		negated_predicate(ground)
+	--->	predicate(ground)
+	;		negated_predicate(ground)
 
-;		mh_true
-;		mh_false
+	;		mh_true
+	;		mh_false
 
-;		conjunction(ground)
-; 		and(ground, ground)
+	;		conjunction(ground)
+	; 		and(ground, ground)
 
-;		disjunction(ground)
-;		or(ground, ground)
+	;		disjunction(ground)
+	;		or(ground, ground)
 
-;		negation(ground)
+	;		negation(ground)
 
-;		xor(ground, ground)
-;		implication(ground, ground)
-;		iff(ground, ground)
+	;		xor(ground, ground)
+	;		implication(ground, ground)
+	;		iff(ground, ground)
 
-;		equal(ground, ground)
-;		inequal(ground, ground)
-;		greater_than(ground, ground)
-;		greater_than_or_equal(ground, ground)
-;		less_than(ground, ground)
-;		less_than_or_equal(ground, ground)
+	;		equal(ground, ground)
+	;		inequal(ground, ground)
+	;		greater_than(ground, ground)
+	;		greater_than_or_equal(ground, ground)
+	;		less_than(ground, ground)
+	;		less_than_or_equal(ground, ground)
 
-; 		term(not_numeric_term).
+	; 		term(not_numeric_term).
 
 :- type numeric_expression =< term_expression
---->	term(numeric_term) 
+	--->	term(numeric_term) 
 
-;		sum(list(numeric_expression))
-;		add(numeric_expression, numeric_expression)
-;		subtract(numeric_expression, numeric_expression)
+	;		sum(list(numeric_expression))
+	;		add(numeric_expression, numeric_expression)
+	;		subtract(numeric_expression, numeric_expression)
 
-;		product(list(numeric_expression))
-;		multiply(numeric_expression, numeric_expression)
-;		divide(numeric_expression, numeric_expression). 
+	;		product(list(numeric_expression))
+	;		multiply(numeric_expression, numeric_expression)
+	;		divide(numeric_expression, numeric_expression). 
 
 :- pred is_numeric_expression(expression::in) is semidet.
 
@@ -470,46 +470,46 @@
 %-----------------------------------------------------------------------------%
 
 :- inst addition 
- --->		sum(ground)
-; 			add(ground, ground).
+	 --->		sum(ground)
+	; 			add(ground, ground).
 
 :- inst not_addition
---->	predicate(ground)
-;		negated_predicate(ground)
+	--->	predicate(ground)
+	;		negated_predicate(ground)
 
-;		mh_true
-;		mh_false
+	;		mh_true
+	;		mh_false
 
-;		conjunction(ground)
-; 		and(ground, ground)
+	;		conjunction(ground)
+	; 		and(ground, ground)
 
-;		disjunction(ground)
-;		or(ground, ground)
+	;		disjunction(ground)
+	;		or(ground, ground)
 
-;		negation(ground)
+	;		negation(ground)
 
-;		xor(ground, ground)
-;		implication(ground, ground)
-;		iff(ground, ground)
+	;		xor(ground, ground)
+	;		implication(ground, ground)
+	;		iff(ground, ground)
 
-;		equal(ground, ground)
-;		inequal(ground, ground)
-;		greater_than(ground, ground)
-;		greater_than_or_equal(ground, ground)
-;		less_than(ground, ground)
-;		less_than_or_equal(ground, ground)
+	;		equal(ground, ground)
+	;		inequal(ground, ground)
+	;		greater_than(ground, ground)
+	;		greater_than_or_equal(ground, ground)
+	;		less_than(ground, ground)
+	;		less_than_or_equal(ground, ground)
 
-;		term(ground) 
+	;		term(ground) 
 
-;		subtract(ground, ground)
+	;		subtract(ground, ground)
 
-;		product(ground)
-;		multiply(ground, ground)
-;		divide(ground, ground).
+	;		product(ground)
+	;		multiply(ground, ground)
+	;		divide(ground, ground).
 
 :- type addition =< numeric_expression
---->	sum(list(numeric_expression))
-; 		add(numeric_expression, numeric_expression).
+	--->	sum(list(numeric_expression))
+	; 		add(numeric_expression, numeric_expression).
 
 :- pred is_addition(expression::in) is semidet.
 
@@ -529,46 +529,46 @@
 %-----------------------------------------------------------------------------%
 
 :- inst multiplication 
---->	product(ground)
-;		multiply(ground, ground).
+	--->	product(ground)
+	;		multiply(ground, ground).
 
 :- inst not_multiplication
---->	predicate(ground)
-;		negated_predicate(ground)
+	--->	predicate(ground)
+	;		negated_predicate(ground)
 
-;		mh_true
-;		mh_false
+	;		mh_true
+	;		mh_false
 
-;		conjunction(ground)
-; 		and(ground, ground)
+	;		conjunction(ground)
+	; 		and(ground, ground)
 
-;		disjunction(ground)
-;		or(ground, ground)
+	;		disjunction(ground)
+	;		or(ground, ground)
 
-;		negation(ground)
+	;		negation(ground)
 
-;		xor(ground, ground)
-;		implication(ground, ground)
-;		iff(ground, ground)
+	;		xor(ground, ground)
+	;		implication(ground, ground)
+	;		iff(ground, ground)
 
-;		equal(ground, ground)
-;		inequal(ground, ground)
-;		greater_than(ground, ground)
-;		greater_than_or_equal(ground, ground)
-;		less_than(ground, ground)
-;		less_than_or_equal(ground, ground)
+	;		equal(ground, ground)
+	;		inequal(ground, ground)
+	;		greater_than(ground, ground)
+	;		greater_than_or_equal(ground, ground)
+	;		less_than(ground, ground)
+	;		less_than_or_equal(ground, ground)
 
-;		term(ground) 
+	;		term(ground) 
 
-;		sum(ground)
-;		add(ground, ground)
-;		subtract(ground, ground)
+	;		sum(ground)
+	;		add(ground, ground)
+	;		subtract(ground, ground)
 
-;		divide(ground, ground).
+	;		divide(ground, ground).
 
 :- type multiplication =< term_expression
---->	product(list(numeric_expression))
-;		multiply(numeric_expression, numeric_expression).
+	--->	product(list(numeric_expression))
+	;		multiply(numeric_expression, numeric_expression).
 
 :- pred is_multiplication(expression::in) is semidet.
 

@@ -18,12 +18,14 @@
 :- import_module mh_symbol.
 :- import_module mh_argument.
 
+:- import_module map.
 :- import_module set.
 :- import_module list.
 
 :- type mh_type
---->	free
-	;		type(symbol)
+	--->	free
+	;		type(symbol) % type alias
+	;		type(symbol, list(mh_type)) %parametric type alias
 	;		union(set(mh_type))
 	;		entity
 	;		number
@@ -32,19 +34,31 @@
 	;		enum(set(symbol))
 	;		symbol
 	;		string
-	;		predicate(symbol, list(mh_type))
-	;		function(symbol, list(mh_type), mh_data_type)
+	;		predicate(symbol, predicate_bindings)
+	;		function(symbol, function_bindings)
 	;		data(symbol, list(mh_data_type))
 	;		univ.
 
 %-----------------------------------------------------------------------------%
 
+:- type mh_ground_type =< mh_type
+	--->	entity
+	;		int
+	;		float
+	;		symbol
+	;		string
+	;		predicate(symbol, predicate_bindings)
+	;		function(symbol, function_bindings)
+	;		data(symbol, list(mh_data_type))
+	;		univ.
+
+%-----------------------------------------------------------------------------%
 
 :- type predicate_signature =< mh_type
-	--->	predicate(symbol, list(mh_type)).
+	--->	predicate(symbol, predicate_bindings).
 
 :- type function_signature =< mh_type
-	---> 	function(symbol, list(mh_type), mh_data_type).
+	---> 	function(symbol, function_bindings).
 
 :- type data_signature =< mh_type
 	---> 	data(symbol, list(mh_data_type)).
@@ -71,3 +85,19 @@
 
 :- type predicate_element =< element
 	---> element(mh_type, argument).
+	
+
+
+:- type binding == map(element, element).
+
+:- type bindings == set(binding).
+
+:- type function_binding = binding.
+
+:- type function_bindings = set(function_binding).
+
+:- type predicate_binding == map(predicate_element, predicate_element).
+
+:- type predicate_bindings == set(predicate_binding).
+
+%-----------------------------------------------------------------------------%
