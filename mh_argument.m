@@ -19,9 +19,15 @@
 
 %-----------------------------------------------------------------------------%
 
-:- type argument
---->	arg(int)
-;		arg(int, argument).
+:- type field
+--->	+int
+;		int ^  argument
+;		return.
+
+
+:- type argument =< element
+--->	+int
+;		int ^ argument.
 
 
 %-----------------------------------------------------------------------------%
@@ -45,39 +51,48 @@
 :- mode set_argument(in, in, in, out) is semidet. 
 :- mode set_argument(out, in, in, out) is nondet.
 
-:- func set_argument(T, argument, U) = T.
+:- func set_argument(T, argument, U) = T  <= (index(T, U), index(U, U)).
 :- mode set_argument(in, in, in) = out is semidet.
 :- mode set_argument(in, out, in) = out is nondet.
 
 %-----------------------------------------------------------------------------%
 
+:- func arg(argument, T) = U <= (index(T, U), index(U, U)).
+:- mode arg(in, in) = out is semidet.
+:- mode arg(out, in) = out is nondet.
 
-
+:- func 'arg :='(argument, T, U) = T <= (index(T, U), index(U, U)).
+:- mode 'arg :='(in, in, in) = out is semidet.
+:- mode 'arg :='(out, in, in) = out is nondet.
 
 
 %-----------------------------------------------------------------------------%
 
 :- implementation.
 
-valid_argument(T, arg(I) ) :- valid_index(T, I).
+valid_argument(T, +I ) :- valid_index(T, I).
 
-valid_argument(T, arg(I, Arg) ) :- 
+valid_argument(T, I ^ Arg ) :- 
 	index(T, I, V),
 	valid_argument(V, Arg).
 
-argument(T, arg(I), V) :- index(T, I, V).
+argument(T, +I, V) :- index(T, I, V).
 
-argument(T, arg(I, Arg), V) :- 
+argument(T, I ^ Arg, V) :- 
 	index(T, I, U),
 	argument(U, Arg, V).
 	
 argument(T, Arg) = V :- argument(T, Arg, V).
 	
-set_argument(arg(I), V, !T) :- set_index(I, V, !T).
+set_argument(+I, V, !T) :- set_index(I, V, !T).
 
-set_argument(arg(I, Arg), V, !T) :-
+set_argument(I ^ Arg, V, !T) :-
 	index(!.T, I, U0),
 	set_argument(Arg, V, U0, U1),
 	set_index(I, U1, !T).
 	
 set_argument(!.T, Arg, V) = !:T :- set_argument(Arg, V, !T).
+
+T ^ arg(Arg) = argument(T, Arg).
+
+(T ^ arg(Arg) := V) = set_argument(T, Arg, V).
