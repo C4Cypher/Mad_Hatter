@@ -16,43 +16,58 @@
 :- interface.
 
 :- import_module mh_symbol.
+:- import_module mh_argument.
 
 :- import_module set.
 :- import_module list.
 
 :- type mh_type
 --->	free
-;		type(symbol)
-;		union(set(mh_type))
-;		entity
-;		number
-;		int
-;		float
-;		enum(set(symbol))
-;		symbol
-;		string
-;		predicate(symbol, list(mh_type))
-;		function(symbol, list(mh_type), mh_data_type)
-;		data(symbol, list(mh_data_type))
-;		univ.
+	;		type(symbol)
+	;		union(set(mh_type))
+	;		entity
+	;		number
+	;		int
+	;		float
+	;		enum(set(symbol))
+	;		symbol
+	;		string
+	;		predicate(symbol, list(mh_type))
+	;		function(symbol, list(mh_type), mh_data_type)
+	;		data(symbol, list(mh_data_type))
+	;		univ.
+
+%-----------------------------------------------------------------------------%
+
 
 :- type predicate_signature =< mh_type
---->	predicate(symbol, list(mh_type)).
+	--->	predicate(symbol, list(mh_type)).
 
 :- type function_signature =< mh_type
----> 	function(symbol, list(mh_type), mh_data_type).
+	---> 	function(symbol, list(mh_type), mh_data_type).
 
 :- type data_signature =< mh_type
----> 	data(symbol, list(mh_data_type)).
+	---> 	data(symbol, list(mh_data_type)).
 
-
+%-----------------------------------------------------------------------------%
 
 :- type mh_data_type =< mh_type
---->	union(set(mh_data_type))
-;		entity
-;		number
-;		enum(set(symbol))
-;		symbol
-;		string
-;		data(symbol, list(mh_data_type))
-; 		univ.
+	--->	union(set(mh_data_type))
+	;		entity
+	;		number
+	;		enum(set(symbol))
+	;		symbol
+	;		string
+	;		data(symbol, list(mh_data_type))
+	; 		univ.
+
+
+%-----------------------------------------------------------------------------%
+
+
+:- type element ---> element(mh_type, field).
+
+:- type function_element == element.
+
+:- type predicate_element =< element
+	---> element(mh_type, argument).
