@@ -19,12 +19,6 @@
 
 %-----------------------------------------------------------------------------%
 
-:- type field
-	--->	+int
-	;		int ^  argument
-	;		return.
-
-
 :- type argument =< element
 	--->	+int
 	;		int ^ argument.
