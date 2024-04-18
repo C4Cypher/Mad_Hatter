@@ -87,26 +87,26 @@ valid_list_index([_ | Vs], I) :-
 
 :- pragma promise_equivalent_clauses(list_index/3).
 
-list_index(L::in, I::in, V::in) :- index0(L, I, V).
+list_index(L::in, I::in, V::in) :- index1(L, I, V).
 
-list_index(L::in, I::in, V::out) :- index0(L, I, V). 
+list_index(L::in, I::in, V::out) :- index1(L, I, V). 
 		
 list_index([V | Vs]::in, I::out, U::out) :-
-	I = 0, V = U;
-	I > 0, list_index(Vs @ [_ | _], I - 1, U). 
+	I = 1, V = U;
+	I > 1, list_index(Vs @ [_ | _], I - 1, U). 
 
 
 set_list_index(I, V, !L) :-
 	valid_list_index(!.L, I),
-	det_replace_nth(!.L, I + 1, V, !:L).
+	det_replace_nth(!.L, I, V, !:L).
 
 %-----------------------------------------------------------------------------%
 
 :- pragma promise_equivalent_clauses(valid_array_index/2).
 
-valid_array_index(A::in, I::in) :- in_bounds(A, I).
+valid_array_index(A::in, I::in) :- in_bounds(A, I - 1).
 
-valid_array_index(A::in, I::out) :- all_ints_from_to(min(A), max(A), I).
+valid_array_index(A::in, I::out) :- all_ints_from_to(min(A), max(A), I - 1).
 
 :- pred all_ints_from_to(int::in, int::in, int::out) is nondet.
 
@@ -116,10 +116,10 @@ all_ints_from_to(From, To, Out) :-
 
 array_index(A, I, V) :-
 	valid_array_index(A, I),
-	unsafe_lookup(A, I, V).
+	unsafe_lookup(A, I - 1, V).
 	
 set_array_index(I, V, !A) :-
 	valid_array_index(!.A, I),
-	slow_set(I, V, !A).
+	slow_set(I - 1, V, !A).
 
 %-----------------------------------------------------------------------------%
