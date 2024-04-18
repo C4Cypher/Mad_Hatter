@@ -21,6 +21,8 @@
 :- import_module map.
 :- import_module set.
 :- import_module list.
+:- import_module pair.
+:- import_module assoc_list.
 
 :- type mh_type
 	--->	free
@@ -81,20 +83,28 @@
 
 :- type element ---> element(mh_type, field).
 
+:- type elements == set(element).
+
 :- type function_element == element.
+
+:- type function_elements == set(function_element).
 
 :- type predicate_element =< element
 	---> element(mh_type, argument).
 	
+:- type predicate_elements == set(predicate_elements).
 
+%-----------------------------------------------------------------------------%
 
-:- type binding == map(element, element).
+% TODO settle on an appropriate data structure for bindings
 
-:- type bindings == set(binding).
+:- type binding == pair(elements, elements).
 
-:- type function_binding = binding.
+:- type bindings == list(bindings). % == assoc_list(elements, elements).
 
-:- type function_bindings = set(function_binding).
+:- type function_binding = pair(function_elements, function_elements).
+
+:- type function_bindings = list(function_binding).
 
 :- type predicate_binding == map(predicate_element, predicate_element).
 
