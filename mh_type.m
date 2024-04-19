@@ -17,6 +17,7 @@
 
 :- import_module mh_symbol.
 :- import_module mh_argument.
+:- import_module mh_term.
 
 :- import_module map.
 :- import_module set.
@@ -28,6 +29,7 @@
 	--->	free
 	;		type(symbol) % type alias
 	;		type(symbol, list(mh_type)) %parametric type alias
+	;		type_var(mh_var)
 	;		union(set(mh_type))
 	;		entity
 	;		number
@@ -81,33 +83,6 @@
 %-----------------------------------------------------------------------------%
 
 
-:- type element ---> element(mh_type, field).
 
-:- type elements == set(element).
-
-:- type function_element == element.
-
-:- type function_elements == set(function_element).
-
-:- type predicate_element =< element
-	---> element(mh_type, argument).
-	
-:- type predicate_elements == set(predicate_elements).
-
-%-----------------------------------------------------------------------------%
-
-% TODO settle on an appropriate data structure for bindings
-
-:- type binding == pair(elements, elements).
-
-:- type bindings == list(bindings). % == assoc_list(elements, elements).
-
-:- type function_binding = pair(function_elements, function_elements).
-
-:- type function_bindings = list(function_binding).
-
-:- type predicate_binding == map(predicate_element, predicate_element).
-
-:- type predicate_bindings == set(predicate_binding).
 
 %-----------------------------------------------------------------------------%
