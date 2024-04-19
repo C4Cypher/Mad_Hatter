@@ -19,16 +19,12 @@
 
 %-----------------------------------------------------------------------------%
 
-:- type field
-	--->	+int
-	;		int ^  argument
-	;		return.
-
-
-:- type argument =< element
+:- type argument
 	--->	+int
 	;		int ^ argument.
-
+	
+% return is a synonym for the index of function arguments
+:- func return = int. % return = 0
 
 %-----------------------------------------------------------------------------%
 
@@ -70,6 +66,11 @@
 
 :- implementation.
 
+:- pragma inline(return/0).
+
+return = 0.
+
+
 valid_argument(T, +I ) :- valid_index(T, I).
 
 valid_argument(T, I ^ Arg ) :- 
@@ -96,3 +97,5 @@ set_argument(!.T, Arg, V) = !:T :- set_argument(Arg, V, !T).
 T ^ arg(Arg) = argument(T, Arg).
 
 (T ^ arg(Arg) := V) = set_argument(T, Arg, V).
+
+%-----------------------------------------------------------------------------%
