@@ -49,15 +49,15 @@
 
 
 
-:- inst var
+:- inst mh_var
 	---> 	var(ground)
 	;		named_var(ground).
 
-:- inst var(I)
+:- inst mh_var(I)
 	---> 	var(I)
 	;		named_var(I).
 
-:- type var =< mh_term 
+:- type mh_var =< mh_term 
 	---> 	var(var_id)
 	;		named_var(symbol).
 
