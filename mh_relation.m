@@ -23,7 +23,7 @@
 %-----------------------------------------------------------------------------%
 
 
-:- type relation(T) == array(T).
+:- type relation(T) == array(T). 
 
 :- type relation == relation(mh_term).
 
