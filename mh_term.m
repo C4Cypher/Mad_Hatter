@@ -30,7 +30,7 @@
 
 
 :- type entity_id == id(entity).
-:- type var_id == id(var).
+:- type var_id == id(mh_var).
 
 
 :- type mh_term 
@@ -112,7 +112,7 @@
 
 
 :- type numeric_term =< mh_term
-	---> 	var(id(var))
+	---> 	var(var_id)
 	;		named_var(symbol)
 	;		int(int)
 	;		float(float)
