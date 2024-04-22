@@ -43,8 +43,7 @@
 	;		string(string)
 	;		type(mh_type)
 	;		functor(symbol, relation)
-	;		function(mh_function)
-	;		closure(mh_function, relation)
+	;		lambda(relation, list(literal))
 	;		univ(univ).
 
 
@@ -77,8 +76,6 @@
 	;		string(string)
 	;		type(mh_type)
 	;		functor(symbol, ground_relation)
-	;		function(mh_function)
-	;		closure(mh_function, ground_relation)
 	;		univ(univ).
 
 :- type entity =< mh_ground ---> entity(id(entity)).
