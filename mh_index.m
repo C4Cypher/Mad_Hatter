@@ -25,7 +25,7 @@
 :- typeclass index(T, U) <= (T -> U) where [
 
 	pred valid_index(T, int),
-	mode valid_index(in, in) is semidet, % suceed on valid index
+	mode valid_index(in, in) is semidet, % succeed on valid index
 	mode valid_index(in, out) is nondet, % return all valid indexes
 
 	pred index(T, int, U),
@@ -44,82 +44,154 @@
 %-----------------------------------------------------------------------------%
 % Helper predicates for declaring instances of index/2
 
-:- pred valid_list_index(list(T), int).
-:- mode valid_list_index(in, in) is semidet.
-:- mode valid_list_index(in, out) is nondet. 
+:- pred valid_list_index0(list(T), int).
+:- mode valid_list_index0(in, in) is semidet.
+:- mode valid_list_index0(in, out) is nondet. 
 
-:- pred list_index(list(T), int, T).
-:- mode list_index(in, in, in) is semidet.
-:- mode list_index(in, in, out) is semidet. 
-:- mode list_index(in, out, out) is nondet. 
+:- pred list_index0(list(T), int, T).
+:- mode list_index0(in, in, in) is semidet.
+:- mode list_index0(in, in, out) is semidet. 
+:- mode list_index0(in, out, out) is nondet. 
 	
-:- pred set_list_index(int, T, list(T), list(T)).
-:- mode set_list_index(in, in, in, out) is semidet. 
-:- mode set_list_index(out, in, in, out) is nondet.
+:- pred set_list_index0(int, T, list(T), list(T)).
+:- mode set_list_index0(in, in, in, out) is semidet. 
+:- mode set_list_index0(out, in, in, out) is nondet.
 
 %-----------------------------------------------------------------------------%
 
-:- pred valid_array_index(array(T), int).
-:- mode valid_array_index(in, in) is semidet.
-:- mode valid_array_index(in, out) is nondet. 
+:- pred valid_list_index1(list(T), int).
+:- mode valid_list_index1(in, in) is semidet.
+:- mode valid_list_index1(in, out) is nondet. 
 
-:- pred array_index(array(T), int, T).
-:- mode array_index(in, in, in) is semidet.
-:- mode array_index(in, in, out) is semidet. 
-:- mode array_index(in, out, out) is nondet. 
+:- pred list_index1(list(T), int, T).
+:- mode list_index1(in, in, in) is semidet.
+:- mode list_index1(in, in, out) is semidet. 
+:- mode list_index1(in, out, out) is nondet. 
 	
-:- pred set_array_index(int, T, array(T), array(T)).
-:- mode set_array_index(in, in, in, out) is semidet. 
-:- mode set_array_index(out, in, in, out) is nondet.
+:- pred set_list_index1(int, T, list(T), list(T)).
+:- mode set_list_index1(in, in, in, out) is semidet. 
+:- mode set_list_index1(out, in, in, out) is nondet.
+
+%-----------------------------------------------------------------------------%
+
+
+:- pred valid_array_index0(array(T), int).
+:- mode valid_array_index0(in, in) is semidet.
+:- mode valid_array_index0(in, out) is nondet. 
+
+:- pred array_index0(array(T), int, T).
+:- mode array_index0(in, in, in) is semidet.
+:- mode array_index0(in, in, out) is semidet. 
+:- mode array_index0(in, out, out) is nondet. 
+	
+:- pred set_array_index0(int, T, array(T), array(T)).
+:- mode set_array_index0(in, in, in, out) is semidet. 
+:- mode set_array_index0(out, in, in, out) is nondet.
+
+%-----------------------------------------------------------------------------%
+
+:- pred valid_array_index1(array(T), int).
+:- mode valid_array_index1(in, in) is semidet.
+:- mode valid_array_index1(in, out) is nondet. 
+
+:- pred array_index1(array(T), int, T).
+:- mode array_index1(in, in, in) is semidet.
+:- mode array_index1(in, in, out) is semidet. 
+:- mode array_index1(in, out, out) is nondet. 
+	
+:- pred set_array_index1(int, T, array(T), array(T)).
+:- mode set_array_index1(in, in, in, out) is semidet. 
+:- mode set_array_index1(out, in, in, out) is nondet.
 	
 
 :- implementation.
 
 %-----------------------------------------------------------------------------%
 	
-valid_list_index([_], 0).
+valid_list_index0([_], 0).
 
-valid_list_index([_ | Vs], I) :-
+valid_list_index0([_ | Vs], I) :-
 	I > 0,
-	valid_list_index(Vs, I - 1).
+	valid_list_index0(Vs, I - 1).
 	
 
 
-:- pragma promise_equivalent_clauses(list_index/3).
+:- pragma promise_equivalent_clauses(list_index0/3).
 
-list_index(L::in, I::in, V::in) :- index1(L, I, V).
+list_index0(L::in, I::in, V::in) :- index0(L, I, V).
 
-list_index(L::in, I::in, V::out) :- index1(L, I, V). 
+list_index0(L::in, I::in, V::out) :- index0(L, I, V). 
 		
-list_index([V | Vs]::in, I::out, U::out) :-
+list_index0([V | Vs]::in, I::out, U::out) :-
+	I = 0, V = U;
+	I > 0, list_index0(Vs @ [_ | _], I - 1, U). 
+
+
+set_list_index0(I, V, !L) :-
+	valid_list_index0(!.L, I),
+	det_replace_nth(!.L, I + 1, V, !:L).
+	
+%-----------------------------------------------------------------------------%
+	
+valid_list_index1([_], 1).
+
+valid_list_index1([_ | Vs], I) :-
+	I > 1,
+	valid_list_index1(Vs, I - 1).
+	
+
+
+:- pragma promise_equivalent_clauses(list_index1/3).
+
+list_index1(L::in, I::in, V::in) :- index1(L, I, V).
+
+list_index1(L::in, I::in, V::out) :- index1(L, I, V). 
+		
+list_index1([V | Vs]::in, I::out, U::out) :-
 	I = 1, V = U;
-	I > 1, list_index(Vs @ [_ | _], I - 1, U). 
+	I > 1, list_index1(Vs @ [_ | _], I - 1, U). 
 
 
-set_list_index(I, V, !L) :-
-	valid_list_index(!.L, I),
-	det_replace_nth(!.L, I, V, !:L).
+set_list_index1(I, V, !L) :-
+	valid_list_index1(!.L, I),
+	det_replace_nth(!.L, I, V, !:L).	
 
 %-----------------------------------------------------------------------------%
 
-:- pragma promise_equivalent_clauses(valid_array_index/2).
+:- pragma promise_equivalent_clauses(valid_array_index0/2).
 
-valid_array_index(A::in, I::in) :- in_bounds(A, I - 1).
+valid_array_index0(A::in, I::in) :- in_bounds(A, I).
 
-valid_array_index(A::in, I::out) :- all_ints_from_to(min(A), max(A), I - 1).
+valid_array_index0(A::in, I::out) :- all_ints_from_to(min(A), max(A), I).
+
+array_index0(A, I, V) :-
+	valid_array_index0(A, I),
+	unsafe_lookup(A, I, V).
+	
+set_array_index0(I, V, !A) :-
+	valid_array_index0(!.A, I),
+	slow_set(I, V, !A).
+
+%-----------------------------------------------------------------------------%
+
+:- pragma promise_equivalent_clauses(valid_array_index1/2).
+
+valid_array_index1(A::in, I::in) :- in_bounds(A, I - 1).
+
+valid_array_index1(A::in, I::out) :- all_ints_from_to(min(A), max(A), I - 1).
+
+array_index1(A, I, V) :-
+	valid_array_index1(A, I),
+	unsafe_lookup(A, I - 1, V).
+	
+set_array_index1(I, V, !A) :-
+	valid_array_index1(!.A, I),
+	slow_set(I - 1, V, !A).
+	
+%-----------------------------------------------------------------------------%
 
 :- pred all_ints_from_to(int::in, int::in, int::out) is nondet.
 
 all_ints_from_to(From, To, Out) :-
 	From =< To,
 	( Out = From ; all_ints_from_to(From + 1, To, Out) ).
-
-array_index(A, I, V) :-
-	valid_array_index(A, I),
-	unsafe_lookup(A, I - 1, V).
-	
-set_array_index(I, V, !A) :-
-	valid_array_index(!.A, I),
-	slow_set(I - 1, V, !A).
-
-%-----------------------------------------------------------------------------%
