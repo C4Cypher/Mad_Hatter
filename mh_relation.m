@@ -17,11 +17,13 @@
 
 :- import_module mh_term.
 
+:- import_module array.
 :- import_module list.
 
 %-----------------------------------------------------------------------------%
 
-:- type relation(T).
+
+:- type relation(T) == array(T).
 
 :- type relation == relation(mh_term).
 
@@ -29,16 +31,69 @@
 
 :- type state_relation == relation(mh_stval).
 
+:- inst relaiton == array.
+
+:- inst uniq_relation(I) == uniq_array(I).
+
+:- inst uniq_relation == uniq_array.
+
+:- mode rdi == array_di.
+:- mode ruo == array_uo.
+:- mode rui == array_ui.
+
+
 
 :- func relation(list(T)) = relation(T).
 :- mode relation(in) = out is det.
 :- mode relation(out) = in is det.
 
+% init_relation(Size, InitVal, Relation).
+% Create a new relation of specified size, filling all elements with InitVal 
+:- pred init_relation(int::in, T::in, relation(T)::ruo) is det.
+
+:- func init_relation(int::in, T::in) = (relation(T)::ruo) is det.
+
+%-----------------------------------------------------------------------------%
+% destructive update, fails if indexs is out of bounds
+
+update_relation(int::in, T::in, relation(T)::rdi, relation(T)::ruo) is semidet.
+
+
+
+
+
+%-----------------------------------------------------------------------------%
+% Definitions for instances of the index typeclass
+
+:- pred valid_relation_index0(relation(T), int).
+:- mode valid_relation_index0(in, in) is semidet.
+:- mode valid_relation_index0(in, out) is nondet. 
+
+:- pred relation_index0(relation(T), int, T).
+:- mode relation_index0(in, in, in) is semidet.
+:- mode relation_index0(in, in, out) is semidet. 
+:- mode relation_index0(in, out, out) is nondet. 
+	
+:- pred set_relation_index0(int, T, relation(T), relation(T)).
+:- mode set_relation_index0(in, in, in, out) is semidet. 
+:- mode set_relation_index0(out, in, in, out) is nondet.
+
 %-----------------------------------------------------------------------------%
 
-:- type argument
-	--->	arg(int)
-	;		arg(int, argument).
+:- pred valid_relation_index1(relation(T), int).
+:- mode valid_relation_index1(in, in) is semidet.
+:- mode valid_relation_index1(in, out) is nondet. 
+
+:- pred relation_index1(relation(T), int, T).
+:- mode relation_index1(in, in, in) is semidet.
+:- mode relation_index1(in, in, out) is semidet. 
+:- mode relation_index1(in, out, out) is nondet. 
+	
+:- pred set_relation_index1(int, T, relation(T), relation(T)).
+:- mode set_relation_index1(in, in, in, out) is semidet. 
+:- mode set_relation_index1(out, in, in, out) is nondet.
+
+
 
 
 %-----------------------------------------------------------------------------%
@@ -86,10 +141,8 @@
 
 :- implementation.
 
+:- import_module mh_index.
 
-:- import_module array.
-
-:- type relation(T) == array(T).
 
 
 :- pragma promise_equivalent_clauses(relation/1).
@@ -97,3 +150,27 @@
 relation(List::in) = (array(List)::out).
 
 relation(to_list(Relation)::out) = (Relation::in).
+
+init_relation(S, T, R) :- init(S, T, R).
+
+init_relation(S, T) = init(S, T).
+
+update_relation(I, T, !R) :- semidet_set(I, T, !R).
+
+%-----------------------------------------------------------------------------%
+
+valid_relation_index0(R, I) :- valid_array_index0(R, I).
+
+relation_index0(R, I, T) :- array_index0(R, I, T).
+
+set_relation_index0(I, T, !R) :- set_array_index0(I, T, !R).
+
+%-----------------------------------------------------------------------------%
+
+valid_relation_index1(R, I) :- valid_array_index1(R, I).
+
+relation_index1(R, I, T) :- array_index1(R, I, T).
+
+set_relation_index1(I, T, !R) :- set_array_index1(I, T, !R).
+
+%-----------------------------------------------------------------------------%
