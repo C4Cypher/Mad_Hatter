@@ -16,10 +16,31 @@
 :- interface.
 
 :- import_module mh_type.
+:- import_module mh_relation.
+:- import_module mh_index.
 
 :- import_module list.
 
+
 %-----------------------------------------------------------------------------%
 
-:- type mode 
-	--->	
+:- type mh_mode 
+	--->	in	
+	;		out
+	;		inout(relation_mode)
+	;		di
+	;		uo
+	;		unused.
+	
+:- type mode_type ---> mh_type :: mh_mode.
+
+:- type relation_mode == list(mode_type).
+
+:- type predicate_mode == list(mode_type).
+
+:- type function_mode == predicate_mode -> mode_type.
+
+
+
+
+
