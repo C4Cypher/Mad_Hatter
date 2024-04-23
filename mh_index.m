@@ -35,10 +35,10 @@
 	
 	pred set_index(int, U, T, T),
 	mode set_index(in, in, in, out) is semidet, % fail on invalid index
+	mode set_index(in, in, di, uo) is semidet,
 	mode set_index(out, in, in, out) is nondet % update any index nondet
 ].
 
-% TODO: Subclass index with unique set modes 
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -88,6 +88,9 @@
 :- mode set_array_index0(in, in, in, out) is semidet. 
 :- mode set_array_index0(out, in, in, out) is nondet.
 
+:- pred uniq_set_array_index0(int::in, T::in, 
+	array(T)::array_di, array(T)::array_uo) is semidet.
+
 %-----------------------------------------------------------------------------%
 
 :- pred valid_array_index1(array(T), int).
@@ -102,6 +105,9 @@
 :- pred set_array_index1(int, T, array(T), array(T)).
 :- mode set_array_index1(in, in, in, out) is semidet. 
 :- mode set_array_index1(out, in, in, out) is nondet.
+
+:- pred uniq_set_array_index1(int::in, T::in, 
+	array(T)::array_di, array(T)::array_uo) is semidet.
 	
 
 :- implementation.
@@ -171,6 +177,10 @@ array_index0(A, I, V) :-
 set_array_index0(I, V, !A) :-
 	valid_array_index0(!.A, I),
 	slow_set(I, V, !A).
+	
+uniq_set_array_index0(I, V, !A) :-
+	valid_array_index0(!.A, I),
+	set(I, V, !A).
 
 %-----------------------------------------------------------------------------%
 
@@ -187,6 +197,10 @@ array_index1(A, I, V) :-
 set_array_index1(I, V, !A) :-
 	valid_array_index1(!.A, I),
 	slow_set(I - 1, V, !A).
+	
+uniq_set_array_index1(I, V, !A) :-
+	valid_array_index1(!.A, I),
+	set(I, V, !A).
 	
 %-----------------------------------------------------------------------------%
 
