@@ -28,8 +28,6 @@
 	--->	in	
 	;		out
 	;		inout(relation_mode)
-	;		di
-	;		uo
 	;		unused.
 	
 :- type mode_type ---> mh_type :: mh_mode.
@@ -38,7 +36,7 @@
 
 :- type predicate_mode == list(mode_type).
 
-:- type function_mode == predicate_mode -> mode_type.
+:- type function_mode ---> relation_mode -> mode_type.
 
 
 
