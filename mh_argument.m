@@ -44,7 +44,7 @@
 :- mode argument(in, out) = out is nondet.
 
 :- pred set_argument(argument, U, T, T) <= (index(T, U), index(U, U)).
-:- mode set_argument(in, in, in, out) is semidet. 
+:- mode set_argument(in, in, in, out) is semidet.
 :- mode set_argument(out, in, in, out) is nondet.
 
 :- func set_argument(T, argument, U) = T  <= (index(T, U), index(U, U)).
@@ -84,6 +84,7 @@ argument(T, I ^ Arg, V) :-
 	argument(U, Arg, V).
 	
 argument(T, Arg) = V :- argument(T, Arg, V).
+
 	
 set_argument(+I, V, !T) :- set_index(I, V, !T).
 
