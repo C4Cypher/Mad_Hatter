@@ -16,85 +16,85 @@
 :- interface.
 
 :- import_module mh_term.
+:- import_module mh_index.
 
 :- import_module array.
 :- import_module list.
 
 %-----------------------------------------------------------------------------%
 
+% TODO: Abstract the constructors of relations to preserve array uniqueness?
 
-:- type relation(T) == array(T). 
+:- type proc_relation 
+	--->	relation(array(mh_term))
+	;		function_relation(array(mh_term)).
 
-:- type relation == relation(mh_term).
+:- type relation =< proc_relation
+	---> relation(array(mh_term)).
+	
+:- type function_relation =< proc_relation
+	---> function_relation(array(mh_term)).
+	
+%-----------------------------------------------------------------------------%
 
-:- type ground_relation == relation(mh_ground).
+:- type ground_proc_relation =< proc_relation
+	--->	relation(array(mh_ground))
+	;		function_relation(array(mh_ground)).
 
-:- type state_relation == relation(mh_stval).
+:- type ground_relation =< relation
+	---> relation(array(mh_ground)).
+	
+:- type ground_function_relation =< function_relation
+	---> function_relation(array(mh_ground)).
 
-:- inst relaiton == array.
+%-----------------------------------------------------------------------------%
 
-:- inst uniq_relation(I) == uniq_array(I).
+:- type state_proc_relation =< proc_relation
+	--->	relation(array(mh_stval))
+	;		function_relation(array(mh_stval)).
 
-:- inst uniq_relation == uniq_array.
+:- type state_relation =< relation
+	---> relation(array(mh_stval)).
+	
+:- type state_function_relation =< function_relation
+	---> function_relation(array(mh_stval)).
 
-:- mode rdi == array_di.
-:- mode ruo == array_uo.
-:- mode rui == array_ui.
+%-----------------------------------------------------------------------------%
 
+:- func relation_arguments(list(mh_term)) = relation.
+:- mode relation_arguments(in) = out is det.
+:- mode relation_arguments(out) = in is det.
 
-
-:- func relation(list(T)) = relation(T).
-:- mode relation(in) = out is det.
-:- mode relation(out) = in is det.
+:- func function_relation_arguments(mh_term, list(mh_term)) = function_relation.
+:- mode function_relation_arguments(in, in) = out is det.
+:- mode function_relation_arguments(out, out) = in is semidet.
 
 % init_relation(Size, InitVal, Relation).
 % Create a new relation of specified size, filling all elements with InitVal 
-:- pred init_relation(int::in, T::in, relation(T)::ruo) is det.
+:- pred init_relation(int::in, mh_term::in, relation::out) is det.
 
-:- func init_relation(int::in, T::in) = (relation(T)::ruo) is det.
+:- func init_relation(int, mh_term) = relation.
 
-%-----------------------------------------------------------------------------%
-% destructive update, fails if indexs is out of bounds
-
-update_relation(int::in, T::in, relation(T)::rdi, relation(T)::ruo) is semidet.
-
-
-
-
-
-%-----------------------------------------------------------------------------%
-% Definitions for instances of the index typeclass
-
-:- pred valid_relation_index0(relation(T), int).
-:- mode valid_relation_index0(in, in) is semidet.
-:- mode valid_relation_index0(in, out) is nondet. 
-
-:- pred relation_index0(relation(T), int, T).
-:- mode relation_index0(in, in, in) is semidet.
-:- mode relation_index0(in, in, out) is semidet. 
-:- mode relation_index0(in, out, out) is nondet. 
+% init_function_relation(Args, InitVal, Relation) 
+% creates an array of size Args+1
+:- pred init_function_relation(int::in, mh_term::in, function_relation::out) 
+	is det. 
 	
-:- pred set_relation_index0(int, T, relation(T), relation(T)).
-:- mode set_relation_index0(in, in, in, out) is semidet. 
-:- mode set_relation_index0(out, in, in, out) is nondet.
-
-%-----------------------------------------------------------------------------%
-
-:- pred valid_relation_index1(relation(T), int).
-:- mode valid_relation_index1(in, in) is semidet.
-:- mode valid_relation_index1(in, out) is nondet. 
-
-:- pred relation_index1(relation(T), int, T).
-:- mode relation_index1(in, in, in) is semidet.
-:- mode relation_index1(in, in, out) is semidet. 
-:- mode relation_index1(in, out, out) is nondet. 
+:- func init_function_relation(int, mh_term) = function_relation.
 	
-:- pred set_relation_index1(int, T, relation(T), relation(T)).
-:- mode set_relation_index1(in, in, in, out) is semidet. 
-:- mode set_relation_index1(out, in, in, out) is nondet.
+%-----------------------------------------------------------------------------%
+	
+:- instance index(proc_relation, 	mh_term).
+:- instance index(relation, 		mh_term).
+:- instance index(function_relation, mh_term).
 
+:- instance index(ground_proc_relation, mh_ground).
+:- instance index(ground_relation, 		mh_ground).
+:- instance index(ground_function_relation, mh_ground).
 
-
+:- instance index(state_proc_relation, 	mh_stval).
+:- instance index(state_relation, 		mh_stval).
+:- instance index(state_function_relation, mh_stval).
 
 %-----------------------------------------------------------------------------%
 
@@ -138,39 +138,113 @@ update_relation(int::in, T::in, relation(T)::rdi, relation(T)::ruo) is semidet.
 	mode query_relation(in, out) is nondet
 	].
 
+%-----------------------------------------------------------------------------%
 
 :- implementation.
 
-:- import_module mh_index.
 
+:- pragma promise_equivalent_clauses(relation_arguments/1).
 
+relation_arguments(List::in) = (relation(array(List))::out).
 
-:- pragma promise_equivalent_clauses(relation/1).
+relation_arguments(to_list(Array)::out) = (relation(Array)::in).
 
-relation(List::in) = (array(List)::out).
+:- pragma promise_equivalent_clauses(function_relation_arguments/2).
 
-relation(to_list(Relation)::out) = (Relation::in).
+function_relation_arguments(T::in, List::in) = 
+	(function_relation(array([T | List ]))::out).
 
-init_relation(S, T, R) :- init(S, T, R).
+function_relation_arguments(X::out, Xs::out) = 
+	(function_relation(Array)::in) :-  to_list(Array) = [X | Xs].
 
-init_relation(S, T) = init(S, T).
+init_relation(S, T, relation(A)) :- init(S, T, A).
 
-update_relation(I, T, !R) :- semidet_set(I, T, !R).
+init_relation(S, T) = relation(init(S, T)).
 
-%-----------------------------------------------------------------------------%
+init_function_relation(S, T, function_relation(A)) :- init(S, T, A).
 
-valid_relation_index0(R, I) :- valid_array_index0(R, I).
-
-relation_index0(R, I, T) :- array_index0(R, I, T).
-
-set_relation_index0(I, T, !R) :- set_array_index0(I, T, !R).
-
-%-----------------------------------------------------------------------------%
-
-valid_relation_index1(R, I) :- valid_array_index1(R, I).
-
-relation_index1(R, I, T) :- array_index1(R, I, T).
-
-set_relation_index1(I, T, !R) :- set_array_index1(I, T, !R).
+init_function_relation(S, T) = function_relation(init(S, T)).
 
 %-----------------------------------------------------------------------------%
+
+:- instance index(proc_relation, mh_term) where [
+
+	valid_index(relation(A), I) :- valid_array_index1(A, I),
+	valid_index(function_relation(A), I) :- valid_array_index0(A, I),
+	
+	index(relation(A), I, Term) :- array_index1(A, I, Term),
+	index(function_relation(A), I, Term) :- array_index0(A, I, Term),
+	
+	set_index(I, Term, relation(!.A), relation(!:A)) :- 
+		set_array_index1(I, Term, !A),
+	set_index(I, Term, function_relation(!.A), function_relation(!:A)) :-
+		set_array_index0(I, Term, !A)
+	].
+	
+:- instance index(relation, mh_term) where [
+	valid_index(relation(A), I) :- valid_array_index1(A, I),
+	index(relation(A), I, Term) :- array_index1(A, I, Term),
+	set_index(I, Term, relation(!.A), relation(!:A)) :- 
+		set_array_index1(I, Term, !A) ].
+	
+:- instance index(function_relation, mh_term) where [
+	valid_index(function_relation(A), I) :- valid_array_index0(A, I),
+	index(function_relation(A), I, Term) :- array_index0(A, I, Term),
+	set_index(I, Term, function_relation(!.A), function_relation(!:A)) :-
+		set_array_index0(I, Term, !A) ].
+	
+:- instance index(ground_proc_relation, mh_ground) where [
+
+	valid_index(relation(A), I) :- valid_array_index1(A, I),
+	valid_index(function_relation(A), I) :- valid_array_index0(A, I),
+	
+	index(relation(A), I, Term) :- array_index1(A, I, Term),
+	index(function_relation(A), I, Term) :- array_index0(A, I, Term),
+	
+	set_index(I, Term, relation(!.A), relation(!:A)) :- 
+		set_array_index1(I, Term, !A),
+	set_index(I, Term, function_relation(!.A), function_relation(!:A)) :-
+		set_array_index0(I, Term, !A) ].
+	
+:- instance index(ground_relation, mh_ground) where [
+	valid_index(relation(A), I) :- valid_array_index1(A, I),
+	index(relation(A), I, Term) :- array_index1(A, I, Term),
+	set_index(I, Term, relation(!.A), relation(!:A)) :- 
+		set_array_index1(I, Term, !A) ].
+	
+:- instance index(ground_function_relation, mh_ground) where [
+	valid_index(function_relation(A), I) :- valid_array_index0(A, I),
+	index(function_relation(A), I, Term) :- array_index0(A, I, Term),
+	set_index(I, Term, function_relation(!.A), function_relation(!:A)) :-
+		set_array_index0(I, Term, !A) ].
+	
+:- instance index(state_proc_relation, mh_stval) where [
+
+	valid_index(relation(A), I) :- valid_array_index1(A, I),
+	valid_index(function_relation(A), I) :- valid_array_index0(A, I),
+	
+	index(relation(A), I, Term) :- array_index1(A, I, Term),
+	index(function_relation(A), I, Term) :- array_index0(A, I, Term),
+	
+	set_index(I, Term, relation(!.A), relation(!:A)) :- 
+		set_array_index1(I, Term, !A),
+	set_index(I, Term, function_relation(!.A), function_relation(!:A)) :-
+		set_array_index0(I, Term, !A) ].
+	
+:- instance index(state_relation, mh_stval) where [
+	valid_index(relation(A), I) :- valid_array_index1(A, I),
+	index(relation(A), I, Term) :- array_index1(A, I, Term),
+	set_index(I, Term, relation(!.A), relation(!:A)) :- 
+		set_array_index1(I, Term, !A) ].
+	
+:- instance index(state_function_relation, mh_stval) where [
+	valid_index(function_relation(A), I) :- valid_array_index0(A, I),
+	index(function_relation(A), I, Term) :- array_index0(A, I, Term),
+	set_index(I, Term, function_relation(!.A), function_relation(!:A)) :-
+		set_array_index0(I, Term, !A) ].
+	
+	
+
+	
+
+	
