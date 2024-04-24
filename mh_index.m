@@ -35,7 +35,6 @@
 	
 	pred set_index(int, U, T, T),
 	mode set_index(in, in, in, out) is semidet, % fail on invalid index
-	mode set_index(in, in, di, uo) is semidet,
 	mode set_index(out, in, in, out) is nondet % update any index nondet
 ].
 
@@ -133,7 +132,7 @@ list_index0([V | Vs]::in, I::out, U::out) :-
 	I > 0, list_index0(Vs @ [_ | _], I - 1, U). 
 
 
-set_list_index0(I, V, !L) :-
+set_list_index0(I, V, !L) :- 
 	valid_list_index0(!.L, I),
 	det_replace_nth(!.L, I + 1, V, !:L).
 	
@@ -158,9 +157,11 @@ list_index1([V | Vs]::in, I::out, U::out) :-
 	I > 1, list_index1(Vs @ [_ | _], I - 1, U). 
 
 
-set_list_index1(I, V, !L) :-
-	valid_list_index1(!.L, I),
-	det_replace_nth(!.L, I, V, !:L).	
+
+
+set_list_index1(I, V, !L) :- 
+	valid_list_index0(!.L, I),
+	det_replace_nth(!.L, I, V, !:L).
 
 %-----------------------------------------------------------------------------%
 
