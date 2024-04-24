@@ -173,7 +173,7 @@
 
 :- inst negation ---> negation(ground).
 
-:- inst negation(I) ---> negation(T).
+:- inst negation(I) ---> negation(I).
 
 :- inst not_negation
 	--->	predicate(ground)
