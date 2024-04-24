@@ -23,8 +23,6 @@
 
 %-----------------------------------------------------------------------------%
 
-% TODO: Abstract the constructors of relations to preserve array uniqueness?
-
 :- type proc_relation 
 	--->	relation(array(mh_term))
 	;		function_relation(array(mh_term)).
