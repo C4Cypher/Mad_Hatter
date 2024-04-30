@@ -26,6 +26,7 @@
 
 :- type declaration
 --->	type_def(symbol, mh_type)
+;		type_def(symbol, list
 ;		data_type(data_signature)
 ;		state_var(predicate_signature)
 ;		state_relation(predicate_signature,	   )
