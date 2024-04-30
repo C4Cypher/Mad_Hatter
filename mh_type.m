@@ -24,21 +24,23 @@
 :- import_module set.
 :- import_module list.
 
+%-----------------------------------------------------------------------------%
+
+
 :- type mh_type
 	--->	free
-	;		type(symbol) % type alias
-	;		type(symbol, list(mh_type)) %parametric type alias
+	;		named_type(symbol) % type alias
+	;		parametric_type(symbol, list(mh_type)) %parametric type alias
 	;		type_var(mh_var)
 	;		union(set(mh_type))
 	;		entity
 	;		number
 	;		int
 	;		float
-	;		enum(set(symbol))
 	;		symbol
 	;		string
-	;		predicate(symbol, relation_mode)
-	;		function(symbol, relation_mode)
+	;		predicate(relation_mode) 
+	;		function(function_mode) 
 	;		data(symbol, list(mh_data_type))
 	;		univ.
 
@@ -50,14 +52,14 @@
 	;		float
 	;		symbol
 	;		string
-	;		predicate(symbol, relation_mode)
-	;		function(symbol, relation_mode)
+	;		predicate(relation_mode) 
+	;		function(function_mode) 
 	;		data(symbol, list(mh_data_type))
 	;		univ.
 
 %-----------------------------------------------------------------------------%
 
-
+:- type mh_ground_union =< mh_type ---> union(set(mh_ground_type)).
 
 %-----------------------------------------------------------------------------%
 
