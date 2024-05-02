@@ -16,8 +16,8 @@
 :- interface.
 
 :- import_module mh_term.
-:- import_module mh_symbol.
 :- import_module mh_relation.
+:- import_module mh_expression.
 
 :- type clause 
 	--->	clause(
