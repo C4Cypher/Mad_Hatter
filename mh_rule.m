@@ -15,10 +15,10 @@
 
 :- interface.
 
-:- import_module mh_term.
-:- import_module mh_expression.
+:- import_module mh_relation.
+:- import_module mh_mode.
 
-:- type rule ---> rule(rule_head, rule_body).
+:- type rule ---> rule(proc_relation, rule_body).
 
 :- type rule_head 
 	--->	
