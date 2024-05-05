@@ -36,7 +36,7 @@
 
 :- type proc_mode
 	---> 	predicate_mode(relation_mode)
-	;		function_mode relation_mode -> mode_type.
+	;		relation_mode -> mode_type.
 
 :- type predicate_mode =< proc_mode
 	---> predicate_mode(relation_mode).
