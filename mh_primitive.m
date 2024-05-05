@@ -15,9 +15,14 @@
 
 :- interface.
 
-:- import_module list.
-
 :- import_module mh_relation.
+:- import_module mh_type.
 
 
-:- type primitive == (pred(
+
+:- typeclass primitive(T) where [
+	pred call_primitive(T::in, relation::in, mh_term::out) is det,
+	pred primitive_type_signature(T::in, primitive_signature::out) is det
+].
+
+:- type primitive_func = (func(relation) = mh_term). 
