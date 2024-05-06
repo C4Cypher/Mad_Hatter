@@ -15,10 +15,21 @@
 
 :- interface.
 
+:- import_module list.
+
+:- import_module mh_primitive.
+:- import_module mh_term.
 :- import_module mh_relation.
-:- import_module mh_mode.
 
-:- type rule ---> rule(proc_relation, rule_body).
+:- type atom == functor.
+	
+:- type literal
+	--->	+atom
+	;		-atom.
 
-:- type rule_head 
-	--->	
+:- type proc_rule 
+	---> 	clause_rule(proc_relation, list(literal))
+	;		some [T] primitive_rule(function_relation, T) => primitive(T). 
+
+
+
