@@ -16,11 +16,9 @@
 :- interface.
 
 :- import_module mh_symbol.
-:- import_module mh_argument.
 :- import_module mh_term.
 :- import_module mh_mode.
 
-:- import_module map.
 :- import_module set.
 :- import_module list.
 
