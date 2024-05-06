@@ -18,13 +18,10 @@
 
 :- import_module mh_symbol.
 :- import_module mh_identifier.
-:- import_module mh_var.
 :- import_module mh_type.
 :- import_module mh_relation.
-:- import_module mh_expression.
+:- import_module mh_rule.
 
-:- import_module set.
-:- import_module list.
 :- import_module univ.
 
 
@@ -42,8 +39,8 @@
 	; 		symbol(symbol)
 	;		string(string)
 	;		type(mh_type)
-	;		functor(symbol, relation)
-	;		lambda(proc_relation, list(literal))
+	;		functor(proc_term, proc_relation)
+	;		lambda(proc_rule)
 	;		univ(univ).
 
 %-----------------------------------------------------------------------------%
@@ -62,9 +59,15 @@
 	
 %-----------------------------------------------------------------------------%	
 
+:- type proc_term =< mh_term
+	--->	symbol(symbol)
+	;		lambda(proc_rule).
+
+%-----------------------------------------------------------------------------%
+
 :- inst functor ---> functor(ground, ground).
 
-:- type functor =< mh_term ---> functor(symbol, relation).
+:- type functor =< mh_term ---> functor(proc_term, proc_relation).
 
 
 %-----------------------------------------------------------------------------%
@@ -77,8 +80,8 @@
 	; 		symbol(symbol)
 	;		string(string)
 	;		type(mh_type)
-	;		functor(symbol, ground_relation)
-	;		lambda(proc_relation, list(literal))
+	;		functor(proc_term, ground_proc_relation)
+	;		lambda(proc_rule)
 	;		univ(univ).
 
 :- type entity =< mh_ground ---> entity(id(entity)).
@@ -95,7 +98,7 @@
 	; 		symbol(symbol)
 	;		string(string)
 	;		type(mh_type)
-	;		functor(symbol, ground_relation).
+	;		functor(proc_term, ground_proc_relation).
 	
 %-----------------------------------------------------------------------------%
 
@@ -128,7 +131,7 @@
 	;		named_var(symbol)
 	;		int(int)
 	;		float(float)
-	;		functor(symbol, relation).
+	;		functor(proc_term, proc_relation).
 
 :- type number =< numeric_term
 	--->	int(int)
