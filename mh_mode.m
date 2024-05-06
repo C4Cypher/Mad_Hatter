@@ -15,11 +15,11 @@
 
 :- interface.
 
-:- import_module mh_type.
-:- import_module mh_relation.
-:- import_module mh_index.
+
 
 :- import_module list.
+
+:- import_module mh_type.
 
 
 %-----------------------------------------------------------------------------%
