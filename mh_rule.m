@@ -17,7 +17,6 @@
 
 :- import_module list.
 
-:- import_module mh_primitive.
 :- import_module mh_term.
 :- import_module mh_relation.
 
