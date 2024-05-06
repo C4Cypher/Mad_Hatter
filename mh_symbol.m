@@ -25,14 +25,11 @@
 :- mode symbol(in) = out is det.
 :- mode symbol(out) = in is det.
 
-
-
-
 :- implementation.
 
-:- pragma require_feature_set(memo).
+:- pragma require_feature_set([memo]).
 
-:- type symbol = \string.
+:- type symbol ---> \string.
 
 symbol(String) = \String.
 
