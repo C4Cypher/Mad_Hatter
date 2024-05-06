@@ -15,8 +15,11 @@
 
 :- interface.
 
+:- import_module mh_term.
 :- import_module mh_relation.
 :- import_module mh_type.
+
+
 
 
 
@@ -25,4 +28,4 @@
 	pred primitive_type_signature(T::in, primitive_signature::out) is det
 ].
 
-:- type primitive_func = (func(relation) = mh_term). 
+:- type primitive_func == (func(relation) = mh_term). 
