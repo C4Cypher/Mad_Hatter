@@ -20,9 +20,6 @@
 :- import_module mh_type.
 
 
-
-
-
 :- typeclass primitive(T) where [
 	pred call_primitive(T::in, relation::in, mh_term::out) is det,
 	pred primitive_type_signature(T::in, primitive_signature::out) is det
