@@ -9,3 +9,5 @@
 # MCFLAGS += --flag
 # MCFLAGS-module += --flag
 # CFLAGS += -f|--flag
+
+CFLAGS += -Wno-unused-function
