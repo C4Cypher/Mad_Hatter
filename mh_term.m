@@ -39,6 +39,8 @@
 	; 		symbol(symbol)
 	;		string(string)
 	;		type(mh_type)
+	;		mh_true
+	;		mh_false
 	;		functor(proc_term, proc_relation)
 	;		lambda(proc_rule)
 	;		univ(univ).
