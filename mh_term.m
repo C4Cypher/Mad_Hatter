@@ -41,7 +41,7 @@
 	;		type(mh_type)
 	;		mh_true
 	;		mh_false
-	;		functor(proc_term, proc_relation)
+	;		expression(functor, proc_relation)
 	;		lambda(proc_rule)
 	;		univ(univ).
 
@@ -61,15 +61,15 @@
 	
 %-----------------------------------------------------------------------------%	
 
-:- type proc_term =< mh_term
+:- type functor =< mh_term
 	--->	symbol(symbol)
 	;		lambda(proc_rule).
 
 %-----------------------------------------------------------------------------%
 
-:- inst functor ---> functor(ground, ground).
+:- inst expression ---> expression(ground, ground).
 
-:- type functor =< mh_term ---> functor(proc_term, proc_relation).
+:- type expression =< mh_term ---> expression(functor, proc_relation).
 
 
 %-----------------------------------------------------------------------------%
@@ -82,7 +82,7 @@
 	; 		symbol(symbol)
 	;		string(string)
 	;		type(mh_type)
-	;		functor(proc_term, ground_proc_relation)
+	;		expression(functor, ground_proc_relation)
 	;		lambda(proc_rule)
 	;		univ(univ).
 
@@ -100,7 +100,7 @@
 	; 		symbol(symbol)
 	;		string(string)
 	;		type(mh_type)
-	;		functor(proc_term, ground_proc_relation).
+	;		expression(functor, ground_proc_relation).
 	
 %-----------------------------------------------------------------------------%
 
@@ -109,14 +109,14 @@
 	;		named_var(ground)
 	;		int(ground)
 	;		float(ground)
-	;		functor(ground, ground).
+	;		expression(ground, ground).
 	
 :- inst numeric_term(I)
 	--->	var(I)
 	;		named_var(I)
 	;		int(I)
 	;		float(I)
-	;		functor(I, I).
+	;		expression(I, I).
 
 
 
@@ -133,7 +133,7 @@
 	;		named_var(symbol)
 	;		int(int)
 	;		float(float)
-	;		functor(proc_term, proc_relation).
+	;		expression(functor, proc_relation).
 
 :- type number =< numeric_term
 	--->	int(int)

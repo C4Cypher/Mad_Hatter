@@ -20,14 +20,8 @@
 :- import_module mh_term.
 :- import_module mh_relation.
 
-:- type atom == functor.
-	
-:- type literal
-	--->	+atom
-	;		-atom.
-
 :- type proc_rule 
-	---> 	clause_rule(proc_relation, list(literal))
+	---> 	clause_rule(proc_relation, list(expression))
 	;		some [T] primitive_rule(function_relation, T) => primitive(T). 
 
 
