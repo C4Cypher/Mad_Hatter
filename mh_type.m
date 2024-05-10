@@ -29,6 +29,8 @@
 	--->	free
 	;		named_type(symbol) % type alias
 	;		parametric_type(symbol, list(mh_type)) %parametric type alias
+	;		type_class(symbol)
+	;		type_class(symbol, list(mh_type))
 	;		type_var(mh_var)
 	;		union(set(mh_type))
 	;		entity
@@ -38,7 +40,8 @@
 	;		symbol
 	;		string
 	;		predicate(relation_mode) 
-	;		function(function_mode) 
+	;		function(function_mode)
+	;		boolean
 	;		data(symbol, list(mh_data_type))
 	;		univ.
 
