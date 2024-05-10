@@ -34,3 +34,7 @@
 symbol(String) = \String.
 
 :- pragma memo(symbol(in) = out).
+
+% I don't like using '\' as the internal constructor for symbols, but Mercury
+% doesn't have a more suitable bultin operator at present. The reason I'm
+% using it is that, at this point it should result in more readable output
