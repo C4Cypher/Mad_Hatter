@@ -6,12 +6,12 @@
 % Public License - see the file COPYING.LIB in the Mercury distribution.
 %-----------------------------------------------------------------------------%
 % 
-% File: mh_statement.m
+% File: mh_declaration.m
 % Main author: C4Cypher.
 % Stability: low.
 %-----------------------------------------------------------------------------%
 
-:- module mh_statement.
+:- module mh_declaration.
 
 :- interface.
 
@@ -24,7 +24,7 @@
 :- import_module set.
 
 
-:- type statement
+:- type declaration
 --->	type_def(symbol, mh_type)
 ;		type_def(symbol, list
 ;		data_type(data_signature)
