@@ -16,13 +16,14 @@
 :- interface.
 
 :- import_module mh_term.
+:- import_module mh_symbol.
 :- import_module mh_relation.
-:- import_module mh_type.
+
+:- use_module term.
 
 
 :- typeclass primitive(T) where [
-	pred call_primitive(T::in, relation::in, mh_term::out) is det,
-	pred primitive_type_signature(T::in, primitive_signature::out) is det
+	func parse_primitive(symbol, term.term) = T is semidet
 ].
 
 :- type primitive_func == (func(relation) = mh_term). 

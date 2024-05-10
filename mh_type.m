@@ -33,30 +33,20 @@
 	;		type_class(symbol, list(mh_type))
 	;		type_var(mh_var)
 	;		union(set(mh_type))
-	;		entity
-	;		number
-	;		int
-	;		float
-	;		symbol
-	;		string
+	;		primitive(symbol)
 	;		predicate(relation_mode) 
 	;		function(function_mode)
 	;		boolean
-	;		data(symbol, list(mh_data_type))
-	;		univ.
+	;		data(symbol, list(mh_type)).
 
 %-----------------------------------------------------------------------------%
 
 :- type mh_ground_type =< mh_type
-	--->	entity
-	;		int
-	;		float
-	;		symbol
-	;		string
+	--->	primitive(symbol)
 	;		predicate(relation_mode) 
 	;		function(function_mode) 
-	;		data(symbol, list(mh_data_type))
-	;		univ.
+	;		boolean
+	;		data(symbol, list(mh_ground_type)).
 
 %-----------------------------------------------------------------------------%
 
@@ -64,17 +54,6 @@
 
 %-----------------------------------------------------------------------------%
 
-:- type mh_data_type =< mh_type
-	--->	union(set(mh_data_type))
-	;		entity
-	;		number
-	;		symbol
-	;		string
-	;		data(symbol, list(mh_data_type))
-	; 		univ.
-
-
-%-----------------------------------------------------------------------------%
 
 :- type primitive_signature
 	---> list(mh_type) -> mh_type.
