@@ -17,7 +17,6 @@
 
 :- import_module mh_term.
 :- import_module mh_relation.
-:- import_module mh_primitive.
 :- import_module mh_mode.
 
 :- type proc_rule 
@@ -27,3 +26,5 @@
 				operation_signature, 
 				primitive_operation
 			).
+			
+:- type primitive_operation == (func(relation) = mh_term). 
