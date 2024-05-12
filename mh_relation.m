@@ -25,13 +25,17 @@
 
 :- type proc_relation 
 	--->	relation(array(mh_term))
-	;		function_relation(array(mh_term)).
+	;		function_relation(array(mh_term))	%relation = term
+	;		operation_relation(array(mh_term)).	%relation -> term
 
 :- type relation =< proc_relation
 	---> relation(array(mh_term)).
 	
 :- type function_relation =< proc_relation
 	---> function_relation(array(mh_term)).
+	
+:- type operation_relation =< proc_relation
+	---> operation_relation(array(mh_term)).
 	
 %-----------------------------------------------------------------------------%
 
@@ -44,6 +48,9 @@
 	
 :- type ground_function_relation =< function_relation
 	---> function_relation(array(mh_ground)).
+	
+:- type ground_operation_relation =< operation_relation
+	---> operation_relation(array(mh_ground)).
 
 %-----------------------------------------------------------------------------%
 

@@ -19,11 +19,13 @@
 :- import_module mh_symbol.
 :- import_module mh_relation.
 
-:- use_module term.
+:- import_module term.
 
 
 :- typeclass primitive(T) where [
-	func parse_primitive(symbol, term.term) = T is semidet
+	pred parse_primitive(term, symbol, T),
+	mode parse_primitive(in, out, out) is semidet,
+	func primtive_to_string(T) = string
 ].
 
-:- type primitive_func == (func(relation) = mh_term). 
+:- type primitive_operation == (func(relation) = mh_term). 

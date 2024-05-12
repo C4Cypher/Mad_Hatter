@@ -24,25 +24,29 @@
 
 %-----------------------------------------------------------------------------%
 
-:- type mh_mode 
+:- type mh_mode
 	--->	in	
 	;		out
-	;		inout(relation_mode)
+	;		inout(relation_signature)
 	;		unused.
 	
-:- type mode_type ---> mh_type :: mh_mode.
+:- type term_signature ---> mh_type :: mh_mode.
 
-:- type relation_mode == list(mode_type).
+:- type relation_signature == list(term_signature).
 
-:- type proc_mode
-	---> 	predicate_mode(relation_mode)
-	;		relation_mode -> mode_type.
+:- type proc_signature
+	---> 	predicate_signature(relation_signature)
+	;		function_signature(relation_signature, term_signature)
+	;		operation_signature(list(mh_type), mh_type).
 
-:- type predicate_mode =< proc_mode
-	---> predicate_mode(relation_mode).
+:- type predicate_signature =< proc_signature
+	---> 	predicate_signature(relation_signature).
 	
-:- type function_mode =< proc_mode
-	---> relation_mode -> mode_type.
+:- type function_signature =< proc_signature
+	---> 	function_signature(relation_signature, term_signature).
+	
+:- type operation_signature =< proc_signature
+	--->	operation_signature(list(mh_type), mh_type).
 
 
 

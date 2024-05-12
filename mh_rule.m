@@ -16,14 +16,14 @@
 :- interface.
 
 :- import_module mh_term.
-:- import_module mh_type.
 :- import_module mh_relation.
 :- import_module mh_primitive.
+:- import_module mh_mode.
 
 :- type proc_rule 
 	---> 	clause_rule(proc_relation, expression)
 	;		primitive_rule(
-				function_relation, 
-				primitive_signature, 
-				primitive_func
+				operation_relation, 
+				operation_signature, 
+				primitive_operation
 			).

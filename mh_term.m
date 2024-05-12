@@ -16,6 +16,8 @@
 
 :- interface.
 
+:- import_module list.
+
 :- import_module mh_symbol.
 :- import_module mh_identifier.
 :- import_module mh_primitive.
@@ -32,6 +34,7 @@
 	;		named_var(symbol)
 	;		some [T] primitive(symbol, T) => primitive(T)
 	;		symbol(symbol)
+	;		parametric_type(mh_type, list(mh_type_term))
 	;		type(mh_type)
 	;		mh_true
 	;		mh_false
@@ -79,17 +82,46 @@
 
 %-----------------------------------------------------------------------------%
 
+:- inst mh_ground
+	--->	primitive(ground, ground)
+	;		symbol(ground)
+	;		parametric_type(ground, list(mh_ground_type_term))
+	;		type(ground)
+	;		mh_true
+	;		mh_false
+	;		expression(ground, ground)
+	;		lambda(ground).
 
 :- type mh_ground =< mh_term 
 	--->	some [T] primitive(symbol, T) => primitive(T)
 	;		symbol(symbol)
+	;		parametric_type(mh_type, list(mh_ground_type_term))
 	;		type(mh_type)
 	;		mh_true
 	;		mh_false
 	;		expression(functor, ground_proc_relation)
 	;		lambda(proc_rule).
-	
+
 
 %-----------------------------------------------------------------------------%
 
+:- inst mh_type_term
+	---> 	var(ground)
+	;		named_var(ground)
+	;		parametric_type(ground, ground)
+	;		type(ground).
+	
 
+:- type mh_type_term =< mh_term
+	---> 	var(var_id)
+	;		named_var(symbol)
+	;		parametric_type(mh_type, list(mh_type_term))
+	;		type(mh_type). 
+	
+:- inst mh_ground_type_term
+	--->	parametric_type(ground, list(mh_ground_type_term))
+	;		type(ground).
+	
+:- type mh_ground_type_term =< mh_type_term
+	--->	parametric_type(mh_type, list(mh_ground_type_term))
+	;		type(mh_type).

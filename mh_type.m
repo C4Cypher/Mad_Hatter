@@ -16,7 +16,6 @@
 :- interface.
 
 :- import_module mh_symbol.
-:- import_module mh_term.
 :- import_module mh_mode.
 
 :- import_module set.
@@ -29,22 +28,29 @@
 	--->	free
 	;		named_type(symbol) % type alias
 	;		parametric_type(symbol, list(mh_type)) %parametric type alias
-	;		type_class(symbol)
-	;		type_class(symbol, list(mh_type))
-	;		type_var(mh_var)
 	;		union(set(mh_type))
 	;		primitive(symbol)
-	;		predicate(relation_mode) 
-	;		function(function_mode)
+	;		predicate(relation_signature) 
+	;		function(function_signature)
+	;		operation(operation_signature)
 	;		boolean
 	;		data(symbol, list(mh_type)).
-
+	
 %-----------------------------------------------------------------------------%
+
+:- inst mh_ground_type
+	--->	primitive(ground)
+	;		predicate(ground)
+	;		function(ground)
+	;		operation(ground)
+	;		boolean
+	;		data(ground, list(mh_ground_type)).
 
 :- type mh_ground_type =< mh_type
 	--->	primitive(symbol)
-	;		predicate(relation_mode) 
-	;		function(function_mode) 
+	;		predicate(relation_signature) 
+	;		function(function_signature) 
+	;		operation(operation_signature)
 	;		boolean
 	;		data(symbol, list(mh_ground_type)).
 
@@ -55,8 +61,7 @@
 %-----------------------------------------------------------------------------%
 
 
-:- type primitive_signature
-	---> list(mh_type) -> mh_type.
+
 
 
 %-----------------------------------------------------------------------------%
