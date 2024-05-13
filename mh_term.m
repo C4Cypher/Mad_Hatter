@@ -73,11 +73,9 @@
 
 %-----------------------------------------------------------------------------%
 
-:- inst expression ---> expression(ground, ground).
+:- inst expression_term ---> expression(ground, ground).
 
-:- inst expression(I) ---> expression(ground, I).
-
-:- type expression =< mh_term ---> expression(functor, proc_relation).
+:- type expression_term =< mh_term ---> expression(functor, proc_relation).
 
 
 %-----------------------------------------------------------------------------%

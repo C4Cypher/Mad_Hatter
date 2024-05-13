@@ -20,7 +20,7 @@
 :- import_module mh_mode.
 
 :- type proc_rule 
-	---> 	clause_rule(proc_relation, expression)
+	---> 	clause_rule(proc_relation, expression_term)
 	;		primitive_rule(
 				operation_relation, 
 				operation_signature, 
