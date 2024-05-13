@@ -41,7 +41,8 @@
 
 :- type ground_proc_relation =< proc_relation
 	--->	relation(array(mh_ground))
-	;		function_relation(array(mh_ground)).
+	;		function_relation(array(mh_ground))
+	;		operation_relation(array(mh_ground)).
 
 :- type ground_relation =< relation
 	---> relation(array(mh_ground)).
@@ -80,10 +81,12 @@
 :- instance index(proc_relation, 	mh_term).
 :- instance index(relation, 		mh_term).
 :- instance index(function_relation, mh_term).
+:- instance index(operation_relation, mh_term).
 
 :- instance index(ground_proc_relation, mh_ground).
 :- instance index(ground_relation, 		mh_ground).
 :- instance index(ground_function_relation, mh_ground).
+:- instance index(ground_operation_relation, mh_ground).
 
 %-----------------------------------------------------------------------------%
 
@@ -119,27 +122,54 @@ init_function_relation(S, T) = function_relation(init(S, T)).
 
 	valid_index(relation(A), I) :- valid_array_index1(A, I),
 	valid_index(function_relation(A), I) :- valid_array_index0(A, I),
+	valid_index(operation_relation(A), I) :- valid_array_index0(A, I),
 	
 	index(relation(A), I, Term) :- array_index1(A, I, Term),
 	index(function_relation(A), I, Term) :- array_index0(A, I, Term),
+	index(operation_relation(A), I, Term) :- array_index0(A, I, Term),
 	
 	set_index(I, Term, relation(!.A), relation(!:A)) :- 
 		set_array_index1(I, Term, !A),
 	set_index(I, Term, function_relation(!.A), function_relation(!:A)) :-
-		set_array_index0(I, Term, !A)
+		set_array_index0(I, Term, !A),
+	set_index(I, Term, operation_relation(!.A), function_relation(!:A)) :-
+		set_array_index0(I, Term, !A),
+		
+	max_index(relation(A)) = max_array_index1(A),
+	max_index(function_relation(A)) = max_array_index0(A),
+	max_index(operation_relation(A)) = max_array_index0(A),
+	
+	min_index(relation(A)) = min_array_index1(A),
+	min_index(function_relation(A)) = min_array_index0(A),
+	min_index(operation_relation(A)) = min_array_index0(A)
 	].
 	
 :- instance index(relation, mh_term) where [
 	valid_index(relation(A), I) :- valid_array_index1(A, I),
 	index(relation(A), I, Term) :- array_index1(A, I, Term),
 	set_index(I, Term, relation(!.A), relation(!:A)) :- 
-		set_array_index1(I, Term, !A) ].
+		set_array_index1(I, Term, !A),
+	max_index(relation(A)) = max_array_index1(A),
+	min_index(relation(A)) = min_array_index1(A)
+].
 	
 :- instance index(function_relation, mh_term) where [
 	valid_index(function_relation(A), I) :- valid_array_index0(A, I),
 	index(function_relation(A), I, Term) :- array_index0(A, I, Term),
 	set_index(I, Term, function_relation(!.A), function_relation(!:A)) :-
-		set_array_index0(I, Term, !A) ].
+		set_array_index0(I, Term, !A),
+	max_index(function_relation(A)) = max_array_index0(A),
+	min_index(function_relation(A)) = min_array_index0(A) 
+].
+	
+:- instance index(operation_relation, mh_term) where [
+	valid_index(operation_relation(A), I) :- valid_array_index0(A, I),
+	index(operation_relation(A), I, Term) :- array_index0(A, I, Term),
+	set_index(I, Term, operation_relation(!.A), operation_relation(!:A)) :-
+		set_array_index0(I, Term, !A),
+	max_index(operation_relation(A)) = max_array_index0(A),
+	min_index(operation_relation(A)) = min_array_index0(A) 
+].
 	
 :- instance index(ground_proc_relation, mh_ground) where [
 
@@ -152,19 +182,43 @@ init_function_relation(S, T) = function_relation(init(S, T)).
 	set_index(I, Term, relation(!.A), relation(!:A)) :- 
 		set_array_index1(I, Term, !A),
 	set_index(I, Term, function_relation(!.A), function_relation(!:A)) :-
-		set_array_index0(I, Term, !A) ].
+		set_array_index0(I, Term, !A),
+		
+	max_index(relation(A)) = max_array_index1(A),
+	max_index(function_relation(A)) = max_array_index0(A),
+	max_index(operation_relation(A)) = max_array_index0(A),
+	
+	min_index(relation(A)) = min_array_index1(A),
+	min_index(function_relation(A)) = min_array_index0(A),
+	min_index(operation_relation(A)) = min_array_index0(A)
+].
 	
 :- instance index(ground_relation, mh_ground) where [
 	valid_index(relation(A), I) :- valid_array_index1(A, I),
 	index(relation(A), I, Term) :- array_index1(A, I, Term),
 	set_index(I, Term, relation(!.A), relation(!:A)) :- 
-		set_array_index1(I, Term, !A) ].
+		set_array_index1(I, Term, !A),
+	max_index(relation(A)) = max_array_index1(A),
+	min_index(relation(A)) = min_array_index1(A)
+].
 	
 :- instance index(ground_function_relation, mh_ground) where [
 	valid_index(function_relation(A), I) :- valid_array_index0(A, I),
 	index(function_relation(A), I, Term) :- array_index0(A, I, Term),
 	set_index(I, Term, function_relation(!.A), function_relation(!:A)) :-
-		set_array_index0(I, Term, !A) ].
+		set_array_index0(I, Term, !A),
+	max_index(function_relation(A)) = max_array_index0(A),
+	min_index(function_relation(A)) = min_array_index0(A)
+].
+
+:- instance index(ground_operation_relation, mh_ground) where [
+	valid_index(operation_relation(A), I) :- valid_array_index0(A, I),
+	index(operation_relation(A), I, Term) :- array_index0(A, I, Term),
+	set_index(I, Term, operation_relation(!.A), operation_relation(!:A)) :-
+		set_array_index0(I, Term, !A),
+	max_index(operation_relation(A)) = max_array_index0(A),
+	min_index(operation_relation(A)) = min_array_index0(A)
+].
 
 	
 
