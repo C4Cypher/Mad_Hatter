@@ -11,13 +11,26 @@
 % Stability: low.
 %-----------------------------------------------------------------------------%
 
-:- module mh_state.m
+:- module mh_state.
 
 :- interface.
-:- import_module mh_term.
+
+:- import_module mh_symbol.
+:- import_module mh_type.
 :- import_module mh_relation.
+:- import_module mh_arity.
+
+:- typeclass state(T) where [
+	pred query_state(T, relation, ground_relation),
+	mode query_state(in, in, out) is nondet
+].
 
 
-
+:- type state_type(T) 	% 	<= state(T)
+	--->	state_type(
+				type_name::symbol, 
+				relation_type::relation_type,
+				init_state::((func) = T <= state(T))
+			).
 
 
