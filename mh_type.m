@@ -60,7 +60,15 @@
 
 %-----------------------------------------------------------------------------%
 
-
+:- type proc_relation_type  %TODO: Consider using arrays instead
+	--->	relation_type(list(mh_type))
+	;		function_type(list(mh_type), mh_type).
+	
+:- type relation_type =< proc_relation_type
+	---> 	relation_type(list(mh_type)).
+	
+:- type function_type =< proc_relation_type
+	--->	function_type(list(mh_type), mh_type).
 
 
 
