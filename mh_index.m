@@ -35,7 +35,10 @@
 	
 	pred set_index(int, U, T, T),
 	mode set_index(in, in, in, out) is semidet, % fail on invalid index
-	mode set_index(out, in, in, out) is nondet % update any index nondet
+	mode set_index(out, in, in, out) is nondet, % update any index nondet
+	
+	func max_index(T) = int is semidet, % fail if there are no valid indexes
+	func min_index(T) = int is semidet
 ].
 
 
@@ -56,6 +59,9 @@
 :- mode set_list_index0(in, in, in, out) is semidet. 
 :- mode set_list_index0(out, in, in, out) is nondet.
 
+:- func max_list_index0(list(T)) = int is semidet.
+:- func min_list_index0(list(T)) = int is semidet.
+
 %-----------------------------------------------------------------------------%
 
 :- pred valid_list_index1(list(T), int).
@@ -70,6 +76,9 @@
 :- pred set_list_index1(int, T, list(T), list(T)).
 :- mode set_list_index1(in, in, in, out) is semidet. 
 :- mode set_list_index1(out, in, in, out) is nondet.
+
+:- func max_list_index1(list(T)) = int is semidet.
+:- func min_list_index1(list(T)) = int is semidet.
 
 %-----------------------------------------------------------------------------%
 
@@ -86,6 +95,9 @@
 :- pred set_array_index0(int, T, array(T), array(T)).
 :- mode set_array_index0(in, in, in, out) is semidet. 
 :- mode set_array_index0(out, in, in, out) is nondet.
+
+:- func max_array_index0(array(T)) = int is semidet.
+:- func min_array_index0(array(T)) = int is semidet.
 
 :- pred uniq_set_array_index0(int::in, T::in, 
 	array(T)::array_di, array(T)::array_uo) is semidet.
@@ -104,6 +116,9 @@
 :- pred set_array_index1(int, T, array(T), array(T)).
 :- mode set_array_index1(in, in, in, out) is semidet. 
 :- mode set_array_index1(out, in, in, out) is nondet.
+
+:- func max_array_index1(array(T)) = int is semidet.
+:- func min_array_index1(array(T)) = int is semidet.
 
 :- pred uniq_set_array_index1(int::in, T::in, 
 	array(T)::array_di, array(T)::array_uo) is semidet.
@@ -136,6 +151,10 @@ set_list_index0(I, V, !L) :-
 	valid_list_index0(!.L, I),
 	det_replace_nth(!.L, I + 1, V, !:L).
 	
+max_list_index0(List @ [_,_]) = length(List) - 1.
+
+min_list_index0([_|_]) = 0.
+	
 %-----------------------------------------------------------------------------%
 	
 valid_list_index1([_], 1).
@@ -162,6 +181,10 @@ list_index1([V | Vs]::in, I::out, U::out) :-
 set_list_index1(I, V, !L) :- 
 	valid_list_index0(!.L, I),
 	det_replace_nth(!.L, I, V, !:L).
+	
+max_list_index1(List @ [_,_]) = length(List).
+
+min_list_index1([_|_]) = 1.
 
 %-----------------------------------------------------------------------------%
 
@@ -182,6 +205,12 @@ set_array_index0(I, V, !A) :-
 uniq_set_array_index0(I, V, !A) :-
 	valid_array_index0(!.A, I),
 	set(I, V, !A).
+	
+max_array_index0(A) = max(A) :- size(A) > 0.
+
+min_array_index0(A) = min(A) :- size(A) > 0.
+
+
 
 %-----------------------------------------------------------------------------%
 
@@ -202,6 +231,10 @@ set_array_index1(I, V, !A) :-
 uniq_set_array_index1(I, V, !A) :-
 	valid_array_index1(!.A, I),
 	set(I, V, !A).
+	
+max_array_index1(A) = max(A) + 1 :- size(A) > 0.
+
+min_array_index1(A) = min(A) + 1 :- size(A) > 0.
 	
 %-----------------------------------------------------------------------------%
 
