@@ -27,6 +27,5 @@
 	--->	type_def(symbol, mh_type) 
 	;		type_def(symbol, list(mh_type_term), mh_type_term) %Parametric
 	; 		data_type(symbol)
-	;		data_type(symbol, list(mh_type))
 	;		primitive_type(symbol)
 	;		clause(mh_term).
