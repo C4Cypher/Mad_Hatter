@@ -15,22 +15,23 @@
 
 :- interface.
 
-:- import_module mh_symbol.
 :- import_module mh_type.
 :- import_module mh_relation.
 :- import_module mh_arity.
 
-:- typeclass state(T) where [
+:- typeclass state(T) <= arity(T) where [
 	pred query_state(T, relation, ground_relation),
 	mode query_state(in, in, out) is nondet
 ].
 
 
-:- type state_type(T) 	% 	<= state(T)
-	--->	state_type(
-				type_name::symbol, 
+:- type state_type
+	--->	some [T] state_type( 
 				relation_type::relation_type,
-				init_state::((func) = T <= state(T))
-			).
+				init_state::init_func(T)
+			) => state(T).
+			
+			
+:- type init_func(T) == ((func) = T).
 
 
