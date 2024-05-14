@@ -23,7 +23,7 @@
 :- import_module mh_primitive.
 :- import_module mh_type.
 :- import_module mh_relation.
-:- import_module mh_rule.
+:- import_module mh_clause.
 
 
 :- type var_id == id(mh_var).
@@ -39,7 +39,7 @@
 	;		mh_true
 	;		mh_false
 	;		expression(functor, proc_relation)
-	;		lambda(proc_rule).
+	;		lambda(proc_clause).
 
 %-----------------------------------------------------------------------------%
 
@@ -61,7 +61,7 @@
 
 :- inst primitive(I) ---> primitive(ground, I).
 
-:- type primtive =< mh_term
+:- type primitive =< mh_term
 	---> 	some [T] primitive(symbol, T) => primitive(T).
 
 
@@ -69,7 +69,7 @@
 
 :- type functor =< mh_term
 	--->	symbol(symbol)
-	;		lambda(proc_rule).
+	;		lambda(proc_clause).
 
 %-----------------------------------------------------------------------------%
 
@@ -98,7 +98,7 @@
 	;		mh_true
 	;		mh_false
 	;		expression(functor, ground_proc_relation)
-	;		lambda(proc_rule).
+	;		lambda(proc_clause).
 
 
 %-----------------------------------------------------------------------------%
