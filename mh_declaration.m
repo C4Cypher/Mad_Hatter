@@ -18,6 +18,8 @@
 :- import_module mh_symbol.
 :- import_module mh_type.
 :- import_module mh_term.
+:- import_module mh_clause.
+:- import_module mh_state.
 
 :- import_module list.
 :- import_module set.
@@ -28,4 +30,5 @@
 	;		type_def(symbol, list(mh_type_term), mh_type_term) %Parametric
 	; 		data_type(symbol)
 	;		primitive_type(symbol)
-	;		clause(mh_term).
+	;		state_relation(symbol, state_type)
+	;		clause(symbol, proc_clause).
