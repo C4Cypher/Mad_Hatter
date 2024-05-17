@@ -21,7 +21,13 @@
 
 :- typeclass state(T) <= arity(T) where [
 	pred query_state(T, relation, ground_relation),
-	mode query_state(in, in, out) is nondet
+	mode query_state(in, in, out) is nondet,
+	
+	pred assert(ground_relation, T, T),
+	mode assert(in, in, out) is semidet,
+	
+	pred retract(relation, T, T),
+	mode retract(in, in, out) is semidet
 ].
 
 
