@@ -20,15 +20,27 @@
 :- import_module mh_term.
 :- import_module mh_clause.
 :- import_module mh_state.
+:- import_module mh_mode.
 
 :- import_module list.
 :- import_module set.
 
 
 :- type declaration
-	--->	type_def(symbol, mh_type) 
-	;		type_def(symbol, list(mh_type_term), mh_type_term) %Parametric
+	--->	type_def(
+				type_name::symbol,
+				type_args::list(mh_type_term),
+				type_assignment::mh_type_term,
+				where_clause::where_clause
+			)
 	; 		data_type(symbol)
 	;		primitive_type(symbol)
 	;		state_relation(symbol, state_type)
 	;		clause(symbol, proc_clause).
+	
+:- type where_clause
+	--->	nothing
+	;		class_constraints(list(class_constraint)).
+	
+:- type class_constraint
+	---> 	class_constraint(symbol, proc_signature).
