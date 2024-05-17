@@ -25,7 +25,7 @@
 
 
 :- type mh_type
-	--->	free
+	--->	any
 	;		named_type(symbol) % type alias
 	;		parametric_type(symbol, list(mh_type)) %parametric type alias
 	;		union(set(mh_type))
