@@ -31,7 +31,7 @@
 
 :- type mh_term 
 	--->	var(var_id)
-	;		named_var(symbol)
+	;		named_var(var_id, symbol)
 	;		some [T] primitive(symbol, T) => primitive(T)
 	;		symbol(symbol)
 	;		parametric_type(mh_type, list(mh_type_term))
@@ -39,21 +39,22 @@
 	;		mh_true
 	;		mh_false
 	;		expression(functor, proc_relation)
-	;		lambda(proc_clause).
+	;		lambda(proc_clause)
+	;		constrained(mh_term, constraint).
 
 %-----------------------------------------------------------------------------%
 
 :- inst mh_var
 	---> 	var(ground)
-	;		named_var(ground).
+	;		named_var(ground, ground).
 
-:- inst mh_var(I)
-	---> 	var(I)
-	;		named_var(I).
 
 :- type mh_var =< mh_term 
 	---> 	var(var_id)
-	;		named_var(symbol).
+	;		named_var(var_id, symbol).
+	
+:- func var_id(mh_term) = var_id is semidet.
+:- func var_name(mh_term) = symbol is semidet.
 	
 %-----------------------------------------------------------------------------%
 
@@ -105,14 +106,14 @@
 
 :- inst mh_type_term
 	---> 	var(ground)
-	;		named_var(ground)
+	;		named_var(ground, ground)
 	;		parametric_type(ground, ground)
 	;		type(ground).
 	
 
 :- type mh_type_term =< mh_term
 	---> 	var(var_id)
-	;		named_var(symbol)
+	;		named_var(var_id, symbol)
 	;		parametric_type(mh_type, list(mh_type_term))
 	;		type(mh_type). 
 	
@@ -123,3 +124,20 @@
 :- type mh_ground_type_term =< mh_type_term
 	--->	parametric_type(mh_type, list(mh_ground_type_term))
 	;		type(mh_type).
+	
+%-----------------------------------------------------------------------------%
+
+:- type constraint
+	--->	type_constraint(mh_type).
+
+%-----------------------------------------------------------------------------%
+%-----------------------------------------------------------------------------%
+
+:- implementation.
+
+%-----------------------------------------------------------------------------%
+
+var_id(var(ID)) = ID.
+var_id(named_var(ID, _)) = ID.
+
+var_name(named_var(_, Name)) = Name.
