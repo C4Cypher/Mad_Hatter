@@ -20,6 +20,7 @@
 
 :- import_module set.
 :- import_module list.
+:- import_module type_desc.
 
 %-----------------------------------------------------------------------------%
 
@@ -29,6 +30,7 @@
 	;		named_type(symbol) % type alias
 	;		parametric_type(symbol, list(mh_type)) %parametric type alias
 	;		union(set(mh_type))
+	;		mercury_type(type_desc).
 	;		primitive(symbol)
 	;		predicate(relation_signature) 
 	;		function(function_signature)
