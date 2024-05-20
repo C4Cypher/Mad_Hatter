@@ -16,35 +16,34 @@
 :- interface.
 
 
-:- import_module mh_parse_term.
 :- import_module mh_to_literal.
 :- import_module mh_term.
 
 :- import_module term.
 
 
-:- typeclass primitive(T) <= (parse_term(T), to_literal(T)) where [
-	pred primitive_type_name(T, string),
-	mode primitive_type_name(in, out) is det
+:- typeclass primitive(T) <= (to_literal(T)) where [
+	pred primitive_type_name(T::in, string::out) is det,
+	pred primitive_type_desc(T::in, type_desc::out) is det
 ].
 
-:- pred parse_primitive(term(_)::in, primitive::out) is det.
 
-:- func parse_primitive(term(_)) = primitive.
+:- pred parse_primitive_term(term(T)::in, primitive::out) is multi.
+
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
 :- implementation.
 
-:- import_module mh_symbol.
+:- import_module term_conversion.
 
 %-----------------------------------------------------------------------------%
 
-parse_primitive(Term, primitive(Symbol, Primitive) ) :-
-	parse_term(Term, Primitive),
+
+parse_primitive_term(Term, 'new primitive'(Symbol, Primitive) ) :-
+	type_to_term
 	primitive_type_name(Primitive, Name),
 	Symbol = symbol(Name).
 
-parse_primitive(Term) = PrimitiveTerm :- parse_primitive(Term, PrimitiveTerm).
 	
