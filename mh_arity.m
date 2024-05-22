@@ -19,6 +19,8 @@
 :- import_module list.
 :- import_module array.
 
+:- import_module mh_symbol.
+
 %-----------------------------------------------------------------------------%
 
 :- typeclass arity(T) where [
@@ -27,6 +29,12 @@
 ].
 
 :- func arity(T) = int <= arity(T).
+
+%-----------------------------------------------------------------------------%
+
+:- type symbol_arity ---> symbol/int.
+
+:- func symbol_arity(symbol, T) = symbol_arity <= arity(T).
 
 %-----------------------------------------------------------------------------%
 
@@ -39,6 +47,12 @@
 :- implementation.
 
 arity(T) = A :- arity(T, A).
+
+%-----------------------------------------------------------------------------%
+
+symbol_arity(S, T) = S/arity(T).
+
+%-----------------------------------------------------------------------------%
 
 :- instance arity(list(T)) where [ pred(arity/2) is list.length ].
 
