@@ -54,9 +54,11 @@
 
 :- implementation.
 
-
+:- import_module mh_arity.
 
 %-----------------------------------------------------------------------------%
+
+:- type functor_table == map(symbol_arity, 
 
 :- type mh_module
 	--->	mh_module(functor_table, type_table).
