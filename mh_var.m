@@ -16,7 +16,8 @@
 
 :- import_module mh_term.
 
-
+:- type mh_var
+	--->
 
 
 :- implementation.
