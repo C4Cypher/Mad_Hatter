@@ -19,24 +19,24 @@
 :- import_module mh_relation.
 :- import_module mh_mode.
 
-:- type proc_clause 
-	---> 	horn_clause(proc_relation, expression_term)
-	;		fact_clause(proc_relation)
+:- type mh_clause 
+	---> 	horn_clause(relation, expression_term)
+	;		fact_clause(relation)
 	;		primitive_clause(
-				operation_relation, 
+				relation, 
 				operation_signature, 
 				primitive_operation
 			).
 			
-:- type horn_clause =< proc_clause
-	---> 	horn_clause(proc_relation, expression_term).
+:- type horn_clause =< mh_clause
+	---> 	horn_clause(relation, expression_term).
 	
-:- type fact_clause =< proc_clause
-	--->	fact_clause(proc_relation).
+:- type fact_clause =< mh_clause
+	--->	fact_clause(relation).
 	
-:- type primitive_clause =< proc_clause
+:- type primitive_clause =< mh_clause
 	--->	primitive_clause(
-				operation_relation, 
+				relation, 
 				operation_signature, 
 				primitive_operation
 			).

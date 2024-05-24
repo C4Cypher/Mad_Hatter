@@ -20,6 +20,7 @@
 :- import_module mh_term.
 
 :- import_module term.
+:- import_module type_desc.
 
 
 :- typeclass primitive(T) <= (to_literal(T)) where [
@@ -28,7 +29,6 @@
 ].
 
 
-:- pred parse_primitive_term(term(T)::in, primitive::out) is multi.
 
 
 %-----------------------------------------------------------------------------%
@@ -40,10 +40,5 @@
 
 %-----------------------------------------------------------------------------%
 
-
-parse_primitive_term(Term, 'new primitive'(Symbol, Primitive) ) :-
-	type_to_term
-	primitive_type_name(Primitive, Name),
-	Symbol = symbol(Name).
 
 	

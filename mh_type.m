@@ -30,13 +30,16 @@
 	;		named_type(symbol) % type alias
 	;		parametric_type(symbol, list(mh_type)) %parametric type alias
 	;		union(set(mh_type))
-	;		mercury_type(type_desc).
+	;		mercury_type(type_desc)
 	;		primitive(symbol)
 	;		predicate(relation_signature) 
 	;		function(function_signature)
 	;		operation(operation_signature)
-	;		boolean
-	;		data(symbol, list(mh_type)).
+	;		data(symbol, data_type_signature).
+	
+%-----------------------------------------------------------------------------%
+
+:- type data_type_signature == list(mh_type).
 	
 %-----------------------------------------------------------------------------%
 
@@ -45,7 +48,6 @@
 	;		predicate(ground)
 	;		function(ground)
 	;		operation(ground)
-	;		boolean
 	;		data(ground, list(mh_ground_type)).
 
 :- type mh_ground_type =< mh_type
@@ -53,7 +55,6 @@
 	;		predicate(relation_signature) 
 	;		function(function_signature) 
 	;		operation(operation_signature)
-	;		boolean
 	;		data(symbol, list(mh_ground_type)).
 
 %-----------------------------------------------------------------------------%
@@ -62,15 +63,10 @@
 
 %-----------------------------------------------------------------------------%
 
-:- type proc_relation_type  %TODO: Consider using arrays instead
-	--->	relation_type(list(mh_type))
-	;		function_type(list(mh_type), mh_type).
-	
-:- type relation_type =< proc_relation_type
+:- type relation_type 
 	---> 	relation_type(list(mh_type)).
 	
-:- type function_type =< proc_relation_type
-	--->	function_type(list(mh_type), mh_type).
+
 
 
 

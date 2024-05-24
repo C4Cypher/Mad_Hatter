@@ -19,6 +19,8 @@
 :- type symbol.
 :- type symbols == list(symbol).
 
+:- inst symbol(I) ---> \I.
+
 
 
 :- func symbol(string) = symbol.

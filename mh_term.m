@@ -17,6 +17,7 @@
 :- interface.
 
 :- import_module list.
+:- import_module univ.
 
 :- import_module mh_symbol.
 :- import_module mh_identifier.
@@ -30,31 +31,33 @@
 
 
 :- type mh_term 
-	--->	var(var_id)
-	;		named_var(var_id, symbol)
+	--->	var(var_id, mh_type)
+	;		named_var(symbol, mh_type)
 	;		some [T] primitive(symbol, T) => primitive(T)
-	;		symbol(symbol)
-	;		parametric_type(mh_type, list(mh_type_term))
-	;		type(mh_type)
-	;		mh_true
-	;		mh_false
-	;		expression(functor, proc_relation)
-	;		lambda(proc_clause)
-	;		constrained(mh_term, constraint).
+	;		atom(symbol)
+	;		expression(functor, relation)
+	;		lambda(mh_clause).
 
 %-----------------------------------------------------------------------------%
 
 :- inst mh_var
-	---> 	var(ground)
+	---> 	var(ground, ground)
 	;		named_var(ground, ground).
 
 
 :- type mh_var =< mh_term 
-	---> 	var(var_id)
-	;		named_var(var_id, symbol).
+	---> 	var(var_id, mh_type)
+	;		named_var(symbol, mh_type).
 	
-:- func var_id(mh_term) = var_id is semidet.
-:- func var_name(mh_term) = symbol is semidet.
+:- pred is_var(mh_term::in) is semidet.
+	
+:- func term_var_id(mh_term) = var_id is semidet.
+:- func term_var_name(mh_term) = symbol is semidet.
+:- func term_var_type(mh_term) = mh_type is semidet.
+
+:- func var_id(mh_var) = var_id is semidet.
+:- func var_name(mh_var) = symbol is semidet.
+:- func var_type(mh_var) = mh_type is det.
 	
 %-----------------------------------------------------------------------------%
 
@@ -69,66 +72,35 @@
 %-----------------------------------------------------------------------------%	
 
 :- type functor =< mh_term
-	--->	symbol(symbol)
-	;		lambda(proc_clause).
+	--->	atom(symbol)
+	;		lambda(mh_clause).
 
 %-----------------------------------------------------------------------------%
 
 :- inst expression_term ---> expression(ground, ground).
 
-:- type expression_term =< mh_term ---> expression(functor, proc_relation).
+:- type expression_term =< mh_term ---> expression(functor, relation).
 
 
 %-----------------------------------------------------------------------------%
 
 :- inst mh_ground
 	--->	primitive(ground, ground)
-	;		symbol(ground)
-	;		parametric_type(ground, list(mh_ground_type_term))
-	;		type(ground)
-	;		mh_true
-	;		mh_false
+	;		atom(ground)
 	;		expression(ground, ground)
 	;		lambda(ground).
 
 :- type mh_ground =< mh_term 
 	--->	some [T] primitive(symbol, T) => primitive(T)
-	;		symbol(symbol)
-	;		parametric_type(mh_type, list(mh_ground_type_term))
-	;		type(mh_type)
-	;		mh_true
-	;		mh_false
-	;		expression(functor, ground_proc_relation)
-	;		lambda(proc_clause).
+	;		atom(symbol)
+	;		expression(functor, relation)
+	;		lambda(mh_clause).
 
 
 %-----------------------------------------------------------------------------%
 
-:- inst mh_type_term
-	---> 	var(ground)
-	;		named_var(ground, ground)
-	;		parametric_type(ground, ground)
-	;		type(ground).
-	
 
-:- type mh_type_term =< mh_term
-	---> 	var(var_id)
-	;		named_var(var_id, symbol)
-	;		parametric_type(mh_type, list(mh_type_term))
-	;		type(mh_type). 
 	
-:- inst mh_ground_type_term
-	--->	parametric_type(ground, list(mh_ground_type_term))
-	;		type(ground).
-	
-:- type mh_ground_type_term =< mh_type_term
-	--->	parametric_type(mh_type, list(mh_ground_type_term))
-	;		type(mh_type).
-	
-%-----------------------------------------------------------------------------%
-
-:- type constraint
-	--->	type_constraint(mh_type).
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -137,7 +109,20 @@
 
 %-----------------------------------------------------------------------------%
 
-var_id(var(ID)) = ID.
-var_id(named_var(ID, _)) = ID.
+is_var(var(_, _)).
+is_var(named_var(_, _)).
 
-var_name(named_var(_, Name)) = Name.
+term_var_id(var(ID, _)) = ID.
+
+term_var_name(named_var(Name, _)) = Name.
+
+term_var_type(var(_, Type)) = Type.
+term_var_type(named_var(_, Type)) = Type. 
+
+var_id(var(ID, _)) = ID.
+
+var_name(named_var(Name, _)) = Name.
+
+var_type(var(_, Type)) = Type.
+var_type(named_var(_, Type)) = Type. 
+
