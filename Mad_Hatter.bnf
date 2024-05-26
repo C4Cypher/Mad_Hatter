@@ -1,0 +1,31 @@
+int ::= [0-9]+
+float ::= <int> "." <int>
+
+char ::= "_" | [a-z] | [A-Z] | [0-9]
+string ::= <char>+
+
+literal_value ::= <string>
+
+identifier ::= [a-z] <char>*
+qualified_var_name :: [A-Z] <char>*
+anon_var_name :: "_" <char>*
+var_name ::= <qualified_var_name> | <anon_var_name>
+
+symbol ::= "symbol(\"" <string> "\")"
+id ::= "id(" int ")"
+
+mh_term ::= <var> | <value> | <atom> | <expression> | <lambda>
+
+var ::= "var(" <id> ", " <mh_type> ")" | <named_var>
+named_var ::= "named_var(symbol(\"" <var_name> "\"), " <mh_type> ")"
+
+value ::= "value(" <literal_value> ")"
+
+atom ::= "atom("<symbol>")"
+
+functor ::= <atom> | "(" <lambda> ")"
+
+expression ::= 
+
+
+mh_type ::= <symbol>
