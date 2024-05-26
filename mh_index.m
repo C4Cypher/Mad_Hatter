@@ -16,9 +16,6 @@
 :- interface.
 
 :- import_module int.
-:- import_module list.
-
-:- import_module array.
 
 %-----------------------------------------------------------------------------%
 
@@ -35,188 +32,109 @@
 	
 	pred set_index(int, U, T, T),
 	mode set_index(in, in, in, out) is semidet, % fail on invalid index
-	mode set_index(out, in, in, out) is nondet % update any index nondet
+	mode set_index(out, in, in, out) is nondet, % update any index nondet
+	
+	pred map(pred(U, U), T, T),
+	mode map(pred(in, out) is det, 	in, out) is det,
+	mode map(pred(in, out) is cc_multi, in, out) is cc_multi,
+	mode map(pred(in, out) is semidet, in, out)	is semidet,
+	mode map(pred(in, out) is multi, in, out) is multi,
+	mode map(pred(in, out) is nondet, in, out) is nondet
 ].
 
-
 %-----------------------------------------------------------------------------%
-%-----------------------------------------------------------------------------%
-% Helper predicates for declaring instances of index/2
 
-:- pred valid_list_index0(list(T), int).
-:- mode valid_list_index0(in, in) is semidet.
-:- mode valid_list_index0(in, out) is nondet. 
+:- pred det_index(T::in, int::in, U::out) is det <= index(T, U).
 
-:- pred list_index0(list(T), int, T).
-:- mode list_index0(in, in, in) is semidet.
-:- mode list_index0(in, in, out) is semidet. 
-:- mode list_index0(in, out, out) is nondet. 
-	
-:- pred set_list_index0(int, T, list(T), list(T)).
-:- mode set_list_index0(in, in, in, out) is semidet. 
-:- mode set_list_index0(out, in, in, out) is nondet.
-
+:- pred det_set_index(int::in, U::in, T::in, T::out) is det <= index(T, U).
 
 %-----------------------------------------------------------------------------%
 
-:- pred valid_list_index1(list(T), int).
-:- mode valid_list_index1(in, in) is semidet.
-:- mode valid_list_index1(in, out) is nondet. 
+:- func index(int, T) = U is semidet <= index(T, U).
 
-:- pred list_index1(list(T), int, T).
-:- mode list_index1(in, in, in) is semidet.
-:- mode list_index1(in, in, out) is semidet. 
-:- mode list_index1(in, out, out) is nondet. 
-	
-:- pred set_list_index1(int, T, list(T), list(T)).
-:- mode set_list_index1(in, in, in, out) is semidet. 
-:- mode set_list_index1(out, in, in, out) is nondet.
+:- func 'index :='(int, T, U) = T is semidet <= index(T, U).
 
+
+:- func det_index(int, T) = U <= index(T, U).
+
+:- func 'det_index :='(int, T, U) = T <= index(T, U).
 
 %-----------------------------------------------------------------------------%
 
-
-:- pred valid_array_index0(array(T), int).
-:- mode valid_array_index0(in, in) is semidet.
-:- mode valid_array_index0(in, out) is nondet. 
-
-:- pred array_index0(array(T), int, T).
-:- mode array_index0(in, in, in) is semidet.
-:- mode array_index0(in, in, out) is semidet. 
-:- mode array_index0(in, out, out) is nondet. 
-	
-:- pred set_array_index0(int, T, array(T), array(T)).
-:- mode set_array_index0(in, in, in, out) is semidet. 
-:- mode set_array_index0(out, in, in, out) is nondet.
+:- func map(func(U) = U, T) = T <= index(T, U).
+:- mode map(func(in) = out is det, in) = out is det.
+:- mode map(func(in) = out is semidet, in) = out is semidet.
 
 
-:- pred uniq_set_array_index0(int::in, T::in, 
-	array(T)::array_di, array(T)::array_uo) is semidet.
-
-%-----------------------------------------------------------------------------%
-
-:- pred valid_array_index1(array(T), int).
-:- mode valid_array_index1(in, in) is semidet.
-:- mode valid_array_index1(in, out) is nondet. 
-
-:- pred array_index1(array(T), int, T).
-:- mode array_index1(in, in, in) is semidet.
-:- mode array_index1(in, in, out) is semidet. 
-:- mode array_index1(in, out, out) is nondet. 
-	
-:- pred set_array_index1(int, T, array(T), array(T)).
-:- mode set_array_index1(in, in, in, out) is semidet. 
-:- mode set_array_index1(out, in, in, out) is nondet.
 
 
-:- pred uniq_set_array_index1(int::in, T::in, 
-	array(T)::array_di, array(T)::array_uo) is semidet.
+
 	
 
 :- implementation.
 
-%-----------------------------------------------------------------------------%
-	
-valid_list_index0([_], 0).
-
-valid_list_index0([_ | Vs], I) :-
-	I > 0,
-	valid_list_index0(Vs, I - 1).
-	
-
-
-:- pragma promise_equivalent_clauses(list_index0/3).
-
-list_index0(L::in, I::in, V::in) :- index0(L, I, V).
-
-list_index0(L::in, I::in, V::out) :- index0(L, I, V). 
-		
-list_index0([V | Vs]::in, I::out, U::out) :-
-	I = 0, V = U;
-	I > 0, list_index0(Vs @ [_ | _], I - 1, U). 
-
-
-set_list_index0(I, V, !L) :- 
-	valid_list_index0(!.L, I),
-	det_replace_nth(!.L, I + 1, V, !:L).
-	
-	
-%-----------------------------------------------------------------------------%
-	
-valid_list_index1([_], 1).
-
-valid_list_index1([_ | Vs], I) :-
-	I > 1,
-	valid_list_index1(Vs, I - 1).
-	
-
-
-:- pragma promise_equivalent_clauses(list_index1/3).
-
-list_index1(L::in, I::in, V::in) :- index1(L, I, V).
-
-list_index1(L::in, I::in, V::out) :- index1(L, I, V). 
-		
-list_index1([V | Vs]::in, I::out, U::out) :-
-	I = 1, V = U;
-	I > 1, list_index1(Vs @ [_ | _], I - 1, U). 
-
-
-
-
-set_list_index1(I, V, !L) :- 
-	valid_list_index0(!.L, I),
-	det_replace_nth(!.L, I, V, !:L).
-	
+:- import_module require.
+:- import_module string.
+:- import_module type_desc.
 
 %-----------------------------------------------------------------------------%
 
-:- pragma promise_equivalent_clauses(valid_array_index0/2).
+det_index(T, I, U) :-
+	if valid_index(T, I) then (
+		if index(T, I, V) 
+			then U = V
+			else unexpected($module, $pred, 
+				"Index " ++ string(I) ++ 
+				" out of range for method call of index(" ++ 
+				type_name(type_of(T)) ++ ", " ++ type_name(type_of(U)) ++
+				"). mh_index.valid_index/2 should not have allowed this!")
+		)
+		else unexpected($module, $pred, 
+				"Index " ++ string(I) ++ 
+				" out of range for method call of index(" ++ 
+				type_name(type_of(T)) ++ ", " ++ type_name(type_of(U)) ++
+				").").
+				
+det_set_index(I, U, !T) :-
+	if valid_index(!.T, I) then (
+		if set_index(I, U, !.T, NewT) 
+			then !:T = NewT
+			else unexpected($module, $pred, 
+				"Index " ++ string(I) ++ 
+				" out of range for method call of index(" ++ 
+				type_name(type_of(!.T)) ++ ", " ++ type_name(type_of(U)) ++
+				"). mh_index.valid_index/2 should not have allowed this!")
+		)
+		else unexpected($module, $pred, 
+				"Index " ++ string(I) ++ 
+				" out of range for method call of index(" ++ 
+				type_name(type_of(!.T)) ++ ", " ++ type_name(type_of(U)) ++
+				").").
 
-valid_array_index0(A::in, I::in) :- in_bounds(A, I).
+%-----------------------------------------------------------------------------%
 
-valid_array_index0(A::in, I::out) :- all_ints_from_to(min(A), max(A), I).
+T ^ index(I) = U :- index(T, I, U).
 
-array_index0(A, I, V) :-
-	valid_array_index0(A, I),
-	unsafe_lookup(A, I, V).
+(!.T ^ index(I) := U) = !:T :- set_index(I, U, !T).
+
+T ^ det_index(I) = U :- det_index(T, I, U).
+
+(!.T ^ det_index(I) := U) = !:T :- det_set_index(I, U, !T).
+
+%-----------------------------------------------------------------------------%
+
+:- pragma promise_equivalent_clauses(map/2).
+
+map(Function::in(func(in) = out is det), !.T::in) = (!:T::out) :- 
+	Closure = (pred(U0::in, U::out) is det :- Function(U0) = U),
+	map(Closure, !T).
 	
-set_array_index0(I, V, !A) :-
-	valid_array_index0(!.A, I),
-	slow_set(I, V, !A).
-	
-uniq_set_array_index0(I, V, !A) :-
-	valid_array_index0(!.A, I),
-	set(I, V, !A).
-	
+map(Function::in(func(in) = out is semidet), !.T::in) = (!:T::out) :- 
+	Closure = (pred(U0::in, U::out) is semidet :- Function(U0) = U),
+	map(Closure, !T).
+
 
 
 
 %-----------------------------------------------------------------------------%
 
-:- pragma promise_equivalent_clauses(valid_array_index1/2).
-
-valid_array_index1(A::in, I::in) :- in_bounds(A, I - 1).
-
-valid_array_index1(A::in, I::out) :- all_ints_from_to(min(A), max(A), I - 1).
-
-array_index1(A, I, V) :-
-	valid_array_index1(A, I),
-	unsafe_lookup(A, I - 1, V).
-	
-set_array_index1(I, V, !A) :-
-	valid_array_index1(!.A, I),
-	slow_set(I - 1, V, !A).
-	
-uniq_set_array_index1(I, V, !A) :-
-	valid_array_index1(!.A, I),
-	set(I, V, !A).
-	
-	
-%-----------------------------------------------------------------------------%
-
-:- pred all_ints_from_to(int::in, int::in, int::out) is nondet.
-
-all_ints_from_to(From, To, Out) :-
-	From =< To,
-	( Out = From ; all_ints_from_to(From + 1, To, Out) ).
