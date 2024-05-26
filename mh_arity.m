@@ -24,8 +24,7 @@
 %-----------------------------------------------------------------------------%
 
 :- typeclass arity(T) where [
-	pred arity(T, int),
-	mode arity(in, out) is det
+	pred arity(T::in, int::out) is det
 ].
 
 :- func arity(T) = int <= arity(T).
@@ -40,6 +39,7 @@
 
 :- instance arity(list(T)).
 :- instance arity(array(T)).
+:- instance arity(symbol_arity).
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -57,3 +57,7 @@ symbol_arity(S, T) = S/arity(T).
 :- instance arity(list(T)) where [ pred(arity/2) is list.length ].
 
 :- instance arity(array(T)) where [ pred(arity/2) is array.size ].
+
+:- instance arity(symbol_arity) where [
+		arity(_/Arity, Arity)
+	].
