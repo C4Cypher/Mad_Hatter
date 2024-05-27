@@ -24,7 +24,11 @@
 
 	pred valid_index(T, int),
 	mode valid_index(in, in) is semidet, % succeed on valid index
-	mode valid_index(in, out) is nondet, % return all valid indexes, no dups
+	mode valid_index(in, out) is nondet, % return all valid indexes, 
+	
+	% valid_index(in, out) may produce indexes in any order, but it must not
+	% generate duplicate indexes, otherwise default_map/3 may produce
+	% undefined behavior
 
 	pred index(T, int, U),
 	mode index(in, in, in) is semidet, % implicit fail on inequality
