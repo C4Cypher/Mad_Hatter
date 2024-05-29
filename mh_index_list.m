@@ -6,12 +6,12 @@
 % Public License - see the file COPYING.LIB in the Mercury distribution.
 %-----------------------------------------------------------------------------%
 % 
-% File: mh_list_helper.m
+% File: mh_index_list.m
 % Main author: C4Cypher.
 % Stability: low.
 %-----------------------------------------------------------------------------%
 
-:- module mh_list_helper.
+:- module mh_index_list.
 
 :- interface.
 
