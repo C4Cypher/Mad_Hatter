@@ -15,12 +15,13 @@
 
 :- interface.
 
-:- import_module mh_symbol.
-:- import_module mh_mode.
-
 :- import_module set.
 :- import_module list.
 :- import_module type_desc.
+
+:- import_module mh_symbol.
+:- import_module mh_mode.
+
 
 %-----------------------------------------------------------------------------%
 
@@ -28,13 +29,14 @@
 :- type mh_type
 	--->	any
 	;		named_type(symbol) % type alias
-	;		parametric_type(symbol, list(mh_type)) %parametric type alias
-	;		union(set(mh_type))
-	;		mercury_type(type_desc)
-	;		primitive(symbol)
+	;		bound_p_type(p_type, list(mh_type)) %bound parametric type
+	;		type_disjunction(set(mh_type))
+	;		type_conjunction(set(mh_type))
+	;		mr_type(type_desc)
+	;		mr_relation(type_desc, relation_signature)
 	;		predicate(relation_signature) 
 	;		function(function_signature)
-	;		operation(operation_signature)
+	;		monomorphism(monomorphism_signature)
 	;		data(symbol, data_type_signature).
 	
 %-----------------------------------------------------------------------------%
@@ -43,23 +45,10 @@
 	
 %-----------------------------------------------------------------------------%
 
-:- inst mh_ground_type
-	--->	primitive(ground)
-	;		predicate(ground)
-	;		function(ground)
-	;		operation(ground)
-	;		data(ground, list(mh_ground_type)).
-
-:- type mh_ground_type =< mh_type
-	--->	primitive(symbol)
-	;		predicate(relation_signature) 
-	;		function(function_signature) 
-	;		operation(operation_signature)
-	;		data(symbol, list(mh_ground_type)).
-
-%-----------------------------------------------------------------------------%
-
-:- type mh_ground_union =< mh_type ---> union(set(mh_ground_type)).
+% Parametric types and pseudo types
+:- type p_type	
+	--->	parametric(symbol, int)  %name, arity
+	;		pseudo(pseudo_type).
 
 %-----------------------------------------------------------------------------%
 
