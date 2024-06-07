@@ -47,8 +47,8 @@
 
 % Parametric types and pseudo types
 :- type p_type	
-	--->	parametric(symbol, int)  %name, arity
-	;		pseudo(pseudo_type).
+	--->	parametric_type(symbol, int)  %name, arity
+	;		pseudo_type(pseudo_type_desc).
 
 %-----------------------------------------------------------------------------%
 

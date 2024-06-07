@@ -18,7 +18,7 @@
 :- import_module array.
 :- import_module list.
 
-:- import_module mh_term.
+:- import_module mh_expression.
 :- import_module mh_index.
 :- import_module mh_argument.
 :- import_module mh_arity.
