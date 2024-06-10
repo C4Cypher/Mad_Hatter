@@ -37,7 +37,7 @@
 :- type proc_signature
 	---> 	predicate_signature(relation_signature)
 	;		function_signature(relation_signature, term_signature)
-	;		operation_signature(relation_type).
+	;		monomorphism_signature(relation_type).
 
 :- type predicate_signature =< proc_signature
 	---> 	predicate_signature(relation_signature).
@@ -45,8 +45,8 @@
 :- type function_signature =< proc_signature
 	---> 	function_signature(relation_signature, term_signature).
 	
-:- type operation_signature =< proc_signature
-	--->	operation_signature(relation_type).
+:- type monomorphism_signature =< proc_signature
+	--->	monomorphism_signature(relation_type).
 
 
 

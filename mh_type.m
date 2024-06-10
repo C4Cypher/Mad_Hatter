@@ -37,9 +37,20 @@
 	;		predicate(relation_signature) 
 	;		function(function_signature)
 	;		monomorphism(monomorphism_signature)
-	;		data(symbol, data_type_signature).
+	;		data_type(symbol, data_type_signature).
 	
 %-----------------------------------------------------------------------------%
+
+:- type mh_ground_type =< mh_type
+	--->	mr_type(type_desc)
+	;		data_type(symbol, data_type_signature).
+	
+%TODO: Ground higher order types
+
+
+
+%-----------------------------------------------------------------------------%
+
 
 :- type data_type_signature == list(mh_type).
 	

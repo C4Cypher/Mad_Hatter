@@ -16,8 +16,9 @@
 
 :- interface.
 
-:- import_module list.
-:- import_module univ.
+% :- import_module list.
+:- import_module set.
+% :- import_module univ.
 
 :- import_module mh_symbol.
 :- import_module mh_identifier.
@@ -31,6 +32,10 @@
 
 	%	void
 	--->	nil
+	
+	%	errors
+	;		expression_error(mh_expression, string)
+	;		expression_warning(mh_expression, string)
 	
 	% 	-	terms
 	
@@ -48,12 +53,24 @@
 	
 	%	higher order terms
 	;		some [T] lambda_pred(T, mh_clause) => relation(T)
-	;		some [T] lambda_func(T, mh_term, mh_clause) => relation(T).
+	;		some [T] lambda_func(T, mh_term, mh_clause) => relation(T)
 	
-	%	-	formulas (axiomatic expressions, truth values)
+	%	-	axioms 
 	
-	%TODO: Define constructors for forumulas and clauses	
-
+	% 	logical
+	;		conjunction(set(mh_axiom))
+	;		disjunction(set(mh_axiom))
+	;		negation(mh_axiom)
+	
+	% 	clause
+	;		implication(mh_fact, mh_axiom)
+	
+	% 	comparison
+	;		equal(mh_term, mh_term)
+	;		greater_than(mh_term, mh_term)
+	;		less_than(mh_term, mh_term).
+	
+	
 %-----------------------------------------------------------------------------%
 % void expression
 
@@ -90,7 +107,7 @@
 %-----------------------------------------------------------------------------%
 % atomic terms
 
-:- type mh_atomic_term =< mh_term
+:- type mh_atomic_term =< mh_applicable
 	--->	atom(symbol)
 	;		some [T] mr_value(T).
 	
@@ -112,14 +129,20 @@
 	;		some [T] lambda_pred(T, mh_clause) => relation(T)
 	;		some [T] lambda_func(T, mh_term, mh_clause) => relation(T).
 	
-:- type mh_compound_term =< mh_term
+:- type mh_relation =< mh_term
 	--->	some [T] functor(mh_applicable, T) => relation(T)
 	;		some [T] mr_relation(T) => relation(T).
 	
 % :- instance relation(mh_compound_term).
 
+:- type mh_functor =< mh_relation
+	--->	some [T] functor(mh_applicable, T) => relation(T).
 	
-:- type mr_relation =< mh_compound_term
+:- type mh_atomic_functior =< mh_functor
+	---> 	some [T] functor(mh_atom, T) => relation(T).
+
+	
+:- type mr_relation =< mh_relation
 	---> 	some [T] mr_relation(T) => relation(T).
 	
 % :- instance relation(mr_relation).
@@ -129,6 +152,7 @@
 
 %TODO:  Include constructors for direct mercury higher order terms
 %TODO:	Include constructors for monomorphic functions (maybe)
+%TODO:  redefine lambadas in terms of mh_facts and rules
 
 :- type mh_clause ---> unimplemented.
 
@@ -146,12 +170,80 @@
 
 
 %-----------------------------------------------------------------------------%
+% axioms
 
+:- type mh_axiom =< mh_expression
+
+	% atomic
+	--->	atom(symbol)
+	;		some [T] mr_value(T)
+	;		some [T] functor(mh_applicable, T) => relation(T)
+	;		some [T] mr_relation(T) => relation(T)
+	
+	% 	logical
+	;		conjunction(set(mh_axiom))
+	;		disjunction(set(mh_axiom))
+	;		negation(mh_axiom)
+	
+	% 	clause
+	;		implication(mh_fact, mh_axiom)
+	
+	% 	comparison
+	;		equal(mh_term, mh_term)
+	;		greater_than(mh_term, mh_term)
+	;		less_than(mh_term, mh_term).
 
 %-----------------------------------------------------------------------------%
+% clauses
+
+:- type mh_clause =< mh_axiom
+
+	% facts
+	--->	atom(symbol)
+	;		some [T] mr_value(T)
+	;		some [T] functor(mh_atom, T) => relation(T)
+	;		some [T] mr_relation(T) => relation(T)
+	;		equal(mh_relation, mh_term)  %function head clause
+
+	% rules
+	;		implication(mh_fact, mh_axiom).		
+
+%-----------------------------------------------------------------------------%
+% facts
 
 
+:- type mh_fact =< mh_clause
+	--->	atom(symbol)
+	;		some [T] mr_value(T)
+	;		some [T] functor(mh_atom, T) => relation(T)
+	;		some [T] mr_relation(T) => relation(T)
+	;		equal(mh_relation, mh_term).  %function head clause
 	
+:- type mh_atomic_fact =< mh_fact
+	--->	atom(symbol)
+	;		some [T] mr_value(T).
+	
+:- type mh_atom_fact =< mh_atomic_fact
+	---> 	atom(symbol).
+	
+:- type mh_value_fact =< mh_atomic_fact
+	---> 	some [T] mr_value(T).
+	
+:- type mh_relation_fact =< mh_fact
+	--->	some [T] functor(mh_atom, T) => relation(T)
+	;		some [T] mr_relation(T) => relation(T).
+	
+:- type mh_atomic_functor_fact =< mh_fact
+	---> some[T] functor(mh_atom, T) => relation(T).
+	
+:- type mh_function_fact =< mh_fact
+	--->	equal(mh_relation, mh_term).
+	
+%-----------------------------------------------------------------------------%
+% rules
+
+:- type mh_rule =< mh_clause
+	--->	implication(mh_fact, mh_axiom).
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
