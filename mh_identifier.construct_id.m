@@ -6,49 +6,24 @@
 % Public License - see the file COPYING.LIB in the Mercury distribution.
 %-----------------------------------------------------------------------------%
 % 
-% File: mh_var.m
+% File: mh_identifier.construct_id.m
 % Main author: C4Cypher.
 % Stability: low.
 
-:- module mh_var.
+:- module mh_identifier.construct_id.
 
 :- interface.
 
-:- import_module mh_identifier.
-:- import_module mh_type.
-
 %-----------------------------------------------------------------------------%
+% The following is intended for types that store the int identifier internally
+% it is not meant for constructing id's arbitrarily, as that would break the
+% intended semantics for normal usage of the mh_identifier module.
 
-:- type var_id == id(mh_var).
-
-:- type mh_var.
-
-%-----------------------------------------------------------------------------%
-
-:- pred var_id(mh_var::in, var_id::out) is semidet.
-
-:- func var_id(mh_var) = var_id is semidet.
-
-:- pred var_type(mh_var::in, mh_type::out) is det.
-
-:- func var_type(mh_var) = mh_type.
-
-:- pred is_anonymous(mh_var::in) is semidet.
+:- func construct_id(int) = id(T).
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
 :- implementation.
 
-:- import_module mr_identifier.construct_id.
-
-:- type mh_var
-	--->	mh_var(int, mh_type)
-	;		anonymous_var.
-
-%-----------------------------------------------------------------------------%
-
-var_id(mh_var(Index, _), construct_id(Index)).
-
-var_id(mh_var(Index, _)) = construct_id(Index). 
-
+construct_id(I) = id(I).

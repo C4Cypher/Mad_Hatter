@@ -24,6 +24,8 @@
 :- import_module mh_identifier.
 :- import_module mh_type.
 :- import_module mh_relation.
+:- import_module mh_predicate.
+:- import_module mh_function.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -52,10 +54,15 @@
 	;		some [T] mr_relation(T) => relation(T)
 	
 	%	higher order terms
+	;		some [T] mr_predicate(T) => predicate(T)
+	;		some [T] mr_function(T) => function(T)
 	;		some [T] lambda_pred(T, mh_clause) => relation(T)
 	;		some [T] lambda_func(T, mh_term, mh_clause) => relation(T)
 	
 	%	-	axioms 
+	
+	% 	predicate
+	;		predicate(mh_term)
 	
 	% 	logical
 	;		conjunction(set(mh_axiom))
@@ -88,6 +95,8 @@
 	;		some [T] mr_value(T)
 	;		some [T] functor(mh_applicable, T) => relation(T)
 	;		some [T] mr_relation(T) => relation(T)
+	;		some [T] mr_predicate(T) => predicate(T)
+	;		some [T] mr_function(T) => function(T)
 	;		some [T] lambda_pred(T, mh_clause) => relation(T)
 	;		some [T] lambda_func(T, mh_term, mh_clause) => relation(T).
 
@@ -123,9 +132,9 @@
 :- type mh_applicable =< mh_term
 	--->	var(var_id, mh_type)
 	;		atom(symbol)
-	;		some [T] mr_value(T)
 	;		some [T] functor(mh_applicable, T) => relation(T)
-	;		some [T] mr_relation(T) => relation(T)
+	;		some [T] mr_predicate(T) => predicate(T)
+	;		some [T] mr_function(T) => function(T)
 	;		some [T] lambda_pred(T, mh_clause) => relation(T)
 	;		some [T] lambda_func(T, mh_term, mh_clause) => relation(T).
 	
@@ -140,6 +149,9 @@
 	
 :- type mh_atomic_functior =< mh_functor
 	---> 	some [T] functor(mh_atom, T) => relation(T).
+	
+:- type mh_closure =< mh_relation
+	--->	some [T] functor(mh_higher_order_term, T) => relation(T).
 
 	
 :- type mr_relation =< mh_relation
@@ -157,7 +169,9 @@
 :- type mh_clause ---> unimplemented.
 
 :- type mh_higher_order_term =< mh_term
-	--->	some [T] lambda_pred(T, mh_clause) => relation(T)
+	--->	some [T] mr_predicate(T) => predicate(T)
+	;		some [T] mr_function(T) => function(T)
+	;		some [T] lambda_pred(T, mh_clause) => relation(T)
 	;		some [T] lambda_func(T, mh_term, mh_clause) => relation(T).
 
 :- type mh_lambda_pred =< mh_higher_order_term
@@ -166,8 +180,14 @@
 :- type mh_lambda_func =< mh_higher_order_term
 	--->	some [T] lambda_func(T, mh_term, mh_clause) => relation(T).
 
+%-----------------------------------------------------------------------------%
+% predicate terms
 
-
+:- type mh_predicate_term
+	--->	atom(symbol)
+	;		some [T] mr_value(T)
+	;		some [T] functor(mh_applicable, T) => relation(T)
+	;		some [T] mr_relation(T) => relation(T)
 
 %-----------------------------------------------------------------------------%
 % axioms
@@ -175,10 +195,7 @@
 :- type mh_axiom =< mh_expression
 
 	% atomic
-	--->	atom(symbol)
-	;		some [T] mr_value(T)
-	;		some [T] functor(mh_applicable, T) => relation(T)
-	;		some [T] mr_relation(T) => relation(T)
+	
 	
 	% 	logical
 	;		conjunction(set(mh_axiom))

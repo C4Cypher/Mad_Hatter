@@ -17,9 +17,16 @@
 :- import_module list.
 :- import_module enum.
 
+:- include_module mh_identifier.construct_id.
+
+%-----------------------------------------------------------------------------%
+
 :- type id(T).
 
 :- type id_set(T).
+
+%-----------------------------------------------------------------------------%
+
 
 :- func init_id_set = id_set(T).
 :- pred init_id_set(id_set(T)::out) is det.
@@ -31,6 +38,8 @@
 
 :- pred new_ids(id_set(T)::in, id_set(T)::out, list(id(T))::out) is cc_multi.
 
+%-----------------------------------------------------------------------------%
+
 :- pred contains(id_set(T)::in, id(T)::in) is semidet.
 
 :- func last_id(id_set(T)) = id(T).
@@ -38,14 +47,21 @@
 
 :- instance enum(id(T)).
 
+%-----------------------------------------------------------------------------%
+%-----------------------------------------------------------------------------%
+
 :- implementation.
 
 :- import_module int.
 :- import_module require.
 
+%-----------------------------------------------------------------------------%
+
 :- type id(T) ---> id(int).
 
 :- type id_set(T) ---> id_set(int).
+
+%-----------------------------------------------------------------------------%
 
 init_id_set = id_set(0).
 init_id_set(init_id_set).
@@ -77,7 +93,7 @@ multi_append_id(!Set, !List) :-
 	new_id(!Set, ID),
 	multi_append_id(!Set, !.List ++ [ ID ], !:List).
 	
-	
+%-----------------------------------------------------------------------------%
 
 contains(id_set(Top), id(Id)) :- Id < 0, Id =< Top. 
 
