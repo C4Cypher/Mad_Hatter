@@ -21,7 +21,7 @@
 % :- import_module univ.
 
 :- import_module mh_symbol.
-:- import_module mh_identifier.
+:- import_module mh_term.
 :- import_module mh_type.
 :- import_module mh_relation.
 :- import_module mh_predicate.
@@ -32,38 +32,12 @@
 
 :- type mh_expression
 
-	%	void
-	--->	nil
 	
-	%	errors
-	;		expression_error(mh_expression, string)
-	;		expression_warning(mh_expression, string)
 	
-	% 	-	terms
 	
-	%	variables
-	;		var(var_id, mh_type)
-	;		anonymous_var
 	
-	% 	atomic terms
-	;		atom(symbol)
-	;		some [T] mr_value(T)
 	
-	%	compound terms
-	;		some [T] functor(mh_applicable, T) => relation(T)
-	;		some [T] mr_relation(T) => relation(T)
-	
-	%	higher order terms
-	;		some [T] mr_predicate(T) => predicate(T)
-	;		some [T] mr_function(T) => function(T)
-	;		some [T] lambda_pred(T, mh_clause) => relation(T)
-	;		some [T] lambda_func(T, mh_term, mh_clause) => relation(T)
-	
-	%	-	axioms 
-	
-	% 	predicate
-	;		predicate(mh_term)
-	
+/* After I figure out term expressions
 	% 	logical
 	;		conjunction(set(mh_axiom))
 	;		disjunction(set(mh_axiom))
@@ -76,7 +50,7 @@
 	;		equal(mh_term, mh_term)
 	;		greater_than(mh_term, mh_term)
 	;		less_than(mh_term, mh_term).
-	
+*/	
 	
 %-----------------------------------------------------------------------------%
 % void expression
@@ -168,7 +142,7 @@
 
 :- type mh_clause ---> unimplemented.
 
-:- type mh_higher_order_term =< mh_term
+:- type mh_higher_order_term =< mh_applicable
 	--->	some [T] mr_predicate(T) => predicate(T)
 	;		some [T] mr_function(T) => function(T)
 	;		some [T] lambda_pred(T, mh_clause) => relation(T)

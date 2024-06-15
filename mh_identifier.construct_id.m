@@ -19,11 +19,13 @@
 % it is not meant for constructing id's arbitrarily, as that would break the
 % intended semantics for normal usage of the mh_identifier module.
 
-:- func construct_id(int) = id(T).
+:- func id_constructor(int) = id(T).
+:- mode id_constructor(in) = out is det.
+:- mode id_constructor(out) = in is det.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
 :- implementation.
 
-construct_id(I) = id(I).
+id_constructor(I) = id(I).

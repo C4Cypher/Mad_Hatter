@@ -34,9 +34,9 @@
 	;		type_conjunction(set(mh_type))
 	;		mr_type(type_desc)
 	;		mr_relation(type_desc, relation_signature)
-	;		predicate(relation_signature) 
+	;		predicate(relation_signature)
+	;		functor(functor_signature) 
 	;		function(function_signature)
-	;		monomorphism(monomorphism_signature)
 	;		data_type(symbol, data_type_signature).
 	
 %-----------------------------------------------------------------------------%
@@ -45,14 +45,16 @@
 	--->	mr_type(type_desc)
 	;		data_type(symbol, data_type_signature).
 	
+:- type data_type_signature == list(mh_type).	
+
 %TODO: Ground higher order types
 
 
 
 %-----------------------------------------------------------------------------%
+:- type relation_type == list(mh_type).
 
 
-:- type data_type_signature == list(mh_type).
 	
 %-----------------------------------------------------------------------------%
 
@@ -63,8 +65,7 @@
 
 %-----------------------------------------------------------------------------%
 
-:- type relation_type 
-	---> 	relation_type(list(mh_type)).
+
 	
 
 

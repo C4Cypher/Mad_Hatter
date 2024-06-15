@@ -16,30 +16,43 @@
 
 :- interface.
 
-:- import_module list.
-:- import_module univ.
-
 :- import_module mh_symbol.
 :- import_module mh_identifier.
-:- import_module mh_type.
 :- import_module mh_relation.
-:- import_module mh_clause.
+:- import_module mh_procedure.
+:- import_module mh_type.
+
 
 
 :- type var_id == id(mh_var).
 
-
 :- type mh_term 
+
+	% variables
 	--->	var(var_id, mh_type)
 	;		anonymous_var
+	
+	% atomic terms
 	;		atom(symbol)
+	
+	% value
 	;		some [T] mr_value(T)
-	;		some [T] mr_relation(T) <= relation(T)
-	;		some [T] lambda_func(T, mh_term, mh_clause) <= relation(W)
-	;		some [T] lambda_pred(T, mh_clause) <= relation(T),
-	;		some [T] functor(mh_term, T) <= relation(T).
+	
+	% compound terms
+	;		some [T] compound(symbol, T) => relation(T)
+	;		some [T] mr_structure(T) => relation(T)
+	
+	% Higher order terms
+	;		some [T] predicate(T) => predicate(T)
+	;		some [T] functor(T) => functor(T)
+	;		some [T] function(T) => function(T).
+
+:- type mh_clause ---> unimplemented.
+
+
 
 %-----------------------------------------------------------------------------%
+% Variables
 
 :- inst mh_var
 	---> 	var(ground, ground)
@@ -63,9 +76,6 @@
 
 %-----------------------------------------------------------------------------%
 
-:- inst functor ---> functor(ground, ground).
-
-:- type functor =< mh_term ---> some [T] functor(mh_term, T) <= relation(T).
 
 
 %-----------------------------------------------------------------------------%
