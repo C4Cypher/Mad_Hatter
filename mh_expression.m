@@ -31,6 +31,8 @@
 %-----------------------------------------------------------------------------%
 
 :- type mh_expression
+	--->	term_exp(mh_term)
+	;		
 
 	
 	
@@ -55,24 +57,12 @@
 %-----------------------------------------------------------------------------%
 % void expression
 
-:- type mh_nil =< mh_expression ---> nil.
 
 %-----------------------------------------------------------------------------%
 % term expressions
 
-:- type var_id == id(mh_id_var).
 
-:- type mh_term =< mh_expression 
-	--->	var(var_id, mh_type)
-	;		anonymous_var
-	;		atom(symbol)
-	;		some [T] mr_value(T)
-	;		some [T] functor(mh_applicable, T) => relation(T)
-	;		some [T] mr_relation(T) => relation(T)
-	;		some [T] mr_predicate(T) => predicate(T)
-	;		some [T] mr_function(T) => function(T)
-	;		some [T] lambda_pred(T, mh_clause) => relation(T)
-	;		some [T] lambda_func(T, mh_term, mh_clause) => relation(T).
+
 
 %-----------------------------------------------------------------------------%
 % variables
