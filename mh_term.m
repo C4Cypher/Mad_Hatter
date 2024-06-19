@@ -28,63 +28,87 @@
 
 :- type mh_term 
 
+	% nil, the abscence of term
+	---> 	nil
+
 	% variables
-	--->	var(var_id, mh_type)
-	;		anonymous_var
+	;		var(var_id::var_id, var_type::mh_type)
+	;		anonymous
 	
 	% atomic terms
 	;		atom(symbol)
 	
-	% value
+	% values
 	;		some [T] mr_value(T)
 	
 	% compound terms
 	;		some [T] compound(symbol, T) => relation(T)
-	;		some [T] mr_structure(T) => relation(T)
+	;		some [T] mr_struct(T) 
+	;		some [T] mr_relation(T) => relation(T)
 	
 	% Higher order terms
 	;		some [T] predicate(T) => predicate(T)
 	;		some [T] functor(T) => functor(T)
 	;		some [T] function(T) => function(T).
 
-:- type mh_clause ---> unimplemented.
+%-----------------------------------------------------------------------------%
+%	Atoms
 
-
+:- type atom =< mh_term
+	--->	atom(symbol).
 
 %-----------------------------------------------------------------------------%
-% Variables
+%	Variables
 
-:- inst mh_var
-	---> 	var(ground, ground)
-	;		anonymous_var.
-
-
+:- inst mh_var 
+	--->	var(ground, ground)
+	;		anonymous.
+	
 :- type mh_var =< mh_term 
-	---> 	var(var_id, mh_type)
-	;		anonymous_var.
+	---> 	var(var_id::var_id, var_type::mh_type)
+	;		anonymous.
 	
-:- pred is_var(mh_term::in) is semidet.
-	
-:- func term_var_id(mh_term) = var_id is semidet.
-:- func term_var_type(mh_term) = mh_type is semidet.
+:- mode is_var == ground >> mh_var.
 
-:- func var_id(mh_var) = var_id is semidet.
-:- func var_type(mh_var) = mh_type is det.
+:- pred is_var(mh_term::is_var) is semidet.
 	
 %-----------------------------------------------------------------------------%
+%	Values
 
-
-%-----------------------------------------------------------------------------%
-
-
-
-%-----------------------------------------------------------------------------%
-
+:- type mercury_value =< mh_term
+	---> 	some [T] mr_value(T).
 
 %-----------------------------------------------------------------------------%
+%	Compound terms
 
+:- inst compound_term
+	--->	compound(ground, ground)
+	;		mr_struct(ground)
+	;		mr_relation(ground).
 
+:- type compound_term =< mh_term
+	--->	some [T] compound(symbol, T) => relation(T)
+	;		some [T] mr_struct(T) 
+	;		some [T] mr_relation(T) => relation(T).
 	
+:- 	inst mh_compound ---> compound(ground, ground).
+	
+:- type mh_compound =< compound_term
+	--->	some [T] compound(symbol, T) => relation(T).
+
+%-----------------------------------------------------------------------------%
+%  Structures - Mercury values indexed via deconstruction
+
+:- type mercury_structure =< compound_term
+	---> 	some [T] mr_struct(T).
+	
+%-----------------------------------------------------------------------------%
+%	Relations
+
+:- inst mercury_relation ---> mr_relation(ground).
+
+:- type mercury_relation =< compound_term
+	--->	some [T] mr_relation(T) => relation(T).
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -92,17 +116,18 @@
 :- implementation.
 
 %-----------------------------------------------------------------------------%
+%	Variables
 
-is_var(var(_, _)).
-is_var(anonymous_var).
+is_var(T) :- T = anonymous ; T = var(_, _).
 
-term_var_id(var(ID, _)) = ID.
+%-----------------------------------------------------------------------------%
+%	Atoms
 
-term_var_type(var(_, Type)) = Type.
-term_var_type(anonymous_var) = any. 
 
-var_id(var(ID, _)) = ID.
+%-----------------------------------------------------------------------------%
+%	Values
 
-var_type(var(_, Type)) = Type.
-var_type(anonymous_var) = any.
+
+%-----------------------------------------------------------------------------%
+% Structures
 
