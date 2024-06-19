@@ -27,7 +27,8 @@
 
 
 :- type mh_type
-	--->	any
+	--->	nil_type
+	;		any
 	;		named_type(symbol) % type alias
 	;		bound_p_type(p_type, list(mh_type)) %bound parametric type
 	;		type_disjunction(set(mh_type))
