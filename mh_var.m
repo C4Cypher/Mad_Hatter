@@ -21,6 +21,10 @@
 
 :- type var_id.
 
+
+
+%-----------------------------------------------------------------------------%
+
 :- type var_set.
 
 
@@ -37,7 +41,9 @@
 
 :- type var_id == int.
 
-:- type var_set ---> var_set(last_id::var_id).
+:- type var_set 
+	---> 	complete_var_set(last_id::var_id)
+	;		incomplete_var_set(set(var_id)).
 
 
 
