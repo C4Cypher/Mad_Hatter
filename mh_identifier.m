@@ -9,6 +9,7 @@
 % File: mh_identifier.m
 % Main author: C4Cypher.
 % Stability: low.
+%-----------------------------------------------------------------------------%
 
 :- module mh_identifier.
 
@@ -24,6 +25,8 @@
 :- type id(T).
 
 :- type id_set(T).
+
+:- instance enum(id(T)).
 
 %-----------------------------------------------------------------------------%
 
@@ -45,7 +48,6 @@
 :- func last_id(id_set(T)) = id(T).
 :- pred last_id(id_set(T)::in, id(T)::out) is det.
 
-:- instance enum(id(T)).
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -60,6 +62,10 @@
 :- type id(T) ---> id(int).
 
 :- type id_set(T) ---> id_set(int).
+
+:- instance enum(id(T)) where [
+	to_int(id(I)) = I,
+	from_int(I) = id(I) ].
 
 %-----------------------------------------------------------------------------%
 
@@ -100,6 +106,4 @@ contains(id_set(Top), id(Id)) :- Id < 0, Id =< Top.
 last_id(id_set(Id)) = id(Id).
 last_id(id_set(Id), id(Id)).
 
-:- instance enum(id(T)) where [
-	to_int(id(I)) = I,
-	from_int(I) = id(I) ].
+%-----------------------------------------------------------------------------%

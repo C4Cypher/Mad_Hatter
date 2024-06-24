@@ -24,18 +24,39 @@
 :- import_module mh_term.
 :- import_module mh_type.
 :- import_module mh_relation.
-:- import_module mh_predicate.
-:- import_module mh_function.
+:- import_module mh_procedure.
 
 %-----------------------------------------------------------------------------%
-%-----------------------------------------------------------------------------%
+% Expressions - evaluates to terms or other expressions
 
 :- type mh_expression
-	--->	term_exp(mh_term)
-	;		
+	--->	unification(mh_term, mh_term)
+	;		some [P, R] predicate_call(P, R) => (predicate( 
+	
+%-----------------------------------------------------------------------------%
+% Parse expressions - expressions that can be parsed directly from source
 
+:- type parse_expression =< mh_expression
+	--->	
+		
+%-----------------------------------------------------------------------------%
+% Term expressions - expressions that evaluate to terms
+
+:- type term_expression =< mh_expression
+	--->	some [F, R] functor_application(F, R)
+
+%-----------------------------------------------------------------------------%
+% Predicate expresssions =
+
+:- type predicate_expression =< mh_expression
+	--->	unification(mh_term, mh_term)
+	;		some [P, R] predicate_call(P, R) => (predicate(P), relation(R))
 	
 	
+	
+	
+	
+	;		
 	
 	
 	

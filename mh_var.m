@@ -14,41 +14,31 @@
 
 :- interface.
 
-:- import_module mh_identifier.
-:- import_module mh_type.
+
+% :- import_module mh_term.
 
 %-----------------------------------------------------------------------------%
 
-:- type var_id == id(mh_var).
+:- type var_id.
 
-:- type mh_var.
+:- type var_set.
+
 
 %-----------------------------------------------------------------------------%
 
-:- pred var_id(mh_var::in, var_id::out) is semidet.
 
-:- func var_id(mh_var) = var_id is semidet.
-
-:- pred var_type(mh_var::in, mh_type::out) is det.
-
-:- func var_type(mh_var) = mh_type.
-
-:- pred is_anonymous(mh_var::in) is semidet.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
 :- implementation.
 
-:- import_module mr_identifier.construct_id.
-
-:- type mh_var
-	--->	mh_var(int, mh_type)
-	;		anonymous_var.
-
 %-----------------------------------------------------------------------------%
 
-var_id(mh_var(Index, _), construct_id(Index)).
+:- type var_id == int.
 
-var_id(mh_var(Index, _)) = construct_id(Index). 
+:- type var_set ---> var_set(last_id::var_id).
 
+
+
+%-----------------------------------------------------------------------------%

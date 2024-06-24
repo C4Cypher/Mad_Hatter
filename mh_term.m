@@ -16,15 +16,13 @@
 
 :- interface.
 
+:- import_module mh_var.
 :- import_module mh_symbol.
-:- import_module mh_identifier.
 :- import_module mh_relation.
 :- import_module mh_procedure.
-:- import_module mh_type.
 
+%-----------------------------------------------------------------------------%
 
-
-:- type var_id == id(mh_var).
 
 :- type mh_term 
 
@@ -32,7 +30,7 @@
 	---> 	nil
 
 	% variables
-	;		var(var_id::var_id, var_type::mh_type)
+	;		var(var_id::var_id)
 	;		anonymous
 	
 	% atomic terms
@@ -61,11 +59,11 @@
 %	Variables
 
 :- inst mh_var 
-	--->	var(ground, ground)
+	--->	var(ground)
 	;		anonymous.
 	
 :- type mh_var =< mh_term 
-	---> 	var(var_id::var_id, var_type::mh_type)
+	---> 	var(var_id::var_id)
 	;		anonymous.
 	
 :- mode is_var == ground >> mh_var.
@@ -118,7 +116,7 @@
 %-----------------------------------------------------------------------------%
 %	Variables
 
-is_var(T) :- T = anonymous ; T = var(_, _).
+is_var(T) :- T = anonymous ; T = var(_).
 
 %-----------------------------------------------------------------------------%
 %	Atoms

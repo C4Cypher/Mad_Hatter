@@ -6,12 +6,16 @@
 % Public License - see the file COPYING.LIB in the Mercury distribution.
 %-----------------------------------------------------------------------------%
 % 
-% File: mh_scope.m
+% File: mh_dictionary.m
 % Main author: C4Cypher.
 % Stability: low.
 %-----------------------------------------------------------------------------%
 
-:- module mh_scope.
+:- module dictionary.
 
-:- interface.
+:- type dictionary(T, U). %Map of Id's to values implemented in an array
 
+%	init_id_map(ID_Set, InitialValue, NewMap).
+:- pred init_dictionary(id_set(T)::in, U::in, dictionary(T, U)::out) is det.
+
+:- func init_dictionary(id_set(T), U) = dictionary(T, U).
