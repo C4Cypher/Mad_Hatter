@@ -20,22 +20,10 @@
 %-----------------------------------------------------------------------------%
 
 % Types implementing index(T, U) will store values of type U in structures of
-% type T, indexed from 1 to arity(T), T must not have invalid indexes
-% between 1 and arity(T)
+% type T, indexed from 1 to arity(T), index/3 and set_index/4 are expected to
+% throw an exception if index is out of range.
 
 :- typeclass index(T, U) <= ((T -> U), arity(T)) where [
-
-
-	pred valid_index(T, int), % valid_index(Container, Index)
-	mode valid_index(in, in) is semidet, % succeed on valid index
-	mode valid_index(in, out) is nondet, % return all valid indexes, 
-	
-	% valid_index(in, out) may produce indexes in any order, but it must not
-	% generate duplicate indexes, otherwise default_map/3 may produce
-	% undefined behavior.  This requirement allows higher order iterators
-	% to execute over valid indexes in place, rather than having to generate
-	% a list of solutions first. My implementations will attempt to produce
-	% indexes from 1 to arity(T)
 
 	pred index(T, int, U),	% index(Container, Index, Value)
 	mode index(in, in, out) is det, % exception on invalid index
@@ -46,7 +34,7 @@
 	mode set_index(out, in, in, out) is nondet, % update any index nondet
 	
 	% Iterate a closure over all values in a container with an accumulator
-	% in the same order as index/3
+	% from index 1 to arity(T)
 	pred fold_index(pred(U, A, A), T, A, A), % fold_index(Closure, Cont, !Acc)
 	mode fold_index(pred(in, in, out) is det, in, in, out) is det,
 	
@@ -56,7 +44,15 @@
 ].
 
 %-----------------------------------------------------------------------------%
+% Valid indexes
+
+:- pred valid_index(T, int) <= index(T, _). % valid_index(Container, Index)
+:- mode valid_index(in, in) is semidet. % succeed on valid index
+:- mode valid_index(in, out) is nondet. % return all valid indexes, 
+
+%-----------------------------------------------------------------------------%
 % Index Operation determinism casts
+
 
 	
 :- pred semidet_valid_index(T::in, int::in) is semidet <= index(T, _).
@@ -129,6 +125,24 @@
 :- import_module bool.
 :- import_module maybe.
 :- import_module sparse_bitset.
+
+%-----------------------------------------------------------------------------%
+% Valid indexes
+
+:- pragma promise_equivalent_clauses(valid_index/2).
+
+valid_index(T::in, I::in) :- I > 0, I =< arity(T).
+
+valid_index(T::in, I::out) :- 
+	Arity @ arity(T) > 0,
+	generate_valid_index(1, Arity, I).
+	
+:- pred generate_valid_index(int::in, int::in, int::out) is multi.
+
+generate_valid_index(I0, A, I) :-
+		I = I0 
+	; 	I0 < A,
+		generate_valid_index(I0 + 1, A, I).
 
 %-----------------------------------------------------------------------------%
 % Index Operation determinism casts

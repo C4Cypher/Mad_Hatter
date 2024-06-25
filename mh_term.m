@@ -138,8 +138,9 @@
 
 :- implementation.
 
-:- import_module type_desc.
 :- import_module deconstruct.
+:- import_module univ.
+:- import_module construct.
 
 %-----------------------------------------------------------------------------%
 % 	mh_term
@@ -157,13 +158,13 @@
 		), A = 0
 		
 	;	T = compound(_, R), A = arity(R)
-	;	T = mr_struct(S), A = type_ctor_arity(type_ctor(type_of(S)))
+	;	T = mr_struct(S), A = struct_arity(S)
 	;	T = mr_relation(R), A = arity(R)
 	)
 ].
 
 :- instance index(mh_term, mh_term) where [
-	valid_index(T, I) :- require_complete_switch [T] (
+	index(T, I, U) :- require_complete_switch [T] (
 		(	T = nil
 		;	T = var(_)
 		;	T = anonymous
@@ -174,17 +175,60 @@
 		;	T = function(_)
 		), fail	
 		
-		;	T = compound(_, R), valid_index(R, I)
-		;	T = mr_struct(S), 
+		;	T = compound(_, R), index(R, I, U)
+		;	T = mr_struct(S), struct_index(S, I, U)
+		;	T = mr_relation(R), index(R, I, U),
+		
+	set_index(I, U, !T) :-
+		(	T = nil
+		;	T = var(_)
+		;	T = anonymous
+		;	T = atom(_)
+		;	T = mr_value(_)
+		;	T = predicate(_)
+		;	T = functor(_)
+		;	T = function(_)
+		), fail	
 		
 		
-:- pred struct_valid_index(T, int) <= index(T, _).
-:- mode struct_valid_index(in, in) is semidet.
-:- mode struct_valid_index(in, out) is nondet.
+	
+	
+		
 
-:- pragma promise_equivalent_clauses(struct_valid_index/2).
+:- func struct_arity(T) = int.
 
-struct_valid_index(T::in, I::in) :- I > 0, I =< arity(T).
+struct_arity(T) = A :- functor(T, canonicalize, _, A).
+		
+:- pred struct_index(T, int, mh_term) <= index(T, _).
+:- mode struct_index(in, in, mh_term) is semidet.
+:- mode struct_index(in, out, mh_term) is nondet.
+
+:- pragma promise_equivalent_clauses(struct_index/2).
+
+struct_index(T::in, I::in, U::out) :- 
+	det_arg(T, canonicalize, I, V),
+	U = 'new mr_value'(univ_value(V)).
+	
+struct_index(T::in, I::out, U::out) :-
+	deconstruct(T, canonicalize, _, _, Args),
+	univ_list_index(Args, I, U).
+	
+	
+:- pred univ_list_index(list(univ)::in, int::out, mh_term::out) is nondet.
+
+univ_list_index([ X | XS], I, Term) :-
+	Term = 'new mr_value'(X),
+	I = 1, 
+	(
+		XS = []
+	;	univ_list_index(XS, I + 1, Term)
+	).
+		
+:- pred set_struct_index(int, mh_term, T, T).
+:- mode set_struct_index(in, in, in, out) is det.
+:- mode set_struct_index(out, in, in, out) is nondet.
+
+:- pragma promise_equivalent_clauses(set_struct_index/2).
 
 %-----------------------------------------------------------------------------%
 %	Variables
@@ -205,7 +249,7 @@ is_var(T) :- T = anonymous ; T = var(_).
 :- instance arity(compound_term) where [
 	arity(T, A) :- require_complete_switch [T] 
 	(	T = compound(_, R), A = arity(R)
-	;	T = mr_struct(S), A = type_ctor_arity(type_ctor(type_of(S)))
+	;	T = mr_struct(S), A = struct_arity(S)
 	;	T = mr_relation(R), A = arity(R)
 	)
 ].
