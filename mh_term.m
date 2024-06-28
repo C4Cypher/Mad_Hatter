@@ -44,7 +44,6 @@
 	
 	% compound terms
 	;		some [T] compound(symbol, T) => relation(T)
-	;		some [T] mr_struct(T) 
 	;		some [T] mr_relation(T) => relation(T)
 	
 	% Higher order terms
@@ -93,12 +92,10 @@
 
 :- inst compound_term
 	--->	compound(ground, ground)
-	;		mr_struct(ground)
 	;		mr_relation(ground).
 
 :- type compound_term =< mh_term
 	--->	some [T] compound(symbol, T) => relation(T)
-	;		some [T] mr_struct(T) 
 	;		some [T] mr_relation(T) => relation(T).
 	
 :- instance arity(compound_term).
@@ -110,14 +107,6 @@
 
 :- instance arity(mh_compound).
 
-%-----------------------------------------------------------------------------%
-%  Structures - Mercury values indexed via deconstruction
-
-:- type mercury_structure =< compound_term
-	---> 	some [T] mr_struct(T).
-	
-:- instance arity(mercury_structure).
-	
 %-----------------------------------------------------------------------------%
 %	Relations
 
@@ -138,9 +127,9 @@
 
 :- implementation.
 
-:- import_module deconstruct.
-:- import_module univ.
-:- import_module construct.
+:- import_module require.
+:- import_module type_desc.
+:- import_module string.
 
 %-----------------------------------------------------------------------------%
 % 	mh_term
@@ -158,7 +147,6 @@
 		), A = 0
 		
 	;	T = compound(_, R), A = arity(R)
-	;	T = mr_struct(S), A = struct_arity(S)
 	;	T = mr_relation(R), A = arity(R)
 	)
 ].
@@ -173,13 +161,30 @@
 		;	T = predicate(_)
 		;	T = functor(_)
 		;	T = function(_)
-		), fail	
+		), zero_index_err("index", T) 	
 		
 		;	T = compound(_, R), index(R, I, U)
-		;	T = mr_struct(S), struct_index(S, I, U)
-		;	T = mr_relation(R), index(R, I, U),
+		;	T = mr_relation(R), index(R, I, U)
+	),
 		
-	set_index(I, U, !T) :-
+	set_index(I, U, !T) :- require_complete_switch [!.T] (
+		(	!.T = nil
+		;	!.T = var(_)
+		;	!.T = anonymous
+		;	!.T = atom(_)
+		;	!.T = mr_value(_)
+		;	!.T = predicate(_)
+		;	!.T = functor(_)
+		;	!.T = function(_)
+		), zero_index_err("set index of", !.T) 	
+		
+		; 	!.T = compound(F, R0),	set_index(I, U, R0, R), 
+			!:T = 'new compound'(F, R)
+		;	!.T = mr_relation(R0), set_index(I, U, R0, R),
+			!:T = 'new mr_relation'(R) 
+	),
+		
+	fold_index(P, T, !A) :- require_complete_switch [T] (
 		(	T = nil
 		;	T = var(_)
 		;	T = anonymous
@@ -188,48 +193,36 @@
 		;	T = predicate(_)
 		;	T = functor(_)
 		;	T = function(_)
-		), fail	
+		), zero_index_err("fold index on", T)
 		
+		;	T = compound(_, R), fold_index(P, R, !A)
+		;	T = mr_relation(R), fold_index(P, R, !A)
+	),
+	
+	map_index(P, !T) :- require_complete_switch [!.T] (
+		(	!.T = nil
+		;	!.T = var(_)
+		;	!.T = anonymous
+		;	!.T = atom(_)
+		;	!.T = mr_value(_)
+		;	!.T = predicate(_)
+		;	!.T = functor(_)
+		;	!.T = function(_)
+		), zero_index_err("map index on", !.T) 	
+		
+		; 	!.T = compound(F, R0), map_index(P, R0, R), 
+			!:T = 'new compound'(F, R)
+		;	!.T = mr_relation(R0), map_index(P, R0, R),
+			!:T = 'new mr_relation'(R)
+	)
+].
 		
 	
 	
 		
 
-:- func struct_arity(T) = int.
 
-struct_arity(T) = A :- functor(T, canonicalize, _, A).
 		
-:- pred struct_index(T, int, mh_term) <= index(T, _).
-:- mode struct_index(in, in, mh_term) is semidet.
-:- mode struct_index(in, out, mh_term) is nondet.
-
-:- pragma promise_equivalent_clauses(struct_index/2).
-
-struct_index(T::in, I::in, U::out) :- 
-	det_arg(T, canonicalize, I, V),
-	U = 'new mr_value'(univ_value(V)).
-	
-struct_index(T::in, I::out, U::out) :-
-	deconstruct(T, canonicalize, _, _, Args),
-	univ_list_index(Args, I, U).
-	
-	
-:- pred univ_list_index(list(univ)::in, int::out, mh_term::out) is nondet.
-
-univ_list_index([ X | XS], I, Term) :-
-	Term = 'new mr_value'(X),
-	I = 1, 
-	(
-		XS = []
-	;	univ_list_index(XS, I + 1, Term)
-	).
-		
-:- pred set_struct_index(int, mh_term, T, T).
-:- mode set_struct_index(in, in, in, out) is det.
-:- mode set_struct_index(out, in, in, out) is nondet.
-
-:- pragma promise_equivalent_clauses(set_struct_index/2).
-
 %-----------------------------------------------------------------------------%
 %	Variables
 
@@ -249,7 +242,6 @@ is_var(T) :- T = anonymous ; T = var(_).
 :- instance arity(compound_term) where [
 	arity(T, A) :- require_complete_switch [T] 
 	(	T = compound(_, R), A = arity(R)
-	;	T = mr_struct(S), A = struct_arity(S)
 	;	T = mr_relation(R), A = arity(R)
 	)
 ].
@@ -259,14 +251,39 @@ is_var(T) :- T = anonymous ; T = var(_).
 		
 	
 %-----------------------------------------------------------------------------%
-% Structures
-
-:- instance arity(mercury_structure) where [ 
-	 arity(mr_struct(T), type_ctor_arity(type_ctor(type_of(T))))
-].
-
-%-----------------------------------------------------------------------------%
 %	Relations
 
 
 :- instance arity(mercury_relation) where [ arity(mr_relation(R), arity(R)) ].
+
+%-----------------------------------------------------------------------------%
+% Utility
+
+:- pred zero_index_err(string::in, mh_term::in) is erroneous.
+
+zero_index_err(Action, Term) :- 
+	error("Attempt to " ++ Action ++ " "  ++ term_description(Term) ++ 
+	". Zero arity terms may not be indexed.").
+	
+:- func mr_type_name(T) = string.
+
+mr_type_name(T) = type_name(type_of(T)).
+
+:- func term_description(mh_term) = string.
+
+term_description(nil) = "nil term".
+term_description(var(V)) = "variable with id " ++ string(V).
+term_description(anonymous) = "anonymous variable".
+term_description(atom(A)) = "atomic term '" ++ to_string(A) ++ "'".
+term_description(mr_value(M)) = 
+	"mercury value term of type " ++ mr_type_name(M).
+term_description(compound(A, R)) = 
+	"compound term " ++ to_string(A) ++ "(" ++ mr_type_name(R) ++ ")".
+term_description(mr_relation(R)) = 
+	"mercury relation term of type " ++	mr_type_name(R).
+term_description(predicate(P)) = 
+	"mercury predicate term of type " ++ mr_type_name(P).
+term_description(functor(F)) =
+	"mercury functor term of type " ++ mr_type_name(F).
+term_description(function(F)) =
+	"mercury function term of type " ++ mr_type_name(F).
