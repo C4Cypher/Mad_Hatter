@@ -76,9 +76,11 @@
 % Function versions of index/2 methods
 
 :- func index(int, T) = U <= index(T, U).
+:- func set_index(int, U, T) = T <= index(T, U).
 :- func 'index :='(int, T, U) = T <= index(T, U).
 
 :- func semidet_index(int, T) = U is semidet <= index(T, U).
+:- func semidet_set_index(int, U, T) = T is semidet <= index(T, U).
 :- func 'semidet_index :='(int, T, U) = T is semidet <= index(T, U).
 
 
@@ -168,9 +170,13 @@ cc_nondet_set_index(I, U, !T) :- valid_index(!.T, I),set_index(I, U, !T).
 
 T ^ index(I) = U :- index(T, I, U).
 
+set_index(I, U, !.T) = !:T :- set_index(I, U, !T). 
+
 (!.T ^ index(I) := U) = !:T :- set_index(I, U, !T).
 
 T ^ semidet_index(I) = U :- semidet_index(T, I, U).
+
+semidet_set_index(I, U, !.T) = !:T :- semidet_set_index(I, U, !T).
 
 (!.T ^ semidet_index(I) := U) = !:T :- semidet_set_index(I, U, !T).
 
