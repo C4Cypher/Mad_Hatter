@@ -51,6 +51,8 @@
 	;		some [T] functor(T) => functor(T)
 	;		some [T] function(T) => function(T).
 	
+:- func term_functor(mh_term) = symbol is semidet.
+	
 :- instance arity(mh_term).
 :- instance index(mh_term, mh_term).
 :- instance relation(mh_term).
@@ -137,6 +139,9 @@
 
 %-----------------------------------------------------------------------------%
 % 	mh_term
+
+term_functor(atom(A)) = A.
+term_functor(compound(F, _)) = F.
 
 :- instance arity(mh_term) where [
 	arity(T, A) :- require_complete_switch [T] (
