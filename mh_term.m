@@ -52,10 +52,8 @@
 	;		some [T] function(T) => function(T).
 	
 :- instance arity(mh_term).
-
 :- instance index(mh_term, mh_term).
-
-% :- instance relation(mh_term).
+:- instance relation(mh_term).
 
 
 %-----------------------------------------------------------------------------%
@@ -99,6 +97,8 @@
 	;		some [T] mr_relation(T) => relation(T).
 	
 :- instance arity(compound_term).
+:- instance index(compound_term, mh_term).
+:- instance relation(compound_term).
 	
 :- 	inst mh_compound ---> compound(ground, ground).
 	
@@ -106,6 +106,8 @@
 	--->	some [T] compound(symbol, T) => relation(T).
 
 :- instance arity(mh_compound).
+:- instance index(mh_compound, mh_term).
+:- instance relation(mh_compound).
 
 %-----------------------------------------------------------------------------%
 %	Relations
@@ -116,6 +118,8 @@
 	--->	some [T] mr_relation(T) => relation(T).
 	
 :- instance arity(mercury_relation).
+:- instance index(mercury_relation, mh_term).
+:- instance relation(mercury_relation).
 	
 
 
@@ -217,7 +221,7 @@
 	)
 ].
 		
-	
+:- instance relation(mh_term) where [ ].
 	
 		
 
@@ -246,8 +250,59 @@ is_var(T) :- T = anonymous ; T = var(_).
 	)
 ].
 
-:- instance arity(mh_compound) where [ arity(compound(_, T), arity(T)) ].
+
+:- instance index(compound_term, mh_term) where [
+	index(T, I, U) :- require_complete_switch [T] (
+		T = compound(_, R), index(R, I, U)
+	;	
+		T = mr_relation(R), index(R, I, U)
+	),
+		
+	set_index(I, U, !T) :- require_complete_switch [!.T] (
+		!.T = compound(F, R0),	set_index(I, U, R0, R), 
+		!:T = 'new compound'(F, R)
+	;
+		!.T = mr_relation(R0), set_index(I, U, R0, R),
+		!:T = 'new mr_relation'(R) 
+	),
+		
+	fold_index(P, T, !A) :- require_complete_switch [T] (
+		T = compound(_, R), fold_index(P, R, !A)
+	;	
+		T = mr_relation(R), fold_index(P, R, !A)
+	),
 	
+	map_index(P, !T) :- require_complete_switch [!.T] (
+		!.T = compound(F, R0), map_index(P, R0, R), 
+		!:T = 'new compound'(F, R)
+	;	
+		!.T = mr_relation(R0), map_index(P, R0, R),
+		!:T = 'new mr_relation'(R)
+	)
+].
+
+:- instance relation(compound_term) where [ ].
+
+:- instance arity(mh_compound) where [ arity(compound(_, T), arity(T)) ].
+
+:- instance index(mh_compound, mh_term) where [ 
+	index(compound(_, R), I, U) :- index(R, I, U),
+	
+	set_index(I, U, !T) :- (
+		!.T = compound(F, R0),	set_index(I, U, R0, R), 
+		!:T = 'new compound'(F, R)
+	),
+		
+	fold_index(P, compound(_, R), !A) :- 
+		fold_index(P, R, !A),
+	
+	map_index(P, !T) :- (
+		!.T = compound(F, R0), map_index(P, R0, R), 
+		!:T = 'new compound'(F, R)
+	)
+].
+	
+:- instance relation(mh_compound) where [ ].	
 		
 	
 %-----------------------------------------------------------------------------%
@@ -255,6 +310,25 @@ is_var(T) :- T = anonymous ; T = var(_).
 
 
 :- instance arity(mercury_relation) where [ arity(mr_relation(R), arity(R)) ].
+
+:- instance index(mercury_relation, mh_term) where [ 
+	index(mr_relation(R), I, U) :- index(R, I, U),
+	
+	set_index(I, U, !T) :- (
+		!.T = mr_relation(R0),	set_index(I, U, R0, R), 
+		!:T = 'new mr_relation'(R)
+	),
+		
+	fold_index(P, mr_relation(R), !A) :- 
+		fold_index(P, R, !A),
+	
+	map_index(P, !T) :- (
+		!.T = mr_relation(R0), map_index(P, R0, R), 
+		!:T = 'new mr_relation'(R)
+	)
+].
+
+:- instance relation(mercury_relation) where [ ].
 
 %-----------------------------------------------------------------------------%
 % Utility
