@@ -97,10 +97,13 @@
 :- type compound_term =< mh_term
 	--->	some [T] compound(symbol, T) => relation(T)
 	;		some [T] mr_relation(T) => relation(T).
-	
+
 :- instance arity(compound_term).
 :- instance index(compound_term, mh_term).
 :- instance relation(compound_term).
+
+%-----------------------------------------------------------------------------%
+%	Mad Hatter compound terms
 	
 :- 	inst mh_compound ---> compound(ground, ground).
 	
@@ -288,6 +291,9 @@ is_var(T) :- T = anonymous ; T = var(_).
 
 :- instance relation(compound_term) where [ ].
 
+%-----------------------------------------------------------------------------%
+%	Mad Hatter compound terms
+
 :- instance arity(mh_compound) where [ arity(compound(_, T), arity(T)) ].
 
 :- instance index(mh_compound, mh_term) where [ 
@@ -312,7 +318,6 @@ is_var(T) :- T = anonymous ; T = var(_).
 	
 %-----------------------------------------------------------------------------%
 %	Relations
-
 
 :- instance arity(mercury_relation) where [ arity(mr_relation(R), arity(R)) ].
 
