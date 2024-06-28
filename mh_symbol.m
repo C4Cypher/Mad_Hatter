@@ -27,6 +27,8 @@
 :- mode symbol(in) = out is det.
 :- mode symbol(out) = in is det.
 
+:- func to_string(symbol) = string.
+
 :- implementation.
 
 :- pragma require_feature_set([memo]).
@@ -34,6 +36,8 @@
 :- type symbol ---> \string.
 
 symbol(String) = \String.
+
+to_string(\String) = String.
 
 :- pragma memo(symbol(in) = out).
 
