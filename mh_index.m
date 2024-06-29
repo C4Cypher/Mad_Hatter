@@ -37,7 +37,8 @@
 	mode set_index(out, in, in, out) is nondet, % update any index nondet
 	
 	% Iterate a closure over all values in a container with an accumulator
-	% from index 1 to arity(T)
+	% from index 1 to arity(T), abort and return the accumulator early if 
+	% closure fails.
 	pred fold_index(pred(U, A, A), T, A, A), % fold_index(Closure, Cont, !Acc)
 	mode fold_index(pred(in, in, out) is det, in, in, out) is det,
 	
@@ -117,6 +118,12 @@
 :- mode set_list_index(in, in, in, out) is det. 
 :- mode set_list_index(out, in, in, out) is nondet.
 
+:- pred fold_list_index(pred(T, A, A), list(T), A, A). 
+:- mode fold_list_index(pred(in, in, out) is det, in, in, out) is det.
+
+:- pred map_list_index(pred(T, T), list(T), list(T)).
+:- mode map_list_index(pred(in, out) is det, in, out) is det.
+	
 %-----------------------------------------------------------------------------%
 % Array index implementation methods
 
@@ -213,7 +220,6 @@ function_closure(Func, !T) :- Func(!.T) = !:T.
 %-----------------------------------------------------------------------------%
 % Default implementation of index methods
 
-
 default_fold(Closure, T, !A) :-	promise_equivalent_solutions [!:A]
 	unsorted_aggregate(	
 		nondet_valid_index(T), 
@@ -223,6 +229,7 @@ default_fold(Closure, T, !A) :-	promise_equivalent_solutions [!:A]
 :- pred default_fold_aggregator(pred(U, A, A), T, int, A, A) <= index(T, U).
 :- mode default_fold_aggregator(pred(in, in, out) is det, in, in, in, out)
 	is det.
+
 	
 default_fold_aggregator(Pred, T, I, !A) :- det_index(T, I, U), Pred(U, !A).
 
@@ -277,6 +284,18 @@ set_list_index(I, T, [_ | Vs], [T | Vs], I).
 set_list_index(I + 1, T, [V | !.Vs], [V | !:Vs], Len) :-
 	Len > 1,
 	set_list_index(I, T, !Vs, Len - 1).
+	
+fold_list_index(_, [], !A).
+
+fold_list_index(Closure, [T | L], !A) :-
+	Closure(T, !A),
+	fold_list_index(Closure, L, !A).
+	
+map_list_index(_, [], []).
+
+map_list_index(Closure, [ !.T | !.L ], [ !:T | !:L]) :-
+	Closure(!T),
+	map_list_index(Closure, !L).
 	
 %-----------------------------------------------------------------------------%
 % Array index implementation methods
