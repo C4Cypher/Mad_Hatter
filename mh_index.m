@@ -135,6 +135,12 @@
 :- mode set_array_index(in, in, in, out) is det. 
 :- mode set_array_index(out, in, in, out) is nondet.
 
+:- pred fold_array_index(pred(T, A, A), array(T), A, A). 
+:- mode fold_array_index(pred(in, in, out) is det, in, in, out) is det.
+
+:- pred map_array_index(pred(T, T), array(T), array(T)).
+:- mode map_array_index(pred(in, out) is det, in, out) is det.
+
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
@@ -316,3 +322,11 @@ set_array_index(I::in, V::in, !.A::in, !:A::out) :-
 set_array_index(I::out, V::in, !.A::in, !:A::out) :-
 	valid_index(!.A, I),
 	slow_set(I - 1, V, !A).
+	
+:- pragma inline(fold_array_index/4).
+	
+fold_array_index(Closure, Array, !A) :- foldl(Closure, Array, !A).
+
+:- pragma inline(map_array_index/3).
+
+map_array_index(Closure, !Array) :- map(Closure, !Array).
