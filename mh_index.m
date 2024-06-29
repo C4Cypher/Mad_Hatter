@@ -15,6 +15,9 @@
 
 :- interface.
 
+:- import_module list.
+:- import_module array.
+
 :- import_module mh_arity.
 
 %-----------------------------------------------------------------------------%
@@ -46,15 +49,13 @@
 %-----------------------------------------------------------------------------%
 % Valid indexes
 
-:- pred valid_index(T, int) <= index(T, _). % valid_index(Container, Index)
+:- pred valid_index(T, int) <= arity(T). % valid_index(Container, Index)
 :- mode valid_index(in, in) is semidet. % succeed on valid index
 :- mode valid_index(in, out) is nondet. % return all valid indexes, 
 
 %-----------------------------------------------------------------------------%
 % Index Operation determinism casts
 
-
-	
 :- pred semidet_valid_index(T::in, int::in) is semidet <= index(T, _).
 :- pred nondet_valid_index(T::in, int::out) is nondet <= index(T, _).
 :- pred cc_nondet_valid_index(T::in, int::out) is cc_nondet <= index(T, _).
@@ -88,23 +89,12 @@
 :- func map_index(func(U) = U, T) = T <= index(T, U).
 
 %-----------------------------------------------------------------------------%
-% Validity checks
-
-% Fails if arity is 0 and valid_index does not fail, arity is less than zero
-% or if arity is greater than zero and valid_index fails
-:- pred valid_index(T::in) is semidet <= index(T, _).
-
-% Fails if valid_index produces duplicate indexes
-:- pred valid_index_dup_check(T::in) is semidet <= index(T, _). 
-
-%-----------------------------------------------------------------------------%
 % Default implementation of index methods
 
 % These default implementations of typeclass index/2 member predicates require
 % implementations that iterate over the entire structure using index/3 or
 % valid_index/2 resulting in O(n) complexities, some instances
 % may have more efficient implementations availible.
-
 
 :- pred default_fold(pred(U, A, A), T, A, A) <= index(T, U).
 :- mode default_fold(pred(in, in, out) is det, in, in, out) is det.
@@ -116,6 +106,30 @@
 :- pred index_out_of_range_error(string::in, string::in, T::unused, U::unused, 
 	int::in) is erroneous <= index(T, U).
 
+%-----------------------------------------------------------------------------%
+% List index implementation methods
+
+:- pred list_index(list(T), int, T).
+:- mode list_index(in, in, out) is det. 
+:- mode list_index(in, out, out) is nondet. 
+	
+:- pred set_list_index(int, T, list(T), list(T)).
+:- mode set_list_index(in, in, in, out) is det. 
+:- mode set_list_index(out, in, in, out) is nondet.
+
+%-----------------------------------------------------------------------------%
+% Array index implementation methods
+
+:- pred array_index(array(T), int, T).
+:- mode array_index(in, in, out) is det. 
+:- mode array_index(in, out, out) is nondet. 
+	
+:- pred set_array_index(int, T, array(T), array(T)).
+:- mode set_array_index(in, in, in, out) is det. 
+:- mode set_array_index(out, in, in, out) is nondet.
+
+%-----------------------------------------------------------------------------%
+%-----------------------------------------------------------------------------%
 
 :- implementation.
 
@@ -197,45 +211,6 @@ map_index(Func, !.T) = !:T :- map_index(function_closure(Func), !T).
 function_closure(Func, !T) :- Func(!.T) = !:T.
 
 %-----------------------------------------------------------------------------%
-% Validity checks
-
-valid_index(T) :- 
-	arity(T, Arity),
-	compare(ZeroComp, Arity, 0),
-	require_complete_switch [ZeroComp] (
-		ZeroComp = (<), fail
-	;	ZeroComp = (=), not valid_index(T, _)
-	;	ZeroComp = (>), not (
-			valid_index(T, I),
-			I < 1, 
-			I > Arity
-		)
-	).
-
-valid_index_dup_check(T) :-
-	promise_equivalent_solutions [DupSet]
-		do_while(nondet_valid_index(T), dup_check, { no, init }, DupSet),
-		DupSet = { no, _ }.
-		
-
-:- type dup_index_set == { bool,  sparse_bitset(int) }.
-	
-:- pred dup_check(int::in, bool::out, dup_index_set::in, 
-	dup_index_set::out) is det.
-	
-dup_check(I, More, { !.Dups, !.Set }, { !:Dups, !:Set } ) :- (
-	if member(I, !.Set) then
-		!:Dups = yes,
-		!:Set = !.Set,
-		More = no
-	else
-		!:Dups = !.Dups,
-		insert(I, !Set),
-		More = yes
-	).
-
-
-%-----------------------------------------------------------------------------%
 % Default implementation of index methods
 
 
@@ -271,3 +246,54 @@ index_out_of_range_error(Module, Pred, T, U, I) :- unexpected(Module, Pred,
 				" out of range for method call of index(" ++ 
 				type_name(type_of(T)) ++ ", " ++ type_name(type_of(U)) ++
 				").").
+				
+%-----------------------------------------------------------------------------%
+% List index implementation methods
+
+:- pragma promise_equivalent_clauses(list_index/3).
+
+list_index(L::in, I::in, V::out) :- det_index1(L, I, V). 
+		
+list_index([V | Vs]::in, I::out, U::out) :-
+	I = 1, V = U;
+	I > 1, list_index(Vs @ [_ | _], I - 1, U). 
+
+
+:- pragma promise_equivalent_clauses(set_list_index/4).
+
+set_list_index(I::in, T::in, !.L::in, !:L::out) :-
+	det_replace_nth(!.L, I, T, !:L).
+
+
+set_list_index(I::out, T::in, !.L::in, !:L::out) :-
+	Len = length(!.L),
+	set_list_index(I, T, !L, Len).
+
+:- pred set_list_index(int::out, T::in, list(T)::in, list(T)::out, int::in)
+		is nondet.
+		
+set_list_index(I, T, [_ | Vs], [T | Vs], I).
+
+set_list_index(I + 1, T, [V | !.Vs], [V | !:Vs], Len) :-
+	Len > 1,
+	set_list_index(I, T, !Vs, Len - 1).
+	
+%-----------------------------------------------------------------------------%
+% Array index implementation methods
+
+:- pragma promise_equivalent_clauses(array_index/3).
+
+array_index(A::in, I::in, V::out) :- unsafe_lookup(A, I - 1, V).
+
+array_index(A::in, I::out, V::out) :-
+	valid_index(A, I),
+	unsafe_lookup(A, I - 1, V).
+
+:- pragma promise_equivalent_clauses(set_array_index/4).
+
+set_array_index(I::in, V::in, !.A::in, !:A::out) :-
+	slow_set(I - 1, V, !A).
+	
+set_array_index(I::out, V::in, !.A::in, !:A::out) :-
+	valid_index(!.A, I),
+	slow_set(I - 1, V, !A).
