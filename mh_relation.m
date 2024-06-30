@@ -15,6 +15,9 @@
 
 :- interface.
 
+:- import_module list.
+:- import_module array.
+
 :- import_module mh_term.
 :- import_module mh_index.
 
@@ -29,28 +32,51 @@
 
 
 %-----------------------------------------------------------------------------%
+% List relations
 
+:- instance index(list(mh_term), mh_term).
+
+:- instance relation(list(mh_term)).
 	
 
 
 
 %-----------------------------------------------------------------------------%
+% List relations
 
+:- instance index(array(mh_term), mh_term).
+
+:- instance relation(array(mh_term)).
 
 
 
 	
 %-----------------------------------------------------------------------------%
-	
-
-
 %-----------------------------------------------------------------------------%
 
 
 :- implementation.
 
+%-----------------------------------------------------------------------------%
+% List relations
 
+:- instance index(list(mh_term), mh_term) where [
+	pred(index/3) is list_index,
+	pred(set_index/4) is set_list_index,
+	pred(fold_index/4) is fold_list_index,
+	pred(map_index/3) is map_list_index
+].
 
+:- instance relation(list(mh_term)) where [ ].
 
 %-----------------------------------------------------------------------------%
+% Array relations
 
+:- instance index(array(mh_term), mh_term) where [
+	pred(index/3) is array_index,
+	pred(set_index/4) is set_array_indexl,
+	pred(fold_index/4) is fold_array_index,
+	pred(map_index/3) is map_array_index
+].
+
+:- instance relation(array(mh_term)) where [ ].
