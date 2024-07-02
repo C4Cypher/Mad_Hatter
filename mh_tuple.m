@@ -6,12 +6,12 @@
 % Public License - see the file COPYING.LIB in the Mercury distribution.
 %-----------------------------------------------------------------------------%
 % 
-% File: mh_relation.m
+% File: mh_tuple.m
 % Main author: C4Cypher.
 % Stability: low.
 %-----------------------------------------------------------------------------%
 
-:- module mh_relation.
+:- module mh_tuple.
 
 :- interface.
 
@@ -19,23 +19,23 @@
 :- import_module mh_term.
 
 %-----------------------------------------------------------------------------%
-% Relation
+% Tuple
 
 % Represents an indexable tuple of terms
 
-:- typeclass relation(T) <= arity(T) where [
+:- typeclass tuple(T) <= arity(T) where [
 
-	% term_index(Relation, Index, Term) 
-	% retreive the Term from the Relation at Index, throw an exception if
+	% term_index(Tuple, Index, Term) 
+	% retreive the Term from the Tuple at Index, throw an exception if
 	% index is out of range
 	pred term_index(T, int, mh_term),
 	mode term_index(in, in, out) is det,
 	mode term_index(in, out, out) is nondet,
 	
-	% convert_relation(Relation, Type)
-	% Accept some other Relation and return a relation of this Type with the
-	% same terms
-	some [R] pred convert_relation(R::in, T::out) => relaiton(T) is det,
+	% convert_relation(Tuple, Type)
+	% Accept some other Tuple and return a tuple of this Type with the
+	% same terms, fail if the types are incompatable
+	some [U] pred convert_tuple(Tup::in, T::out) => relaiton(Tup) is semidet,
 	
 	% fold_term_index(Closure, Relation, !Accumulator)
 	% perform a left fold from index 1 to arity(Relation), calling Closure on

@@ -29,7 +29,7 @@
 	% Todo:  predicate to call predicate under a module and scope
 ].
 
-:- typeclass functor(T) <= procedure(T, functor_signature) where [
+:- typeclass relation(T) <= procedure(T, relation_signature) where [
 	% Todo: context to call a functor unification under a module and scope
 ].
 

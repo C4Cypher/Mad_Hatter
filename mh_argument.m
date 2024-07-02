@@ -19,7 +19,7 @@
 
 %-----------------------------------------------------------------------------%
 
-:- type argument
+:- type argument % TODO: rewrite argument as list(int)
 	--->	+int
 	;		int ^ argument.
 	

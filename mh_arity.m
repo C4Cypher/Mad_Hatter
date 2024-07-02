@@ -22,6 +22,7 @@
 :- import_module mh_symbol.
 
 %-----------------------------------------------------------------------------%
+% Arity typeclass
 
 :- typeclass arity(T) where [
 	pred arity(T::in, int::out) is det
@@ -30,12 +31,21 @@
 :- func arity(T) = int <= arity(T).
 
 %-----------------------------------------------------------------------------%
+% Indexing values with arity
+
+:- pred valid_index(T, int) <= arity(T). % valid_index(Container, Index)
+:- mode valid_index(in, in) is semidet. % succeed on valid index
+:- mode valid_index(in, out) is nondet. % return all valid indexes, 
+
+%-----------------------------------------------------------------------------%
+% Symbols with arity
 
 :- type symbol_arity ---> symbol/int.
 
 :- func symbol_arity(symbol, T) = symbol_arity <= arity(T).
 
 %-----------------------------------------------------------------------------%
+%	Arity instances
 
 :- instance arity(list(T)).
 :- instance arity(array(T)).
@@ -46,13 +56,36 @@
 
 :- implementation.
 
+%-----------------------------------------------------------------------------%
+% Arity typeclass
+
 arity(T) = A :- arity(T, A).
 
 %-----------------------------------------------------------------------------%
+% Indexing values with arity
+
+:- pragma promise_equivalent_clauses(valid_index/2).
+
+valid_index(T::in, I::in) :- I > 0, I =< arity(T).
+
+valid_index(T::in, I::out) :- 
+	Arity @ arity(T) > 0,
+	generate_valid_index(1, Arity, I).
+	
+:- pred generate_valid_index(int::in, int::in, int::out) is multi.
+
+generate_valid_index(I0, A, I) :-
+		I = I0 
+	; 	I0 < A,
+		generate_valid_index(I0 + 1, A, I).
+
+%-----------------------------------------------------------------------------%
+% Symbols with arity
 
 symbol_arity(S, T) = S/arity(T).
 
 %-----------------------------------------------------------------------------%
+%	Arity instances
 
 :- instance arity(list(T)) where [ pred(arity/2) is list.length ].
 

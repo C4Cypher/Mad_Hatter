@@ -33,7 +33,7 @@
 
 :- type term_signature ---> mh_type :: mh_mode.
 
-:- type relation_signature == list(term_signature).
+:- type tuple_signature == list(term_signature).
 
 :- type proc_signature
 	---> 	predicate_signature(relation_signature)
