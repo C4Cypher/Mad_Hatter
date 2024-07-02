@@ -27,10 +27,17 @@
 
 	% tuple_index(Tuple, Index, Term) 
 	% retreive the Term from the Tuple at Index, throw an exception if
-	% index is out of range
+	% index is out of range, nondet version will fail if tuple is of zero arity
 	pred tuple_index(T, int, mh_term),
 	mode tuple_index(in, in, out) is det,
 	mode tuple_index(in, out, out) is nondet,
+	
+	% set_tuple(Index, Term, !Tuple)
+	% Make a new !:Tuple by subsituting the term at Index in !.Tuple
+	% fail if Term is incompatable with the Tuple type
+	pred set_tuple(int, mh_term, T, T), % set_tuple(Index, Value, !Container)
+	mode set_tuple(in, in, in, out) is semidet, % exception on invalid index
+	mode set_tuple(out, in, in, out) is nondet, % update any index nondet
 	
 	% convert_relation(Tuple, Type)
 	% Accept some other Tuple and return a tuple of this Type with the
