@@ -138,8 +138,8 @@
 %-----------------------------------------------------------------------------%
 % 	mh_term
 
-term_functor(atom(A)) = A.
-term_functor(compound(F, _)) = F.
+functor(atom(A)) = A.
+functor(compound(F, _)) = F.
 
 :- instance arity(mh_term) where [
 	arity(T, A) :- require_complete_switch [T] (
@@ -149,7 +149,7 @@ term_functor(compound(F, _)) = F.
 		;	T = atom(_)
 		;	T = mr_value(_)
 		;	T = predicate(_)
-		;	T = functor(_)
+		;	T = relation(_)
 		;	T = function(_)
 		), A = 0
 		

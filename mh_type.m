@@ -34,17 +34,17 @@
 	;		type_disjunction(set(mh_type))
 	;		type_conjunction(set(mh_type))
 	;		mr_type(type_desc)
-	;		mr_relation(type_desc, relation_signature)
-	;		predicate(relation_signature)
-	;		functor(functor_signature) 
+	;		mr_tuple(type_desc, tuple_type)
+	;		predicate(tuple_signature)
+	;		relation(relation_signature) 
 	;		function(function_signature)
-	;		data_type(symbol, data_type_signature).
+	;		mh_term(symbol, tuple_type).
 	
 %-----------------------------------------------------------------------------%
 
 :- type mh_ground_type =< mh_type
 	--->	mr_type(type_desc)
-	;		data_type(symbol, data_type_signature).
+	;		mh_term(symbol, data_type_signature).
 	
 :- type data_type_signature == list(mh_type).	
 
@@ -53,7 +53,7 @@
 
 
 %-----------------------------------------------------------------------------%
-:- type relation_type == list(mh_type).
+:- type tuple_type == list(mh_type).
 
 
 	
