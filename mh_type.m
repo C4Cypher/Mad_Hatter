@@ -35,8 +35,8 @@
 	;		type_conjunction(set(mh_type))
 	;		mr_type(type_desc)
 	;		mr_tuple(type_desc, tuple_type)
-	;		predicate(tuple_signature)
 	;		relation(relation_signature) 
+	;		predicate(tuple_signature)
 	;		function(function_signature)
 	;		mh_term(symbol, tuple_type).
 	

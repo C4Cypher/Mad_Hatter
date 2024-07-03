@@ -46,8 +46,8 @@
 	;		some [T] mr_tuple(T) => tuple(T)
 	
 	% Higher order terms
-	;		some [T] predicate(T) => predicate(T)
 	;		some [T] relation(T) => relation(T)
+	;		some [T] predicate(T) => predicate(T)
 	;		some [T] function(T) => function(T).
 	
 :- func functor(mh_term) = symbol is semidet.

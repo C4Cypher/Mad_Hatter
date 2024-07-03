@@ -36,33 +36,30 @@
 :- type tuple_signature == list(term_signature).
 
 :- type proc_signature
-	---> 	predicate_signature(tuple_signature)
-	;		relation_signature(tuple_signature, term_signature)
+	---> 	relation_signature(tuple_signature, term_signature)
+	;		predicate_signature(tuple_signature)
 	;		function_signature(tuple_type, mh_type).
-
-:- type predicate_signature =< proc_signature
-	---> 	predicate_signature(tuple_signature).
 	
 :- type relation_signature =< proc_signature
 	--->	relation_signature(tuple_signature, term_signature).
 	
+:- type predicate_signature =< proc_signature
+	---> 	predicate_signature(tuple_signature).
+
 :- type function_signature =< proc_signature
 	---> 	function_signature(tuple_type, mh_type).
 	
-
-
 %-----------------------------------------------------------------------------%
 
 :- type proc_mode
-	--->	predicate_mode(tuple_signature)
-	;		relation_mode(tuple_signature, term_signature).
-	
-:- type predicate_mode =< proc_mode
-	--->	predicate_mode(tuple_signature).
+	--->	relation_mode(tuple_signature, term_signature)
+	;		predicate_mode(tuple_signature).
 	
 :- type relation_mode =< proc_mode
 	--->	relation_mode(tuple_signature, term_signature).
 
+:- type predicate_mode =< proc_mode
+	--->	predicate_mode(tuple_signature).
 
 %-----------------------------------------------------------------------------%
 
@@ -77,8 +74,8 @@
 :- typeclass to_mode(S, M) <= (S -> M) where [ func to_mode(S) = M ].
 
 :- instance to_mode(proc_signature, proc_mode).
-:- instance to_mode(predicate_signature, predicate_mode).
 :- instance	to_mode(relation_signature, relation_mode).
+:- instance to_mode(predicate_signature, predicate_mode).
 :- instance to_mode(function_signature, relation_mode).
 
 %-----------------------------------------------------------------------------%
@@ -97,17 +94,17 @@
 :- implementation.
 
 :- instance to_mode(proc_signature, proc_mode) where [
-	to_mode(predicate_signature(S)) = predicate_mode(S),
 	to_mode(relation_signature(S, R)) = relation_mode(S, R),
+	to_mode(predicate_signature(S)) = predicate_mode(S),
 	to_mode(function_signature(S, R)) = relation_mode(all_in(S), R :: out)
-].
-
-:- instance to_mode(predicate_signature, predicate_mode) where [
-	to_mode(predicate_signature(S)) = predicate_mode(S)
 ].
 
 :- instance to_mode(relation_signature, relation_mode) where [
 	to_mode(relation_signature(S, R)) = relation_mode(S, R)
+].
+
+:- instance to_mode(predicate_signature, predicate_mode) where [
+	to_mode(predicate_signature(S)) = predicate_mode(S)
 ].
 
 :- instance to_mode(function_signature, relation_mode) where [
