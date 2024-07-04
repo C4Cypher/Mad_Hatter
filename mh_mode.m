@@ -27,7 +27,27 @@
 	;		inout(tuple_signature)
 	;		unused.
 
+	% TODO: something akin to unique modes?
+	% implemented differently, the inst system seemed to be a dead end for
+	% mercury, mercury inst's are a powerful, expressive and underutilized
+	% tool ... and I'm sure that the back end performs some impressive 
+	% optimizations with it, for now I'm just going to stick with ground
+	% and free ... implicitly, skipping the inst step altogether when
+	% performing mode optimization, for now
+	
 %-----------------------------------------------------------------------------%
+% Tuple modes and signatures
+
+:- type tuple_mode == list(mh_mode). 
+
+%-----------------------------------------------------------------------------%
+% Relation mode
+
+%	Relation modes carry the control flow information of a call
+	
+%-----------------------------------------------------------------------------%
+% Relation signature
+
 %	Signatures contain all of the information require to derive the mode of
 % 	a procedure
 
@@ -35,7 +55,7 @@
 
 :- type tuple_signature == list(term_signature).
 
-:- type proc_signature
+:- type proc_signature % Todo, reorganize this with relation as the root Functors?
 	---> 	relation_signature(tuple_signature, term_signature)
 	;		predicate_signature(tuple_signature)
 	;		function_signature(tuple_type, mh_type).

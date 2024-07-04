@@ -6,12 +6,12 @@
 % Public License - see the file COPYING.LIB in the Mercury distribution.
 %-----------------------------------------------------------------------------%
 % 
-% File: mh_procedure.m
+% File: mh_relation.m
 % Main author: C4Cypher.
 % Stability: low.
 %-----------------------------------------------------------------------------%
 
-:- module mh_procedure.
+:- module mh_relation.
 
 :- interface.
 
@@ -20,20 +20,16 @@
 
 %-----------------------------------------------------------------------------%
 
-:- typeclass procedure(T, S) <= (arity(T), signature(T, S)) where [ ].
+:- typeclass relation(T) <= arity(T) where [
+	% Todo: method to unify relations under environment
+].
 
-:- typeclass procedure(T) <= procedure(T, proc_signature) where [ ].
-
-:- typeclass predicate(T) <= procedure(T, predicate_signature) where 
+:- typeclass predicate(T) <= relation(T) where 
 [
 	% Todo:  predicate to call predicate under a module and scope
 ].
 
-:- typeclass relation(T) <= procedure(T, relation_signature) where [
-	% Todo: context to call a functor unification under a module and scope
-].
-
-:- typeclass function(T) <= procedure(T, function_signature) where [
+:- typeclass function(T) <= relation(T) where [
 	% Todo:  predicate to apply a function under a module and scope
 ].
 

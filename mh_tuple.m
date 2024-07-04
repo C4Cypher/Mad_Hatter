@@ -18,6 +18,8 @@
 :- import_module mh_arity.
 :- import_module mh_term.
 
+% TODO:  create a commmon interface for unification? Typeclass? 
+
 %-----------------------------------------------------------------------------%
 % Tuple
 
