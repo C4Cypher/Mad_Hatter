@@ -15,6 +15,9 @@
 
 :- interface.
 
+:- import_module list.
+:- import_module array.
+
 :- import_module mh_arity.
 :- import_module mh_term.
 
@@ -34,11 +37,6 @@
 	mode tuple_index(in, in, out) is det,
 	mode tuple_index(in, out, out) is nondet,
 	
-	% convert_tuple_one_way(Tuple, Type)
-	% Accept some other Tuple and return a tuple of this Type with the
-	% same terms, fail if the types are incompatable
-	pred convert_tuple_one_way(U::in, T::out)  is semidet <= tuple(U),
-	
 	% fold_tuple(Closure, Relation, !Accumulator)
 	% perform a left fold from index 1 to arity(Relation), calling Closure on
 	% each term in Relation with !Accumulator
@@ -52,38 +50,40 @@
 
 :- func tuple_index(T, int) = mh_term <= tuple(T).
 
-:- func convert_tuple_one_way(T) = U <= (tuple(T), tuple(U)).
-
 :- func fold_tuple(func(mh_term, A) = A, T, A) = A <= tuple(T).
 
-:- pred det_tuple_index(T::in, int::in, U::out) is det <= tuple(T).
-:- pred semidet_tuple_index(T::in, int::in, U::out) is semidet <= tuple(T).
-:- pred nondet_tuple_index(T::in, int::out, U::out) is nondet <= tuple(T).
-:- pred cc_nondet_tuple_index(T::in, int::out, U::out) is cc_nondet 
+:- pred det_tuple_index(T::in, int::in, mh_term::out) is det <= tuple(T).
+:- pred semidet_tuple_index(T::in, int::in, mh_term::out) is semidet <= tuple(T).
+:- pred nondet_tuple_index(T::in, int::out, mh_term::out) is nondet <= tuple(T).
+:- pred cc_nondet_tuple_index(T::in, int::out, mh_term::out) is cc_nondet 
 	<= tuple(T).
 	
+
 %-----------------------------------------------------------------------------%
-% Tuple conversion
+% Tuple type
 
-:- pred convert_tuple(T, U) <= (tuple(T), tuple(U)).
-:- mode convert_tuple(in, out) is semidet.
-:- mode convert_tuple(out, in) is semidet.
+:- type mh_tuple
+	--->	some [T] mr_tuple(T) => tuple(T)
+	list_tuple(list(mh_term))
+	array_tuple(array(mh_term)).
 
-:- func convert_tuple(T) = U <= (tuple(T), tuple(U)).
-:- mode convert_tuple(in) = out is semidet.
-:- mode convert_tuple(out) = in is semidet.
+:- instance arity(mh_tuple).
+:- instance tuple(mh_tuple).
+	
+
 	
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
 :- implementation.
 
+
+:- import_module mh_index.
+
 %-----------------------------------------------------------------------------%
 % Function versions and determinism casts of tuple methods
 
 tuple_index(T, I) = Term :- tuple_index(T, I, Term).
-
-convert_tuple_one_way(T) = U :- convert_tuple_one_way(T, U).
 
 fold_tuple(Func, T, !.A) = !:A :- fold_tuple(function_closure(Func), T, !A).
 
@@ -95,4 +95,25 @@ function_closure(Func, T, !A) :- Func(T, !.A) = !:A.
 det_tuple_index(T, I, U) :- tuple_index(T, I, U).
 semidet_tuple_index(T, I, U) :- valid_index(T, I), tuple_index(T, I, U).
 nondet_tuple_index(T, I, U) :- valid_index(T, I), tuple_index(T, I, U).
-cc_nondet_tuple_index(T, I, U) :- valid_index(T, I), tuple_index(T, I, U)
+cc_nondet_tuple_index(T, I, U) :- valid_index(T, I), tuple_index(T, I, U).
+
+%-----------------------------------------------------------------------------%
+% Tuple type
+
+:- instance arity(mh_tuple) where [
+	arity(mr_tuple(T), A) :- arity(T, A),
+	arity(list_tuple(L), A) :- arity(L, A),
+	arity(array_tuple(Array), A) :- arity(Array, A)
+].
+
+:- instance tuple(mh_tuple) where [
+	
+	tuple_index(mr_tuple(T), I, Term) :- tuple_index(T, I, Term),
+	tuple_index(list_tuple(L), I, Term) :- list_index(L, I, Term),
+	tuple_index(array_tuple(A), I, Term) :- array_index(L, I, Term)
+	
+	fold_tuple(Closure, mr_tuple(T), !A) :- fold_tuple(Closure, T, !A),
+	fold_tuple(Closure, list_tuple(L), !A) :- fold_list_index(Closure, L, !A),
+	fold_tuple(Closure, array_tuple(T), !A) :- fold_array_index(Closure, T, !A)
+].
+
