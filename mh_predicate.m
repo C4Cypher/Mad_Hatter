@@ -6,32 +6,27 @@
 % Public License - see the file COPYING.LIB in the Mercury distribution.
 %-----------------------------------------------------------------------------%
 % 
-% File: mh_relation.m
+% File: mh_predicate.m
 % Main author: C4Cypher.
 % Stability: low.
 %-----------------------------------------------------------------------------%
 
-:- module mh_relation.
+:- module mh_predicate.
 
 :- interface.
 
+:- import_module predicate.
 :- import_module mh_arity.
 :- import_module mh_mode.
 
 %-----------------------------------------------------------------------------%
 
-:- typeclass relation(T) <= arity(T) where [
-	% Todo: method to unify relations under environment
-	
-	% pred relation_signature(T::in, E::in, relation_signature::out) is nondet,
-].
+
 
 :- typeclass predicate(T) <= relation(T) where 
 [
 	% Todo:  predicate to call predicate under a module and scope
 ].
 
-:- typeclass function(T) <= relation(T) where [
-	% Todo:  predicate to apply a function under a module and scope
-].
+:
 

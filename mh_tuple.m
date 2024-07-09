@@ -21,10 +21,8 @@
 :- import_module mh_arity.
 :- import_module mh_term.
 
-% TODO:  create a commmon interface for unification? Typeclass? 
-
 %-----------------------------------------------------------------------------%
-% Tuple
+% Tuple typeclass
 
 % Represents an indexable tuple of terms
 
@@ -64,8 +62,12 @@
 
 :- type mh_tuple
 	--->	some [T] mr_tuple(T) => tuple(T)
-	list_tuple(list(mh_term))
-	array_tuple(array(mh_term)).
+	;		list_tuple(list(mh_term))
+	;		array_tuple(array(mh_term)).
+
+:- func tuple(T) = mh_tuple <= tuple(T).
+:- mode tuple(in) = out is det.
+:- mode tuple(out) = in is semidet.
 
 :- instance arity(mh_tuple).
 :- instance tuple(mh_tuple).
@@ -100,6 +102,29 @@ cc_nondet_tuple_index(T, I, U) :- valid_index(T, I), tuple_index(T, I, U).
 %-----------------------------------------------------------------------------%
 % Tuple type
 
+:- pragma promise_equivalent_clauses(tuple/1).
+
+tuple(T::in) = Tuple::out :-
+	( if promise_equivalent_solutions [U] (
+			dynamic_cast(T, U:mh_tuple);
+			dynamic_cast(T, V:list(mh_term)), U = list_tuple(V);
+			dynamic_cast(T, V:array(mh_term)), U = array_tuple(V)
+		)
+	then
+		Tuple = U
+	else
+		Tuple = 'new mr_tuple'(T)
+	).
+		
+tuple(T::out) = Tuple::in :-
+	require_complete_switch [Tuple] (
+		Tuple = mr_tuple(U);
+		Tuple = list_tuple(U);
+		Tuple = array_tuple(U)
+	),
+	dynamic_cast(U, T).
+
+
 :- instance arity(mh_tuple) where [
 	arity(mr_tuple(T), A) :- arity(T, A),
 	arity(list_tuple(L), A) :- arity(L, A),
@@ -110,7 +135,7 @@ cc_nondet_tuple_index(T, I, U) :- valid_index(T, I), tuple_index(T, I, U).
 	
 	tuple_index(mr_tuple(T), I, Term) :- tuple_index(T, I, Term),
 	tuple_index(list_tuple(L), I, Term) :- list_index(L, I, Term),
-	tuple_index(array_tuple(A), I, Term) :- array_index(L, I, Term)
+	tuple_index(array_tuple(A), I, Term) :- array_index(L, I, Term),
 	
 	fold_tuple(Closure, mr_tuple(T), !A) :- fold_tuple(Closure, T, !A),
 	fold_tuple(Closure, list_tuple(L), !A) :- fold_list_index(Closure, L, !A),

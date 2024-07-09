@@ -20,6 +20,7 @@
 :- import_module mh_type.
 
 %-----------------------------------------------------------------------------%
+% Term modes
 
 :- type mh_mode
 	--->	in	
@@ -36,114 +37,32 @@
 	% performing mode optimization, for now
 	
 %-----------------------------------------------------------------------------%
-% Tuple modes and signatures
+% Tuple modes
 
-:- type tuple_mode == list(mh_mode). 
+:- type tuple_mode --->	tuple_mode(list(mh_mode)). 
+
+:- type tuple_signature ---> tuple_signature(list(term_signature)).
+
+:- instance signature(tuple_signature, tuple_type, tuple_mode).
+
 
 %-----------------------------------------------------------------------------%
-% Relation mode
+% Relation mode a
+	
+:- type relation_mode
+	--->	relation_mode(list(mh_mode)), mh_mode).% TODO: Determinism?
 
-%	Relation modes carry the control flow information of a call
 	
 %-----------------------------------------------------------------------------%
-% Relation signature
+% Predicate mode and signature
 
-%	Signatures contain all of the information require to derive the mode of
-% 	a procedure
+:- type predicate_mode 
+	--->	predicate_mode(list(mh_mode)). % TODO: Determinism?
 
-:- type term_signature ---> mh_type :: mh_mode.
 
-:- type tuple_signature == list(term_signature).
-
-:- type proc_signature % Todo, reorganize this with relation as the root Functors?
-	---> 	relation_signature(tuple_signature, term_signature)
-	;		predicate_signature(tuple_signature)
-	;		function_signature(tuple_type, mh_type).
 	
-:- type relation_signature =< proc_signature
-	--->	relation_signature(tuple_signature, term_signature).
 	
-:- type predicate_signature =< proc_signature
-	---> 	predicate_signature(tuple_signature).
-
-:- type function_signature =< proc_signature
-	---> 	function_signature(tuple_type, mh_type).
-	
-%-----------------------------------------------------------------------------%
-
-:- type proc_mode
-	--->	relation_mode(tuple_signature, term_signature)
-	;		predicate_mode(tuple_signature).
-	
-:- type relation_mode =< proc_mode
-	--->	relation_mode(tuple_signature, term_signature).
-
-:- type predicate_mode =< proc_mode
-	--->	predicate_mode(tuple_signature).
-
-%-----------------------------------------------------------------------------%
-
-:- typeclass signature(T, S) <= (T -> S) where [
-	pred signature(T, S),
-	mode signature(in, in) is semidet,
-	mode signature(in, out) is nondet
-].
-
-%-----------------------------------------------------------------------------%
-
-:- typeclass to_mode(S, M) <= (S -> M) where [ func to_mode(S) = M ].
-
-:- instance to_mode(proc_signature, proc_mode).
-:- instance	to_mode(relation_signature, relation_mode).
-:- instance to_mode(predicate_signature, predicate_mode).
-:- instance to_mode(function_signature, relation_mode).
-
-%-----------------------------------------------------------------------------%
-
-:- pred mode(T, M) <= (signature(T, S), to_mode(S, M)).
-:- mode mode(in, in) is semidet.
-:- mode mode(in, out) is nondet.
-
-
-
-
-
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
 :- implementation.
-
-:- instance to_mode(proc_signature, proc_mode) where [
-	to_mode(relation_signature(S, R)) = relation_mode(S, R),
-	to_mode(predicate_signature(S)) = predicate_mode(S),
-	to_mode(function_signature(S, R)) = relation_mode(all_in(S), R :: out)
-].
-
-:- instance to_mode(relation_signature, relation_mode) where [
-	to_mode(relation_signature(S, R)) = relation_mode(S, R)
-].
-
-:- instance to_mode(predicate_signature, predicate_mode) where [
-	to_mode(predicate_signature(S)) = predicate_mode(S)
-].
-
-:- instance to_mode(function_signature, relation_mode) where [
-	to_mode(function_signature(S, R)) = relation_mode(all_in(S), R :: out)
-].
-	
-	
-:- func all_in(tuple_type) = list(term_signature).
-
-all_in([]) = [].
-all_in([ X | XS ]) = [ X :: in | all_in(XS) ].
-
-%-----------------------------------------------------------------------------%
-
-mode(T, to_mode(S)) :- signature(T, S). 
-
-
-
-
-
-
-

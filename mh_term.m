@@ -16,10 +16,12 @@
 
 :- interface.
 
+:- import_module univ.
+
 :- import_module mh_var.
 :- import_module mh_symbol.
 :- import_module mh_tuple.
-:- import_module mh_procedure.
+:- import_module mh_relation.
 :- import_module mh_arity.
 
 
@@ -32,17 +34,14 @@
 	---> 	nil
 
 	% variables
-	;		var(var_id::var_id)
+	;		var(var_id)
 	;		anonymous
 	
-	% atomic terms
-	;		atom(symbol)
-	
-	% values
-	;		some [T] mr_value(T)
+		% values
+	;		mr_value(univ)
 	
 	% compound terms
-	;		some [T] compound(symbol, T) => tuple(T)
+	;		some [T] constructor(symbol, T) => tuple(T)
 	;		some [T] mr_tuple(T) => tuple(T)
 	
 	% Higher order terms
@@ -72,12 +71,7 @@
 :- pred is_var(mh_term::is_var) is semidet.
 
 
-%-----------------------------------------------------------------------------%
-%	Atoms
 
-:- type atom =< mh_term
-	--->	atom(symbol).
-	
 %-----------------------------------------------------------------------------%
 %	Values
 
@@ -89,23 +83,23 @@
 %	Compound terms
 
 :- inst compound_term
-	--->	compound(ground, ground)
+	--->	constructor(ground, ground)
 	;		mr_tuple(ground).
 
 :- type compound_term =< mh_term
-	--->	some [T] compound(symbol, T) => tuple(T)
+	--->	some [T] constructor(symbol, T) => tuple(T)
 	;		some [T] mr_tuple(T) => tuple(T).
 
 :- instance arity(compound_term).
 % :- instance tuple(compound_term).
 
 %-----------------------------------------------------------------------------%
-%	Mad Hatter compound terms
+%	Mad Hatter constructors
 	
-:- 	inst mh_compound ---> compound(ground, ground).
+:- 	inst mh_constructor ---> constructor(ground, ground).
 	
-:- type mh_compound =< compound_term
-	--->	some [T] compound(symbol, T) => tuple(T).
+:- type mh_constructor =< compound_term
+	--->	some [T] constructor(symbol, T) => tuple(T).
 
 :- instance arity(mh_compound).
 % :- instance tuple(mh_compound).

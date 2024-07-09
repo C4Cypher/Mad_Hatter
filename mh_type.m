@@ -21,10 +21,11 @@
 
 :- import_module mh_symbol.
 :- import_module mh_mode.
+:- import_module mh_signature.
 
 
 %-----------------------------------------------------------------------------%
-
+% Mad Hatter types
 
 :- type mh_type
 	--->	nil_type
@@ -34,27 +35,41 @@
 	;		type_disjunction(set(mh_type))
 	;		type_conjunction(set(mh_type))
 	;		mr_type(type_desc)
-	;		mr_tuple(type_desc, tuple_type)
-	;		relation(relation_signature) 
-	;		predicate(tuple_signature)
-	;		function(function_signature)
-	;		mh_term(symbol, tuple_type).
+	;		tuple_type(list(mh_type))
+	;		relation_signature(list(term_signature), term_signature) 
+	;		predicate_signature(list(term_signature))
+	;		function_type(tuple_type, mh_type)
+	;		constructor_type(symbol, tuple_type).
 	
 %-----------------------------------------------------------------------------%
+% Ground types
 
 :- type mh_ground_type =< mh_type
 	--->	mr_type(type_desc)
-	;		mh_term(symbol, data_type_signature).
-	
-:- type data_type_signature == list(mh_type).	
+	;		constructor_type(symbol, tuple_type).
 
 %TODO: Ground higher order types
 
 
-
 %-----------------------------------------------------------------------------%
-:- type tuple_type == list(mh_type).
+% Relation type and signature
 
+:- type relation_type
+	--->	relation_type(list(mh_type), mh_type).
+	
+
+:- type relation_signature	=< mh_type
+	--->	relation_signature(list(term_signature), term_signature).
+	
+%-----------------------------------------------------------------------------%
+% Predicate type and signature
+
+:- type predicate_type
+	---> predicate_type(list(mh_type)).
+
+:- type predicate_signature =< mh_type
+	---> 	predicate_signature(list(term_signature)).
+	
 
 	
 %-----------------------------------------------------------------------------%
@@ -65,7 +80,10 @@
 	;		pseudo_type(pseudo_type_desc).
 
 %-----------------------------------------------------------------------------%
+% Function type
 
+:- type function_type =< mh_type
+	---> 	function_type(tuple_type, mh_type).
 
 	
 
