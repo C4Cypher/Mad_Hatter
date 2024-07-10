@@ -20,7 +20,6 @@
 :- import_module type_desc.
 
 :- import_module mh_symbol.
-:- import_module mh_mode.
 :- import_module mh_signature.
 
 

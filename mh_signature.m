@@ -28,11 +28,11 @@
 	<= ((Signature -> Type), (Signature -> Mode)) where [
 	pred signature(Signature, Type, Mode),
 	mode signature(in, out, out) is det,
-	mode signature(out, in, in) is det
+	mode signature(out, in, in) is semidet
 ].
 
 :- func signature(Type, Mode) = Signature <= signature(Signature, Type, Mode).
-:- mode signature(in, in) = out is det.
+:- mode signature(in, in) = out is semidet.
 :- mode signature(out, out) = in is det.
 
 
@@ -40,6 +40,16 @@
 % Term signature
 
 :- type term_signature ---> term_signature(mh_type, mh_mode).
+
+:- pred term_signature_list(list(term_signature), list(mh_type), 
+	list(mh_mode)).
+:- mode term_signature_list(in, out, out) is det.
+:- mode term_signature_list(out, in, in) is semidet.
+
+:- func term_signature_list(list(mh_type), list(mh_mode)) = 
+	list(term_signature).
+:- mode term_signature_list(in, in) = out is semidet.
+:- mode term_signature_list(out, out) = in is det.
 
 :- instance signature(term_signature, mh_type, mh_mode).
 	
@@ -70,8 +80,16 @@ signature(T, M) = S :- signature(S, T, M).
 %-----------------------------------------------------------------------------%
 % Term signature
 
+term_signature_list([], [], []).
+
+term_signature_list(
+	[ term_signature(T, M) | term_signature_list(Ts, Ms) ], 
+	[ T | Ts ],	[ M | Ms ] ).
+
+term_signature_list(T, M) = S :- term_signature_list(S, T, M).
+
 :- instance signature(term_signature, mh_type, mh_mode) where [
-	pred signature(term_signature(T, M), T, M)
+	signature(term_signature(T, M), T, M)
 ].
 
 %-----------------------------------------------------------------------------%
@@ -79,11 +97,13 @@ signature(T, M) = S :- signature(S, T, M).
 
 :- instance signature(tuple_signature, tuple_type, tuple_mode) where [
 
-	pred signature(tuple_signature([]), tuple_type([]), tuple_mode([])),
+	signature(tuple_signature([]), tuple_type([]), tuple_mode([])),
 
-	pred signature(
-		tuple_signature([ signature(T, M) | signature(Ts, Ms) ]),
+	signature(
+		tuple_signature([ signature(T, M) | term_signature_list(Ts, Ms) ]),
 		tuple_type([ T | Ts]),
 		tuple_mode([ M | Ms])
-	)
+	) 
+	
 ].
+
