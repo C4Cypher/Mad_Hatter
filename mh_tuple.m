@@ -104,7 +104,7 @@ cc_nondet_tuple_index(T, I, U) :- valid_index(T, I), tuple_index(T, I, U).
 
 :- pragma promise_equivalent_clauses(tuple/1).
 
-tuple(T::in) = Tuple::out :-
+tuple(T::in) = (Tuple::out) :-
 	( if promise_equivalent_solutions [U] (
 			dynamic_cast(T, U:mh_tuple);
 			dynamic_cast(T, V:list(mh_term)), U = list_tuple(V);
@@ -116,13 +116,12 @@ tuple(T::in) = Tuple::out :-
 		Tuple = 'new mr_tuple'(T)
 	).
 		
-tuple(T::out) = Tuple::in :-
+tuple(T::out) = (Tuple::in) :-
 	require_complete_switch [Tuple] (
-		Tuple = mr_tuple(U);
-		Tuple = list_tuple(U);
-		Tuple = array_tuple(U)
-	),
-	dynamic_cast(U, T).
+		Tuple = mr_tuple(U), dynamic_cast(U, T);
+		Tuple = list_tuple(U), dynamic_cast(U, T);
+		Tuple = array_tuple(U), dynamic_cast(U, T)
+	).
 
 
 :- instance arity(mh_tuple) where [
@@ -135,7 +134,7 @@ tuple(T::out) = Tuple::in :-
 	
 	tuple_index(mr_tuple(T), I, Term) :- tuple_index(T, I, Term),
 	tuple_index(list_tuple(L), I, Term) :- list_index(L, I, Term),
-	tuple_index(array_tuple(A), I, Term) :- array_index(L, I, Term),
+	tuple_index(array_tuple(A), I, Term) :- array_index(A, I, Term),
 	
 	fold_tuple(Closure, mr_tuple(T), !A) :- fold_tuple(Closure, T, !A),
 	fold_tuple(Closure, list_tuple(L), !A) :- fold_list_index(Closure, L, !A),

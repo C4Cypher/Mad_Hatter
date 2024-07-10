@@ -24,7 +24,8 @@
 %-----------------------------------------------------------------------------%
 % Signature typeclass
 
-:- typeclass signature(Signature, Type, Mode) where [
+:- typeclass signature(Signature, Type, Mode) 
+	<= ((Signature -> Type), (Signature -> Mode)) where [
 	pred signature(Signature, Type, Mode),
 	mode signature(in, out, out) is det,
 	mode signature(out, in, in) is det

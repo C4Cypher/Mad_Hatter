@@ -17,7 +17,7 @@
 
 :- import_module list.
 
-:- import_module mh_type.
+:- import_module mh_signature.
 
 %-----------------------------------------------------------------------------%
 % Term modes
@@ -41,16 +41,13 @@
 
 :- type tuple_mode --->	tuple_mode(list(mh_mode)). 
 
-:- type tuple_signature ---> tuple_signature(list(term_signature)).
-
-:- instance signature(tuple_signature, tuple_type, tuple_mode).
 
 
 %-----------------------------------------------------------------------------%
 % Relation mode a
 	
 :- type relation_mode
-	--->	relation_mode(list(mh_mode)), mh_mode).% TODO: Determinism?
+	--->	relation_mode(list(mh_mode), mh_mode).% TODO: Determinism?
 
 	
 %-----------------------------------------------------------------------------%

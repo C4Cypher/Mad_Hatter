@@ -76,7 +76,7 @@
 %	Values
 
 :- type mercury_value =< mh_term
-	---> 	some [T] mr_value(T).
+	---> 	mr_value(univ).
 	
 
 %-----------------------------------------------------------------------------%
@@ -101,8 +101,8 @@
 :- type mh_constructor =< compound_term
 	--->	some [T] constructor(symbol, T) => tuple(T).
 
-:- instance arity(mh_compound).
-% :- instance tuple(mh_compound).
+:- instance arity(mh_constructor).
+% :- instance tuple(mh_constructor).
 
 %-----------------------------------------------------------------------------%
 %	Relations
@@ -132,22 +132,20 @@
 %-----------------------------------------------------------------------------%
 % 	mh_term
 
-functor(atom(A)) = A.
-functor(compound(F, _)) = F.
+functor(constructor(F, _)) = F.
 
 :- instance arity(mh_term) where [
 	arity(T, A) :- require_complete_switch [T] (
 		(	T = nil
 		;	T = var(_)
 		;	T = anonymous
-		;	T = atom(_)
 		;	T = mr_value(_)
 		;	T = predicate(_)
 		;	T = relation(_)
 		;	T = function(_)
 		), A = 0
 		
-	;	T = compound(_, R), A = arity(R)
+	;	T = constructor(_, R), A = arity(R)
 	;	T = mr_tuple(R), A = arity(R)
 	)
 ].
@@ -164,7 +162,7 @@ functor(compound(F, _)) = F.
 		% ;	T = function(_)
 		% ), zero_index_err("index", T) 	
 		
-		% ;	T = compound(_, R), index(R, I, U)
+		% ;	T = constructor(_, R), index(R, I, U)
 		% ;	T = mr_tuple(R), index(R, I, U)
 	% ),
 		
@@ -179,7 +177,7 @@ functor(compound(F, _)) = F.
 		% ;	!.T = function(_)
 		% ), zero_index_err("set index of", !.T) 	
 		
-		% ; 	!.T = compound(F, R0),	set_index(I, U, R0, R), 
+		% ; 	!.T = constructor(F, R0),	set_index(I, U, R0, R), 
 			% !:T = 'new compound'(F, R)
 		% ;	!.T = mr_tuple(R0), set_index(I, U, R0, R),
 			% !:T = 'new mr_tuple'(R) 
@@ -196,7 +194,7 @@ functor(compound(F, _)) = F.
 		% ;	T = function(_)
 		% ), zero_index_err("fold index on", T)
 		
-		% ;	T = compound(_, R), fold_index(P, R, !A)
+		% ;	T = constructor(_, R), fold_index(P, R, !A)
 		% ;	T = mr_tuple(R), fold_index(P, R, !A)
 	% ),
 	
@@ -211,7 +209,7 @@ functor(compound(F, _)) = F.
 		% ;	!.T = function(_)
 		% ), zero_index_err("map index on", !.T) 	
 		
-		% ; 	!.T = compound(F, R0), map_index(P, R0, R), 
+		% ; 	!.T = constructor(F, R0), map_index(P, R0, R), 
 			% !:T = 'new compound'(F, R)
 		% ;	!.T = mr_tuple(R0), map_index(P, R0, R),
 			% !:T = 'new mr_tuple'(R)
@@ -242,7 +240,7 @@ is_var(T) :- T = anonymous ; T = var(_).
 
 :- instance arity(compound_term) where [
 	arity(T, A) :- require_complete_switch [T] 
-	(	T = compound(_, R), A = arity(R)
+	(	T = constructor(_, R), A = arity(R)
 	;	T = mr_tuple(R), A = arity(R)
 	)
 ].
@@ -250,13 +248,13 @@ is_var(T) :- T = anonymous ; T = var(_).
 
 % :- instance index(compound_term, mh_term) where [
 	% index(T, I, U) :- require_complete_switch [T] (
-		% T = compound(_, R), index(R, I, U)
+		% T = constructor(_, R), index(R, I, U)
 	% ;	
 		% T = mr_tuple(R), index(R, I, U)
 	% ),
 		
 	% set_index(I, U, !T) :- require_complete_switch [!.T] (
-		% !.T = compound(F, R0),	set_index(I, U, R0, R), 
+		% !.T = constructor(F, R0),	set_index(I, U, R0, R), 
 		% !:T = 'new compound'(F, R)
 	% ;
 		% !.T = mr_tuple(R0), set_index(I, U, R0, R),
@@ -264,13 +262,13 @@ is_var(T) :- T = anonymous ; T = var(_).
 	% ),
 		
 	% fold_index(P, T, !A) :- require_complete_switch [T] (
-		% T = compound(_, R), fold_index(P, R, !A)
+		% T = constructor(_, R), fold_index(P, R, !A)
 	% ;	
 		% T = mr_tuple(R), fold_index(P, R, !A)
 	% ),
 	
 	% map_index(P, !T) :- require_complete_switch [!.T] (
-		% !.T = compound(F, R0), map_index(P, R0, R), 
+		% !.T = constructor(F, R0), map_index(P, R0, R), 
 		% !:T = 'new compound'(F, R)
 	% ;	
 		% !.T = mr_tuple(R0), map_index(P, R0, R),
@@ -283,21 +281,21 @@ is_var(T) :- T = anonymous ; T = var(_).
 %-----------------------------------------------------------------------------%
 %	Mad Hatter compound terms
 
-:- instance arity(mh_compound) where [ arity(compound(_, T), arity(T)) ].
+:- instance arity(mh_constructor) where [ arity(constructor(_, T), arity(T)) ].
 
 % :- instance index(mh_compound, mh_term) where [ 
-	% index(compound(_, R), I, U) :- index(R, I, U),
+	% index(constructor(_, R), I, U) :- index(R, I, U),
 	
 	% set_index(I, U, !T) :- (
-		% !.T = compound(F, R0),	set_index(I, U, R0, R), 
+		% !.T = constructor(F, R0),	set_index(I, U, R0, R), 
 		% !:T = 'new compound'(F, R)
 	% ),
 		
-	% fold_index(P, compound(_, R), !A) :- 
+	% fold_index(P, constructor(_, R), !A) :- 
 		% fold_index(P, R, !A),
 	
 	% map_index(P, !T) :- (
-		% !.T = compound(F, R0), map_index(P, R0, R), 
+		% !.T = constructor(F, R0), map_index(P, R0, R), 
 		% !:T = 'new compound'(F, R)
 	% )
 % ].
@@ -347,11 +345,10 @@ mr_type_name(T) = type_name(type_of(T)).
 term_description(nil) = "nil term".
 term_description(var(V)) = "variable with id " ++ string(V).
 term_description(anonymous) = "anonymous variable".
-term_description(atom(A)) = "atomic term '" ++ to_string(A) ++ "'".
 term_description(mr_value(M)) = 
 	"mercury value term of type " ++ mr_type_name(M).
-term_description(compound(A, R)) = 
-	"compound term " ++ to_string(A) ++ "(" ++ mr_type_name(R) ++ ")".
+term_description(constructor(A, R)) = 
+	"constructor " ++ to_string(A) ++ "(" ++ mr_type_name(R) ++ ")".
 term_description(mr_tuple(R)) = 
 	"mercury tuple term of type " ++	mr_type_name(R).
 term_description(predicate(P)) = 
