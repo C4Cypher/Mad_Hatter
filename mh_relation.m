@@ -21,8 +21,8 @@
 % Relation type
 
 :- type mh_relation 
-	--->	relation(mh_constructor, mh_term) % r(X) = Y
-	;		relation(mh_constructor, mh_term, mh_term) % r(X) = Y :- Z.
+	--->	relation_fact(mh_term, mh_term) % \X = Y
+	;		relation_clause(mh_term, mh_term, mh_term) % \X = Y :- Z.
 	
 
 %-----------------------------------------------------------------------------%
