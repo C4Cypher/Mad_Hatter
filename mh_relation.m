@@ -18,6 +18,15 @@
 :- import_module mh_arity.
 
 %-----------------------------------------------------------------------------%
+% Relation type
+
+:- type mh_relation 
+	--->	relation(mh_constructor, mh_term) % r(X) = Y
+	;		relation(mh_constructor, mh_term, mh_term) % r(X) = Y :- Z.
+	
+
+%-----------------------------------------------------------------------------%
+% Relation typeclass
 
 :- typeclass relation(T) <= arity(T) where [
 	% Todo: method to unify relations under environment
