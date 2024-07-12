@@ -108,7 +108,8 @@ tuple(T::in) = (Tuple::out) :-
 	( if promise_equivalent_solutions [U] (
 			dynamic_cast(T, U:mh_tuple);
 			dynamic_cast(T, V:list(mh_term)), U = list_tuple(V);
-			dynamic_cast(T, V:array(mh_term)), U = array_tuple(V)
+			dynamic_cast(T, V:array(mh_term)), U = array_tuple(V);
+			dynamic_cast(T, tuple_term(V), U = tuple(V))
 		)
 	then
 		Tuple = U
