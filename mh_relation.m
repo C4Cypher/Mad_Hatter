@@ -22,7 +22,7 @@
 
 :- type mh_relation 
 	--->	relation_fact(mh_term, mh_term) % \X = Y
-	;		relation_clause(mh_term, mh_term, mh_term) % \X = Y :- Z.
+	;		relation_clause(mh_term, mh_term, mh_term). % \X = Y :- Z.
 	
 
 %-----------------------------------------------------------------------------%
@@ -34,10 +34,6 @@
 	% pred relation_signature(T::in, E::in, relation_signature::out) is nondet,
 ].
 
-:- typeclass predicate(T) <= relation(T) where 
-[
-	% Todo:  predicate to call predicate under a module and scope
-].
 
 :- typeclass function(T) <= relation(T) where [
 	% Todo:  predicate to apply a function under a module and scope

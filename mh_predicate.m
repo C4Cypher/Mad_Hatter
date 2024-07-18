@@ -15,15 +15,19 @@
 
 :- interface.
 
-:- import_module predicate.
+
 :- import_module mh_arity.
-:- import_module mh_mode.
+%-----------------------------------------------------------------------------%
+
+:- type mh_predicate 
+	--->	predicate_fact(mh_term) % \X = Y
+	;		predicate_clause(mh_term, mh_term, mh_term). % \X = Y :- Z.
 
 %-----------------------------------------------------------------------------%
 
 
 
-:- typeclass predicate(T) <= relation(T) where 
+:- typeclass predicate(T)  where 
 [
 	% Todo:  predicate to call predicate under a module and scope
 ].

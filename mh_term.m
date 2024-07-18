@@ -35,6 +35,7 @@
 
 	% variables
 	;		var(var_id)
+	;		var(var_id, mh_type)
 	;		anonymous
 	
 		% values
@@ -60,11 +61,15 @@
 
 :- inst mh_var 
 	--->	var(ground)
+	;		var(ground, ground)
 	;		anonymous.
 	
 :- type mh_var =< mh_term 
-	---> 	var(var_id::var_id)
+	---> 	var(var_id)
+	;		var(var_id, mh_type)
 	;		anonymous.
+	
+:- func var_id(mh_var) = var_id is semidet.
 	
 :- mode is_var == ground >> mh_var.
 
@@ -138,6 +143,7 @@ functor(constructor(F, _)) = F.
 	arity(T, A) :- require_complete_switch [T] (
 		(	T = nil
 		;	T = var(_)
+		;	T = var(_, _)
 		;	T = anonymous
 		;	T = mr_value(_)
 		;	T = predicate(_)
@@ -158,6 +164,7 @@ functor(constructor(F, _)) = F.
 	% index(T, I, U) :- require_complete_switch [T] (
 		% (	T = nil
 		% ;	T = var(_)
+		% ;	T = var(_, _)
 		% ;	T = anonymous
 		% ;	T = atom(_)
 		% ;	T = mr_value(_)
@@ -173,6 +180,7 @@ functor(constructor(F, _)) = F.
 	% set_index(I, U, !T) :- require_complete_switch [!.T] (
 		% (	!.T = nil
 		% ;	!.T = var(_)
+		% ;	T = var(_, _)
 		% ;	!.T = anonymous
 		% ;	!.T = atom(_)
 		% ;	!.T = mr_value(_)
@@ -190,6 +198,7 @@ functor(constructor(F, _)) = F.
 	% fold_index(P, T, !A) :- require_complete_switch [T] (
 		% (	T = nil
 		% ;	T = var(_)
+		% ;	T = var(_, _)
 		% ;	T = anonymous
 		% ;	T = atom(_)
 		% ;	T = mr_value(_)
@@ -205,6 +214,7 @@ functor(constructor(F, _)) = F.
 	% map_index(P, !T) :- require_complete_switch [!.T] (
 		% (	!.T = nil
 		% ;	!.T = var(_)
+		% ;	T = var(_, _)
 		% ;	!.T = anonymous
 		% ;	!.T = atom(_)
 		% ;	!.T = mr_value(_)
@@ -229,7 +239,7 @@ functor(constructor(F, _)) = F.
 %-----------------------------------------------------------------------------%
 %	Variables
 
-is_var(T) :- T = anonymous ; T = var(_).
+is_var(T) :- T = anonymous ; T = var(_) ; T = var(_, _).
 
 
 %-----------------------------------------------------------------------------%
