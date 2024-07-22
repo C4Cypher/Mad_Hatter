@@ -10,7 +10,7 @@
 % Main author: C4Cypher.
 % Stability: low.
 
-:- module mh_var.
+:- module mh_var_id.
 
 :- interface.
 
@@ -76,7 +76,8 @@
 
 :- func var_id_elem(var_id, array(T)) = T.
 
-:- pred var_id_set(var_id::in, T::in, array(T)::in, array(T)::out) is det.
+:- pred var_id_set(var_id::in, T::in, array(T)::array_di, array(T)::array_uo) 
+	is det.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -176,10 +177,16 @@ valid_varset(var_set(Last)) :- Last >= 0.
 %-----------------------------------------------------------------------------%
 % Indexing Arrays by var_id
 
-var_id_in_bounds(Array, ID) :- in_bounds(Array, ID - 1).
+:- func id_index(var_id) = int.
 
-var_id_lookup(Array, ID, T) :- lookup(Array, ID - 1, T).
+id_index(ID) = ID - 1.
 
-var_id_lookup(Array, ID) = lookup(Array, ID - 1).
+var_id_in_bounds(Array, ID) :- in_bounds(Array, id_index(ID)).
 
-var_id_elem(ID, Array) = elem(ID - 1, Array).
+var_id_lookup(Array, ID, T) :- lookup(Array, id_index(ID), T).
+
+var_id_lookup(Array, ID) = lookup(Array, id_index(ID)).
+
+var_id_elem(ID, Array) = elem(id_index(ID), Array).
+
+var_id_set(ID, T, !Array) :- set(id_index(ID), T, !Array).
