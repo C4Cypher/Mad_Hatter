@@ -39,29 +39,33 @@
 %-----------------------------------------------------------------------------%
 % Variable sets
 
-:- type mh_varset.
+:- type var_id_set.
 
-:- func init = mh_varset.
+:- func init_var_id_set = var_id_set.
 
-:- pred init(mh_varset::out) is det.
+:- pred init_var_id_set(var_id_set::out) is det.
 
-:- pred valid_varset(mh_varset::in) is semidet.
+:- pred var_id_count(valid_var_id_set::in, int::out) is det.
 
-:- pred require_valid_varset(mh_varset::in) is det.
+:- func var_id_count(valid_var_id) = int.
 
-:- pred expect_valid_varset(mh_varset::in, string::in, string::in) is det.
+:- pred valid_var_id_set(var_id_set::in) is semidet.
+
+:- pred require_valid_var_id_set(var_id_set::in) is det.
+
+:- pred expect_valid_var_id_set(var_id_set::in, string::in, string::in) is det.
 
 %-----------------------------------------------------------------------------%
-% Operations on var_ids and var_sets
+% Operations on var_ids and var_id_sets
 
-:- pred new_var_id(var_id::out, mh_varset::in, mh_varset::out) is det.
+:- pred new_var_id(var_id::out, var_id_set::in, var_id_set::out) is det.
 
-:- pred new_var_ids(var_ids::out, mh_varset::in, mh_varset::out) is cc_multi.
+:- pred new_var_ids(var_ids::out, var_id_set::in, var_id_set::out) is cc_multi.
 
-:- pred new_var_ids(int::in, var_ids::out, mh_varset::in, mh_varset::out) 
+:- pred new_var_ids(int::in, var_ids::out, var_id_set::in, var_id_set::out) 
 	is det.
 
-:- pred contains_var_id(mh_varset, var_id).
+:- pred contains_var_id(var_id_set, var_id).
 :- mode contains_var_id(in, in) is semidet.
 :- mode contains_var_id(in, out) is nondet.
 
@@ -77,6 +81,16 @@
 :- func var_id_elem(var_id, array(T)) = T.
 
 :- pred var_id_set(var_id::in, T::in, array(T)::array_di, array(T)::array_uo) 
+	is det.
+
+% slow set
+:- pred var_id_update(var_id::in, T::in, array(T)::in, array(T)::array_uo)
+	is det.
+	
+:- pred var_id_set_init_array(var_id_set::in, T::in, array(T)::array_uo) 
+	is det.
+
+:- func var_id_set_init_array(var_id_set::in, T::in) = array(T)::array_uo
 	is det.
 
 %-----------------------------------------------------------------------------%
@@ -106,26 +120,30 @@ expect_valid_var_id(I, Module, Proc) :- expect(valid_var_id(I), Module, Proc,
 %-----------------------------------------------------------------------------%
 % Variable sets
 
-:- type mh_varset ---> var_set(last_id::var_id).
+:- type var_id_set ---> var_id_set(last_id::var_id).
 
-init = var_set(0).
+init_var_id_set = var_id_set(0).
 
-init(init).
+init_var_id_set(init_var_id_set).
 
-require_valid_varset(Set) :- 
-	require(valid_varset(Set), "Invalid varset. Last var_id: " ++ string(Set) 
+var_id_count(Set, var_id_count(Set)).
+
+var_id_count(var_id_set(Count)) = Count.
+
+require_valid_var_id_set(Set) :- 
+	require(valid_var_id_set(Set), "Invalid var_id_set. Last var_id: " ++ string(Set) 
 	++	" was less than zero.").
 
-expect_valid_varset(Set, Module, Proc) :- 
-	expect(valid_varset(Set), Module, Proc, "Invalid varset. Last var_id: " 
+expect_valid_var_id_set(Set, Module, Proc) :- 
+	expect(valid_var_id_set(Set), Module, Proc, "Invalid var_id_set. Last var_id: " 
 	++ string(Set) ++ " was less than zero.").
 
 %-----------------------------------------------------------------------------%
-% Operations on var_ids and var_sets
+% Operations on var_ids and var_id_sets
 
 
 
-new_var_id(ID, var_set(ID - 1), var_set(ID)).
+new_var_id(ID, var_id_set(ID - 1), var_id_set(ID)).
 
 new_var_ids([], !Set).
 
@@ -151,11 +169,11 @@ new_var_ids(Number, List, !Set) :-
 
 :- pragma promise_equivalent_clauses(contains_var_id/2).
 
-contains_var_id(var_set(Last)::in, ID::in) :- 
+contains_var_id(var_id_set(Last)::in, ID::in) :- 
 	expect_valid_var_id(ID, $module, $pred),
 	ID =< Last.
 	
-contains_var_id(var_set(Last)::in, ID::out) :-
+contains_var_id(var_id_set(Last)::in, ID::out) :-
 	expect_valid_var_id(ID, $module, $pred),
 	Last > 0,
 	all_ids_to(1, Last, ID).
@@ -172,7 +190,7 @@ all_ids_to(First, Last, This) :-
 		)
 	).
 
-valid_varset(var_set(Last)) :- Last >= 0.
+valid_var_id_set(var_id_set(Last)) :- Last >= 0.
 
 %-----------------------------------------------------------------------------%
 % Indexing Arrays by var_id
@@ -190,3 +208,9 @@ var_id_lookup(Array, ID) = lookup(Array, id_index(ID)).
 var_id_elem(ID, Array) = elem(id_index(ID), Array).
 
 var_id_set(ID, T, !Array) :- set(id_index(ID), T, !Array).
+
+var_id_update(ID, T, !Array) :- slow_set(id_index(ID), T, !Array).
+
+var_id_set_init_array(var_id_set(Last), T, A) :- array.init(Last, T, A).
+
+var_id_set_init_array(Set, T) = A :- var_id_set_init_array(Set, T, A).
