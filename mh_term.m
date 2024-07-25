@@ -42,7 +42,7 @@
 	;		mr_value(univ)
 	
 	% compound terms
-	;		constructor(symbol, mh_term)
+	;		cons(symbol, mh_term)
 	;		tuple_term(mh_tuple)
 	
 	% Higher order terms
@@ -92,11 +92,11 @@
 %	Compound terms
 
 :- inst compound_term
-	--->	constructor(ground, ground)
+	--->	cons(ground, ground)
 	;		tuple_term(ground).
 
 :- type compound_term =< mh_term
-	--->	constructor(symbol, mh_term)
+	--->	cons(symbol, mh_term)
 	;		tuple_term(mh_tuple).
 
 :- instance arity(compound_term).
@@ -105,10 +105,10 @@
 %-----------------------------------------------------------------------------%
 %	Mad Hatter constructors
 	
-:- 	inst mh_constructor ---> constructor(ground, ground).
+:- 	inst mh_constructor ---> cons(ground, ground).
 	
 :- type mh_constructor =< compound_term
-	--->	constructor(symbol, mh_term).
+	--->	cons(symbol, mh_term).
 
 :- instance arity(mh_constructor).
 % :- instance tuple(mh_constructor).
@@ -141,7 +141,7 @@
 %-----------------------------------------------------------------------------%
 % 	mh_term
 
-functor(constructor(F, _)) = F.
+functor(cons(F, _)) = F.
 
 :- instance arity(mh_term) where [
 	arity(T, A) :- require_complete_switch [T] (
@@ -155,7 +155,7 @@ functor(constructor(F, _)) = F.
 		;	T = function(_)
 		), A = 0
 		
-	;	T = constructor(_, Arg), 
+	;	T = cons(_, Arg), 
 		(	if Arg = tuple_term(Tuple)
 			then A = arity(Tuple)
 			else A = 1
@@ -177,7 +177,7 @@ functor(constructor(F, _)) = F.
 		% ;	T = function(_)
 		% ), zero_index_err("index", T) 	
 		
-		% ;	T = constructor(_, R), index(R, I, U)
+		% ;	T = cons(_, R), index(R, I, U)
 		% ;	T = tuple_term(R), index(R, I, U)
 	% ),
 		
@@ -193,7 +193,7 @@ functor(constructor(F, _)) = F.
 		% ;	!.T = function(_)
 		% ), zero_index_err("set index of", !.T) 	
 		
-		% ; 	!.T = constructor(F, R0),	set_index(I, U, R0, R), 
+		% ; 	!.T = cons(F, R0),	set_index(I, U, R0, R), 
 			% !:T = 'new compound'(F, R)
 		% ;	!.T = tuple_term(R0), set_index(I, U, R0, R),
 			% !:T = 'new tuple_term'(R) 
@@ -211,7 +211,7 @@ functor(constructor(F, _)) = F.
 		% ;	T = function(_)
 		% ), zero_index_err("fold index on", T)
 		
-		% ;	T = constructor(_, R), fold_index(P, R, !A)
+		% ;	T = cons(_, R), fold_index(P, R, !A)
 		% ;	T = tuple_term(R), fold_index(P, R, !A)
 	% ),
 	
@@ -227,7 +227,7 @@ functor(constructor(F, _)) = F.
 		% ;	!.T = function(_)
 		% ), zero_index_err("map index on", !.T) 	
 		
-		% ; 	!.T = constructor(F, R0), map_index(P, R0, R), 
+		% ; 	!.T = cons(F, R0), map_index(P, R0, R), 
 			% !:T = 'new compound'(F, R)
 		% ;	!.T = tuple_term(R0), map_index(P, R0, R),
 			% !:T = 'new tuple_term'(R)
@@ -258,7 +258,7 @@ is_var(T) :- T = anonymous ; T = var(_) ; T = var(_, _).
 
 :- instance arity(compound_term) where [
 	arity(T, A) :- require_complete_switch [T] 
-	(	T = constructor(_, Arg), 
+	(	T = cons(_, Arg), 
 		(	if Arg = tuple_term(Tuple)
 			then A = arity(Tuple)
 			else A = 1
@@ -270,13 +270,13 @@ is_var(T) :- T = anonymous ; T = var(_) ; T = var(_, _).
 
 % :- instance index(compound_term, mh_term) where [
 	% index(T, I, U) :- require_complete_switch [T] (
-		% T = constructor(_, R), index(R, I, U)
+		% T = cons(_, R), index(R, I, U)
 	% ;	
 		% T = tuple_term(R), index(R, I, U)
 	% ),
 		
 	% set_index(I, U, !T) :- require_complete_switch [!.T] (
-		% !.T = constructor(F, R0),	set_index(I, U, R0, R), 
+		% !.T = cons(F, R0),	set_index(I, U, R0, R), 
 		% !:T = 'new compound'(F, R)
 	% ;
 		% !.T = tuple_term(R0), set_index(I, U, R0, R),
@@ -284,13 +284,13 @@ is_var(T) :- T = anonymous ; T = var(_) ; T = var(_, _).
 	% ),
 		
 	% fold_index(P, T, !A) :- require_complete_switch [T] (
-		% T = constructor(_, R), fold_index(P, R, !A)
+		% T = cons(_, R), fold_index(P, R, !A)
 	% ;	
 		% T = tuple_term(R), fold_index(P, R, !A)
 	% ),
 	
 	% map_index(P, !T) :- require_complete_switch [!.T] (
-		% !.T = constructor(F, R0), map_index(P, R0, R), 
+		% !.T = cons(F, R0), map_index(P, R0, R), 
 		% !:T = 'new compound'(F, R)
 	% ;	
 		% !.T = tuple_term(R0), map_index(P, R0, R),
@@ -304,7 +304,7 @@ is_var(T) :- T = anonymous ; T = var(_) ; T = var(_, _).
 %	Mad Hatter compound terms
 
 :- instance arity(mh_constructor) where [ 
-	arity(constructor(_, T), Arg), 
+	arity(cons(_, T), Arg), 
 		(	if Arg = tuple_term(Tuple)
 			then A = arity(Tuple)
 			else A = 1
@@ -312,18 +312,18 @@ is_var(T) :- T = anonymous ; T = var(_) ; T = var(_, _).
 ].
 
 % :- instance index(mh_compound, mh_term) where [ 
-	% index(constructor(_, R), I, U) :- index(R, I, U),
+	% index(cons(_, R), I, U) :- index(R, I, U),
 	
 	% set_index(I, U, !T) :- (
-		% !.T = constructor(F, R0),	set_index(I, U, R0, R), 
+		% !.T = cons(F, R0),	set_index(I, U, R0, R), 
 		% !:T = 'new compound'(F, R)
 	% ),
 		
-	% fold_index(P, constructor(_, R), !A) :- 
+	% fold_index(P, cons(_, R), !A) :- 
 		% fold_index(P, R, !A),
 	
 	% map_index(P, !T) :- (
-		% !.T = constructor(F, R0), map_index(P, R0, R), 
+		% !.T = cons(F, R0), map_index(P, R0, R), 
 		% !:T = 'new compound'(F, R)
 	% )
 % ].
@@ -375,7 +375,7 @@ term_description(var(V)) = "variable with id " ++ string(V).
 term_description(anonymous) = "anonymous variable".
 term_description(mr_value(M)) = 
 	"mercury value term of type " ++ mr_type_name(M).
-term_description(constructor(A, R)) = 
+term_description(cons(A, R)) = 
 	"constructor " ++ to_string(A) ++ "(" ++ mr_type_name(R) ++ ")".
 term_description(tuple_term(R)) = 
 	"mercury tuple term of type " ++	mr_type_name(R).
