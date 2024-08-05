@@ -16,13 +16,15 @@
 :- interface.
 
 :- import_module mh_arity.
+:- import_module mh_term.
 
 %-----------------------------------------------------------------------------%
 % Relation type
 
 :- type mh_relation 
 	--->	relation_fact(mh_term, mh_term) % \X = Y
-	;		relation_clause(mh_term, mh_term, mh_term). % \X = Y :- Z.
+	;		relation_clause(mh_term, mh_term, mh_term) % \X = Y :- Z.
+	; 		some [T] mr_relation(T) => relation(T).
 	
 
 %-----------------------------------------------------------------------------%
