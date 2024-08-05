@@ -18,7 +18,7 @@
 
 :- import_module univ.
 
-:- import_module mh_var.
+:- import_module mh_var_id.
 :- import_module mh_symbol.
 :- import_module mh_tuple.
 :- import_module mh_relation.
@@ -35,7 +35,6 @@
 
 	% variables
 	;		var(var_id)
-	;		var(var_id, mh_type)
 	;		anonymous
 	
 		% values
@@ -61,12 +60,10 @@
 
 :- inst mh_var 
 	--->	var(ground)
-	;		var(ground, ground)
 	;		anonymous.
 	
 :- type mh_var =< mh_term 
 	---> 	var(var_id)
-	;		var(var_id, mh_type)
 	;		anonymous.
 	
 :- func var_id(mh_var) = var_id is semidet.
@@ -77,7 +74,7 @@
 
 %-----------------------------------------------------------------------------%
 
-:- type var_set == mh_varset.
+:- type var_set.
 
 
 
@@ -164,75 +161,7 @@ functor(cons(F, _)) = F.
 	)
 ].
 
-% :- instance index(mh_term, mh_term) where [
-	% index(T, I, U) :- require_complete_switch [T] (
-		% (	T = nil
-		% ;	T = var(_)
-		% ;	T = var(_, _)
-		% ;	T = anonymous
-		% ;	T = atom(_)
-		% ;	T = mr_value(_)
-		% ;	T = predicate(_)
-		% ;	T = functor(_)
-		% ;	T = function(_)
-		% ), zero_index_err("index", T) 	
-		
-		% ;	T = cons(_, R), index(R, I, U)
-		% ;	T = tuple_term(R), index(R, I, U)
-	% ),
-		
-	% set_index(I, U, !T) :- require_complete_switch [!.T] (
-		% (	!.T = nil
-		% ;	!.T = var(_)
-		% ;	T = var(_, _)
-		% ;	!.T = anonymous
-		% ;	!.T = atom(_)
-		% ;	!.T = mr_value(_)
-		% ;	!.T = predicate(_)
-		% ;	!.T = functor(_)
-		% ;	!.T = function(_)
-		% ), zero_index_err("set index of", !.T) 	
-		
-		% ; 	!.T = cons(F, R0),	set_index(I, U, R0, R), 
-			% !:T = 'new compound'(F, R)
-		% ;	!.T = tuple_term(R0), set_index(I, U, R0, R),
-			% !:T = 'new tuple_term'(R) 
-	% ),
-		
-	% fold_index(P, T, !A) :- require_complete_switch [T] (
-		% (	T = nil
-		% ;	T = var(_)
-		% ;	T = var(_, _)
-		% ;	T = anonymous
-		% ;	T = atom(_)
-		% ;	T = mr_value(_)
-		% ;	T = predicate(_)
-		% ;	T = functor(_)
-		% ;	T = function(_)
-		% ), zero_index_err("fold index on", T)
-		
-		% ;	T = cons(_, R), fold_index(P, R, !A)
-		% ;	T = tuple_term(R), fold_index(P, R, !A)
-	% ),
-	
-	% map_index(P, !T) :- require_complete_switch [!.T] (
-		% (	!.T = nil
-		% ;	!.T = var(_)
-		% ;	T = var(_, _)
-		% ;	!.T = anonymous
-		% ;	!.T = atom(_)
-		% ;	!.T = mr_value(_)
-		% ;	!.T = predicate(_)
-		% ;	!.T = functor(_)
-		% ;	!.T = function(_)
-		% ), zero_index_err("map index on", !.T) 	
-		
-		% ; 	!.T = cons(F, R0), map_index(P, R0, R), 
-			% !:T = 'new compound'(F, R)
-		% ;	!.T = tuple_term(R0), map_index(P, R0, R),
-			% !:T = 'new tuple_term'(R)
-	% )
-% ].
+
 		
 % :- instance tuple(mh_term) where [ ].
 	
@@ -243,7 +172,7 @@ functor(cons(F, _)) = F.
 %-----------------------------------------------------------------------------%
 %	Variables
 
-is_var(T) :- T = anonymous ; T = var(_) ; T = var(_, _).
+is_var(T) :- T = anonymous ; T = var(_).
 
 
 %-----------------------------------------------------------------------------%
@@ -268,35 +197,7 @@ is_var(T) :- T = anonymous ; T = var(_) ; T = var(_, _).
 ].
 
 
-% :- instance index(compound_term, mh_term) where [
-	% index(T, I, U) :- require_complete_switch [T] (
-		% T = cons(_, R), index(R, I, U)
-	% ;	
-		% T = tuple_term(R), index(R, I, U)
-	% ),
-		
-	% set_index(I, U, !T) :- require_complete_switch [!.T] (
-		% !.T = cons(F, R0),	set_index(I, U, R0, R), 
-		% !:T = 'new compound'(F, R)
-	% ;
-		% !.T = tuple_term(R0), set_index(I, U, R0, R),
-		% !:T = 'new tuple_term'(R) 
-	% ),
-		
-	% fold_index(P, T, !A) :- require_complete_switch [T] (
-		% T = cons(_, R), fold_index(P, R, !A)
-	% ;	
-		% T = tuple_term(R), fold_index(P, R, !A)
-	% ),
-	
-	% map_index(P, !T) :- require_complete_switch [!.T] (
-		% !.T = cons(F, R0), map_index(P, R0, R), 
-		% !:T = 'new compound'(F, R)
-	% ;	
-		% !.T = tuple_term(R0), map_index(P, R0, R),
-		% !:T = 'new tuple_term'(R)
-	% )
-% ].
+
 
 % :- instance tuple(compound_term) where [ ].
 
@@ -311,22 +212,7 @@ is_var(T) :- T = anonymous ; T = var(_) ; T = var(_, _).
 		) 
 ].
 
-% :- instance index(mh_compound, mh_term) where [ 
-	% index(cons(_, R), I, U) :- index(R, I, U),
-	
-	% set_index(I, U, !T) :- (
-		% !.T = cons(F, R0),	set_index(I, U, R0, R), 
-		% !:T = 'new compound'(F, R)
-	% ),
-		
-	% fold_index(P, cons(_, R), !A) :- 
-		% fold_index(P, R, !A),
-	
-	% map_index(P, !T) :- (
-		% !.T = cons(F, R0), map_index(P, R0, R), 
-		% !:T = 'new compound'(F, R)
-	% )
-% ].
+
 	
 % :- instance tuple(mh_compound) where [ ].	
 		
@@ -336,22 +222,6 @@ is_var(T) :- T = anonymous ; T = var(_) ; T = var(_, _).
 
 :- instance arity(tuple_term) where [ arity(tuple_term(R), arity(R)) ].
 
-% :- instance index(mercury_tuple, mh_term) where [ 
-	% index(tuple_term(R), I, U) :- index(R, I, U),
-	
-	% set_index(I, U, !T) :- (
-		% !.T = tuple_term(R0),	set_index(I, U, R0, R), 
-		% !:T = 'new tuple_term'(R)
-	% ),
-		
-	% fold_index(P, tuple_term(R), !A) :- 
-		% fold_index(P, R, !A),
-	
-	% map_index(P, !T) :- (
-		% !.T = tuple_term(R0), map_index(P, R0, R), 
-		% !:T = 'new tuple_term'(R)
-	% )
-% ].
 
 % :- instance tuple(mercury_tuple) where [ ].
 
