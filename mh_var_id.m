@@ -92,7 +92,7 @@
 	is det.
 
 % slow set
-:- pred var_id_update(var_id::in, T::in, array(T)::in, array(T)::array_uo)
+:- pred var_id_slow_set(var_id::in, T::in, array(T)::in, array(T)::array_uo)
 	is det.
 	
 :- pred var_id_set_init_array(var_id_set::in, T::in, array(T)::array_uo) 
@@ -309,7 +309,7 @@ var_id_elem(ID, Array) = elem(id_index(ID), Array).
 
 var_id_set(ID, T, !Array) :- set(id_index(ID), T, !Array).
 
-var_id_update(ID, T, !Array) :- slow_set(id_index(ID), T, !Array).
+var_id_slow_set(ID, T, !Array) :- slow_set(id_index(ID), T, !Array).
 
 var_id_set_init_array(Last, T, A) :- array.init(Last, T, A).
 
