@@ -51,7 +51,8 @@
 :- func fold_tuple(func(mh_term, A) = A, T, A) = A <= tuple(T).
 
 :- pred det_tuple_index(T::in, int::in, mh_term::out) is det <= tuple(T).
-:- pred semidet_tuple_index(T::in, int::in, mh_term::out) is semidet <= tuple(T).
+:- pred semidet_tuple_index(T::in, int::in, mh_term::out) is semidet 
+	<= tuple(T).
 :- pred nondet_tuple_index(T::in, int::out, mh_term::out) is nondet <= tuple(T).
 :- pred cc_nondet_tuple_index(T::in, int::out, mh_term::out) is cc_nondet 
 	<= tuple(T).
