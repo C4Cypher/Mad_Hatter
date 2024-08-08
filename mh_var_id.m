@@ -26,6 +26,8 @@
 
 :- func construct_var_id(int) = var_id.
 
+:- func deconstruct_var_id(var_id) = int.
+
 :- pred valid_var_id(var_id::in) is semidet.
 
 :- pred require_valid_var_id(var_id::in) is det.
@@ -86,6 +88,10 @@
 
 :- func var_id_lookup(array(T), var_id) = T.
 
+:- pred var_id_semidet_lookup(array(T)::in, var_id::in, T::out) is semidet.
+
+:- func var_id_semidet_lookup(array(T), var_id) = t.
+
 :- func var_id_elem(var_id, array(T)) = T.
 
 :- pred var_id_set(var_id::in, T::in, array(T)::array_di, array(T)::array_uo) 
@@ -123,6 +129,10 @@
 construct_var_id(ID) = ID.
 
 :- pragma inline(construct_var_id/1).
+
+deconstruct_var_id(ID) = ID.
+
+:- pragma inline(deconstruct_var_id/1).
 
 valid_var_id(I) :- I > 0.
 
@@ -304,6 +314,10 @@ var_id_in_bounds(Array, ID) :- in_bounds(Array, id_index(ID)).
 var_id_lookup(Array, ID, T) :- lookup(Array, id_index(ID), T).
 
 var_id_lookup(Array, ID) = lookup(Array, id_index(ID)).
+
+var_id_semidet_lookup(Array, ID, T) :- lookup(Array, id_index(ID), T).
+
+var_id_semidet_lookup(Array, ID) = semidet_lookup(Array, ID).
 
 var_id_elem(ID, Array) = elem(id_index(ID), Array).
 
