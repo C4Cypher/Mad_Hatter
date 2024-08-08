@@ -22,6 +22,9 @@
 :- import_module mh_symbol.
 :- import_module mh_tuple.
 :- import_module mh_relation.
+:- import_module mh_predicate.
+:- import_module mh_function.
+:- import_module mh_substitution.
 :- import_module mh_arity.
 
 
@@ -32,6 +35,9 @@
 
 	% nil, the abscence of term
 	---> 	nil
+	
+	% atomic values
+	;	atom(symbol)
 
 	% variables
 	;		var(var_id)
@@ -45,16 +51,40 @@
 	;		tuple_term(mh_tuple)
 	
 	% Higher order terms
-	;		some [T] relation(T) => relation(T)
-	;		some [T] predicate(T) => predicate(T)
-	;		some [T] function(T) => function(T).
+	;		relation(mh_relation)
+	;		predicate(mh_predicate)
+	;		function(mh_function)
 	
-:- func functor(mh_term) = symbol is semidet.
+	% Substitutions
+	;		sub(mh_term, mh_substitution).
+	
+:- func functor(mh_term) = mh_functor is semidet.
 	
 :- instance arity(mh_term).
 % :- instance tuple(mh_term).
 
+%-----------------------------------------------------------------------------%
+%  Functor
 
+:- type functor =< mh_term
+	% Atoms
+	---> 	atom(symbol)
+	
+	% Higher order terms
+	;		relation(mh_relation)
+	;		predicate(mh_predicate)
+	;		function(mh_function).
+
+%-----------------------------------------------------------------------------%
+% Atoms
+
+:- inst atom ---> atom(ground).
+
+:- type atom =< functor ---> atom(symbol).
+
+:- mode is_atom == ground >> atom.
+
+:- pred is_atom(mh_term::is_atom) is semidet.
 %-----------------------------------------------------------------------------%
 %	Variables
 
@@ -66,11 +96,25 @@
 	---> 	var(var_id)
 	;		anonymous.
 	
-:- func var_id(mh_var) = var_id is semidet.
 	
 :- mode is_var == ground >> mh_var.
 
 :- pred is_var(mh_term::is_var) is semidet.
+
+%-----------------------------------------------------------------------------%
+% 	Quantified Variables
+
+:- inst quantified_var ---> var(ground).
+	
+:- type quantified_var =< mh_var ---> var(var_id).
+
+:- func var_id(quantified_var) = var_id is det.
+
+:- mode is_quantified == ground >> quantified_var.
+
+:- pred is_quantified_var(mh_term::is_quantified) is semidet.
+
+:- pred var_is_quantified(mh_var::is_quantified) is semidet.
 
 %-----------------------------------------------------------------------------%
 
@@ -122,7 +166,13 @@
 % :- instance tuple(mercury_tuple).
 	
 
+%-----------------------------------------------------------------------------%
+% Higher Order terms
 
+:- type lambda =< functor
+	--->	relation(mh_relation)
+	;		predicate(mh_predicate)
+	;		function(mh_function).
 
 
 
@@ -167,6 +217,11 @@ functor(cons(F, _)) = F.
 	
 		
 
+%-----------------------------------------------------------------------------%
+%	Atoms
+
+is_atom(atom(_)).
+
 
 		
 %-----------------------------------------------------------------------------%
@@ -174,9 +229,13 @@ functor(cons(F, _)) = F.
 
 is_var(T) :- T = anonymous ; T = var(_).
 
-
 %-----------------------------------------------------------------------------%
-%	Atoms
+% 	Quantified Variables
+
+var_id(var(ID)) = ID.
+
+is_quantified_var(var(_)).
+var_is_quantified(var(_)).
 
 
 %-----------------------------------------------------------------------------%
