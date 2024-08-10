@@ -30,10 +30,6 @@
 
 % :- func deconstruct_var_id(var_id) = int.
 
-:- pred var_id_offset(int, var_id, var_id).
-:- mode var_id_offset(in, in, out) is det.
-:- mode var_id_offset(out, in, in) is det.
-:- mode var_id_offset(in, out, in) is det.
 
 :- func var_id_offset(var_id, int) = var_id.
 
@@ -43,8 +39,25 @@
 
 :- pred expect_valid_var_id(var_id::in, string::in, string::in) is det.
 
+%-----------------------------------------------------------------------------%
+% Var ID Offsets
 
+:- type var_id_offset.
 
+:- pred var_id_offset(var_id, var_id, var_id_offset).
+:- mode var_id_offset(in, in, out) is det.
+:- mode var_id_offset(out, in, in) is det.
+:- mode var_id_offset(in, out, in) is det.
+
+:- func var_id_offset(var_id, var_id) = var_id_offset.
+:- mode var_id_offset(in, in) = out is det.
+:- mode var_id_offset(in, out) = in is det.
+:- mode var_id_offset(out, in) = in is det.
+
+:- func apply_var_id_offset(var_id, var_id_offset) = var_id.
+:- mode apply_var_id_offset(in, in) = out is det.
+:- mode apply_var_id_offset(in, out) = in is det.
+:- mode apply_var_id_offset(out, in) = in is det.
 
 %-----------------------------------------------------------------------------%
 % Variable sets
