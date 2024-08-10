@@ -27,14 +27,15 @@
 
 :- type mh_substitution
 	--->	sub_empty
+	;		sub_single(var_id, mh_term)
 	;		sub_map(map(var_id, mh_term))
 	;		sub_array(array(mh_term))
-	;		sub_stack(mh_substitution, mh_substitution)
 	;		ren_empty
+	;		ren_single(var_id, var_id)
 	;		ren_map(map(var_id, var_id))
 	;		ren_array(array(var_id))
-	;		ren_offset(int)
-	;		ren_stack(mh_renaming, mh_renaming).
+	;		ren_offset(int, int) % ren_offset(Offset, Size)
+	;		ren_offset(int, var_id, var_id). %ren_offset(Offset, Size, First)
 	
 :- pred init_sub(mh_substitution::out) is det.
 :- func init_sub = mh_substitution.
@@ -47,10 +48,9 @@
 %-----------------------------------------------------------------------------%
 % Substitution lookup
 
-:- pred sub_id_lookup(mh_substitution::in, var_id::in, mh_term::out) is det.
-:- func sub_id_lookup(mh_substitution, var_id) = mh_term.
-
-:- pred sub_stack_id_lookup(mh_substitution::in, mh_subst)
+:- pred sub_id_lookup(mh_substitution::in, var_id::in, mh_term::out) 
+	is semidet.
+:- func sub_id_lookup(mh_substitution, var_id) = mh_term is semidet.
 
 
 :- pred sub_var_lookup(mh_substitution::in, mh_var::in, mh_term::out) is det.
@@ -79,6 +79,23 @@
 	;		ren_array(arrray(var_id))
 	;		ren_offset(int)
 	;		ren_stack(mh_renaming, mh_renaming).
+	
+%-----------------------------------------------------------------------------%
+% Renaming lookup
+
+:- pred ren_id_lookup(mh_renaming::in, var_id::in, var_id::out) 
+	is semidet.
+:- func ren_id_lookup(mh_renaming, var_id) = var_id is semidet.
+
+:- pred ren_stack_id_lookup(mh_renaming::in, mh_subst) is semidet.
+
+
+:- pred ren_var_lookup(mh_renaming::in, mh_var::in, var_id::out) is det.
+:- func ren_var_lookup(mh_renaming, mh_var) = var_id.
+
+:- pred ren_quantified_lookup(mh_renaming, quantified_var::in, 
+	var_id::out) is det.
+:- func ren_quantified_lookup(mh_renaming, quantified_var) = var_id.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -100,46 +117,35 @@ empty_substitution(sub_offset(0)).
 %-----------------------------------------------------------------------------%
 % Substitution lookup
 
-sub_id_lookup(sub_empty, ID, var(ID)).
+sub_id_lookup(sub_empty, _, _) :- fail.
 
-sub_id_lookup(sub_map(Map), ID, Term) :-
-	( if search(Map, ID, Found)
-	then 	Term = Found
-	else 	Term = var(ID)
-	).
-	
-sub_id_lookup(sub_array(Array), ID, Term)  :-
-	( if var_id_semidet_lookup(Array, ID, Found)
-	then Term = Found
-	else Term = var(ID)
-	).
-	
-	
-sub_id_lookup(sub_stack(Sub1, Sub2), ID, Term) :-
-	sub_id_lookup(Sub2, ID, Term2),
-	(if Term2 = var(ID2)
-	then	Term = sub_id_lookup(Sub1, ID2)
-	else	Term = Term2
-	).
-	
-sub_id_lookup(ren_empty, ID, var(ID)).
+sub_id_lookup(sub_single(ID, Term), ID, Term).
 
-sub_id_lookup(ren_map(Map), ID0, var(ID)) :-
-	( if search(Map, ID0, Found)
-	then 	ID = Found
-	else 	ID = ID0
-	).
+sub_id_lookup(sub_map(Map), ID, Term) :- search(Map, ID, Found).
 	
-sub_id_lookup(ren_array(Array), ID0, var(ID)) :-
-	( if var_id_semidet_lookup(Array, ID0, Found)
-	then ID = Found
-	else ID = ID0
-	).
+sub_id_lookup(sub_array(Array), ID, Term)  :- 
+	var_id_semidet_lookup(Array, ID, Found).
 	
-sub_id_lookup(ren_offset(Offset), ID0, var(ID)) :- 
-	ID = construct_var_id(Offset + deconstruct_var_id(ID0)).
+sub_id_lookup(ren_empty, _, _) :- fail.
+
+sub_id_lookup(ren_map(Map), ID0, var(ID)) :- search(Map, ID0, ID).
 	
-sub_id_lookup(ren_stack(Ren1, Ren2))
+sub_id_lookup(ren_array(Array), ID0, var(ID)) :- 
+	var_id_semidet_lookup(Array, ID0, ID).
+	
+sub_id_lookup(ren_offset(Offset), ID, var( var_id_offset(ID, Offset) ) ).
+
+sub_id_lookup(Sub, ID) = Term :- sub_id_lookup(Sub, ID, Term).
+
+sub_var_lookup(Sub, var(ID), Term) :- sub_id_lookup(Sub, ID, Term).
+
+sub_var_lookup(Sub, anonymous, anonymous).
+
+sub_var_lookup(Sub, Var) = Term :- sub_var_lookup(Sub, Var, Term).
+
+sub_quantified_lookup(Sub, var(ID), Term) :- sub_id_lookup(Sub, ID, Term).
+
+sub_quantified_lookup(Sub, Var) = Term :- sub_quantified_lookup(Sub, Var, Term).
 
 
 
