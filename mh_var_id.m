@@ -15,7 +15,8 @@
 :- interface.
 
 :- import_module list.
-:- import_module array.
+:- import_module array
+:- import_module sparse_bitset.
 
 %-----------------------------------------------------------------------------%
 % Variable ID's
@@ -24,9 +25,17 @@
 
 :- type var_ids == list(var_id).
 
-:- func construct_var_id(int) = var_id.
+% Breaks encapsulation, code smell
+% :- func construct_var_id(int) = var_id.
 
-:- func deconstruct_var_id(var_id) = int.
+% :- func deconstruct_var_id(var_id) = int.
+
+:- pred var_id_offset(int, var_id, var_id).
+:- mode var_id_offset(in, in, out) is det.
+:- mode var_id_offset(out, in, in) is det.
+:- mode var_id_offset(in, out, in) is det.
+
+:- func var_id_offset(var_id, int) = var_id.
 
 :- pred valid_var_id(var_id::in) is semidet.
 
@@ -107,6 +116,7 @@
 :- func var_id_set_init_array(var_id_set::in, T::in) = (array(T)::array_uo)
 	is det.
 
+
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
@@ -126,13 +136,17 @@
 
 :- type var_id == int.
 
-construct_var_id(ID) = ID.
+% construct_var_id(ID) = ID.
 
-:- pragma inline(construct_var_id/1).
+% :- pragma inline(construct_var_id/1).
 
-deconstruct_var_id(ID) = ID.
+% deconstruct_var_id(ID) = ID.
 
-:- pragma inline(deconstruct_var_id/1).
+% :- pragma inline(deconstruct_var_id/1).
+
+var_id_offset(Offset, !ID) :- !:ID = !.ID + Offset.
+
+var_id_offset(!.ID, Offset) = !:ID :- var_id_offset(Offset, !ID). 
 
 valid_var_id(I) :- I > 0.
 
