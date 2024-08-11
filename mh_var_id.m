@@ -31,13 +31,13 @@
 % :- func deconstruct_var_id(var_id) = int.
 
 
-:- func var_id_offset(var_id, int) = var_id.
-
 :- pred valid_var_id(var_id::in) is semidet.
 
 :- pred require_valid_var_id(var_id::in) is det.
 
 :- pred expect_valid_var_id(var_id::in, string::in, string::in) is det.
+
+:- func null_var_id = var_id is det.
 
 %-----------------------------------------------------------------------------%
 % Var ID Offsets
@@ -114,7 +114,7 @@
 
 :- func var_id_semidet_lookup(array(T), var_id) = t.
 
-:- func var_id_elem(var_id, array(T)) = T.
+:- func var_id_elem(var_id, array(T)) = T. 
 
 :- pred var_id_set(var_id::in, T::in, array(T)::array_di, array(T)::array_uo) 
 	is det.
@@ -168,6 +168,17 @@ require_valid_var_id(I) :- require(valid_var_id(I), "Invalid var_id:" ++
 	
 expect_valid_var_id(I, Module, Proc) :- expect(valid_var_id(I), Module, Proc,
 	"Invalid var_id:" ++ string(I) ++ " less than zero.").
+
+%-----------------------------------------------------------------------------%
+% Var ID Offsets
+
+:- type var_id_offset = int.
+
+var_id_offset(ID1, ID2, ID1 - ID2).
+
+var_id_offset(ID1, ID2) = Offset :- var_id_offset(ID1, ID2, Offset).
+
+apply_var_id_offset(ID1, Offset) = ID2 :- var_id_offset(ID1, ID2, Offset).
 
 %-----------------------------------------------------------------------------%
 % Variable sets
