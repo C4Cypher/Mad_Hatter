@@ -34,8 +34,7 @@
 	;		ren_single(var_id, var_id)
 	;		ren_map(map(var_id, var_id))
 	;		ren_array(array(var_id))
-	;		ren_offset(int, int) % ren_offset(Offset, Size)
-	;		ren_offset(int, var_id, var_id). %ren_offset(Offset, Size, First)
+	;		ren_offset(var_id_offset).
 	
 :- pred init_sub(mh_substitution::out) is det.
 :- func init_sub = mh_substitution.
@@ -69,16 +68,22 @@
 % Renaming
 
 :- inst mh_renaming
-	--->	ren_map(ground)
+	--->	ren_empty
+	;		ren_single(ground, ground)
+	;		ren_map(ground)
 	;		ren_array(ground)
-	;		ren_offset(ground)
-	;		ren_stack(ground, ground).
+	;		ren_offset(ground).
 	
 :- type mh_renaming =< mh_substitution
-	---> 	ren_map(map(var_id, var_id))
+	---> 	ren_empty
+	;		ren_single(var_id, var_id)
+	;		ren_map(map(var_id, var_id))
 	;		ren_array(arrray(var_id))
-	;		ren_offset(int)
-	;		ren_stack(mh_renaming, mh_renaming).
+	;		ren_offset(sub_id_offset).
+	
+:- mode is_renaming == ground >> mh_renaming.
+
+:- pred is_renaming(mh_substitution::is_renaming) is semidet.
 	
 %-----------------------------------------------------------------------------%
 % Renaming lookup
@@ -86,8 +91,6 @@
 :- pred ren_id_lookup(mh_renaming::in, var_id::in, var_id::out) 
 	is semidet.
 :- func ren_id_lookup(mh_renaming, var_id) = var_id is semidet.
-
-:- pred ren_stack_id_lookup(mh_renaming::in, mh_subst) is semidet.
 
 
 :- pred ren_var_lookup(mh_renaming::in, mh_var::in, var_id::out) is det.
@@ -117,7 +120,7 @@ empty_substitution(sub_offset(0)).
 %-----------------------------------------------------------------------------%
 % Substitution lookup
 
-sub_id_lookup(sub_empty, _, _) :- fail.
+sub_id_lookup(sub_empty, _, nil) :- fail.
 
 sub_id_lookup(sub_single(ID, Term), ID, Term).
 
@@ -126,16 +129,21 @@ sub_id_lookup(sub_map(Map), ID, Term) :- search(Map, ID, Found).
 sub_id_lookup(sub_array(Array), ID, Term)  :- 
 	var_id_semidet_lookup(Array, ID, Found).
 	
-sub_id_lookup(ren_empty, _, _) :- fail.
+sub_id_lookup(ren_empty, _, nil) :- fail.
 
-sub_id_lookup(ren_map(Map), ID0, var(ID)) :- search(Map, ID0, ID).
+sub_id_lookup(ren_single(ID1, ID2), ID1, var(ID2)).
+
+sub_id_lookup(ren_map(Map), ID1, var(ID2)) :- search(Map, ID1, ID2).
 	
-sub_id_lookup(ren_array(Array), ID0, var(ID)) :- 
-	var_id_semidet_lookup(Array, ID0, ID).
+sub_id_lookup(ren_array(Array), ID1, var(ID2)) :- 
+	var_id_semidet_lookup(Array, ID1, ID2).
 	
-sub_id_lookup(ren_offset(Offset), ID, var( var_id_offset(ID, Offset) ) ).
+sub_id_lookup(ren_offset(Offset), ID1, var(ID2) ) :- 
+	var_id_offset(ID1, ID2, Offset).
 
 sub_id_lookup(Sub, ID) = Term :- sub_id_lookup(Sub, ID, Term).
+
+%-----------------------------------------------------------------------------%
 
 sub_var_lookup(Sub, var(ID), Term) :- sub_id_lookup(Sub, ID, Term).
 
@@ -143,15 +151,55 @@ sub_var_lookup(Sub, anonymous, anonymous).
 
 sub_var_lookup(Sub, Var) = Term :- sub_var_lookup(Sub, Var, Term).
 
+%-----------------------------------------------------------------------------%
+
 sub_quantified_lookup(Sub, var(ID), Term) :- sub_id_lookup(Sub, ID, Term).
 
-sub_quantified_lookup(Sub, Var) = Term :- sub_quantified_lookup(Sub, Var, Term).
-
-
-
-
+sub_quantified_lookup(Sub, Var) = Term :- 
+	sub_quantified_lookup(Sub, Var, Term).
 	
+%-----------------------------------------------------------------------------%
+% Substitution composition
 
+
+
+%-----------------------------------------------------------------------------%
+% Renaming
+
+is_renaming(ren_empty). 
+is_renaming(ren_single(_, _) ).
+is_renaming(ren_map(_) ).
+is_renaming(ren_array(_) ).
+is_renaming(ren_offset(_) ).
+
+%-----------------------------------------------------------------------------%
+% Renaming lookup
+
+% ren_id_lookup(Ren, !ID)
+
+ren_id_lookup(ren_empty, _, null_var_id) :- fail.
+
+ren_id_lookup(ren_single(ID1, ID2), ID1, ID2).
+
+ren_id_lookup(ren_map(Map), ID1, ID2) :- search(Map, ID1, ID2).
 	
+ren_id_lookup(ren_array(Array), ID1, ID2) :- 
+	var_id_semidet_lookup(Array, ID1, ID2).
 	
-	
+ren_id_lookup(ren_offset(Offset), ID1, ID2) :- 
+	var_id_offset(ID1, ID2, Offset).
+
+ren_id_lookup(Ren, ID) = Term :- ren_id_lookup(Ren, ID, Term).
+
+%-----------------------------------------------------------------------------%
+
+ren_var_lookup(Ren, var(ID1), ID2) :- ren_id_lookup(Ren, ID1, ID2).
+
+ren_var_lookup(Ren, Var) = ID :- ren_var_lookup(Ren, Var, ID).
+
+%-----------------------------------------------------------------------------%
+
+ren_quantified_lookup(Ren, var(ID1), ID2) :- ren_id_lookup(Ren, ID1, ID2).
+
+ren_quantified_lookup(Ren, Var) = ID :- 
+	ren_quantified_lookup(Ren, Var, ID).
