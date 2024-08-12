@@ -15,8 +15,8 @@
 :- interface.
 
 :- import_module list.
-:- import_module array
-:- import_module sparse_bitset.
+:- import_module array.
+% :- import_module sparse_bitset.
 
 %-----------------------------------------------------------------------------%
 % Variable ID's
@@ -112,7 +112,7 @@
 
 :- pred var_id_semidet_lookup(array(T)::in, var_id::in, T::out) is semidet.
 
-:- func var_id_semidet_lookup(array(T), var_id) = t.
+:- func var_id_semidet_lookup(array(T), var_id) = T is semidet.
 
 :- func var_id_elem(var_id, array(T)) = T. 
 
@@ -157,10 +157,6 @@
 
 % :- pragma inline(deconstruct_var_id/1).
 
-var_id_offset(Offset, !ID) :- !:ID = !.ID + Offset.
-
-var_id_offset(!.ID, Offset) = !:ID :- var_id_offset(Offset, !ID). 
-
 valid_var_id(I) :- I > 0.
 
 require_valid_var_id(I) :- require(valid_var_id(I), "Invalid var_id:" ++
@@ -168,11 +164,13 @@ require_valid_var_id(I) :- require(valid_var_id(I), "Invalid var_id:" ++
 	
 expect_valid_var_id(I, Module, Proc) :- expect(valid_var_id(I), Module, Proc,
 	"Invalid var_id:" ++ string(I) ++ " less than zero.").
+	
+null_var_id = 0.
 
 %-----------------------------------------------------------------------------%
 % Var ID Offsets
 
-:- type var_id_offset = int.
+:- type var_id_offset == int.
 
 var_id_offset(ID1, ID2, ID1 - ID2).
 
@@ -353,9 +351,9 @@ var_id_lookup(Array, ID, T) :- lookup(Array, id_index(ID), T).
 
 var_id_lookup(Array, ID) = lookup(Array, id_index(ID)).
 
-var_id_semidet_lookup(Array, ID, T) :- lookup(Array, id_index(ID), T).
+var_id_semidet_lookup(Array, ID, T) :- semidet_lookup(Array, id_index(ID), T).
 
-var_id_semidet_lookup(Array, ID) = semidet_lookup(Array, ID).
+var_id_semidet_lookup(Array, ID) = T :- var_id_semidet_lookup(Array, ID, T).
 
 var_id_elem(ID, Array) = elem(id_index(ID), Array).
 

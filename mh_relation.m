@@ -37,7 +37,3 @@
 ].
 
 
-:- typeclass function(T) <= relation(T) where [
-	% Todo:  predicate to apply a function under a module and scope
-].
-

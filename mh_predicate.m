@@ -15,13 +15,13 @@
 
 :- interface.
 
-
+:- import_module mh_term.
 :- import_module mh_arity.
 %-----------------------------------------------------------------------------%
 
 :- type mh_predicate 
 	--->	predicate_fact(mh_term) % \X
-	;		predicate_clause(mh_term, mh_term). % \X :- Y
+	;		predicate_clause(mh_term, mh_term) % \X :- Y
 	;		some [T] mr_predicate(T) => predicate(T).
 
 %-----------------------------------------------------------------------------%
@@ -33,5 +33,4 @@
 	% Todo:  predicate to call predicate under a module and scope
 ].
 
-:
 

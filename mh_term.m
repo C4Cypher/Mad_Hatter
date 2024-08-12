@@ -47,7 +47,7 @@
 	;		mr_value(univ)
 	
 	% compound terms
-	;		cons(symbol, mh_term)
+	;		cons(functor, mh_term)
 	;		tuple_term(mh_tuple)
 	
 	% Higher order terms
@@ -55,16 +55,24 @@
 	;		predicate(mh_predicate)
 	;		function(mh_function)
 	
-	% Substitutions
+	% Substitution
 	;		sub(mh_term, mh_substitution).
 	
-:- func functor(mh_term) = mh_functor is semidet.
+:- func functor(mh_term) = functor is semidet.
+
+:- pred functor(mh_term::in, functor::out) is semidet.
 	
 :- instance arity(mh_term).
 % :- instance tuple(mh_term).
 
 %-----------------------------------------------------------------------------%
 %  Functor
+
+:- inst functor 
+	--->	atom(ground)
+	;		relation(ground)
+	;		function(ground)
+	;		sub(ground, ground).
 
 :- type functor =< mh_term
 	% Atoms
@@ -73,7 +81,8 @@
 	% Higher order terms
 	;		relation(mh_relation)
 	;		predicate(mh_predicate)
-	;		function(mh_function).
+	;		function(mh_function)
+	;		sub(functor, mh_substitution).
 
 %-----------------------------------------------------------------------------%
 % Atoms
@@ -118,7 +127,7 @@
 
 %-----------------------------------------------------------------------------%
 
-:- type var_set.
+% :- type var_set.
 
 
 
@@ -137,7 +146,7 @@
 	;		tuple_term(ground).
 
 :- type compound_term =< mh_term
-	--->	cons(symbol, mh_term)
+	--->	cons(functor, mh_term)
 	;		tuple_term(mh_tuple).
 
 :- instance arity(compound_term).
@@ -149,7 +158,7 @@
 :- 	inst mh_constructor ---> cons(ground, ground).
 	
 :- type mh_constructor =< compound_term
-	--->	cons(symbol, mh_term).
+	--->	cons(functor, mh_term).
 
 :- instance arity(mh_constructor).
 % :- instance tuple(mh_constructor).
@@ -169,10 +178,16 @@
 %-----------------------------------------------------------------------------%
 % Higher Order terms
 
+:- inst lambda
+	--->	relation(ground)
+	;		function(ground)
+	;		sub(ground, ground).
+
 :- type lambda =< functor
 	--->	relation(mh_relation)
 	;		predicate(mh_predicate)
-	;		function(mh_function).
+	;		function(mh_function)
+	;		sub(lambda, mh_substitution).
 
 
 
@@ -189,12 +204,15 @@
 % 	mh_term
 
 functor(cons(F, _)) = F.
+functor(sub(Term, _)) = functor(Term).
+
+functor(Term, functor(Term)).
 
 :- instance arity(mh_term) where [
 	arity(T, A) :- require_complete_switch [T] (
 		(	T = nil
+		;	T = atom(_)
 		;	T = var(_)
-		;	T = var(_, _)
 		;	T = anonymous
 		;	T = mr_value(_)
 		;	T = predicate(_)
@@ -208,6 +226,7 @@ functor(cons(F, _)) = F.
 			else A = 1
 		)
 	;	T = tuple_term(R), A = arity(R)
+	;	T = sub(Term, _), A = arity(Term)
 	)
 ].
 
@@ -264,10 +283,10 @@ var_is_quantified(var(_)).
 %	Mad Hatter compound terms
 
 :- instance arity(mh_constructor) where [ 
-	arity(cons(_, T), Arg), 
-		(	if Arg = tuple_term(Tuple)
-			then A = arity(Tuple)
-			else A = 1
+	arity(cons(_, T), Arg) :-
+		(	if T = tuple_term(Tuple)
+			then Arg = arity(Tuple)
+			else Arg = 1
 		) 
 ].
 
@@ -300,12 +319,13 @@ mr_type_name(T) = type_name(type_of(T)).
 :- func term_description(mh_term) = string.
 
 term_description(nil) = "nil term".
+term_description(atom(Symbol)) = "atom """ ++ to_string(Symbol) ++ """".
 term_description(var(V)) = "variable with id " ++ string(V).
 term_description(anonymous) = "anonymous variable".
 term_description(mr_value(M)) = 
 	"mercury value term of type " ++ mr_type_name(M).
 term_description(cons(A, R)) = 
-	"constructor " ++ to_string(A) ++ "(" ++ mr_type_name(R) ++ ")".
+	"constructor " ++ string(A) ++ "(" ++ mr_type_name(R) ++ ")".
 term_description(tuple_term(R)) = 
 	"mercury tuple term of type " ++	mr_type_name(R).
 term_description(predicate(P)) = 
@@ -314,3 +334,5 @@ term_description(relation(F)) =
 	"mercury relation term of type " ++ mr_type_name(F).
 term_description(function(F)) =
 	"mercury function term of type " ++ mr_type_name(F).
+term_description(sub(Term, _)) =
+	"substitution of " ++ term_description(Term).
