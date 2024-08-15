@@ -62,15 +62,26 @@
 	is semidet.
 :- func sub_id_search(mh_substitution, var_id) = mh_term is semidet.
 
+% Find a given variable ID in the substitution if the id is not found return
+% the variable indexed by the ID
+:- pred sub_id_lookup(mh_substitution::in, var_id::in, mh_term::out) is det.
+:- func sub_id_lookup(mh_substitution, var_id) = mh_term.
 
 :- pred sub_var_search(mh_substitution::in, mh_var::in, mh_term::out) 
 	is semidet.
 :- func sub_var_search(mh_substitution, mh_var) = mh_term is semidet.
 
+:- pred sub_var_lookup(mh_substitution::in, mh_var::in, mh_term::out) is det.
+:- func sub_var_lookup(mh_substitution, mh_var) = mh_term.
+
 :- pred sub_quantified_search(mh_substitution::in, quantified_var::in, 
 	mh_term::out) is semidet.
 :- func sub_quantified_search(mh_substitution, quantified_var) = mh_term
 	is semidet.
+	
+:- pred sub_quantified_lookup(mh_substitution::in, quantified_var::in, 
+	mh_term::out) is det.
+:- func sub_quantified_lookup(mh_substitution, quantified_var) = mh_term.
 
 %-----------------------------------------------------------------------------%
 % Substitution composition
@@ -114,6 +125,8 @@
 %-----------------------------------------------------------------------------%
 % Renaming search
 
+:- pred ren_contains_id(mh_renaming::in, var_id::in) is semidet.
+
 :- pred ren_id_search(mh_renaming::in, var_id::in, var_id::out) 
 	is semidet.
 :- func ren_id_search(mh_renaming, var_id) = var_id is semidet.
@@ -151,15 +164,15 @@ sub_contains_id(sub_empty, _) :- fail.
 sub_contains_id(sub_single(ID, _), ID).
 sub_contains_id(sub_map(Map), ID) :- contains(Map, ID).
 sub_contains_id(sub_array(Array), ID) :- var_id_in_bounds(Array, ID).
-sub_contains_id(sub_offset(Sub, Offset, !.ID) :- 
-	var_id_offset(Offset, !ID), sub_contains_id(Sub, !:ID).
+sub_contains_id(sub_offset(Sub, Offset), ID1) :- 
+	var_id_offset(ID1, ID2, Offset), sub_contains_id(Sub, ID2).
 sub_contains_id(ren_empty, _) :- fail.
 sub_contains_id(ren_single(ID, _), ID).
 sub_contains_id(ren_map(Map), ID) :- contains(Map, ID).
 sub_contains_id(ren_array(Array), ID) :- var_id_in_bounds(Array, ID).
 sub_contains_id(ren_offset(_), _) :- fail.
-sub_contains_id(ren_offset(Sub, Offset, !.ID) :- 
-	var_id_offset(Offset, !ID), sub_contains_id(Sub, !:ID).
+sub_contains_id(ren_offset(Sub, Offset), ID1) :- 
+	var_id_offset(ID1, ID2, Offset), ren_contains_id(Sub, ID2).
 
 
 
@@ -175,9 +188,9 @@ sub_id_search(sub_map(Map), ID, Term) :- search(Map, ID, Term).
 sub_id_search(sub_array(Array), ID, Term)  :- 
 	var_id_semidet_lookup(Array, ID, Term).
 	
-sub_id_search(sub_offset(Sub, Offset), !.ID, Term) :-
-	var_id_offset(!ID, Offset),
-	sub_id_search(Sub, !:ID, Term).
+sub_id_search(sub_offset(Sub, Offset), ID1, Term) :-
+	var_id_offset(ID1, ID2, Offset),
+	sub_id_search(Sub, ID2, Term).
 	
 sub_id_search(ren_empty, _, nil) :- fail.
  
@@ -191,11 +204,20 @@ sub_id_search(ren_array(Array), !.ID, var(!:ID)) :-
 sub_id_search(ren_offset(Offset), !.ID, var(!:ID) ) :- 
 	var_id_offset(!ID, Offset).
 	
-sub_id_search(ren_offset(Sub, Offset), !.ID, var(!:ID)) :-
+sub_id_search(ren_offset(Ren, Offset), !.ID, var(!:ID)) :-
 	var_id_offset(!ID, Offset),
 	ren_id_search(Ren, !ID).
 
 sub_id_search(Sub, ID) = Term :- sub_id_search(Sub, ID, Term).
+
+%-----------------------------------------------------------------------------%
+
+sub_id_lookup(Sub, ID, Term) :-
+	( if sub_id_search(Sub, ID, Found)
+	then Term = Found
+	else Term = var(ID)).
+	
+sub_id_lookup(Sub, ID) = Term :- sub_id_lookup(Sub, ID, Term).
 
 %-----------------------------------------------------------------------------%
 
@@ -205,10 +227,27 @@ sub_var_search(Sub, Var) = Term :- sub_var_search(Sub, Var, Term).
 
 %-----------------------------------------------------------------------------%
 
+sub_var_lookup(_, anonymous, anonymous).
+
+sub_var_lookup(Sub, var(ID), Term) :- sub_id_lookup(Sub, ID, Term).
+
+sub_var_lookup(Sub, Var) = Term :- sub_var_lookup(Sub, Var, Term).
+
+%-----------------------------------------------------------------------------%
+
 sub_quantified_search(Sub, var(ID), Term) :- sub_id_search(Sub, ID, Term).
 
 sub_quantified_search(Sub, Var) = Term :- 
 	sub_quantified_search(Sub, Var, Term).
+	
+%-----------------------------------------------------------------------------%
+
+sub_quantified_lookup(Sub, var(ID), Term) :- sub_id_lookup(Sub, ID, Term).
+
+sub_quantified_lookup(Sub, Var) = Term :- 
+	sub_quantified_lookup(Sub, Var, Term).
+
+
 	
 %-----------------------------------------------------------------------------%
 % Substitution composition
@@ -233,9 +272,23 @@ is_renaming(ren_offset(_, _)).
 %-----------------------------------------------------------------------------%
 % Renaming search
 
+ren_contains_id(ren_empty, _) :- fail.
+ren_contains_id(ren_single(ID, _), ID).
+ren_contains_id(ren_map(Map), ID) :- contains(Map, ID).
+ren_contains_id(ren_array(Array), ID) :- var_id_in_bounds(Array, ID).
+ren_contains_id(ren_offset(Ren, Offset), ID1) :- 
+	var_id_offset(ID1, ID2, Offset), ren_contains_id(Ren, ID2).
+ren_contains_id(ren_empty, _) :- fail.
+ren_contains_id(ren_single(ID, _), ID).
+ren_contains_id(ren_map(Map), ID) :- contains(Map, ID).
+ren_contains_id(ren_array(Array), ID) :- var_id_in_bounds(Array, ID).
+ren_contains_id(ren_offset(_), _) :- fail.
+ren_contains_id(ren_offset(Ren, Offset), ID1) :- 
+	var_id_offset(ID1, ID2, Offset), ren_contains_id(Ren, ID2).
+
 ren_id_search(ren_empty, _, null_var_id) :- fail.
 
-ren_id_search(ren_single(!ID), !ID).
+ren_id_search(ren_single(ID1, ID2), ID1, ID2).
 
 ren_id_search(ren_map(Map), !ID) :- search(Map, !ID).
 	
@@ -246,7 +299,7 @@ ren_id_search(ren_offset(Offset), !ID) :-
 	var_id_offset(!ID, Offset).
 	
 ren_id_search(ren_offset(Ren, Offset), !ID) :-
-	var_id_offset(!ID),
+	var_id_offset(!ID, Offset),
 	ren_id_search(Ren, !ID).
 
 ren_id_search(Ren, !.ID) = !:ID :- ren_id_search(Ren, !ID).
@@ -267,8 +320,8 @@ ren_quantified_search(Ren, Var) = ID :-
 %-----------------------------------------------------------------------------%
 % Utility
 
-:- pred sub_out_of_range(var_id::in, string::in, string::in) is erroneous.
+:- pred sub_out_of_range(var_id::in, string::in) is erroneous.
 
-sub_out_of_range(ID, Type, Container) :-
-	error("error: " ++ Type ++ " with id of " ++ string(ID) ++ 
-		" not found in ":++ Container).
+sub_out_of_range(ID, Container) :-
+	error("error: var_id #" ++ string(ID) ++ 
+		" not found in "++ Container).
