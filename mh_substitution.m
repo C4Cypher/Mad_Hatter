@@ -49,7 +49,8 @@
 
 	
 %-----------------------------------------------------------------------------%
-% Substitution search
+% Looking up variables in substitutions
+
 
 % Succeed if the substitution can index the provided ID
 % note that this will fail for any input with the ren_offset/1 constructor
@@ -57,6 +58,7 @@
 :- pred sub_contains_id(mh_substitution::in, var_id::in) is semidet.
 
 % Find a given variable ID in the substitution, fail if the id is not found
+% If the substitution is a renaming, return the indexed var_id as a variable
 
 :- pred sub_id_search(mh_substitution::in, var_id::in, mh_term::out) 
 	is semidet.
@@ -82,6 +84,18 @@
 :- pred sub_quantified_lookup(mh_substitution::in, quantified_var::in, 
 	mh_term::out) is det.
 :- func sub_quantified_lookup(mh_substitution, quantified_var) = mh_term.
+
+%-----------------------------------------------------------------------------%
+% Applying substitutions
+
+% Apply a substitution to a term, if the term is a variable, replace the
+% variable with the substituted term as appropriate, if not, return the term
+% with the substitution applied.
+
+:- pred apply_term_substitution(mh_substitution::in, mh_term::in, 
+	mh_term::out) is det.
+	
+:- func apply_term_substitution(mh_substitution, T) = mh_term.
 
 %-----------------------------------------------------------------------------%
 % Substitution composition
@@ -123,7 +137,7 @@
 :- pred is_renaming(mh_substitution::is_renaming) is semidet.
 
 %-----------------------------------------------------------------------------%
-% Renaming search
+% Looking up variables in renamings
 
 :- pred ren_contains_id(mh_renaming::in, var_id::in) is semidet.
 
@@ -132,12 +146,24 @@
 :- func ren_id_search(mh_renaming, var_id) = var_id is semidet.
 
 
+:- pred ren_id_lookup(mh_renaming::in, var_id::in, var_id::out) is det.
+:- func ren_id_lookup(mh_renaming, var_id) = var_id.
+
+
 :- pred ren_var_search(mh_renaming::in, mh_var::in, var_id::out) is semidet.
 :- func ren_var_search(mh_renaming, mh_var) = var_id is semidet.
+
+:- pred ren_var_lookup(mh_renaming::in, mh_var::in, mh_var::out) is det.
+:- func ren_var_lookup(mh_renaming, mh_var) = mh_var.
 
 :- pred ren_quantified_search(mh_renaming::in, quantified_var::in, 
 	var_id::out) is semidet.
 :- func ren_quantified_search(mh_renaming, quantified_var) = var_id is semidet.
+
+:- pred ren_quantified_lookup(mh_renaming::in, quantified_var::in, 
+	quantified_var::out) is det.
+:- func ren_quanitifed_lookup(mh_renaming, quantified_var) = quantified_var.	
+
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -158,7 +184,7 @@ empty_substitution(sub_map(init)).
 empty_substitution(sub_array(make_empty_array)).
 
 %-----------------------------------------------------------------------------%
-% Substitution search
+% Looking up variables in substitutions
 
 sub_contains_id(sub_empty, _) :- fail.
 sub_contains_id(sub_single(ID, _), ID).
@@ -247,7 +273,8 @@ sub_quantified_lookup(Sub, var(ID), Term) :- sub_id_lookup(Sub, ID, Term).
 sub_quantified_lookup(Sub, Var) = Term :- 
 	sub_quantified_lookup(Sub, Var, Term).
 
-
+%-----------------------------------------------------------------------------%
+% Applying substitutions
 	
 %-----------------------------------------------------------------------------%
 % Substitution composition
@@ -270,7 +297,12 @@ is_renaming(ren_offset(_, _)).
 
 
 %-----------------------------------------------------------------------------%
-% Renaming search
+% Looking up variables in renamings
+
+apply_substitution
+
+
+%-----------------------------------------------------------------------------%
 
 ren_contains_id(ren_empty, _) :- fail.
 ren_contains_id(ren_single(ID, _), ID).
@@ -285,6 +317,18 @@ ren_contains_id(ren_array(Array), ID) :- var_id_in_bounds(Array, ID).
 ren_contains_id(ren_offset(_), _) :- fail.
 ren_contains_id(ren_offset(Ren, Offset), ID1) :- 
 	var_id_offset(ID1, ID2, Offset), ren_contains_id(Ren, ID2).
+	
+%-----------------------------------------------------------------------------%
+
+ren_id_lookup(Ren, !ID) :-
+	( if ren_id_search(Sub, !.ID, Found)
+	then !:ID = Found
+	else !:ID = !.ID).
+	
+ren_id_lookup(Ren, !.ID) = !:ID :- ren_id_lookup(Ren, !ID).
+
+%-----------------------------------------------------------------------------%
+
 
 ren_id_search(ren_empty, _, null_var_id) :- fail.
 
@@ -312,10 +356,24 @@ ren_var_search(Ren, Var) = ID :- ren_var_search(Ren, Var, ID).
 
 %-----------------------------------------------------------------------------%
 
-ren_quantified_search(Ren, var(ID1), ID2) :- ren_id_search(Ren, ID1, ID2).
+ren_var_lookup(_, anonymous, anonymous).
+
+ren_var_lookup(Ren, var(!.ID), var(!:ID)) :- ren_id_lookup(Ren, !ID).
+
+ren_var_lookup(Ren, !.Var) = !:Var :- ren_var_lookup(Ren, !Var).
+
+%-----------------------------------------------------------------------------%
+
+ren_quantified_search(Ren, var(!.ID), !:ID) :- ren_id_search(Ren, !ID).
 
 ren_quantified_search(Ren, Var) = ID :- 
 	ren_quantified_search(Ren, Var, ID).
+
+%-----------------------------------------------------------------------------%
+
+ren_quanitified_lookup(Ren, var(!.ID), var(!:ID)) :- ren_id_lookup(Ren, !IO).
+
+ren_quanttified_lookup(Ren, !.Var) = !:Var :- ren_quanitifed_lookup(Ren, !Var). 
 	
 %-----------------------------------------------------------------------------%
 % Utility
