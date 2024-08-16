@@ -318,14 +318,7 @@ ren_contains_id(ren_offset(_), _) :- fail.
 ren_contains_id(ren_offset(Ren, Offset), ID1) :- 
 	var_id_offset(ID1, ID2, Offset), ren_contains_id(Ren, ID2).
 	
-%-----------------------------------------------------------------------------%
 
-ren_id_lookup(Ren, !ID) :-
-	( if ren_id_search(Sub, !.ID, Found)
-	then !:ID = Found
-	else !:ID = !.ID).
-	
-ren_id_lookup(Ren, !.ID) = !:ID :- ren_id_lookup(Ren, !ID).
 
 %-----------------------------------------------------------------------------%
 
@@ -347,6 +340,15 @@ ren_id_search(ren_offset(Ren, Offset), !ID) :-
 	ren_id_search(Ren, !ID).
 
 ren_id_search(Ren, !.ID) = !:ID :- ren_id_search(Ren, !ID).
+
+%-----------------------------------------------------------------------------%
+
+ren_id_lookup(Ren, !ID) :-
+	( if ren_id_search(Sub, !.ID, Found)
+	then !:ID = Found
+	else !:ID = !.ID).
+	
+ren_id_lookup(Ren, !.ID) = !:ID :- ren_id_lookup(Ren, !ID).
 
 %-----------------------------------------------------------------------------%
 
