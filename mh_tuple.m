@@ -20,6 +20,7 @@
 
 :- import_module mh_arity.
 :- import_module mh_term.
+:- import_module mh_substitution.
 
 
 %-----------------------------------------------------------------------------%
@@ -30,7 +31,8 @@
 :- type mh_tuple
 	--->	some [T] mr_tuple(T) => mr_tuple(T)
 	;		list_tuple(list(mh_term))
-	;		array_tuple(array(mh_term)).
+	;		array_tuple(array(mh_term))
+	;		tuple_substitution(mh_tuple, mh_substitution).
 
 :- func mr_tuple(T) = mh_tuple <= mr_tuple(T).
 :- mode tuple(in) = out is det.
@@ -41,6 +43,18 @@
 
 :- instance arity(mh_tuple).
 :- instance mr_tuple(mh_tuple).
+
+%-----------------------------------------------------------------------------%
+% Tuple indexing
+
+% :- pred tuple_contains(mr_tuple::in, int::in) is semidet.
+
+% % Throw an exception if index is not found
+% :- pred tuple_lookup(mr_tuple::in, int::in, mh_term::out) is det.
+
+% :- pred tuple_search(mr_tuple::in, int::in, mh_term::out) is semidet.
+
+% :- pred tuple_member(mr_tuple::in, int::out, mh_term::out) is nondet.
 
 
 %-----------------------------------------------------------------------------%
@@ -125,9 +139,7 @@ tuple_size(array_tuple(Array), S) :- size(Array, S).
 
 
 :- instance arity(mh_tuple) where [
-	arity(mr_tuple(T), A) :- arity(T, A),
-	arity(list_tuple(L), A) :- arity(L, A),
-	arity(array_tuple(Array), A) :- arity(Array, A)
+	pred(arity/2) is tuple_size
 ].
 
 :- instance tuple(mh_tuple) where [
@@ -141,6 +153,21 @@ tuple_size(array_tuple(Array), S) :- size(Array, S).
 	fold_mr_tuple(Closure, array_mr_tuple(T), !A) :- 
 		fold_array_index(Closure, T, !A)
 ].
+
+
+%-----------------------------------------------------------------------------%
+% Tuple indexing
+
+% tuple_contains(Tuple, Index) :- Index > 0, Index =< tuple_size(Tuple).
+
+% tuple_lookup(mr_tuple(T), Index, Term) :- mr_tuple_index(T, Index, Term).
+% tuple_lookup(list_tuple(L), Index, Term) :- list_index(L, Index, Term).
+% tuple_lookup(array_tuple(A), Index, Term) :- array_index(A, Index, Term).
+
+% tuple_lookup(tuple_substitution(Tuple, Sub), Index, Term) :-
+	% tuple_lookup(Tuple, Index, Term0),
+	
+
 
 %-----------------------------------------------------------------------------%
 % Function versions and determinism casts of tuple class methods
