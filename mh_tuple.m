@@ -32,7 +32,7 @@
 	--->	some [T] mr_tuple(T) => mr_tuple(T)
 	;		list_tuple(list(mh_term))
 	;		array_tuple(array(mh_term))
-	;		tuple_substitution(mh_tuple, mh_substitution).
+	;		tuple_sub(mh_tuple, mh_substitution).
 
 :- func mr_tuple(T) = mh_tuple <= mr_tuple(T).
 :- mode tuple(in) = out is det.
@@ -164,7 +164,7 @@ tuple_size(array_tuple(Array), S) :- size(Array, S).
 % tuple_lookup(list_tuple(L), Index, Term) :- list_index(L, Index, Term).
 % tuple_lookup(array_tuple(A), Index, Term) :- array_index(A, Index, Term).
 
-% tuple_lookup(tuple_substitution(Tuple, Sub), Index, Term) :-
+% tuple_lookup(tuple_sub(Tuple, Sub), Index, Term) :-
 	% tuple_lookup(Tuple, Index, Term0),
 	
 
