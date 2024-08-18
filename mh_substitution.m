@@ -151,7 +151,14 @@
 
 :- pred ren_quantified_lookup(mh_renaming::in, quantified_var::in, 
 	quantified_var::out) is det.
-:- func ren_quanitifed_lookup(mh_renaming, quantified_var) = quantified_var.	
+:- func ren_quanitifed_lookup(mh_renaming, quantified_var) = quantified_var.
+
+%-----------------------------------------------------------------------------%
+% Substitutible typeclass
+
+:- typeclass substitutable(T) where [
+	pred apply_substitution(mh_substiution::in, T::in, T::out) is det
+].	
 
 
 %-----------------------------------------------------------------------------%

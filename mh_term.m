@@ -259,9 +259,23 @@ apply_term_substitution(Sub, !Term) :- 	require_complete_switch [!.Term] (
 		!:Term = cons(sub(Car, Sub), sub(Cdr, Sub))
 		
 	;	!.Term = tuple_term(Tup),
-		!:Term = tuple_term(tuple_substitution(Tup, Sub))
+		!:Term = tuple_term(tuple_sub(Tup, Sub))
 	
-	;	!.Term = 
+	;	!.Term = relation(Rel1), 
+		apply_relation_substitution(Sub, Rel1, Rel2),
+		!:Term = relation(Rel2)
+		
+	;	!.Term = predicate(Pred1),
+		apply_predicate_substitution(Sub, Pred1, Pred2),
+		!:Terrm = predicate(Pred2)
+		
+	;	!.Term = function(Func1),
+		apply_function_substitution(Sub, Func1, Func2),
+		!:Term = function(Func2)
+		
+	;	!.Term = sub(Term0, Sub0),
+		apply_term_substitution(Sub0, Term0, Term1),
+		apply_term_substitution(Sub, Term1, !:Term)
 	
 ).
 
