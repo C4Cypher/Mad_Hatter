@@ -61,6 +61,14 @@
 :- func functor(mh_term) = functor is semidet.
 
 :- pred functor(mh_term::in, functor::out) is semidet.
+
+% Apply a substitution to a term, if the term is a variable, replace the
+% variable with the substituted term as appropriate, if not, return the term
+% with the substitution applied.
+
+:- pred apply_term_substitution(mh_substitution::in, mh_term::in, mh_term::out)
+ is det.
+:- func apply_term_substitution(mh_substitution, mh_term) = mh_term.
 	
 :- instance arity(mh_term).
 % :- instance tuple(mh_term).
@@ -230,7 +238,35 @@ functor(Term, functor(Term)).
 	)
 ].
 
+%-----------------------------------------------------------------------------%
 
+
+apply_term_substitution(Sub, !Term) :- 	require_complete_switch [!.Term] (
+	( 
+		!.Term = nil 
+	;	!.Term = atom(_) 
+	;	!.Term = anonymous 
+	;	!.Term = mr_value(_) 
+	), !:Term = !.Term 
+	
+	;	!.Term = var(ID),
+		( if var_id_search(Sub, !.Term, Found)
+		then !:Term = Found
+		else !:Term = !.Term
+		)
+		
+	;	!.Term = cons(Car, Cdr),
+		!:Term = cons(sub(Car, Sub), sub(Cdr, Sub))
+		
+	;	!.Term = tuple_term(Tup),
+		!:Term = tuple_term(tuple_substitution(Tup, Sub))
+	
+	;	!.Term = 
+	
+).
+
+
+%-----------------------------------------------------------------------------%
 		
 % :- instance tuple(mh_term) where [ ].
 	

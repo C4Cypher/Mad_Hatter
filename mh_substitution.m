@@ -85,17 +85,6 @@
 	mh_term::out) is det.
 :- func sub_quantified_lookup(mh_substitution, quantified_var) = mh_term.
 
-%-----------------------------------------------------------------------------%
-% Applying substitutions
-
-% Apply a substitution to a term, if the term is a variable, replace the
-% variable with the substituted term as appropriate, if not, return the term
-% with the substitution applied.
-
-:- pred apply_term_substitution(mh_substitution::in, mh_term::in, 
-	mh_term::out) is det.
-	
-:- func apply_term_substitution(mh_substitution, T) = mh_term.
 
 %-----------------------------------------------------------------------------%
 % Substitution composition
@@ -273,8 +262,7 @@ sub_quantified_lookup(Sub, var(ID), Term) :- sub_id_lookup(Sub, ID, Term).
 sub_quantified_lookup(Sub, Var) = Term :- 
 	sub_quantified_lookup(Sub, Var, Term).
 
-%-----------------------------------------------------------------------------%
-% Applying substitutions
+
 	
 %-----------------------------------------------------------------------------%
 % Substitution composition
