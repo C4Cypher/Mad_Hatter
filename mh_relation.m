@@ -15,8 +15,9 @@
 
 :- interface.
 
-:- import_module mh_arity.
 :- import_module mh_term.
+:- import_module mh_substitution.
+:- import_module mh_arity.
 
 %-----------------------------------------------------------------------------%
 % Relation type
@@ -25,6 +26,9 @@
 	--->	relation_fact(mh_term, mh_term) % \X = Y
 	;		relation_clause(mh_term, mh_term, mh_term) % \X = Y :- Z.
 	; 		some [T] mr_relation(T) => relation(T).
+	
+:- pred apply_relation_substitution(mh_substitution::in, mh_relation::in,
+	mh_relation::out) is det.
 	
 
 %-----------------------------------------------------------------------------%
@@ -37,3 +41,14 @@
 ].
 
 
+%-----------------------------------------------------------------------------%
+%-----------------------------------------------------------------------------%
+
+:- interface.
+
+:- import_module require.
+
+%-----------------------------------------------------------------------------%
+
+apply_relation_substitution(_, _, _) :- sorry($module, $pred,
+	"apply_relation_substitution/3").

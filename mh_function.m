@@ -21,4 +21,19 @@
 	--->	mh_function(mh_relation)
 	;		some [T] mr_function(T) => function(T).
 	
+:- pred apply_function_substitution(mh_substitution::in, mh_function::in,
+	mh_function::out) is det.
+	
 :- typeclass function(T) where [].
+
+%-----------------------------------------------------------------------------%
+%-----------------------------------------------------------------------------%
+
+:- interface.
+
+:- import_module require.
+
+%-----------------------------------------------------------------------------%
+
+apply_function_substitution(_, _, _) :- sorry($module, $pred,
+	"apply_function_substitution/3").

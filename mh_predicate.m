@@ -16,6 +16,7 @@
 :- interface.
 
 :- import_module mh_term.
+:- import_module mh_substitution.
 :- import_module mh_arity.
 %-----------------------------------------------------------------------------%
 
@@ -23,6 +24,10 @@
 	--->	predicate_fact(mh_term) % \X
 	;		predicate_clause(mh_term, mh_term) % \X :- Y
 	;		some [T] mr_predicate(T) => predicate(T).
+	
+	
+:- pred apply_predicate_substitution(mh_substitution::in, mh_predicate::in,
+	mh_predicate::out) is det.
 
 %-----------------------------------------------------------------------------%
 
@@ -33,4 +38,14 @@
 	% Todo:  predicate to call predicate under a module and scope
 ].
 
+%-----------------------------------------------------------------------------%
+%-----------------------------------------------------------------------------%
 
+:- interface.
+
+:- import_module require.
+
+%-----------------------------------------------------------------------------%
+
+apply_predicate_substitution(_, _, _) :- sorry($module, $pred,
+	"apply_predicate_substitution/3").
