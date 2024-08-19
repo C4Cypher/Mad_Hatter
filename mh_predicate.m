@@ -33,7 +33,7 @@
 
 
 
-:- typeclass predicate(T)  where 
+:- typeclass predicate(T) <= substituable(T)  where 
 [
 	% Todo:  predicate to call predicate under a module and scope
 ].

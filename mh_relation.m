@@ -34,7 +34,7 @@
 %-----------------------------------------------------------------------------%
 % Relation typeclass
 
-:- typeclass relation(T) <= arity(T) where [
+:- typeclass relation(T) <= (arity(T), substituable(T)) where [
 	% Todo: method to unify relations under environment
 	
 	% pred relation_signature(T::in, E::in, relation_signature::out) is nondet,

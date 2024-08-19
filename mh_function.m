@@ -24,7 +24,7 @@
 :- pred apply_function_substitution(mh_substitution::in, mh_function::in,
 	mh_function::out) is det.
 	
-:- typeclass function(T) where [].
+:- typeclass function(T) <= substituable(T) where [].
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
