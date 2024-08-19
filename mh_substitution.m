@@ -28,12 +28,10 @@
 :- type mh_substitution
 	--->	sub_empty
 	;		sub_single(var_id, mh_term)
-	;		sub_map(map(var_id, mh_term))
 	;		sub_array(array(mh_term))
 	;		sub_offset(mh_substitution, var_id_offset)
 	;		ren_empty
 	;		ren_single(var_id, var_id)
-	;		ren_map(map(var_id, var_id))
 	;		ren_array(array(var_id))
 	;		ren_offset(var_id_offset)
 	;		ren_offset(mh_renaming, var_id_offset).
@@ -56,6 +54,15 @@
 % note that this will fail for any input with the ren_offset/1 constructor
 
 :- pred sub_contains_id(mh_substitution::in, var_id::in) is semidet.
+
+% Succeed if the substitution is an unbounded offset
+
+:- pred sub_unbounded(mh_substitution::in) is semidet.
+
+% Get the offset of a substitution, if it has one
+
+:- pred substitution_offset(mh_substiution::in, var_id_offset::out) is semidet.
+
 
 % Find a given variable ID in the substitution, fail if the id is not found
 % If the substitution is a renaming, return the indexed var_id as a variable
@@ -88,27 +95,19 @@
 
 %-----------------------------------------------------------------------------%
 % Substitution composition
-/*
+
 :- pred compose_substiution(pred(var_id, mh_term), mh_substitution).
 :- mode compose_substiution(pred(out, out) is nondet, out) is det.
 :- mode compose_substiution(pred(out, out) is multi, out) is det.
 
-% Add a new id term pair to a substitution 
-% fail if the substitution already present
 
-:- pred sub_id_add(var_id::in, mh_term::in, 
-	mh_substitution::in, mh_substitution::out) is semidet.
 
-:- pred sub_id_set(var_id::in, mh_term::in, 
-	mh_substitution::in, mh_substitution::out) is det.
-*/
 %-----------------------------------------------------------------------------%
 % Renaming
 
 :- inst mh_renaming
 	--->	ren_empty
 	;		ren_single(ground, ground)
-	;		ren_map(ground)
 	;		ren_array(ground)
 	;		ren_offset(ground)
 	;		ren_offset(ground, ground).
@@ -116,7 +115,6 @@
 :- type mh_renaming =< mh_substitution
 	---> 	ren_empty
 	;		ren_single(var_id, var_id)
-	;		ren_map(map(var_id, var_id))
 	;		ren_array(array(var_id))
 	;		ren_offset(var_id_offset)
 	;		ren_offset(mh_renaming, var_id_offset).
@@ -129,6 +127,10 @@
 % Looking up variables in renamings
 
 :- pred ren_contains_id(mh_renaming::in, var_id::in) is semidet.
+
+:- pred ren_unbounded(mh_renaming::in) is semidet.
+
+:- pred renaming_offset(mh_renaming::in, var_id_offset::out) is semidet.
 
 :- pred ren_id_search(mh_renaming::in, var_id::in, var_id::out) 
 	is semidet.
@@ -160,6 +162,7 @@
 	pred apply_substitution(mh_substiution::in, T::in, T::out) is det
 ].	
 
+:- func apply_substitution(mh_substitution, T) = T <= substitutable(T).
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -184,19 +187,33 @@ empty_substitution(sub_array(make_empty_array)).
 
 sub_contains_id(sub_empty, _) :- fail.
 sub_contains_id(sub_single(ID, _), ID).
-sub_contains_id(sub_map(Map), ID) :- contains(Map, ID).
-sub_contains_id(sub_array(Array), ID) :- var_id_in_bounds(Array, ID).
+
+sub_contains_id(sub_array(Array), ID) :- 
+	var_id_in_bounds(Array, ID),
+	not var_id_lookup(Array, ID, nil).
+
 sub_contains_id(sub_offset(Sub, Offset), ID1) :- 
-	var_id_offset(ID1, ID2, Offset), sub_contains_id(Sub, ID2).
+	var_id_offset(ID1, ID2, Offset), 
+	sub_contains_id(Sub, ID2).
+	
 sub_contains_id(ren_empty, _) :- fail.
 sub_contains_id(ren_single(ID, _), ID).
-sub_contains_id(ren_map(Map), ID) :- contains(Map, ID).
-sub_contains_id(ren_array(Array), ID) :- var_id_in_bounds(Array, ID).
+
+sub_contains_id(ren_array(Array), ID0) :- 
+	var_id_semidet_lookup(Array, ID0, ID1),
+	ID1 > 0.
+
 sub_contains_id(ren_offset(_), _) :- fail.
+
 sub_contains_id(ren_offset(Sub, Offset), ID1) :- 
-	var_id_offset(ID1, ID2, Offset), ren_contains_id(Sub, ID2).
+	var_id_offset(ID1, ID2, Offset), 
+	ren_contains_id(Sub, ID2).
 
+sub_unbounded(ren_offset(_)).
 
+substitution_offset(sub_offset(_, Offset), Offset).
+substitution_offset(ren_offset(_, Offset), Offset).
+substitution_offset(ren_offset(Offset), Offset).
 
 %-----------------------------------------------------------------------------%
 
@@ -205,10 +222,10 @@ sub_id_search(sub_empty, _, nil) :- fail.
 
 sub_id_search(sub_single(ID, Term), ID, Term).
 
-sub_id_search(sub_map(Map), ID, Term) :- search(Map, ID, Term).
-	
+
 sub_id_search(sub_array(Array), ID, Term)  :- 
-	var_id_semidet_lookup(Array, ID, Term).
+	var_id_semidet_lookup(Array, ID, Term),
+	Term \= nil.
 	
 sub_id_search(sub_offset(Sub, Offset), ID1, Term) :-
 	var_id_offset(ID1, ID2, Offset),
@@ -217,8 +234,6 @@ sub_id_search(sub_offset(Sub, Offset), ID1, Term) :-
 sub_id_search(ren_empty, _, nil) :- fail.
  
 sub_id_search(ren_single(ID1, ID2), ID1, var(ID2)).
-
-sub_id_search(ren_map(Map), !.ID, var(!:ID)) :- search(Map, !ID).
 	
 sub_id_search(ren_array(Array), !.ID, var(!:ID)) :- 
 	var_id_semidet_lookup(Array, !ID).
@@ -273,19 +288,16 @@ sub_quantified_lookup(Sub, Var) = Term :-
 	
 %-----------------------------------------------------------------------------%
 % Substitution composition
-/*
-sub_id_add(ID, Term, !Sub) :-
-	not sub_contains_id(!.Sub, ID),
-	sub_id_set(ID, Term, !Sub).
-	
-sub_id_add
-*/
+
+compose_substiution(Gen, Sub) :-
+	(if
+	)
+
 %-----------------------------------------------------------------------------%
 % Renaming
 
 is_renaming(ren_empty). 
 is_renaming(ren_single(_, _) ).
-is_renaming(ren_map(_) ).
 is_renaming(ren_array(_) ).
 is_renaming(ren_offset(_) ).
 is_renaming(ren_offset(_, _)).
@@ -301,19 +313,26 @@ apply_substitution
 
 ren_contains_id(ren_empty, _) :- fail.
 ren_contains_id(ren_single(ID, _), ID).
-ren_contains_id(ren_map(Map), ID) :- contains(Map, ID).
-ren_contains_id(ren_array(Array), ID) :- var_id_in_bounds(Array, ID).
+
+ren_contains_id(ren_array(Array), ID0) :- 
+	var_id_semidet_lookup(Array, ID0, ID1).
+	ID1 > 0..
+
 ren_contains_id(ren_offset(Ren, Offset), ID1) :- 
 	var_id_offset(ID1, ID2, Offset), ren_contains_id(Ren, ID2).
 ren_contains_id(ren_empty, _) :- fail.
 ren_contains_id(ren_single(ID, _), ID).
-ren_contains_id(ren_map(Map), ID) :- contains(Map, ID).
 ren_contains_id(ren_array(Array), ID) :- var_id_in_bounds(Array, ID).
 ren_contains_id(ren_offset(_), _) :- fail.
-ren_contains_id(ren_offset(Ren, Offset), ID1) :- 
-	var_id_offset(ID1, ID2, Offset), ren_contains_id(Ren, ID2).
-	
 
+ren_contains_id(ren_offset(Ren, Offset), ID1) :- 
+	var_id_offset(ID1, ID2, Offset), 
+	ren_contains_id(Ren, ID2).
+	
+ren_unbounded(ren_offset(_)).
+
+renaming_offset(ren_offset(_, Offset), Offset).
+renaming_offset(ren_offset(Offset), Offset).
 
 %-----------------------------------------------------------------------------%
 
@@ -321,11 +340,10 @@ ren_contains_id(ren_offset(Ren, Offset), ID1) :-
 ren_id_search(ren_empty, _, null_var_id) :- fail.
 
 ren_id_search(ren_single(ID1, ID2), ID1, ID2).
-
-ren_id_search(ren_map(Map), !ID) :- search(Map, !ID).
 	
 ren_id_search(ren_array(Array), !ID) :- 
-	var_id_semidet_lookup(Array, !ID).
+	var_id_semidet_lookup(Array, !ID),
+	!:ID > 0.
 	
 ren_id_search(ren_offset(Offset), !ID) :- 
 	var_id_offset(!ID, Offset).
@@ -380,3 +398,8 @@ ren_quanttified_lookup(Ren, !.Var) = !:Var :- ren_quanitifed_lookup(Ren, !Var).
 sub_out_of_range(ID, Container) :-
 	error("error: var_id #" ++ string(ID) ++ 
 		" not found in "++ Container).
+		
+%-----------------------------------------------------------------------------%
+% Substitutible typeclass
+
+apply_substitution(Sub !.T) = !:T :- apply_substitution(Sub, !T).
