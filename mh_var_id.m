@@ -118,6 +118,11 @@
 
 :- func var_id_elem(var_id, array(T)) = T. 
 
+:- pred var_id_member(array(T), var_id, T).
+:- mode var_id_member(in, in, out) is semidet.
+:- mode var_id_member(in, out, out) is nondet.
+
+
 :- pred var_id_set(var_id::in, T::in, array(T)::array_di, array(T)::array_uo) 
 	is det.
 
@@ -346,6 +351,8 @@ accumulate_id_set_unbounded(ID, acc(!.Found, Unique0), acc(!:Found, Unique)) :-
 % Indexing Arrays by var_id
 
 :- func id_index(var_id) = int.
+:- mode id_index(in) = out is det.
+:- mode id_index(out) = in is det.
 
 id_index(ID) = ID - 1.
 
@@ -358,6 +365,17 @@ var_id_lookup(Array, ID) = lookup(Array, id_index(ID)).
 var_id_semidet_lookup(Array, ID, T) :- semidet_lookup(Array, id_index(ID), T).
 
 var_id_semidet_lookup(Array, ID) = T :- var_id_semidet_lookup(Array, ID, T).
+
+:- pragma promise_equivalent_clauses(var_id_member/3).
+
+var_id_member(Array::in, ID::in, T::out) :- 
+	var_id_semidet_lookup(Array, ID, T).
+
+var_id_member(Array::in, ID::out, T::out) :-
+	nondet_int_in_range(array.min(Array), array.max(Array), Index),
+	unsafe_lookup(Array, Index, T),
+	id_index(ID) = Index.
+
 
 var_id_elem(ID, Array) = elem(id_index(ID), Array).
 
