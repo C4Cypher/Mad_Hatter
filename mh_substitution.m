@@ -314,7 +314,10 @@ sub_quantified_lookup(Sub, Var) = Term :-
 %-----------------------------------------------------------------------------%
 % Substitution composition
 
+:- func single_to_array(mh_substitition) = single_to_array.
+:- mode single_to_array()
 
+compose_substitutions(S2, S1, S3) :-
 
 %-----------------------------------------------------------------------------%
 % Renaming
