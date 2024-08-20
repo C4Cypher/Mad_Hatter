@@ -59,6 +59,8 @@
 :- mode apply_var_id_offset(in, out) = in is det.
 :- mode apply_var_id_offset(out, in) = in is det.
 
+:- func null_var_id_offset = var_id_offset.
+
 %-----------------------------------------------------------------------------%
 % Variable sets
 
@@ -177,6 +179,8 @@ var_id_offset(ID1, ID2, ID1 - ID2).
 var_id_offset(ID1, ID2) = Offset :- var_id_offset(ID1, ID2, Offset).
 
 apply_var_id_offset(ID1, Offset) = ID2 :- var_id_offset(ID1, ID2, Offset).
+
+null_var_id_offset = 0.
 
 %-----------------------------------------------------------------------------%
 % Variable sets
