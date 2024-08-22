@@ -45,8 +45,12 @@
 :- mode empty_substitution(in) is semidet.
 :- mode empty_substitution(out) is multi.
 
+% substitution_bounds(Subsitution, Min, Max)
+% Return the minimum and maximum var_id's indexed by Substitution, fail if the
+% Substituion is empty or a pure offset
+:- pred substitution_bounds(mh_substitution::in, var_id_offset::out, 
+	var_id_set::out) is semidet.
 
-	
 %-----------------------------------------------------------------------------%
 % Looking up variables in substitutions
 
@@ -202,6 +206,18 @@ empty_substitution(ren_offset(null_var_id_offset)).
 empty_substitution(ren_offset(Ren, null_var_id_offset)) :-
 	empty_renaming(Ren).
 	
+substitution_bounds(sub_single(ID, _), ID, ID).
+substitution_bounds(sub_array(Array), first_var_id, array_var_id_set(Array)).
+substitution_bounds(sub_offset(Array, Offset), 
+	first_var_id(Offset),
+	offset_array_var_id_set(Array, Offset)
+).
+substitution_bounds(ren_single(ID, _), ID, ID).
+substitution_bounds(ren_array(Array), first_var_id, array_var_id_set(Array)).
+substitution_bounds(ren_offset(Array, Offset), 
+	first_var_id(Offset),
+	offset_array_var_id_set(Array, Offset)
+).
 
 %-----------------------------------------------------------------------------%
 % Looking up variables in substitutions
@@ -314,8 +330,8 @@ sub_quantified_lookup(Sub, Var) = Term :-
 %-----------------------------------------------------------------------------%
 % Substitution composition
 
-:- func single_to_array(mh_substitition) = single_to_array.
-:- mode single_to_array()
+
+
 
 compose_substitutions(S2, S1, S3) :-
 
