@@ -59,6 +59,16 @@
 :- mode apply_var_id_offset(in, out) = in is det.
 :- mode apply_var_id_offset(out, in) = in is det.
 
+:- pred var_id_set_offset(var_id_set, var_id_offset, var_id_set).
+:- mode var_id_set_offset(in, in, out) is det.
+:- mode var_id_set_offset(out, in, in) is det.
+:- mode var_id_set_offset(in, out, in) is det.
+
+:- func var_id_set_offset(var_id_set, var_id_offset) = var_id_set.
+:- mode var_id_set_offset(in, in) = out is det.
+:- mode var_id_set_offset(out, in) = in is det.
+:- mode var_id_set_offset(in, out) = in is det.
+
 :- func null_var_id_offset = var_id_offset.
 
 %-----------------------------------------------------------------------------%
@@ -76,6 +86,8 @@
 
 :- pred valid_var_id_set(var_id_set::in) is semidet.
 
+:- pred empty_var_id_set(var_id_set::in) is semidet.
+
 :- pred require_valid_var_id_set(var_id_set::in) is det.
 
 :- pred expect_valid_var_id_set(var_id_set::in, string::in, string::in) is det.
@@ -89,10 +101,34 @@
 
 :- pred new_var_ids(int::in, var_ids::out, var_id_set::in, var_id_set::out) 
 	is det.
+	
+:- func first_var_id = var_id.
+
+:- func first_var_id(var_id_offset) = var_id.
+:- mode first_var_id(in) = out is det.
+:- mode first_var_id(out) = in is det.
+
+:- func last_var_id(var_id_set) = var_id. 
+:- func last_var_id(var_id_offset, var_id_set) = var_id.
+
+:- func next_var_id(var_id) = var_id.
+:- mode next_var_id(in) = out is det.
+:- mode next_var_id(out) = in is det.
+
+:- func previous_var_id(var_id) = var_id.
+:- mode previous_var_id(in) = out is det.
+:- mode previous_var_id(out) = in is det.
+
+
+	
+% contains(Set, ID) 
+% Succeeds with any ID between 1 and the last var_id in Set
 
 :- pred contains_var_id(var_id_set, var_id).
 :- mode contains_var_id(in, in) is semidet.
 :- mode contains_var_id(in, out) is nondet.
+
+
 
 
 % complete_var_id_set(Generator, Set)
@@ -105,6 +141,10 @@
 
 %-----------------------------------------------------------------------------%
 % Indexing Arrays by var_id 
+
+:- func array_var_id_set(array(_T)) = var_id_set. 
+
+:- func offset_array_var_id_set(array(_T), var_id_offset) = var_id_set.
 
 :- pred var_id_in_bounds(array(_T)::in, var_id::in) is semidet.
 
@@ -185,6 +225,10 @@ var_id_offset(ID1, ID2) = Offset :- var_id_offset(ID1, ID2, Offset).
 
 apply_var_id_offset(ID1, Offset) = ID2 :- var_id_offset(ID1, ID2, Offset).
 
+var_id_set_offset(Set, Offset, Set + Offset).
+
+var_id_set_offset(Set, Offset) = Set + Offset.
+
 null_var_id_offset = 0.
 
 %-----------------------------------------------------------------------------%
@@ -201,6 +245,8 @@ var_id_count(Set, var_id_count(Set)).
 var_id_count(Count) = Count.
 
 valid_var_id_set(Set) :- Set >= 0.
+
+empty_var_id_set(0).
 
 require_valid_var_id_set(Set) :- 
 	require(valid_var_id_set(Set), "Invalid var_id_set. Last var_id: " ++ string(Set) 
@@ -238,18 +284,39 @@ new_var_ids(Number, List, !Set) :-
 			List = [ ID | IDs ]
 		)
 	).
+	
+first_var_id = 1.
+first_var_id(Offset) = Offset + 1. 
+	
+last_var_id(Last) = Last.
+
+next_var_id(ID) = ID + 1.
+
+previous_var_id(ID) = ID - 1.
+
+:- pragma promise_equivalent_clauses(next_var_id/1).
+
+next_var_id(Prev::in) = (Next::out) :- 
+	Next = Prev + 1,
+	require_valid_var_id(Next).
+	
+next_var_id(Prev::out) = (Next::in) :-
+	Prev = Next - 1,
+	require_valid_var_id(Prev).
+	
+previous_var_id(Next) = Prev. :- next_var_id(Prev) = Next.
 
 :- pragma promise_equivalent_clauses(contains_var_id/2).
 
 contains_var_id(Last::in, ID::in) :- 
-	expect_valid_var_id(ID, $module, $pred),
+	ID > 0,
 	ID =< Last.
 	
 contains_var_id(Last::in, ID::out) :-
-	expect_valid_var_id(ID, $module, $pred),
 	Last > 0,
 	all_ids_to(1, Last, ID).
 	
+
 
 :- pred all_ids_to(var_id::in, var_id::in, var_id::out) is multi.
 
@@ -356,7 +423,13 @@ accumulate_id_set_unbounded(ID, acc(!.Found, Unique0), acc(!:Found, Unique)) :-
 
 id_index(ID) = ID - 1.
 
+array_var_id_set(Array) = size(Array).
+
+offset_array_var_id_set(Array, Offset) = size(Array) + Offset.
+
 var_id_in_bounds(Array, ID) :- in_bounds(Array, id_index(ID)).
+
+var_id_in_bounds(Array, Offset, ID) :- in_bounds(Array, id_index(ID - Offset)).
 
 var_id_lookup(Array, ID, T) :- lookup(Array, id_index(ID), T).
 
