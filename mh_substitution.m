@@ -266,8 +266,7 @@ sub_id_search(sub_array(Array), ID, Term)  :-
 	Term \= nil.
 	
 sub_id_search(sub_offset(Array, Offset), ID1, Term) :-
-	var_id_offset(ID1, ID2, Offset),
-	var_id_semidet_lookup(Array, ID2, Term),
+	var_id_semidet_lookup(Array, Offset, ID2, Term),
 	Term \= nil.
 	
 sub_id_search(ren_empty, _, nil) :- fail.
@@ -282,8 +281,7 @@ sub_id_search(ren_offset(Offset), !.ID, var(!:ID) ) :-
 	var_id_offset(!ID, Offset).
 	
 sub_id_search(ren_offset(Array, Offset), !.ID, var(!:ID)) :-
-	var_id_offset(!ID, Offset),
-	var_id_semidet_lookup(Array, !ID),
+	var_id_semidet_lookup(Array, Offset, ID2, Term),
 	!:ID > 0.
 
 sub_id_search(Sub, ID) = Term :- sub_id_search(Sub, ID, Term).
@@ -330,11 +328,70 @@ sub_quantified_lookup(Sub, Var) = Term :-
 %-----------------------------------------------------------------------------%
 % Substitution composition
 
+:- pragma promise_equivalent_clauses(compose_substitutions/3).
+
+compose_substitutions(S, empty_substitution, S).
+compose_substitutions(empty_substitution, S, S).
+
+compose_substitutions(
+	sub_single(ID2, Term), 
+	sub_single(ID1, var(ID2)),
+	sub_single(ID1, Term)
+).
+
+compose_substitutions()
 
 
+:- pred compose_substiution_step(
+	var_id, var_id,
+	mh_substitution, mh_substitution,
+	var_id_offset, array(mh_term), array(mh_term)
+).
 
-compose_substitutions(S2, S1, S3) :-
-
+:- mode compose_substiution_step(
+	in, in, 
+	in, in, 
+	in, array_di, array_uo) is det.
+	
+compose_substiution_step(
+	Current, Last
+	Sub1, Sub2
+	Offset, !Array
+) :-
+	% Look up the current id in the first sub, if the found term is a variable
+	% pass it through the second sub, if it is not a variable, 
+	(if sub_id_search(Sub1, Current, Term1)
+	then
+		(if	Term1 = var(Term1_ID)
+		then
+			(if sub_id_search(Sub2, Term1_ID, Term2)
+			then
+				var_id_set(Current, Term2, Offset, !Array)
+			else
+				var_id_set(Current, Term1, Offset, !Array)
+			)
+		else 
+			var_id_set(Current, Term1, Offset, !Array)
+		)
+	else
+		(if sub_id_search(Sub2, Current, Term)
+		then
+			var_id_set(Current, Term, Offset, !Array)
+		else
+			!:Array = !.Array
+		)
+	),
+	
+	(if Current => Last
+	then true
+	else
+		compose_substiution_step(
+			next_var_id(Current), Last, 
+			Sub2, Sub1, 
+			!Array)
+	).
+	
+	
 %-----------------------------------------------------------------------------%
 % Renaming
 
@@ -369,8 +426,7 @@ ren_contains_id(ren_array(Array), ID1) :-
 	ID2 > 0..
 
 ren_contains_id(ren_offset(Array, Offset), ID1) :- 
-	var_id_offset(ID1, ID2, Offset), 
-	var_id_semidet_lookup(Array, ID1, ID2).
+	var_id_semidet_lookup(Array, Offset, ID1, ID2).
 	ID2 > 0.
 
 	
@@ -394,8 +450,7 @@ ren_id_search(ren_offset(Offset), !ID) :-
 	var_id_offset(!ID, Offset).
 	
 ren_id_search(ren_offset(Array, Offset), !ID) :-
-	var_id_offset(!ID, Offset),
-	var_id_semidet_lookup(Array, !ID),
+	var_id_semidet_lookup(Array, Offset, ID2, Term),
 	!:ID > 0.
 
 ren_id_search(Ren, !.ID) = !:ID :- ren_id_search(Ren, !ID).
