@@ -196,7 +196,7 @@
 	array(T)::array_uo) is det.
 
 :- func var_id_set_init_array(var_id_set::in, T::in) = (array(T)::array_uo)
-	is det.
+	is det. 
 	
 :- func var_id_set_init_array(var_id_offset::in, var_id_set::in, T::in) = 
 	(array(T)::array_uo) is det.
@@ -442,11 +442,23 @@ accumulate_id_set_unbounded(ID, acc(!.Found, Unique0), acc(!:Found, Unique)) :-
 %-----------------------------------------------------------------------------%
 % Indexing Arrays by var_id
 
+:- pragma inline(id_index/1).
+
 :- func id_index(var_id) = int.
 :- mode id_index(in) = out is det.
 :- mode id_index(out) = in is det.
 
 id_index(ID) = ID - 1.
+
+:- pragma inline(id_index/2).
+
+:- func id_index(var_id, var_id_offset) = int.
+:- mode id_index(in) = out is det.
+:- mode id_index(out) = in is det.
+
+id_index(ID, Offset) = id_index(ID - Offset).
+
+
 
 array_var_id_set(Array) = size(Array).
 
@@ -454,17 +466,17 @@ offset_array_var_id_set(Array, Offset) = size(Array) + Offset.
 
 var_id_in_bounds(Array, ID) :- in_bounds(Array, id_index(ID)).
 
-var_id_in_bounds(Array, Offset, ID) :- in_bounds(Array, id_index(ID - Offset)).
+var_id_in_bounds(Array, Offset, ID) :- in_bounds(Array, id_index(ID, Offset)).
 
 var_id_lookup(Array, ID, T) :- lookup(Array, id_index(ID), T).
-var_id_lookup(Array, Offset, ID, T) :- lookup(Array, id_index(ID - Offset), T).
+var_id_lookup(Array, Offset, ID, T) :- lookup(Array, id_index(ID, Offset), T).
 
 var_id_lookup(Array, ID) = lookup(Array, id_index(ID)).
-var_id_lookup(Array, Offset) = lookup(Array, id_index(ID - Offset)).
+var_id_lookup(Array, Offset) = lookup(Array, id_index(ID, Offset)).
 
 var_id_semidet_lookup(Array, ID, T) :- semidet_lookup(Array, id_index(ID), T).
 var_id_semidet_lookup(Array, Offset, ID, T) :- 
-	semidet_lookup(Array, id_index(ID - Offset), T).
+	semidet_lookup(Array, id_index(ID, Offset), T).
 
 var_id_semidet_lookup(Array, ID) = T :- var_id_semidet_lookup(Array, ID, T).
 var_id_semidet_lookup(Array, Offset, ID) = T :- 
@@ -472,7 +484,7 @@ var_id_semidet_lookup(Array, Offset, ID) = T :-
 
 
 var_id_elem(ID, Array) = elem(id_index(ID), Array).
-var_id_elem(ID, Offset, Array) = elem(id_index(ID - Offset), Array).
+var_id_elem(ID, Offset, Array) = elem(id_index(ID, Offset), Array).
 
 
 :- pragma promise_equivalent_clauses(var_id_member/3).
@@ -495,7 +507,7 @@ var_id_set(ID, T, Offset, !Array) :- var_id_set(ID - Offset, T, !Array).
 var_id_slow_set(ID, T, !Array) :- slow_set(id_index(ID), T, !Array).
 
 var_id_slow_set(ID, T, Offset, !Array) :- 
-	var_id_slow_set(id_index(ID - Offset), T, !Array).
+	var_id_slow_set(id_index(ID, Offset), T, !Array).
 
 var_id_set_init_array(Last, T, A) :- array.init(Last, T, A).
 
