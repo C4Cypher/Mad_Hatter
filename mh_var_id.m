@@ -109,7 +109,9 @@
 :- mode first_var_id(out) = in is det.
 
 :- func last_var_id(var_id_set) = var_id. 
-:- func last_var_id(var_id_offset, var_id_set) = var_id.
+:- mode last_var_id(in) = out is det.
+:- mode last_var_id(out) = in is det.
+
 
 :- func next_var_id(var_id) = var_id.
 :- mode next_var_id(in) = out is det.
@@ -133,8 +135,6 @@
 :- pred contains_var_id(var_id_set, var_id_offset, var_id).
 :- mode contains_var_id(in, in, in) is semidet.
 :- mode contains_var_id(in, in, out) is nondet.
-
-
 
 
 % complete_var_id_set(Generator, Set)
