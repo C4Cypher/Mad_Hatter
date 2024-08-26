@@ -356,16 +356,45 @@ sub_quantified_lookup(Sub, Var) = Term :-
 %-----------------------------------------------------------------------------%
 % Substitution composition
 
-:- pragma promise_equivalent_clauses(compose_substitutions/3).
+compose_substitutions(Sub2, Sub1, Sub) :-
+	( if compose_sub_special(Sub2, Sub1, Sub3)
+	then
+		Sub = Sub3
+	else
+		substitution_bounds(Sub1, Offset1, Set1),
+		substitution_bounds(Sub2, Offset2, Set2),
+		(Offset1 < Offset2 -> Offset = Offset1 ; Offset = Offset2 ),
+		(Set1 < Set2 -> Set = Set1 ; Set = Set2),
+		var_id_set_init_array(Offset, Set, nil, !.Array),
+		compose_substiution_step(
+			first_var_id(Offset), last_var_id(Set)
+			Sub2, Sub1,
+			Offset, !Array
+		),
+		(If Offset = null_var_id_offset
+		then
+			Sub = sub_array(!:Array)
+		else
+			Sub = sub_array(!:Array, Offset)
+		)
+	).
+		
+		
+:- pred compose_sub_special(mh_substition::in, mh_substiution::in,
+	mh_substiutiton::out) is semidet.
+
+:- pragma promise_equivalent_clauses(compose_sub_special/3).
 
 
-compose_substitutions(S, sub_empty, S).
-compose_substitutions(sub_empty, S, S).
+compose_sub_special(S, sub_empty, S).
+compose_sub_special(sub_empty, S, S).
 
-compose_substitutions(S, ren_empty, S).
-compose_substitutions(ren_empty, S, S).
+compose_sub_special(S, ren_empty, S).
+compose_sub_special(ren_empty, S, S).
 
-compose_substitutions(
+
+
+compose_sub_special(
 	sub_single(ID2, Term2), 
 	sub_single(ID1, Term1),
 	Sub
@@ -399,7 +428,7 @@ compose_substitutions(
 		
 	).
 	
-compose_substitutions(
+compose_sub_special(
 	sub_single(ID2, Term2),
 	ren_single(ID1, Var1),
 	Sub
@@ -433,7 +462,7 @@ compose_substitutions(
 		
 	).
 
-compose_substiutions(
+compose_sub_special(
 	ren_single(ID2, Var2),
 	sub_single(ID1, Term1),
 	Sub
@@ -467,29 +496,6 @@ compose_substiutions(
 		
 	).
 
-compose_substitutions(
-	Sub2,
-	Sub1,
-	Sub3
-) :-
-	not (
-		Sub1, = 
-	)
-
-:- pred compose_substiution_array(mh_substition::in, mh_substition::in,
-	mh_substition::in) is det.
-
-compose_substiution_array(Sub2, Sub1, Sub3) :-
-		substitution_bounds(Sub1, Offset1, Set1),
-		substitution_bounds(Sub2, Offset2, Set2),
-		(Offset1 < Offset2 -> Offset = Offset1 ; Offset = Offset2 ),
-		(Set1 < Set2 -> Set = Set1 ; Set = Set2),
-		var_id_set_init_array(Offset, Set, nil, !.Array),
-		compose_substiution_step(
-			first_var_id(Offset), last_var_id(Set)
-			Sub2, Sub1,
-		)
-	
 	
 :- pred compose_substiution_step(
 	var_id, var_id,
