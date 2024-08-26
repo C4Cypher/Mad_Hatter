@@ -54,6 +54,7 @@
 % Substituion is empty
 :- pred substitution_bounds(mh_substitution::in, var_id_offset::out, 
 	var_id_set::out) is semidet.
+
 	
 
 %-----------------------------------------------------------------------------%
@@ -367,7 +368,7 @@ compose_substitutions(Sub2, Sub1, Sub) :-
 		(Set1 < Set2 -> Set = Set1 ; Set = Set2),
 		var_id_set_init_array(Offset, Set, nil, !.Array),
 		compose_substiution_step(
-			first_var_id(Offset), last_var_id(Set)
+			first_var_id(Offset), last_var_id(Set),
 			Sub2, Sub1,
 			Offset, !Array
 		),
@@ -509,7 +510,7 @@ compose_sub_special(
 	in, array_di, array_uo) is det.
 	
 compose_substiution_step(
-	Current, Last
+	Current, Last,
 	Sub1, Sub2
 	Offset, !Array
 ) :-

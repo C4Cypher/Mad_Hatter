@@ -53,7 +53,7 @@
 	% Higher order terms
 	;		relation(mh_relation)
 	;		predicate(mh_predicate)
-	;		function(mh_function).
+	;		function(mh_function)
 	
 	% Term substitutions (lazy)
 	;		term_sub(mh_term, mh_substitution).
@@ -125,7 +125,7 @@
 :- mode is_var == ground >> mh_var.
 
 :- pred is_var(mh_term::is_var) is semidet.
-)
+
 
 %-----------------------------------------------------------------------------%
 % 	Quantified Variables
@@ -244,7 +244,7 @@ apply_term_substitution(Sub, !Term) :- 	require_complete_switch [!.Term] (
 		!:Term = cons(!:Car, !:Cdr)
 		
 	;	!.Term = tuple_term(!.Tup),
-		apply_tuple_substiution(Sub, !Tup)
+		apply_tuple_substiution(Sub, !Tup),
 		!:Term = tuple_term(!:Tup)
 	
 	;	!.Term = relation(!.Rel), 
@@ -279,7 +279,7 @@ lazy_term_substitution(Sub, !Term) :- require_complete_switch [!.Term] (
 		!:Term = cons(!:Car, !:Cdr)
 		
 	;	!.Term = tuple_term(!.Tup),
-		apply_tuple_substiution(Sub, !Tup)
+		apply_tuple_substiution(Sub, !Tup),
 		!:Term = tuple_term(!:Tup)
 	
 	;	!.Term = relation(!.Rel), 

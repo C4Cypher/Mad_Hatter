@@ -157,7 +157,8 @@
 	is semidet.
 
 :- pred var_id_lookup(array(T)::in, var_id::in, T::out) is det.
-:- pred var_id_lookup(array(T)::in, var_id_offset, var_id::in, T::out) is det.
+:- pred var_id_lookup(array(T)::in, var_id_offset::in, var_id::in, T::out) 
+	is det.
 
 :- func var_id_lookup(array(T), var_id) = T.
 :- func var_id_lookup(array(T), var_id_offset, var_id) = T.
@@ -192,7 +193,7 @@
 :- pred var_id_slow_set(var_id::in, T::in, array(T)::in, array(T)::array_uo)
 	is det.
 
-:- pred var_id_slow_set(var_id::in, T::in, var_id_offset::in 
+:- pred var_id_slow_set(var_id::in, T::in, var_id_offset::in,
 	array(T)::in, array(T)::array_uo) is det.
 
 :- pred var_id_set_init_array(var_id_set::in, T::in, array(T)::array_uo) 
@@ -335,7 +336,7 @@ next_var_id(Prev::out) = (Next::in) :-
 	Prev = Next - 1,
 	require_valid_var_id(Prev).
 	
-previous_var_id(Next) = Prev. :- next_var_id(Prev) = Next.
+previous_var_id(Next) = Prev :- next_var_id(Prev) = Next.
 
 :- pragma promise_equivalent_clauses(contains_var_id/2).
 
