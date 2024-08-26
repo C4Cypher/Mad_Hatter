@@ -43,11 +43,18 @@
 	
 :- pred empty_substitution(mh_substitution::in) is semidet.
 
+:- pred single_substitution(mh_substiution::in) is semidet.
+
+:- pred array_substitution(mh_substituion::in) is semidet.
+
+:- pred offset_substituion(mh_substition::in) is semidet.
+
 % substitution_bounds(Subsitution, Min, Max)
 % Return the minimum and maximum var_id's indexed by Substitution, fail if the
 % Substituion is empty
 :- pred substitution_bounds(mh_substitution::in, var_id_offset::out, 
 	var_id_set::out) is semidet.
+	
 
 %-----------------------------------------------------------------------------%
 % Looking up variables in substitutions
@@ -195,21 +202,52 @@ empty_substitution(ren_empty).
 empty_substitution(ren_array(make_empty_array)).
 empty_substitution(ren_array(make_empty_array, _)).
 empty_substitution(ren_offset(null_var_id_offset, _)).
-	
-substitution_bounds(sub_single(ID, _), ID, ID).
-substitution_bounds(sub_array(Array), first_var_id, array_var_id_set(Array)).
-substitution_bounds(sub_array(Array, Offset), Offset,
-	offset_array_var_id_set(Array, Offset)
-).
-substitution_bounds(ren_single(ID, _), ID, ID).
-substitution_bounds(ren_array(Array), first_var_id, array_var_id_set(Array)).
-substitution_bounds(ren_array(Array, Offset), Offset,
-	offset_array_var_id_set(Array, Offset)
-).
-substitution_bounds(ren_offset(Offset, Set), Min, Set) :- 
-	Min = ( Offset =< null_var_id_offset -> null_var_id_offset ; Offset ).
-		
 
+single_substitution(sub_single(_, _)).
+single_substitution(ren_single(_, _)).
+
+array_substitution(sub_array(_)).
+array_substitution(sub_array(_, _)).
+array_substitution(ren_array(_)).
+array_substitution(ren_array(_, _)).
+
+offset_substituion(ren_offset(_, _)).
+
+
+
+substitution_bounds(sub_single(ID, _), Offset, Set) :-  
+	ID = first_var_id(Offset),
+	ID = last_var_id(Set).
+
+substitution_bounds(sub_array(Array), 
+	null_var_id_offset, 
+	array_var_id_set(Array)
+).
+substitution_bounds(sub_array(Array, Offset), 
+	Offset,
+	offset_array_var_id_set(Array, Offset)
+).
+substitution_bounds(ren_single(ID, _), Offset, Set) :-
+	ID = first_var_id(Offset),
+	ID = last_var_id(Set).
+
+substitution_bounds(ren_array(Array), 
+	null_var_id_offset, 
+	array_var_id_set(Array)
+).
+
+substitution_bounds(ren_array(Array, Offset), 
+	Offset,
+	offset_array_var_id_set(Array, Offset)
+).
+
+substitution_bounds(ren_offset(Offset, Set), Min, Set) :- 
+	( Offset =< null_var_id_offset -> 
+		Min = null_var_id_offset ; 
+		Min = Offset ).
+	
+	
+	
 %-----------------------------------------------------------------------------%
 % Looking up variables in substitutions
 
@@ -319,6 +357,7 @@ sub_quantified_lookup(Sub, Var) = Term :-
 % Substitution composition
 
 :- pragma promise_equivalent_clauses(compose_substitutions/3).
+
 
 compose_substitutions(S, sub_empty, S).
 compose_substitutions(sub_empty, S, S).
@@ -437,7 +476,21 @@ compose_substitutions(
 		Sub1, = 
 	)
 
+:- pred compose_substiution_array(mh_substition::in, mh_substition::in,
+	mh_substition::in) is det.
 
+compose_substiution_array(Sub2, Sub1, Sub3) :-
+		substitution_bounds(Sub1, Offset1, Set1),
+		substitution_bounds(Sub2, Offset2, Set2),
+		(Offset1 < Offset2 -> Offset = Offset1 ; Offset = Offset2 ),
+		(Set1 < Set2 -> Set = Set1 ; Set = Set2),
+		var_id_set_init_array(Offset, Set, nil, !.Array),
+		compose_substiution_step(
+			first_var_id(Offset), last_var_id(Set)
+			Sub2, Sub1,
+		)
+	
+	
 :- pred compose_substiution_step(
 	var_id, var_id,
 	mh_substitution, mh_substitution,
