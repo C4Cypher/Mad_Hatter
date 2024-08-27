@@ -34,7 +34,7 @@
 %-----------------------------------------------------------------------------%
 % Relation typeclass
 
-:- typeclass relation(T) <= (arity(T), substituable(T)) where [
+:- typeclass relation(T) <= arity(T) where [
 	% Todo: method to unify relations under environment
 	
 	% pred relation_signature(T::in, E::in, relation_signature::out) is nondet,
@@ -52,3 +52,5 @@
 
 apply_relation_substitution(_, _, _) :- sorry($module, $pred,
 	"apply_relation_substitution/3").
+	
+:- pragma no_determinism_warning(apply_relation_substitution/3).

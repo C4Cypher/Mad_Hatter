@@ -16,6 +16,7 @@
 :- interface.
 
 :- import_module mh_relation.
+:- import_module mh_substitution.
 
 :- type mh_function
 	--->	mh_function(mh_relation)
@@ -23,8 +24,8 @@
 	
 :- pred apply_function_substitution(mh_substitution::in, mh_function::in,
 	mh_function::out) is det.
-	
-:- typeclass function(T) <= substituable(T) where [].
+
+:- typeclass function(T) where [].
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -37,3 +38,5 @@
 
 apply_function_substitution(_, _, _) :- sorry($module, $pred,
 	"apply_function_substitution/3").
+	
+:- pragma no_determinism_warning(apply_function_substitution/3).

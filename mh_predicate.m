@@ -33,7 +33,7 @@
 
 
 
-:- typeclass predicate(T) <= substituable(T)  where 
+:- typeclass predicate(T) <= arity(T)  where 
 [
 	% Todo:  predicate to call predicate under a module and scope
 ].
@@ -49,3 +49,5 @@
 
 apply_predicate_substitution(_, _, _) :- sorry($module, $pred,
 	"apply_predicate_substitution/3").
+
+:- pragma no_determinism_warning(apply_predicate_substitution/3).
