@@ -39,6 +39,11 @@
 
 :- func null_var_id = var_id is det.
 
+:- pred var_id_lt(var_id::in, var_id::in) is semidet.
+:- pred var_id_le(var_id::in, var_id::in) is semidet.
+:- pred var_id_gt(var_id::in, var_id::in) is semidet.
+:- pred var_id_ge(var_id::in, var_id::in) is semidet.
+
 %-----------------------------------------------------------------------------%
 % Var ID Offsets
 
@@ -71,6 +76,13 @@
 
 :- func null_var_id_offset = var_id_offset.
 
+:- pred offset_lt(var_id_offset::in, var_id_offset::in) is semidet.
+:- pred offset_le(var_id_offset::in, var_id_offset::in) is semidet.
+:- pred offset_gt(var_id_offset::in, var_id_offset::in) is semidet.
+:- pred offset_ge(var_id_offset::in, var_id_offset::in) is semidet.
+
+
+
 %-----------------------------------------------------------------------------%
 % Variable sets
 
@@ -87,6 +99,11 @@
 :- pred valid_var_id_set(var_id_set::in) is semidet.
 
 :- pred empty_var_id_set(var_id_set::in) is semidet.
+
+:- pred var_id_set_lt(var_id_set::in, var_id_set::in) is semidet.
+:- pred var_id_set_le(var_id_set::in, var_id_set::in) is semidet.
+:- pred var_id_set_gt(var_id_set::in, var_id_set::in) is semidet.
+:- pred var_id_set_ge(var_id_set::in, var_id_set::in) is semidet.
 
 :- pred require_valid_var_id_set(var_id_set::in) is det.
 
@@ -178,8 +195,8 @@
 :- mode var_id_member(in, out, out) is nondet.
 
 :- pred var_id_member(array(T), var_id_offset, var_id, T).
-:- mode var_id_member(in, in, out) is semidet.
-:- mode var_id_member(in, out, out) is nondet.
+:- mode var_id_member(in, in, in, out) is semidet.
+:- mode var_id_member(in, in, out, out) is nondet.
 
 
 
@@ -246,6 +263,11 @@ expect_valid_var_id(I, Module, Proc) :- expect(valid_var_id(I), Module, Proc,
 	
 null_var_id = 0.
 
+var_id_lt(ID1, ID2) :- ID < ID2.
+var_id_le(ID1, ID2) :- ID =< ID2.
+var_id_gt(ID1, ID2) :- ID > ID2.
+var_id_ge(ID1, ID2) :- ID >= ID2.
+
 %-----------------------------------------------------------------------------%
 % Var ID Offsets
 
@@ -263,6 +285,13 @@ var_id_set_offset(Set, Offset) = Set + Offset.
 
 null_var_id_offset = 0.
 
+offset_lt(Offset1, Offset2) :- Offset < Offset2.
+offset_le(Offset1, Offset2) :- Offset =< Offset2.
+offset_gt(Offset1, Offset2) :- Offset > Offset2.
+offset_ge(Offset1, Offset2) :- Offset >= Offset2.
+
+
+
 %-----------------------------------------------------------------------------%
 % Variable sets
 
@@ -279,6 +308,13 @@ var_id_count(Count) = Count.
 valid_var_id_set(Set) :- Set >= 0.
 
 empty_var_id_set(0).
+
+var_id_set_lt(Set1, Set2) :- Set < Set2.
+var_id_set_le(Set1, Set2) :- Set =< Set2.
+var_id_set_gt(Set1, Set2) :- Set > Set2.
+var_id_set_ge(Set1, Set2) :- Set >= Set2.
+
+
 
 require_valid_var_id_set(Set) :- 
 	require(valid_var_id_set(Set), "Invalid var_id_set. Last var_id: " ++ string(Set) 
@@ -489,7 +525,7 @@ var_id_lookup(Array, ID, T) :- lookup(Array, id_index(ID), T).
 var_id_lookup(Array, Offset, ID, T) :- lookup(Array, id_index(ID, Offset), T).
 
 var_id_lookup(Array, ID) = lookup(Array, id_index(ID)).
-var_id_lookup(Array, Offset) = lookup(Array, id_index(ID, Offset)).
+var_id_lookup(Array, Offset, ID) = lookup(Array, id_index(ID, Offset)).
 
 var_id_semidet_lookup(Array, ID, T) :- semidet_lookup(Array, id_index(ID), T).
 var_id_semidet_lookup(Array, Offset, ID, T) :- 
@@ -514,7 +550,7 @@ var_id_member(Array::in, ID::out, T::out) :-
 	unsafe_lookup(Array, Index, T),
 	id_index(ID) = Index.
 	
-var_id_member(Array, Offset, ID + Offset, T) :- var_id_member(Array, ID, T).
+var_id_member(Array, Offset, ID - Offset, T) :- var_id_member(Array, ID, T).
 
 
 var_id_set(ID, T, !Array) :- set(id_index(ID), T, !Array).
@@ -528,10 +564,10 @@ var_id_slow_set(ID, T, Offset, !Array) :-
 
 var_id_set_init_array(Last, T, A) :- array.init(Last, T, A).
 
-var_id_set_init_array(Offset, Last, T, A) :- array.init(Last + Offset, T, A).
+var_id_set_init_array(Offset, Last, T, A) :- array.init(Last - Offset, T, A).
 
 var_id_set_init_array(Set, T) = A :- var_id_set_init_array(Set, T, A).
 
 var_id_set_init_array(Offset, Set, T) = 
-	var_id_set_init_array(Set + Offset, T, A).
+	var_id_set_init_array(Set - Offset, T, A).
 	
