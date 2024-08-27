@@ -15,7 +15,7 @@
 
 :- interface.
 
-:- import_module map.
+% :- import_module map.
 :- import_module array.
 % :- import_module enum.
 
@@ -40,20 +40,29 @@
 	
 :- pred init_sub(mh_substitution::out) is det.
 :- func init_sub = mh_substitution.
+
+:- pred init_array_sub(array(mh_term)::in, var_id_offset::in, 
+	mh_substitution::out) is det.
+	
+:- func init_array_sub(array(mh_term), var_id_offset) = mh_substitution.
+
 	
 :- pred empty_substitution(mh_substitution::in) is semidet.
 
-:- pred single_substitution(mh_substiution::in) is semidet.
+:- pred single_substitution(mh_substitution::in) is semidet.
 
-:- pred array_substitution(mh_substituion::in) is semidet.
+:- pred array_substitution(mh_substitution::in) is semidet.
 
-:- pred offset_substituion(mh_substition::in) is semidet.
+:- pred offset_substituion(mh_substitution::in) is semidet.
 
 % substitution_bounds(Subsitution, Min, Max)
 % Return the minimum and maximum var_id's indexed by Substitution, fail if the
 % Substituion is empty
 :- pred substitution_bounds(mh_substitution::in, var_id_offset::out, 
 	var_id_set::out) is semidet.
+	
+:- pred substitution_bounds_det(mh_substitution::in, var_id_offset::out,
+	var_id_set::out) is det.
 
 	
 
@@ -68,8 +77,9 @@
 
 % Get the offset of a substitution, if it has one
 
-:- pred substitution_offset(mh_substiution::in, var_id_offset::out) is semidet.
+:- pred substitution_offset(mh_substitution::in, var_id_offset::out) is semidet.
 
+:- func substitution_offset(mh_substitution) = var_id_offset is semidet.
 
 % Find a given variable ID in the substitution, fail if the id is not found
 % If the substitution is a renaming, return the indexed var_id as a variable
@@ -110,7 +120,7 @@
 :- pred compose_substitutions(mh_substitution::in, 
 	mh_substitution::in, mh_substitution::out) is det.
 
-:- func compose_substitutions(mh_substitution, mh_substitition) = 
+:- func compose_substitutions(mh_substitution, mh_substitution) = 
 	mh_substitution.
 
 
@@ -121,15 +131,15 @@
 	--->	ren_empty
 	;		ren_single(ground, ground)
 	;		ren_array(ground)
-	;		ren_offset(ground)
+	;		ren_array(ground, ground)
 	;		ren_offset(ground, ground).
 	
 :- type mh_renaming =< mh_substitution
 	---> 	ren_empty
 	;		ren_single(var_id, var_id)
 	;		ren_array(array(var_id))
-	;		ren_offset(var_id_offset)
-	;		ren_offset(array(var_id), var_id_offset).
+	;		ren_array(array(var_id), var_id_offset)
+	;		ren_offset(var_id_offset, var_id_set).
 	
 :- mode is_renaming == ground >> mh_renaming.
 
@@ -139,8 +149,6 @@
 :- func init_ren = mh_renaming.
 
 :- pred empty_renaming(mh_renaming::in) is semidet.
-:- mode empty_renaming(in) is semidet.
-:- mode empty_renaming(out) is cc_multi.
 
 %-----------------------------------------------------------------------------%
 % Looking up variables in renamings
@@ -170,16 +178,9 @@
 
 :- pred ren_quantified_lookup(mh_renaming::in, quantified_var::in, 
 	quantified_var::out) is det.
-:- func ren_quanitifed_lookup(mh_renaming, quantified_var) = quantified_var.
+:- func ren_quantified_lookup(mh_renaming, quantified_var) = quantified_var.
 
-%-----------------------------------------------------------------------------%
-% Substitutible typeclass
 
-:- typeclass substitutable(T) where [
-	pred apply_substitution(mh_substiution::in, T::in, T::out) is det
-].	
-
-:- func apply_substitution(mh_substitution, T) = T <= substitutable(T).
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -195,6 +196,16 @@
 
 init_sub(init_sub).
 init_sub = sub_empty.
+
+init_array_sub(Array, Offset, Sub) :-
+	(if Offset = null_var_id_offset
+	then
+		Sub = sub_array(Array)
+	else
+		Sub = sub_array(Array, Offset)
+	).
+
+init_array_sub(Array, Offset) = Sub :- init_array_sub(Array, Offset, Sub).	
 
 empty_substitution(sub_empty).
 empty_substitution(sub_array(make_empty_array)).
@@ -243,11 +254,19 @@ substitution_bounds(ren_array(Array, Offset),
 ).
 
 substitution_bounds(ren_offset(Offset, Set), Min, Set) :- 
-	( Offset =< null_var_id_offset -> 
+	( offset_le(Offset, null_var_id_offset) -> 
 		Min = null_var_id_offset ; 
 		Min = Offset ).
 	
-	
+substitution_bounds_det(Sub, Offset, Set) :-
+	(if substitution_bounds(Sub, Offset0, Set0)
+	then
+		Offset = Offset0,
+		Set = Set0
+	else error($pred, 
+		"Empty substitutions do not have bounds, check for empty substitution"
+		)
+	).
 	
 %-----------------------------------------------------------------------------%
 % Looking up variables in substitutions
@@ -269,17 +288,18 @@ sub_contains_id(ren_single(ID, _), ID).
 
 sub_contains_id(ren_array(Array), ID1) :- 
 	var_id_semidet_lookup(Array, ID1, ID2),
-	ID2 > 0.
+	var_id_gt(ID2, null_var_id).
 
 sub_contains_id(ren_array(Array, Offset), ID1) :- 
 	var_id_offset(ID1, ID2, Offset), 
 	var_id_semidet_lookup(Array, ID2, ID3),
-	ID3 > 0.
+	var_id_gt(ID3, null_var_id).
 	
 sub_contains_id(ren_offset(Offset, Set), ID) :- 
 	contains_var_id(Set, Offset, ID).
 
-substitution_offset(ren_offset(Offset), Offset).
+substitution_offset(ren_offset(Offset, _), Offset).
+substitution_offset(ren_offset(Offset, _)) = Offset.
 
 %-----------------------------------------------------------------------------%
 
@@ -293,21 +313,21 @@ sub_id_search(sub_array(Array), ID, Term)  :-
 	var_id_semidet_lookup(Array, ID, Term),
 	Term \= nil.
 	
-sub_id_search(sub_array(Array, Offset), ID1, Term) :-
-	var_id_semidet_lookup(Array, Offset, ID2, Term),
+sub_id_search(sub_array(Array, Offset), ID, Term) :-
+	var_id_semidet_lookup(Array, Offset, ID, Term),
 	Term \= nil.
 	
 sub_id_search(ren_empty, _, nil) :- fail.
  
 sub_id_search(ren_single(ID1, ID2), ID1, var(ID2)).
 	
-sub_id_search(ren_array(Array), !.ID, var(!:ID)) :- 
-	var_id_semidet_lookup(Array, !ID),
-	!:ID > 0.
+sub_id_search(ren_array(Array), ID1, var(ID2)) :- 
+	var_id_semidet_lookup(Array, ID1, ID2),
+	var_id_gt(ID2, null_var_id).
 	
-sub_id_search(ren_array(Array, Offset), !.ID, var(!:ID)) :-
-	var_id_semidet_lookup(Array, Offset, ID2, Term),
-	!:ID > 0.
+sub_id_search(ren_array(Array, Offset), ID1, var(ID2)) :-
+	var_id_semidet_lookup(Array, Offset, ID1, ID2),
+	var_id_gt(ID2, null_var_id).
 	
 sub_id_search(ren_offset(Offset, Set), !.ID, var(!:ID) ) :- 
 	contains_var_id(Set, !.ID),
@@ -358,33 +378,30 @@ sub_quantified_lookup(Sub, Var) = Term :-
 % Substitution composition
 
 compose_substitutions(Sub2, Sub1, Sub) :-
-	( if compose_sub_special(Sub2, Sub1, Sub3)
+	( if promise_equivalent_solutions [Sub3]
+		compose_sub_special(Sub2, Sub1, Sub3)
 	then
 		Sub = Sub3
 	else
-		substitution_bounds(Sub1, Offset1, Set1),
-		substitution_bounds(Sub2, Offset2, Set2),
-		(Offset1 < Offset2 -> Offset = Offset1 ; Offset = Offset2 ),
-		(Set1 < Set2 -> Set = Set1 ; Set = Set2),
-		var_id_set_init_array(Offset, Set, nil, !.Array),
+		substitution_bounds_det(Sub1, Offset1, Set1),
+		substitution_bounds_det(Sub2, Offset2, Set2),
+		(offset_lt(Offset1, Offset2) -> Offset = Offset1 ; Offset = Offset2 ),
+		(var_id_set_lt(Set1, Set2) -> Set = Set1 ; Set = Set2),
+		var_id_set_init_array(Offset, Set, nil, Array0),
 		compose_substiution_step(
 			first_var_id(Offset), last_var_id(Set),
 			Sub2, Sub1,
-			Offset, !Array
+			Offset, Array0, Array1
 		),
-		(If Offset = null_var_id_offset
-		then
-			Sub = sub_array(!:Array)
-		else
-			Sub = sub_array(!:Array, Offset)
-		)
+		init_array_sub(Array1, Offset, Sub)
 	).
+	
+compose_substitutions(Sub2, Sub1) = Sub :- 
+	compose_substitutions(Sub2, Sub1, Sub).
 		
 		
-:- pred compose_sub_special(mh_substition::in, mh_substiution::in,
-	mh_substiutiton::out) is semidet.
-
-:- pragma promise_equivalent_clauses(compose_sub_special/3).
+:- pred compose_sub_special(mh_substitution::in, mh_substitution::in,
+	mh_substitution::out) is cc_nondet.
 
 
 compose_sub_special(S, sub_empty, S).
@@ -418,16 +435,14 @@ compose_sub_special(
 				first_var_id(Offset) = ID1,
 				last_var_id(Set) = ID2
 			),
-			var_id_set_init_array(Offset, Set, nil, !.Array),
-			var_id_set(ID1, Term1, Offset, !Array),
-			var_id_set(ID2, Term2, Offset, !Array),
-			( if Offset = null_var_id_offset
-			then Sub = sub_array(!:Array)
-			else Sub = sub_array(!:Array, Offset)
-			)
+			var_id_set_init_array(Offset, Set, nil, A0),
+			var_id_set(ID1, Term1, Offset, A0, A1),
+			var_id_set(ID2, Term2, Offset, A1, A2),
+			init_array_sub(A2, Offset, Sub)
 		)
 		
 	).
+	
 	
 compose_sub_special(
 	sub_single(ID2, Term2),
@@ -452,13 +467,10 @@ compose_sub_special(
 				first_var_id(Offset) = ID1,
 				last_var_id(Set) = ID2
 			),
-			var_id_set_init_array(Offset, Set, nil, !.Array),
-			var_id_set(ID1, var(Var1), Offset, !Array),
-			var_id_set(ID2, Term2, Offset, !Array),
-			( if Offset = null_var_id_offset
-			then Sub = sub_array(!:Array)
-			else Sub = sub_array(!:Array, Offset)
-			)
+			var_id_set_init_array(Offset, Set, nil, A0),
+			var_id_set(ID1, var(Var1), Offset, A0, A1),
+			var_id_set(ID2, Term2, Offset, A1, A2),
+			init_array_sub(A2, Offset, Sub)
 		)
 		
 	).
@@ -473,6 +485,7 @@ compose_sub_special(
 		Sub = ren_single(ID1, Var2)
 	else 
 		compare(Comp, ID1, ID2),
+		promise_equivalent_solutions [Sub]
 		(
 			Comp = (=),
 			Sub = sub_single(ID1, Term1)
@@ -486,13 +499,10 @@ compose_sub_special(
 				first_var_id(Offset) = ID1,
 				last_var_id(Set) = ID2
 			),
-			var_id_set_init_array(Offset, Set, nil, !.Array),
-			var_id_set(ID1, Term1, Offset, !Array),
-			var_id_set(ID2, var(Var2), Offset, !Array),
-			( if Offset = null_var_id_offset
-			then Sub = sub_array(!:Array)
-			else Sub = sub_array(!:Array, Offset)
-			)
+			var_id_set_init_array(Offset, Set, nil, A0),
+			var_id_set(ID1, Term1, Offset, A0, A1),
+			var_id_set(ID2, var(Var2), Offset, A1, A2),
+			init_array_sub(A2, Offset, Sub)
 		)
 		
 	).
@@ -511,7 +521,7 @@ compose_sub_special(
 	
 compose_substiution_step(
 	Current, Last,
-	Sub1, Sub2
+	Sub1, Sub2,
 	Offset, !Array
 ) :-
 	% Look up the current id in the first sub, if the found term is a variable
@@ -538,13 +548,13 @@ compose_substiution_step(
 		)
 	),
 	
-	(if Current => Last
+	(if var_id_ge(Current, Last)
 	then true
 	else
 		compose_substiution_step(
 			next_var_id(Current), Last, 
 			Sub2, Sub1, 
-			!Array)
+			Offset, !Array)
 	).
 	
 	
@@ -578,12 +588,12 @@ ren_contains_id(ren_empty, _) :- fail.
 ren_contains_id(ren_single(ID, _), ID).
 
 ren_contains_id(ren_array(Array), ID1) :- 
-	var_id_semidet_lookup(Array, ID1, ID2).
-	ID2 > 0..
+	var_id_semidet_lookup(Array, ID1, ID2),
+	var_id_gt(ID2, null_var_id).
 
 ren_contains_id(ren_array(Array, Offset), ID1) :- 
 	var_id_semidet_lookup(Array, Offset, ID1, ID2),
-	ID2 > 0.
+	var_id_gt(ID2, null_var_id).
 	
 ren_contains_id(ren_offset(Offset, Set), ID) :- 
 	contains_var_id(Set, Offset, ID).
@@ -598,16 +608,16 @@ ren_id_search(ren_empty, _, null_var_id) :- fail.
 
 ren_id_search(ren_single(ID1, ID2), ID1, ID2).
 	
-ren_id_search(ren_array(Array), !ID) :- 
-	var_id_semidet_lookup(Array, !ID),
-	!:ID > 0.
+ren_id_search(ren_array(Array), ID1, ID2) :- 
+	var_id_semidet_lookup(Array, ID1, ID2),
+	var_id_gt(ID2, null_var_id).
 	
 
-ren_id_search(ren_array(Array, Offset), !ID) :-
-	var_id_semidet_lookup(Array, Offset, ID2, Term),
-	!:ID > 0.
+ren_id_search(ren_array(Array, Offset), ID1, ID2) :-
+	var_id_semidet_lookup(Array, Offset, ID1, ID2),
+	var_id_gt(ID2, null_var_id).
 	
-ren_id_search(ren_offset(Offset), !ID) :- 
+ren_id_search(ren_offset(Offset, Set), !ID) :- 
 	contains_var_id(Set, !.ID),
 	var_id_offset(!ID, Offset).
 
@@ -616,7 +626,7 @@ ren_id_search(Ren, !.ID) = !:ID :- ren_id_search(Ren, !ID).
 %-----------------------------------------------------------------------------%
 
 ren_id_lookup(Ren, !ID) :-
-	( if ren_id_search(Sub, !.ID, Found)
+	( if ren_id_search(Ren, !.ID, Found)
 	then !:ID = Found
 	else !:ID = !.ID).
 	
@@ -645,16 +655,11 @@ ren_quantified_search(Ren, Var) = ID :-
 
 %-----------------------------------------------------------------------------%
 
-ren_quanitified_lookup(Ren, var(!.ID), var(!:ID)) :- ren_id_lookup(Ren, !IO).
+ren_quantified_lookup(Ren, var(!.ID), var(!:ID)) :- ren_id_lookup(Ren, !ID).
 
-ren_quanttified_lookup(Ren, !.Var) = !:Var :- ren_quanitifed_lookup(Ren, !Var). 
+ren_quantified_lookup(Ren, !.Var) = !:Var :- ren_quantified_lookup(Ren, !Var). 
 	
 
-		
-%-----------------------------------------------------------------------------%
-% Substitutible typeclass
-
-apply_substitution(Sub !.T) = !:T :- apply_substitution(Sub, !T).
 
 %-----------------------------------------------------------------------------%
 % Utility
