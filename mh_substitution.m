@@ -445,8 +445,8 @@ compose_sub_special(
 	
 	
 compose_sub_special(
-	sub_single(ID1, Var1),
-	ren_single(ID2, Term2),
+	ren_single(ID1, Var1),
+	sub_single(ID2, Term2),
 	Sub
 ) :- 
 	( if ID2 = Var1
