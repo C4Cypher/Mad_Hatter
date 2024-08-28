@@ -34,7 +34,7 @@
 	;		array_tuple(array(mh_term))
 	;		tuple_sub(mh_tuple, mh_substitution).
 
-:- func mr_tuple(T) = mh_tuple <= mr_tuple(T).
+:- func tuple(T) = mh_tuple <= mr_tuple(T).
 :- mode tuple(in) = out is det.
 :- mode tuple(out) = in is semidet.
 
