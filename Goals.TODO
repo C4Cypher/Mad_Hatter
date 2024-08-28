@@ -1,0 +1,13 @@
+Outline
+Current goals
+
+	get a repl running
+		finish mh_term
+			define environments/symbol substitution
+				finish substitutions <- I am here
+					implement unification
+			hash out exact definitions and distinctrions for: 
+				relations
+				predicates
+				functions
+				
