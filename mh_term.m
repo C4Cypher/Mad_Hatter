@@ -29,7 +29,7 @@
 
 
 %-----------------------------------------------------------------------------%
-% 	mh_term
+% Terms
 
 :- type mh_term 
 
@@ -71,10 +71,6 @@
 	mh_term::in, mh_term::out) is det.
 :- func apply_term_substitution(mh_substitution, mh_term) = mh_term.
 
-:- pred lazy_term_substitution(mh_substitution::in, 
-	mh_term::in, mh_term::out) is det.
-:- func lazy_term_substitution(mh_substitution, mh_term) = mh_term.
-	
 :- instance arity(mh_term).
 % :- instance tuple(mh_term).
 % :- instance substitutable(mh_term).
@@ -85,7 +81,8 @@
 :- inst functor 
 	--->	atom(ground)
 	;		relation(ground)
-	;		function(ground).
+	;		function(ground)
+	;		term_sub(ground, ground).
 
 :- type functor =< mh_term
 	% Atoms
@@ -94,7 +91,10 @@
 	% Higher order terms
 	;		relation(mh_relation)
 	;		predicate(mh_predicate)
-	;		function(mh_function).
+	;		function(mh_function)
+	
+	% Substitution
+	;		term_sub(functor, mh_substitution).
 	
 :- pred apply_functor_substitution(mh_substitution::in, 
 	functor::in, functor::out) is det.
@@ -160,11 +160,13 @@
 
 :- inst compound_term
 	--->	cons(ground, ground)
-	;		tuple_term(ground).
+	;		tuple_term(ground)
+	;		term_sub(ground, ground).
 
 :- type compound_term =< mh_term
 	--->	cons(functor, mh_term)
-	;		tuple_term(mh_tuple).
+	;		tuple_term(mh_tuple)
+	;		term_sub(compound_term, mh_substitution).
 
 :- instance arity(compound_term).
 % :- instance tuple(compound_term).
@@ -216,7 +218,7 @@
 :- import_module string.
 
 %-----------------------------------------------------------------------------%
-% 	mh_term
+% Terms
 
 functor(cons(F, _)) = F.
 functor(term_sub(T, S)) = term_sub(functor(T), S).
@@ -238,63 +240,33 @@ apply_term_substitution(Sub, !Term) :- 	require_complete_switch [!.Term] (
 	
 	;	!.Term = var(ID), sub_id_lookup(Sub, ID, !:Term)
 		
-	;	!.Term = cons(!.Car, !.Cdr),
-		apply_functor_substitution(Sub, !Car),
-		apply_term_substitution(Sub, !Cdr),
-		!:Term = cons(!:Car, !:Cdr)
+	;	!.Term = cons(Car0, Cdr0),
+		apply_functor_substitution(Sub, Car0, Car),
+		apply_term_substitution(Sub, Cdr0, Cdr),
+		!:Term = cons(Car, Cdr)
 		
-	;	!.Term = tuple_term(!.Tup),
-		apply_tuple_substiution(Sub, !Tup),
-		!:Term = tuple_term(!:Tup)
+	;	!.Term = tuple_term(Tup0),
+		apply_tuple_substiution(Sub, Tup0, Tup),
+		!:Term = tuple_term(Tup)
 	
-	;	!.Term = relation(!.Rel), 
-		apply_relation_substitution(Sub, !Rel),
-		!:Term = relation(!:Rel)
+	;	!.Term = relation(Rel0), 
+		apply_relation_substitution(Sub, Rel0, Rel),
+		!:Term = relation(Rel)
 		
-	;	!.Term = predicate(!.Pred),
-		apply_predicate_substitution(Sub, !Pred),
-		!:Terrm = predicate(!:Pred)
+	;	!.Term = predicate(Pred0),
+		apply_predicate_substitution(Sub, Pred0, Pred),
+		!:Term = predicate(Pred)
 		
-	;	!.Term = function(!.Func),
-		apply_function_substitution(Sub, !Func),
-		!:Term = function(!:Func)
-	
+	;	!.Term = function(Func0),
+		apply_function_substitution(Sub, Func0, Func),
+		!:Term = function(Func)
+		
+	;	!.Term = term_sub(SubTerm, Sub0),
+		compose_substitutions(Sub0, Sub, Sub1),
+		!:Term = term_sub(SubTerm, Sub1)
 ).
 
 apply_term_substitution(S, !.T) = !:T :- apply_term_substitution(S, !T).
-
-lazy_term_substitution(Sub, !Term) :- require_complete_switch [!.Term] (
-	( 
-		!.Term = nil 
-	;	!.Term = atom(_) 
-	;	!.Term = anonymous 
-	;	!.Term = mr_value(_) 
-	), !:Term = !.Term 
-	
-	;	!.Term = var(ID), sub_id_lookup(Sub, ID, !:Term)
-		
-	;	!.Term = cons(!.Car, !.Cdr),
-		apply_functor_substitution(Sub, !Car),
-		apply_term_substitution(Sub, !Cdr),
-		!:Term = cons(!:Car, !:Cdr)
-		
-	;	!.Term = tuple_term(!.Tup),
-		apply_tuple_substiution(Sub, !Tup),
-		!:Term = tuple_term(!:Tup)
-	
-	;	!.Term = relation(!.Rel), 
-		apply_relation_substitution(Sub, !Rel),
-		!:Term = relation(!:Rel)
-		
-	;	!.Term = predicate(!.Pred),
-		apply_predicate_substitution(Sub, !Pred),
-		!:Terrm = predicate(!:Pred)
-		
-	;	!.Term = function(!.Func),
-		apply_function_substitution(Sub, !Func),
-		!:Term = function(!:Func)
-	
-).
 
 %-----------------------------------------------------------------------------%
 
@@ -316,7 +288,7 @@ lazy_term_substitution(Sub, !Term) :- require_complete_switch [!.Term] (
 			else A = 1
 		)
 	;	T = tuple_term(R), A = arity(R)
-	;	T = sub(Term, _), A = arity(Term)
+	;	T = term_sub(Term, _), A = arity(Term)
 	)
 ].
 
@@ -327,9 +299,27 @@ lazy_term_substitution(Sub, !Term) :- require_complete_switch [!.Term] (
 %-----------------------------------------------------------------------------%
 %  Functor
 
+apply_functor_substitution(Sub, !Fun) :-
+		!.Fun = atom(_), !:Fun = !.Fun
+	
+	;	!.Fun = relation(Rel0), 
+		apply_relation_substitution(Sub, Rel0, Rel),
+		!:Fun = relation(Rel)
+		
+	;	!.Fun = predicate(Pred0),
+		apply_predicate_substitution(Sub, Pred0, Pred),
+		!:Fun = predicate(Pred)
+	
+	;	!.Fun = function(Func0),
+		apply_function_substitution(Sub, Func0, Func),
+		!:Fun = function(Func)
+	
+	;	!.Fun = term_sub(SubFun, Sub0),
+		compose_substitutions(Sub0, Sub, Sub1),
+		!:Fun = term_sub(SubFun, Sub1).
+		
 apply_functor_substitution(Sub, !.Fun) = !:Fun :- 
 	apply_functor_substitution(Sub, !Fun).
-
 %-----------------------------------------------------------------------------%
 %	Atoms
 
@@ -364,7 +354,10 @@ var_is_quantified(var(_)).
 			then A = arity(Tuple)
 			else A = 1
 		)
+		
 	;	T = tuple_term(R), A = arity(R)
+	
+	;	T = term_sub(Term, _), A = arity(Term)
 	)
 ].
 
@@ -428,5 +421,5 @@ term_description(relation(F)) =
 	"mercury relation term of type " ++ mr_type_name(F).
 term_description(function(F)) =
 	"mercury function term of type " ++ mr_type_name(F).
-term_description(sub(Term, _)) =
+term_description(term_sub(Term, _)) =
 	"substitution of " ++ term_description(Term).

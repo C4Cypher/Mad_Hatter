@@ -263,10 +263,10 @@ expect_valid_var_id(I, Module, Proc) :- expect(valid_var_id(I), Module, Proc,
 	
 null_var_id = 0.
 
-var_id_lt(ID1, ID2) :- ID < ID2.
-var_id_le(ID1, ID2) :- ID =< ID2.
-var_id_gt(ID1, ID2) :- ID > ID2.
-var_id_ge(ID1, ID2) :- ID >= ID2.
+var_id_lt(ID1, ID2) :- ID1 < ID2.
+var_id_le(ID1, ID2) :- ID1 =< ID2.
+var_id_gt(ID1, ID2) :- ID1 > ID2.
+var_id_ge(ID1, ID2) :- ID1 >= ID2.
 
 %-----------------------------------------------------------------------------%
 % Var ID Offsets
@@ -285,10 +285,10 @@ var_id_set_offset(Set, Offset) = Set + Offset.
 
 null_var_id_offset = 0.
 
-offset_lt(Offset1, Offset2) :- Offset < Offset2.
-offset_le(Offset1, Offset2) :- Offset =< Offset2.
-offset_gt(Offset1, Offset2) :- Offset > Offset2.
-offset_ge(Offset1, Offset2) :- Offset >= Offset2.
+offset_lt(Offset1, Offset2) :- Offset1 < Offset2.
+offset_le(Offset1, Offset2) :- Offset1 =< Offset2.
+offset_gt(Offset1, Offset2) :- Offset1 > Offset2.
+offset_ge(Offset1, Offset2) :- Offset1 >= Offset2.
 
 
 
@@ -309,10 +309,10 @@ valid_var_id_set(Set) :- Set >= 0.
 
 empty_var_id_set(0).
 
-var_id_set_lt(Set1, Set2) :- Set < Set2.
-var_id_set_le(Set1, Set2) :- Set =< Set2.
-var_id_set_gt(Set1, Set2) :- Set > Set2.
-var_id_set_ge(Set1, Set2) :- Set >= Set2.
+var_id_set_lt(Set1, Set2) :- Set1 < Set2.
+var_id_set_le(Set1, Set2) :- Set1 =< Set2.
+var_id_set_gt(Set1, Set2) :- Set1 > Set2.
+var_id_set_ge(Set1, Set2) :- Set1 >= Set2.
 
 
 
@@ -361,18 +361,7 @@ last_var_id(Last) = Last.
 next_var_id(ID) = ID + 1.
 
 previous_var_id(ID) = ID - 1.
-
-:- pragma promise_equivalent_clauses(next_var_id/1).
-
-next_var_id(Prev::in) = (Next::out) :- 
-	Next = Prev + 1,
-	require_valid_var_id(Next).
 	
-next_var_id(Prev::out) = (Next::in) :-
-	Prev = Next - 1,
-	require_valid_var_id(Prev).
-	
-previous_var_id(Next) = Prev :- next_var_id(Prev) = Next.
 
 :- pragma promise_equivalent_clauses(contains_var_id/2).
 
@@ -506,8 +495,9 @@ id_index(ID) = ID - 1.
 :- pragma inline(id_index/2).
 
 :- func id_index(var_id, var_id_offset) = int.
-:- mode id_index(in) = out is det.
-:- mode id_index(out) = in is det.
+:- mode id_index(in, in) = out is det.
+:- mode id_index(out, in) = in is det.
+:- mode id_index(in, out) = in is det.
 
 id_index(ID, Offset) = id_index(ID - Offset).
 
@@ -569,5 +559,5 @@ var_id_set_init_array(Offset, Last, T, A) :- array.init(Last - Offset, T, A).
 var_id_set_init_array(Set, T) = A :- var_id_set_init_array(Set, T, A).
 
 var_id_set_init_array(Offset, Set, T) = 
-	var_id_set_init_array(Set - Offset, T, A).
+	var_id_set_init_array(Set - Offset, T).
 	
