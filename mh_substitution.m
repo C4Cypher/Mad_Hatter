@@ -113,7 +113,7 @@
 %-----------------------------------------------------------------------------%
 % Substitution composition
 
-% compose_substitutions(S2, S1, S3) 
+% compose_substitutions(S1, S2, S3) 
 % Create a substitution that, when applied, has the same effect as applying
 % S1 and then S2
 
@@ -377,9 +377,9 @@ sub_quantified_lookup(Sub, Var) = Term :-
 %-----------------------------------------------------------------------------%
 % Substitution composition
 
-compose_substitutions(Sub2, Sub1, Sub) :-
+compose_substitutions(Sub1, Sub2, Sub) :-
 	( if promise_equivalent_solutions [Sub3]
-		compose_sub_special(Sub2, Sub1, Sub3)
+		compose_sub_special(Sub1, Sub2, Sub3)
 	then
 		Sub = Sub3
 	else
@@ -390,14 +390,14 @@ compose_substitutions(Sub2, Sub1, Sub) :-
 		var_id_set_init_array(Offset, Set, nil, Array0),
 		compose_substiution_step(
 			first_var_id(Offset), last_var_id(Set),
-			Sub2, Sub1,
+			Sub1, Sub2,
 			Offset, Array0, Array1
 		),
 		init_array_sub(Array1, Offset, Sub)
 	).
 	
-compose_substitutions(Sub2, Sub1) = Sub :- 
-	compose_substitutions(Sub2, Sub1, Sub).
+compose_substitutions(Sub1, Sub2) = Sub :- 
+	compose_substitutions(Sub1, Sub2, Sub).
 		
 		
 :- pred compose_sub_special(mh_substitution::in, mh_substitution::in,
@@ -413,8 +413,8 @@ compose_sub_special(ren_empty, S, S).
 
 
 compose_sub_special(
-	sub_single(ID2, Term2), 
-	sub_single(ID1, Term1),
+	sub_single(ID1, Term1), 
+	sub_single(ID2, Term2),
 	Sub
 ) :-
 	( if Term1 = var(ID2)
@@ -445,8 +445,8 @@ compose_sub_special(
 	
 	
 compose_sub_special(
-	sub_single(ID2, Term2),
-	ren_single(ID1, Var1),
+	sub_single(ID1, Var1),
+	ren_single(ID2, Term2),
 	Sub
 ) :- 
 	( if ID2 = Var1
@@ -476,8 +476,8 @@ compose_sub_special(
 	).
 
 compose_sub_special(
-	ren_single(ID2, Var2),
 	sub_single(ID1, Term1),
+	ren_single(ID2, Var2),
 	Sub
 ) :-
 	( if Term1 = var(ID2)
@@ -553,7 +553,7 @@ compose_substiution_step(
 	else
 		compose_substiution_step(
 			next_var_id(Current), Last, 
-			Sub2, Sub1, 
+			Sub1, Sub2, 
 			Offset, !Array)
 	).
 	
