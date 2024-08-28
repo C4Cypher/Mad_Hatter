@@ -56,6 +56,11 @@
 
 % :- pred tuple_member(mr_tuple::in, int::out, mh_term::out) is nondet.
 
+%-----------------------------------------------------------------------------%
+% Tuple substitutions
+
+:- pred apply_tuple_substiution(mh_substitution::in, mh_tuple::in,
+	mh_tuple::out) is det.
 
 %-----------------------------------------------------------------------------%
 % Tuple typeclass
@@ -104,6 +109,7 @@
 
 
 :- import_module mh_index.
+:- import_module require.
 
 
 
@@ -167,7 +173,11 @@ tuple_size(array_tuple(Array), S) :- size(Array, S).
 % tuple_lookup(tuple_sub(Tuple, Sub), Index, Term) :-
 	% tuple_lookup(Tuple, Index, Term0),
 	
+%-----------------------------------------------------------------------------%
+% Tuple substitutions
 
+apply_tuple_substiution(_, _, _) :- sorry($module, $pred,
+	"apply_tuple_substiution/3").
 
 %-----------------------------------------------------------------------------%
 % Function versions and determinism casts of tuple class methods
