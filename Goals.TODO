@@ -3,11 +3,41 @@ Current goals
 
 	get a repl running
 		finish mh_term
-			define environments/symbol substitution
-				finish substitutions <- I am here
-					implement unification
-			hash out exact definitions and distinctrions for: 
-				relations
-				predicates
-				functions
-				
+			implement unification
+				define environments/symbol substitution
+					scope
+						further define and integerate type system
+					finish substitutions 
+				hash out exact definitions and distinctrions for:  <- I am here
+					relations
+					predicates
+					functions
+					
+					
+Notes:
+
+With substitutions in place, the last piece of the puzzle for mh_term (my AST) is higher level abstractions: clauses ... three concepts I need to establish a relationship between: relations, predicates and functions.
+
+I put off this step because I more clearly wanted to define and establish the rest of the term tree, without which I couldn't clearly focus on higher order.
+
+relations describe the relationship between a predicate/function symbol and the lambda expression said symbol represents
+foo(X) :- X > 2. ==> (\X :- X > 2).
+
+foo(5) ==> (\5 :- 5 > 2).
+
+bar(X) = X * 2. ==> (\X = X * 2).
+
+a predicate takes a set of terms as input and returns substitutions binding some of the variables in the input list to terms,  if the predicate is deterministic, it returns one substitution, nondeterministic it returns a set (depending on evaluation, as a list, or as an iterator)
+
+a function takes one value as input, and returns a value as output, conceptually there is no failure
+
+a predicate can be transformed into a function, by making the predicates input parameters into a tuple as input for the function, and a list/set of substitutions as the function's output
+
+a function can be abstracted into a predicate by transforming it's return value into a variable substitution, a predicate that always succeeds and binds one variable (the return value becoming part of the functions head clause)
+
+a relation represents replacing a symbol with either a predicate or function lambda abstraction
+
+a logic program can be normalized for WAM style evaluation by abstracting all functions into predicates
+
+a logic program can be normalized for Haskell/ML style functional evaluation (which can be optimized into C style imperative functions) by abstracting all of the predicates into functions.
+			
