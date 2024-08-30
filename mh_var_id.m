@@ -6,7 +6,7 @@
 % Public License - see the file COPYING.LIB in the Mercury distribution.
 %-----------------------------------------------------------------------------%
 % 
-% File: mh_var.m
+% File: mh_var_id.m
 % Main author: C4Cypher.
 % Stability: low.
 
