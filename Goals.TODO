@@ -40,4 +40,28 @@ a relation represents replacing a symbol with either a predicate or function lam
 a logic program can be normalized for WAM style evaluation by abstracting all functions into predicates
 
 a logic program can be normalized for Haskell/ML style functional evaluation (which can be optimized into C style imperative functions) by abstracting all of the predicates into functions.
+
+This is close to where I want to be, but not entirely correct as far as where I want my semantics to be.  Time to go back to basics.
+A clause is a fact or a rule. 
+Fact
+X.
+
+Rule
+X :- Y.
+
+Where X is a head clause and Y is a body clause.
+
+I have four kinds of 'head clauses' depending on the kind of higher order abstraction I'm defining.
+
+Predicate head clause
+foo(A, B:T, ...)
+
+Relation head clause
+bar(A, B:T, ...) = R
+
+Function head clause
+baz(A, B:T, ...) -> R
+
+Unification head clause (or type casting head clause)
+A:T = B:U
 			
