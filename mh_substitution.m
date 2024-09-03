@@ -296,7 +296,7 @@ sub_contains_id(ren_array(Array, Offset), ID1) :-
 	var_id_gt(ID3, null_var_id).
 	
 sub_contains_id(ren_offset(Offset, Set), ID) :- 
-	contains_var_id(Set, Offset, ID).
+	contains_var_id(Offset, Set, ID).
 
 substitution_offset(ren_offset(Offset, _), Offset).
 substitution_offset(ren_offset(Offset, _)) = Offset.
@@ -596,7 +596,7 @@ ren_contains_id(ren_array(Array, Offset), ID1) :-
 	var_id_gt(ID2, null_var_id).
 	
 ren_contains_id(ren_offset(Offset, Set), ID) :- 
-	contains_var_id(Set, Offset, ID).
+	contains_var_id(Offset, Set, ID).
 
 
 renaming_offset(ren_offset(Offset, _), Offset).

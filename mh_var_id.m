@@ -149,7 +149,7 @@
 
 % contains(Set, Offset, ID)
 % Succeeds with any ID between Offset and the last var_id of Set
-:- pred contains_var_id(var_id_set, var_id_offset, var_id).
+:- pred contains_var_id(var_id_offset, var_id_set, var_id).
 :- mode contains_var_id(in, in, in) is semidet.
 :- mode contains_var_id(in, in, out) is nondet.
 
@@ -375,11 +375,11 @@ contains_var_id(Last::in, ID::out) :-
 	
 :- pragma promise_equivalent_clauses(contains_var_id/3).
 
-contains_var_id(Last::in, Offset::in, ID::in) :- 
+contains_var_id( Offset::in, Last::in,ID::in) :- 
 	ID > Offset,
 	ID =< Last.
 	
-contains_var_id(Last::in, Offset::in, ID::out) :-
+contains_var_id( Offset::in, Last::in,ID::out) :-
 	Last > 0,
 	all_ids_to(Offset + 1, Last, ID).	
 	
