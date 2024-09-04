@@ -48,6 +48,15 @@
 :- mode singleton_var_set(in) = out is det.
 :- mode singleton_var_set(out) = in is semidet.
 
+:- func var_set_first_id(mh_var_set) = var_id.
+:- func var_set_last_id(mh_var_set) = var_id.
+
+:- func var_set_first(mh_var_set) = mh_var.
+:- func var_set_last(mh_var_set) = mh_var.
+
+:- func var_set_first_qualified(mh_var_set) = qualified_var.
+:- func var_set_qualified(mh_var_set) = qualified_var.
+
 %-----------------------------------------------------------------------------%
 % Var Set membership
 
@@ -55,13 +64,36 @@
 :- mode var_set_contains_id(in, in) is semidet.
 :- mode var_set_contains_id(in, out) is nondet.
 
-:- pred var_set_contains_var(mh_var_set, mh_var).
-:- pred var_set_contains_var(in, in) is semidet.
-:- pred var_set_contains_var(in, out) is nondet.
+:- pred var_set_contains(mh_var_set, mh_var).
+:- mode var_set_contains(in, in) is semidet.
+:- mode var_set_contains(in, out) is nondet.
 
-:- pred var_set_contains_quantified(mh_var_set, quantified_var).
-:- pred var_set_contains_quantified(in, in) is semidet.
-:- pred var_set_contains_quantified(in, out) is nondet.
+:- pred var_set_contains_qualified(mh_var_set, qualified_var).
+:- mode var_set_contains_qualified(in, in) is semidet.
+:- mode var_set_contains_qualified(in, out) is nondet.
+
+%-----------------------------------------------------------------------------%
+% Var Set insertion and removal
+
+% These clauses fail if insertion would create null or negative variables
+
+:- pred var_set_append(mh_var_set, mh_var_set).
+:- mode var_set_append(in, out) is det.
+:- mode var_set_append(out, in) is det.
+
+:- pred var_set_append_id(mh_var_set, mh_var_set, var_id).
+:- mode var_set_append_id(in, out, out) is det.
+:- mode var_set_append_id(out, in, out) is det.
+
+:- pred var_set_insert_id(var_id, mh_var_set, mh_var_set).
+:- mode var_set_insert_id(in, in, out) is semidet.
+:- mode var_set_insert_id(in, out, in) is semidet.
+:- mode var_set_insert_id(out, in, in) is semidet.
+
+:- pred var_set_merge_id(var_id, mh_var_set, mh_var_set).
+:- mode var_set_merge_id(in, in, out) is det.
+:- mode var_set_merge_id(in, out, in) is semidet.
+:- mode var_set_merge_id(out, in, in) is semidet.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -159,6 +191,21 @@ singleton_var_set(ID, var_set(Offset, Set)) :-
 	ID = last_var_id(Set).
 
 singleton_var_set(ID) = VarSet :- singleton_var_set(ID, VarSet).
+
+%-----------------------------------------------------------------------------%
+
+var_set_first_id(var_set(Offset, _)) = first_var_id(Offset).
+var_set_first_id(var_set(Offset, _, _)) = first_var_id(Offset).
+
+var_set_last_id(var_set(_, Set)) :- last_var_id(Set).
+var_set_last_id(var_set(_,_, Next)) :- var_set_last_id(Next).
+
+var_set_first(Set) = var(var_set_first_id(Set)).
+var_set_last(Set) = var(var_set_last_id(Set)).
+
+var_set_first_qualified(Set) = var(var_set_first_id(Set)).
+var_set_last_qualified(Set) = var(var_set_last_id(Set)).
+
 %-----------------------------------------------------------------------------%
 % Var Set membership
 
@@ -167,7 +214,38 @@ var_set_contains_id(var_set(Offset, Set), ID) :-
 	
 var_set_contains_id(var_set(Offset, Set, Next), ID) :-
 	contains_var_id(Offset, Set, ID);
-	var_set_contains_id(Next, ID).
+	var_set_contains(Next, ID).
+	
+var_set_contains(Set, var(ID)) :- var_set_contains_id(Set, ID).
+var_set_contains_qualified(Set, var(ID)) :- var_set_contains_id(Set, ID).
 
-var_set_contains_var(Set, var(ID)) :- var_set_contains_id(Set, ID).
-var_set_contains_quantified(Set, var(ID)) :- var_set_contains_id(Set, ID).
+%-----------------------------------------------------------------------------%
+% Var Set insertion and removal
+
+:- pragma promise_equivalent_clauses(var_set_append_id/2).
+
+var_set_append(var_set(Offset, Set1), var_set(Offset, Set2)) :-
+	Last = last_var_id(Set2),
+	require(var_id_gt(Last, null_var_id), 
+		"Invalid var_set, emppty var_set cannot be pre-pended."),
+	next_var_id(last_var_id(Set1)) =  Last.
+	
+var_set_append(var_set(Offset, Set, Next1), var_set(Offset, Set, Next2)) :-
+	var_set_append(Next1, Next2).
+	
+var_set_append_id(var_set(Offset, Set1), var_set(Offset, Set2), Last) :-
+	Last = last_var_id(Set2),
+	require(var_id_gt(Last, null_var_id), 
+		"Invalid var_set, emppty var_set cannot be pre-pended."),
+	next_var_id(last_var_id(Set1)) =  Last.
+	
+var_set_append_id(
+	var_set(Offset, Set, Next1),
+	var_set(Offset, Set, Next2),
+	Last) :-
+	var_set_append_id(Nxt1, Nxt2, Last).
+	
+	
+var_set_insert_id() :-
+		var_set_append_id(!VarSet),
+		
