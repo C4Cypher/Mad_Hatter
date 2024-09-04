@@ -118,6 +118,7 @@
 :- implementation.
 
 :- import_module require.
+:- import_module string.
 
 %-----------------------------------------------------------------------------%
 % Variable sets
@@ -240,27 +241,56 @@ var_set_contains_quantified(Set, var(ID)) :- var_set_contains_id(Set, ID).
 % Var Set insertion and removal
 
 
-var_set_append(var_set(Offset, Set1), var_set(Offset, Set2)) :-
-	Last = last_var_id(Set2),
-	require(var_id_gt(Last, null_var_id), 
-		"Invalid var_set, emppty var_set cannot be pre-pended."),
-	next_var_id(last_var_id(Set1)) =  Last.
+var_set_append(var_set(Offset, !.Set), var_set(Offset, !:Set)) :-
+	new_appended_id(!Set, _)
 	
-var_set_append(var_set(Offset, Set, Next1), var_set(Offset, Set, Next2)) :-
-	var_set_append(Next1, Next2).
+var_set_append(var_set(Offset, Set, !.Next), var_set(Offset, Set, !:Next)) :-
+	var_set_append(Next1, !Next).
 	
-var_set_append_id(var_set(Offset, Set1), var_set(Offset, Set2), Last) :-
-	Last = last_var_id(Set2),
-	require(var_id_gt(Last, null_var_id), 
-		"Invalid var_set, emppty var_set cannot be pre-pended."),
-	next_var_id(last_var_id(Set1)) =  Last.
-	
+var_set_append_id(var_set(Offset, !.Set), var_set(Offset, !:Set), Last) :-
+	new_appended_id(!Set, Last).
+
 var_set_append_id(
 	var_set(Offset, Set, !.Next),
 	var_set(Offset, Set, !:Next),
 	Last) :-
-	var_set_append_id(!Next, Last).
+	var_set_append_id(!Next, Last).	
+
+:- pragma inline(new_appended_id/3).
 	
-var_set_prepend(!Set) :- var_set_append(!:Set, !.Set).
-var_set_prepend_id(!Set, Last) :- var_set_append_id(!:Set, !.Set, Last).
- 	
+:- pred new_appended_id(var_id_set, var_id_set, var_id).
+:- mode new_appended_id(in, out, out) is det.
+:- mode new_appended_id(out, in, out) is det.
+	
+new_appended_id(!Set, New) :-
+	New = last_var_id(!:Set) @ next_var_id(last_var_id(!.Set)),
+	expect(var_id_gt(New, null_var_id), $module, $pred,
+		"Cannot remove var from empty var_set").	
+	
+	
+%-----------------------------------------------------------------------------%
+
+var_set_prepend(var_set(!.Offset, Set), var_set(!:Offset, Set)) :-
+	new_prepended_id(!Offset, _).
+
+var_set_prepend(var_set(!.Offset, Set, Next), var_set(!:Offset, Set, Next)) :-
+	new_prepended_id(!Offset, _).
+	
+var_set_prepend_id(var_set(!.Offset, Set), var_set(!:Offset, Set), First) :-
+	new_prepended_id(!Offset, First).
+
+var_set_prepend_id(var_set(!.Offset, Set, Next), var_set(!:Offset, Set, Next), 
+	First) :-
+	new_prepended_id(!Offset, First).
+
+:- pragma inline(new_prepended_id/3).
+
+:- pred new_prepended_id(var_id_offset, var_id_offset, var_id).
+:- mode new_prepended_id(in, out, out) is det.
+:- mode new_prepended_id(out, in, out) is det.
+
+new_prepended_id(!Offset, New) :-
+	New = first_var_id(!:Offset) @ previous_var_id(first_var_id(!.Offset)),
+	expect(var_id_ge(New, first_var_id), $module, $pred,
+		"Cannot pre-pend var to var_set starting at first_var_id. " ++
+		"In other words, you can't add a var to a var_set starting at id 1.").
