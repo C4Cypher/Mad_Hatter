@@ -102,10 +102,10 @@
 
 
 
-% :- pred var_set_insert_id(var_id, mh_var_set, mh_var_set).
-% :- mode var_set_insert_id(in, in, out) is semidet.
-% :- mode var_set_insert_id(in, out, in) is semidet.
-% :- mode var_set_insert_id(out, in, in) is semidet.
+:- pred var_set_insert_id(var_id, mh_var_set, mh_var_set).
+:- mode var_set_insert_id(in, in, out) is semidet.
+:- mode var_set_insert_id(in, out, in) is semidet.
+:- mode var_set_insert_id(out, in, in) is semidet.
 
 % :- pred var_set_merge_id(var_id, mh_var_set, mh_var_set).
 % :- mode var_set_merge_id(in, in, out) is det.
@@ -294,3 +294,85 @@ new_prepended_id(!Offset, New) :-
 	expect(var_id_ge(New, first_var_id), $module, $pred,
 		"Cannot pre-pend var to var_set starting at first_var_id. " ++
 		"In other words, you can't add a var to a var_set starting at id 1.").
+		
+%-----------------------------------------------------------------------------%
+
+:- pragma promise_equivalent_clauses(var_set_insert_id/3).
+
+% var_set_insert_id(ID, Set1, Set2)
+
+% ID is the first elment of Set2 and one prior to the first element of Set1
+var_set_insert_id(ID, var_set(!.Offset, Set), var_set(!:Offset, Set) ) :-
+	new_prepended_id(!Offset, ID).
+
+% ID is the last element of Set2 and the one after the last element of Set1		
+var_set_insert_id(ID, var_set(Offset, !.Set), var_set(Offset, !:Set) ) :-
+	not_empty_var_id_set(!.Set),
+	new_appended_id(!Set, ID).
+	
+% Set1 is empty and ID is the only element of Set2
+var_set_insert_id(
+	first_var_id(Offset) @ last_var_id(Offset), 
+	empty_var_set, 
+	var_set(Offset, Set)
+	).
+	
+% ID is less than the element prior to the first element of Set1,
+% Set1 is the next set after Set2, and 
+% ID is the first and last element of Set2
+var_set_insert_id(ID, First, var_set(Offset, Set, First) ) :-
+	var_id_lt(ID, previous_var_id(var_set_first_id(First))),
+	ID = first_var_id(Offset) @ last_var_id(Set),
+	expect(var_id_ge(ID, first_var_id), $module, $pred,
+		"Attempted to insert invalid (less than one) var_id into var_set").
+
+var_set_insert_id(
+	ID,
+	var_set(Offset, Set), 
+	var_set(Offset, Set, var_set(NextOffset, NextSet)) 
+	) :-
+		var_id_gt(ID, next_var_id(last_var_id(Set))),
+		ID = first_var_id(NextOffset) @ last_var_id(NextSet).
+		
+var_set_insert_id(ID, var_set(!.Offset, Set, Next), 
+	var_set(!:Offset, Set, Next) ) :-	
+		new_prepended_id(!Offset, ID).
+	
+var_set_insert_id(
+	ID, 
+	var_set(Offset, !.Set, Next),
+	var_set(Offset, !:Set, Next)
+	) :-	
+		new_appended_id(!Set, ID),
+		var_id_lt(ID, previous_var_id(var_set_first_id(Next))).
+
+var_set_insert_id(
+	ID, 
+	var_set(!.Offset, !.Set, !.Next),
+	var_set(!:Offset, !:Set, !:Next)
+	) :-
+		!.Next = var_set(NextOffset, NextSet, NextNext),
+		ID = next_var_id(last_var_id(!.Set)) @ 
+			previous_var_id(first_id(NextOffset)),
+		!:Offset = !.Offset,
+		!:Set = NextSet,
+		!:Next = NextNext.
+
+var_set_insert_id(
+	ID, 
+	var_set(!.Offset, !.Set, !.Next),
+	var_set(!:Offset, !:Set, !:Next)
+	) :-
+		!:Offset = !.Offset,
+		!:Set = !.Set
+		var_set_insert_id(ID, !Next).
+
+var_set_insert_id(
+	ID, 
+	var_set(!.Offset, !.Set, Next), 
+	var_set(!:Offset, !:Set)
+	) :-
+	
+		
+	
+	
