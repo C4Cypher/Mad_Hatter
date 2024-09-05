@@ -99,6 +99,7 @@
 :- pred valid_var_id_set(var_id_set::in) is semidet.
 
 :- pred empty_var_id_set(var_id_set::in) is semidet.
+:- pred not_empty_var_id_set(var_id_set::in) is semidet.
 
 :- pred var_id_set_lt(var_id_set::in, var_id_set::in) is semidet.
 :- pred var_id_set_le(var_id_set::in, var_id_set::in) is semidet.
@@ -129,7 +130,6 @@
 :- mode last_var_id(in) = out is det.
 :- mode last_var_id(out) = in is det.
 
-
 :- func next_var_id(var_id) = var_id.
 :- mode next_var_id(in) = out is det.
 :- mode next_var_id(out) = in is det.
@@ -138,8 +138,6 @@
 :- mode previous_var_id(in) = out is det.
 :- mode previous_var_id(out) = in is det.
 
-
-	
 % contains(Set, ID) 
 % Succeeds with any ID between 1 and the last var_id in Set
 
@@ -308,6 +306,7 @@ var_id_count(Count) = Count.
 valid_var_id_set(Set) :- Set >= 0.
 
 empty_var_id_set(0).
+not_empty_var_id_set(Set) :- Set > 0.
 
 var_id_set_lt(Set1, Set2) :- Set1 < Set2.
 var_id_set_le(Set1, Set2) :- Set1 =< Set2.
