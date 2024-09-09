@@ -102,10 +102,10 @@
 
 
 
-:- pred var_set_insert_id(var_id, mh_var_set, mh_var_set).
-:- mode var_set_insert_id(in, in, out) is semidet.
-:- mode var_set_insert_id(in, out, in) is semidet.
-:- mode var_set_insert_id(out, in, in) is semidet.
+% :- pred var_set_insert_id(var_id, mh_var_set, mh_var_set).
+% :- mode var_set_insert_id(in, in, out) is semidet.
+% :- mode var_set_insert_id(in, out, in) is semidet.
+% :- mode var_set_insert_id(out, in, in) is semidet.
 
 % :- pred var_set_merge_id(var_id, mh_var_set, mh_var_set).
 % :- mode var_set_merge_id(in, in, out) is det.
@@ -115,8 +115,12 @@
 %-----------------------------------------------------------------------------%
 % Var Set composition
 
-% :- pred var_set_union(mh_var_set::in, mh_var_set::in, mh_var_set::out) is det.
-% :- func var_set_union(mh_var_set, mh_var_set) = mh_var_set.
+:- pred var_set_union(mh_var_set::in, mh_var_set::in, mh_var_set::out) is det.
+:- func var_set_union(mh_var_set, mh_var_set) = mh_var_set.
+
+% :- pred var_set_intersection(mh_var_set::in, mh_var_set::in, mh_var_set::out) 
+	% is det.
+% :- func var_set_intersection(mh_var_set, mh_var_set) = mh_var_set.
 
 
 %-----------------------------------------------------------------------------%
@@ -304,7 +308,7 @@ new_prepended_id(!Offset, New) :-
 		
 %-----------------------------------------------------------------------------%
 
-var_set_insert_id(ID, Set1, Set2) :- sorry($module,$pred).
+% var_set_insert_id(_, _, _) :- sorry($module,$pred), semidet_true.
 	
 
 /* Bad Implementation
@@ -427,4 +431,60 @@ var_set_insert_id_cc(
 	
 */	
 	
+
+%-----------------------------------------------------------------------------%
+% Var Set composition
+
+
+
+var_set_union(var_set(O1, S1), var_set(O2, S2), 
+	var_set_union_pairs(O1, S1, O2, S2)).
+		
+var_set_union(var_set(O1, S1), var_set(O2, S2, Next), Union) :-
+	offset_order(O1, O2, OL, OG),
+	var_id_set_order(S1, S2, SL, SG),
 	
+	% if the greater pair does not overlap with the lesser pair
+	Union = (if var_id_gt(first_var_id(OG), next_var_id(last_var_id(SL)))
+	then
+		var_set(OL, SL, var_set_union(var_set(OG, SG), Next))
+	else
+		% if the greater pair does not overlap with next pair
+		(if 
+			var_id_lt(
+				last_var_id(SG),
+				previous_var_id(var_set_first_id(Next))
+			)
+		then
+			var_set(OL, SG, Next)
+		else
+			%union both pairs with the next var_set
+			var_set_union(var_set(OL, SG), Next)
+		)
+	).
+	
+var_set_union(VS1 @ var_set(_, _, _), VS2 @ var_set(_, _), Union) :-
+	var_set_union(VS2, VS1, Union).
+	
+var_set_union(var_set(O1, S1, Next1), var_set(O2, S2, Next2), Union) :-
+	Union = var_set_union(
+		var_set_union_pairs(O1, S1, O2, S2),
+		var_set_union(Next1, Next2)
+	).
+			
+
+var_set_union(VS1, VS2) = VS3 :- var_set_union(VS1, VS2, VS3).
+
+:- func var_set_union_pairs(
+	var_id_offset, var_id_set,
+	var_id_offset, var_id_set) = mh_var_set.
+
+var_set_union_pairs(O1, S1, O2, S2) =
+	(if var_id_gt(first_var_id(OG), next_var_id(last_var_id(SL)))
+	then
+		var_set(OL, SL, var_set(OG, SG))
+	else
+		var_set(OL, SG)
+	) :-
+	offset_order(O1, O2, OL, OG),
+	var_id_set_order(S1, S2, SL, SG).
