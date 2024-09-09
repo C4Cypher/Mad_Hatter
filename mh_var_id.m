@@ -44,6 +44,8 @@
 :- pred var_id_gt(var_id::in, var_id::in) is semidet.
 :- pred var_id_ge(var_id::in, var_id::in) is semidet.
 
+:- pred var_id_order(var_id::in, var_id::in, var_id::out, var_id::out) is det.
+
 %-----------------------------------------------------------------------------%
 % Var ID Offsets
 
@@ -81,7 +83,8 @@
 :- pred offset_gt(var_id_offset::in, var_id_offset::in) is semidet.
 :- pred offset_ge(var_id_offset::in, var_id_offset::in) is semidet.
 
-
+:- pred offset_order(var_id_offset::in, var_id_offset::in, var_id_offset::out,
+	var_id_offset::out) is det.
 
 %-----------------------------------------------------------------------------%
 % Variable sets
@@ -105,6 +108,9 @@
 :- pred var_id_set_le(var_id_set::in, var_id_set::in) is semidet.
 :- pred var_id_set_gt(var_id_set::in, var_id_set::in) is semidet.
 :- pred var_id_set_ge(var_id_set::in, var_id_set::in) is semidet.
+
+:- pred var_id_set_order(var_id_set::in, var_id_set::in, var_id_set::out,
+	var_id_set::out) is det.
 
 :- pred require_valid_var_id_set(var_id_set::in) is det.
 
@@ -266,6 +272,16 @@ var_id_le(ID1, ID2) :- ID1 =< ID2.
 var_id_gt(ID1, ID2) :- ID1 > ID2.
 var_id_ge(ID1, ID2) :- ID1 >= ID2.
 
+var_id_order(ID1, ID2, IDL, IDG) :-
+	(if ID1 > ID2
+	then
+		IDG = ID1,
+		IDL = ID2
+	else
+		IDL = ID1,
+		IDG = ID2
+	).
+
 %-----------------------------------------------------------------------------%
 % Var ID Offsets
 
@@ -288,7 +304,15 @@ offset_le(Offset1, Offset2) :- Offset1 =< Offset2.
 offset_gt(Offset1, Offset2) :- Offset1 > Offset2.
 offset_ge(Offset1, Offset2) :- Offset1 >= Offset2.
 
-
+offset_order(O1, O2, OL, OG) :-
+	(if O1 > O2
+	then
+		OG = O1,
+		OL = O2
+	else
+		OL = O1,
+		OG = O2
+	).
 
 %-----------------------------------------------------------------------------%
 % Variable sets
@@ -313,7 +337,15 @@ var_id_set_le(Set1, Set2) :- Set1 =< Set2.
 var_id_set_gt(Set1, Set2) :- Set1 > Set2.
 var_id_set_ge(Set1, Set2) :- Set1 >= Set2.
 
-
+var_id_set_order(Set1, Set2, SetL, SetG) :-
+	(if Set1 > Set2
+	then
+		SetG = Set1,
+		SetL = Set2
+	else
+		SetL = Set1,
+		SetG = Set2
+	).
 
 require_valid_var_id_set(Set) :- 
 	require(valid_var_id_set(Set), "Invalid var_id_set. Last var_id: " ++ string(Set) 
