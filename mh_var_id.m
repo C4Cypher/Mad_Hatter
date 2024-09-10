@@ -95,6 +95,8 @@
 
 :- pred init_var_id_set(var_id_set::out) is det.
 
+:- func empty_var_id_set = var_id_set.
+
 :- pred var_id_count(var_id_set::in, int::out) is det.
 
 :- func var_id_count(var_id_set) = int.
@@ -322,6 +324,8 @@ offset_order(O1, O2, OL, OG) :-
 init_var_id_set = 0.
 
 init_var_id_set(init_var_id_set).
+
+empty_var_id_set = init_var_id_set.
 
 var_id_count(Set, var_id_count(Set)).
 
