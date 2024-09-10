@@ -24,16 +24,19 @@
 :- type mh_var_set.
 	
 	
-:- func var_set(var_id_set) = mh_var_set.
-:- mode var_set(in) = out is det.
-:- mode var_set(out) = in is semidet.
+:- func complete_var_set(var_id_set) = mh_var_set.
+:- mode complete_var_set(in) = out is det.
+:- mode complete_var_set(out) = in is semidet.
+
+:- func contiguous_var_set(var_id_offset, var_id_set) = mh_var_set.
+:- mode contiguous_var_set(in, in) = out is det.
+:- mode contiguous_var_set(out, out) = in is semidet.
 
 :- pred valid_var_set(mh_var_set::in) is semidet.
 :- pred require_valid_var_set(mh_var_set::in) is det.
 
-
-:- pred complete_var_set(mh_var_set::in) is semidet.
-:- pred contiguous_var_set(mh_var_set::in) is semidet.
+:- pred is_complete_var_set(mh_var_set::in) is semidet.
+:- pred is_contiguous_var_set(mh_var_set::in) is semidet.
 
 :- pred empty_var_set(mh_var_set::out) is det.
 :- func empty_var_set = mh_var_set.
@@ -118,9 +121,9 @@
 :- pred var_set_union(mh_var_set::in, mh_var_set::in, mh_var_set::out) is det.
 :- func var_set_union(mh_var_set, mh_var_set) = mh_var_set.
 
-% :- pred var_set_intersection(mh_var_set::in, mh_var_set::in, mh_var_set::out) 
-	% is det.
-% :- func var_set_intersection(mh_var_set, mh_var_set) = mh_var_set.
+:- pred var_set_intersection(mh_var_set::in, mh_var_set::in, mh_var_set::out) 
+	is det.
+:- func var_set_intersection(mh_var_set, mh_var_set) = mh_var_set.
 
 
 %-----------------------------------------------------------------------------%
@@ -138,7 +141,9 @@
 	--->	var_set(var_id_offset, var_id_set)
 	;		var_set(var_id_offset, var_id_set, mh_var_set).
 
-var_set(Set) = var_set(null_var_id_offset, Set).
+complete_var_set(Set) = var_set(null_var_id_offset, Set).
+
+contiguous_var_set(Offset, Set) = var_set(Offset, Set).
 
 valid_var_set(var_set(Offset, Set)) :-
 	offset_ge(Offset, null_var_id_offset),
@@ -202,9 +207,9 @@ require_valid_var_set_step(Last, var_set(Offset, Set, Next)) :-
 %-----------------------------------------------------------------------------%
 
 	
-complete_var_set(var_set(null_var_id_offset, _)).
+is_complete_var_set(var_set(null_var_id_offset, _)).
 
-contiguous_var_set(var_set(_, _)).
+is_contiguous_var_set(var_set(_, _)).
 
 %-----------------------------------------------------------------------------%
 
@@ -435,17 +440,15 @@ var_set_insert_id_cc(
 %-----------------------------------------------------------------------------%
 % Var Set composition
 
+var_set_union(VS1, VS2, var_set_union(VS1, VS2)).
 
-
-var_set_union(var_set(O1, S1), var_set(O2, S2), 
-	var_set_union_pairs(O1, S1, O2, S2)).
+var_set_union(var_set(O1, S1), var_set(O2, S2)) =
+	var_set_union_pairs(O1, S1, O2, S2).
 		
-var_set_union(var_set(O1, S1), var_set(O2, S2, Next), Union) :-
-	offset_order(O1, O2, OL, OG),
-	var_id_set_order(S1, S2, SL, SG),
-	
+var_set_union(var_set(O1, S1), var_set(O2, S2, Next)) = 
+
 	% if the greater pair does not overlap with the lesser pair
-	Union = (if var_id_gt(first_var_id(OG), next_var_id(last_var_id(SL)))
+	 (if var_id_gt(first_var_id(OG), next_var_id(last_var_id(SL)))
 	then
 		var_set(OL, SL, var_set_union(var_set(OG, SG), Next))
 	else
@@ -461,19 +464,22 @@ var_set_union(var_set(O1, S1), var_set(O2, S2, Next), Union) :-
 			%union both pairs with the next var_set
 			var_set_union(var_set(OL, SG), Next)
 		)
-	).
+	)
+:-
+	offset_order(O1, O2, OL, OG),
+	var_id_set_order(S1, S2, SL, SG).
 	
-var_set_union(VS1 @ var_set(_, _, _), VS2 @ var_set(_, _), Union) :-
-	var_set_union(VS2, VS1, Union).
+var_set_union(VS1 @ var_set(_, _, _), VS2 @ var_set(_, _)) = 
+	var_set_union(VS2, VS1).
 	
-var_set_union(var_set(O1, S1, Next1), var_set(O2, S2, Next2), Union) :-
-	Union = var_set_union(
+var_set_union(var_set(O1, S1, Next1), var_set(O2, S2, Next2)) = 
+	var_set_union(
 		var_set_union_pairs(O1, S1, O2, S2),
 		var_set_union(Next1, Next2)
 	).
 			
 
-var_set_union(VS1, VS2) = VS3 :- var_set_union(VS1, VS2, VS3).
+
 
 :- func var_set_union_pairs(
 	var_id_offset, var_id_set,
@@ -485,6 +491,70 @@ var_set_union_pairs(O1, S1, O2, S2) =
 		var_set(OL, SL, var_set(OG, SG))
 	else
 		var_set(OL, SG)
-	) :-
+	) 
+:-
 	offset_order(O1, O2, OL, OG),
 	var_id_set_order(S1, S2, SL, SG).
+	
+%-----------------------------------------------------------------------------%
+
+var_set_intersection(VS1, VS2, var_set_intersection(VS1, VS2)).
+
+var_set_intersection(var_set(O1, S1), var_set(O2, S2)) =
+	var_set_intersection_pairs(O1, S1, O2, S2).
+
+var_set_intersection(VS1 @ var_set(O1, S1), var_set(O2, S2, Next)) =
+	var_set_union(
+		var_set_intersection_pairs(O1, S1, O2, S2),
+		var_set_intersection(VS1, Next)
+		)
+:-
+	offset_order(O1, O2, OL, OG),
+	var_id_set_order(S1, S2, SL, SG).
+	
+var_set_intersection(VS1 @ var_set(_, _, _), VS2 @ var_set(_, _)) =
+	var_set_intersection(VS2, VS1).
+	
+var_set_intersection(VS1 @ var_set(O1, S1, N1), VS2 @ var_set(O2, S2, N2)) =
+	(if var_id_ge(first_var_id(O1), var_set_first_id(N2))
+	then var_set_intersection(VS1, N2)
+	
+	else if var_id_ge(first_var_id(O2), var_set_first_id(N1))
+	then var_set_intersection(VS2, N1)
+	
+	else if 
+		offset_order(O1, O2, OL, OG),
+		var_id_set_order(S1, S2, SL, SG),
+		
+	)
+
+:- 
+	offset_order(O1, O2, OL, OG),
+	var_id_set_order(S1, S2, SL, SG).
+
+:- func var_set_intersection_pairs(
+	var_id_offset, var_id_set,
+	var_id_offset, var_id_set) = mh_var_set.
+	
+var_set_intersection_pairs(O1, S1, O2, S2) = 
+	(if (SL = empty_var_id_set ; var_id_lt(last_var_id(SL), first_var_id(OG)))
+	then empty_var_set
+	else var_set(OG, SL)
+	)
+:- 
+	offset_order(O1, O2, OL, OG),
+	var_id_set_order(S1, S2, SL, SG).
+	
+:- pred var_set_intersection_pairs(
+	var_id_offset::in, var_id_set::in
+	var_id_offset::in, var_id_set::in
+	var_id_offset::out, var_id_set::out) is semidet.
+	
+var_set_intersection_pairs(
+	O1, S1,
+	O2, S2,
+	OG, SL) :-
+	
+	offset_order(O1, O2, OL, OG),
+	var_id_set_order(S1, S2, SL, SG),
+	var_id_ge(last_var_id(SL), first_var_id(OG)).
