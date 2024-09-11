@@ -522,15 +522,41 @@ var_set_intersection(VS1 @ var_set(O1, S1, N1), VS2 @ var_set(O2, S2, N2)) =
 	else if var_id_ge(first_var_id(O2), var_set_first_id(N1))
 	then var_set_intersection(VS2, N1)
 	
-	else if 
-		offset_order(O1, O2, OL, OG),
-		var_id_set_order(S1, S2, SL, SG),
+	else if var_set_intersection_pairs(O1, S1, O2, S2, VS3)
+	then
+		( if var_id_ge(last_var_id(S1), var_set_first_id(N2) )
+		then
+			var_set_union(VS3, 
+				var_set_union(var_set_intersection(VS1, N2), N3)
+			)
+		else if var_id_ge(last_var_id(S2), var_set_first_id(N1) )
+		then
+			var_set_union(VS3, 
+				var_set_union(var_set_intersection(VS2, N1), N3)
+			)
+		else
+			var_set_union(VS3, N3)
+		)
+	else if var_id_ge(last_var_id(S1), var_set_first_id(N2) )
+		then
+			var_set_union(VS3, 
+				var_set_union(var_set_intersection(VS1, N2), N3)
+			)
+		else if var_id_ge(last_var_id(S2), var_set_first_id(N1) )
+		then
+			var_set_union(VS3, 
+				var_set_union(var_set_intersection(VS2, N1), N3)
+			)
+		else
+			var_set_union(VS3, N3)
+		
 		
 	)
 
 :- 
 	offset_order(O1, O2, OL, OG),
-	var_id_set_order(S1, S2, SL, SG).
+	var_id_set_order(S1, S2, SL, SG),
+	var_id_intersection(N1, N2, N3).
 
 :- func var_set_intersection_pairs(
 	var_id_offset, var_id_set,
@@ -545,6 +571,7 @@ var_set_intersection_pairs(O1, S1, O2, S2) =
 	offset_order(O1, O2, OL, OG),
 	var_id_set_order(S1, S2, SL, SG).
 	
+
 :- pred var_set_intersection_pairs(
 	var_id_offset::in, var_id_set::in
 	var_id_offset::in, var_id_set::in
