@@ -2,66 +2,49 @@ Outline
 Current goals
 
 	get a repl running
+		modes
+			insts?
 		finish mh_term
 			implement unification
 				define environments/symbol substitution
 					scope
 						further define and integerate type system
 					finish substitutions 
-				hash out exact definitions and distinctrions for:  <- I am here
+				hash out exact definitions and distinctrions for:   <- I am here
 					relations
 					predicates
 					functions
+				merge type system/constraints into mh_term
 					
 					
 Notes:
 
-With substitutions in place, the last piece of the puzzle for mh_term (my AST) is higher level abstractions: clauses ... three concepts I need to establish a relationship between: relations, predicates and functions.
+I just realized I can implement constraint solving (and thus types) by making
+'constraint terms' ... 
 
-I put off this step because I more clearly wanted to define and establish the rest of the term tree, without which I couldn't clearly focus on higher order.
+Id' have to re-think the rules to unification.
+* A free variable unified with a constraint binds the variable to the constraint the same as if bound to a ground value.
+* A constraint unifies with another constraint to produce a new constraint, and may result in constraint propogation, resulting in more unifications
+* A constraint unifying with a ground value either fails if the constraint is not met, or results in a binding to said ground value if it succeeds
 
-relations describe the relationship between a predicate/function symbol and the lambda expression said symbol represents
-foo(X) :- X > 2. ==> (\X :- X > 2).
+And I suspect I can use relations as the mechanism for defining constraints
 
-foo(5) ==> (\5 :- 5 > 2).
+I've been struggling to define relations in anything but a general sense, 
+I know they're something of a superclass to both predicates and functions,
+Depending on the mode, i.e. information flow of the arguments and return value
 
-bar(X) = X * 2. ==> (\X = X * 2).
+A function is a relation with all input arguments and unifies with an output 
 
-a predicate takes a set of terms as input and returns substitutions binding some of the variables in the input list to terms,  if the predicate is deterministic, it returns one substitution, nondeterministic it returns a set (depending on evaluation, as a list, or as an iterator)
+A predicate accepts substitutions and returns new substitutions 
+and with constraints may *replace* substitutions
 
-a function takes one value as input, and returns a value as output, conceptually there is no failure
+A predicate can also, under the right modes, be reduced to a function, either
+of the form pred(in, in, in, out) => func(in, in, in) -> out OR 
+pred(args) => func(substitutions) -> substitutions
 
-a predicate can be transformed into a function, by making the predicates input parameters into a tuple as input for the function, and a list/set of substitutions as the function's output
+Loose ideas:
+Relations can resolve to predicates or functions
+Relations propogate constraints if they can't resolve to a higher order call?
+Constraints == types?
+Constraints ARE higher order constructts?
 
-a function can be abstracted into a predicate by transforming it's return value into a variable substitution, a predicate that always succeeds and binds one variable (the return value becoming part of the functions head clause)
-
-a relation represents replacing a symbol with either a predicate or function lambda abstraction
-
-a logic program can be normalized for WAM style evaluation by abstracting all functions into predicates
-
-a logic program can be normalized for Haskell/ML style functional evaluation (which can be optimized into C style imperative functions) by abstracting all of the predicates into functions.
-
-This is close to where I want to be, but not entirely correct as far as where I want my semantics to be.  Time to go back to basics.
-A clause is a fact or a rule. 
-Fact
-X.
-
-Rule
-X :- Y.
-
-Where X is a head clause and Y is a body clause.
-
-I have four kinds of 'head clauses' depending on the kind of higher order abstraction I'm defining.
-
-Predicate head clause
-foo(A, B:T, ...)
-
-Relation head clause
-bar(A, B:T, ...) = R
-
-Function head clause
-baz(A, B:T, ...) -> R
-
-Unification head clause (or type casting head clause)
-A:T = B:U
-			
