@@ -105,15 +105,15 @@
 
 
 
-% :- pred var_set_insert_id(var_id, mh_var_set, mh_var_set).
-% :- mode var_set_insert_id(in, in, out) is semidet.
-% :- mode var_set_insert_id(in, out, in) is semidet.
-% :- mode var_set_insert_id(out, in, in) is semidet.
+:- pred var_set_insert_id(var_id, mh_var_set, mh_var_set).
+:- mode var_set_insert_id(in, in, out) is semidet.
+:- mode var_set_insert_id(in, out, in) is semidet.
+:- mode var_set_insert_id(out, in, in) is semidet.
 
-% :- pred var_set_merge_id(var_id, mh_var_set, mh_var_set).
-% :- mode var_set_merge_id(in, in, out) is det.
-% :- mode var_set_merge_id(in, out, in) is semidet.
-% :- mode var_set_merge_id(out, in, in) is semidet.
+:- pred var_set_merge_id(var_id, mh_var_set, mh_var_set).
+:- mode var_set_merge_id(in, in, out) is det.
+:- mode var_set_merge_id(in, out, in) is det.
+:- mode var_set_merge_id(out, in, in) is semidet.
 
 %-----------------------------------------------------------------------------%
 % Var Set composition
@@ -124,6 +124,10 @@
 :- pred var_set_intersection(mh_var_set::in, mh_var_set::in, mh_var_set::out) 
 	is det.
 :- func var_set_intersection(mh_var_set, mh_var_set) = mh_var_set.
+
+:- pred var_set_difference(mh_var_set::in, mh_var_set::in, mh_var_set::out) 
+	is det.
+:- func var_set_difference(mh_var_set, mh_var_set) = mh_var_set.
 
 
 %-----------------------------------------------------------------------------%
@@ -313,128 +317,31 @@ new_prepended_id(!Offset, New) :-
 		
 %-----------------------------------------------------------------------------%
 
-% var_set_insert_id(_, _, _) :- sorry($module,$pred), semidet_true.
+:- pragma promise_equivalent_clauses(var_set_insert_id/3).
+
+var_set_insert_id(ID::in, VS1::in, VS2::out) :-
+	not var_set_contains_id(VS1, ID),
+	var_set_merge_id(ID, VS1, VS2).
 	
-
-/* Bad Implementation
-:- pred var_set_insert_id_cc(var_id, mh_var_set, mh_var_set).
-:- mode var_set_insert_id_cc(in, in, out) is cc_nondet.
-:- mode var_set_insert_id_cc(in, out, in) is cc_nondet.
-:- mode var_set_insert_id_cc(out, in, in) is cc_nondet.
-
-
-% var_set_insert_id_cc(ID, Set1, Set2)
-
-% If ID is greater than the element after the last element of the first pair
-% of Set1, and greater than the element before the last element of the
-% next element of Set1, insert ID into the next var set of Set1 		
-
-var_set_insert_id_cc(
-	ID, 
-	var_set(Offset, Set, !.Next),
-	var_set(Offset, Set, !:Next)
-	) :-
-		var_id_gt(ID, next_var_id(last_var_id(Set))),
-		var_id_ge(ID, previous_var_id(var_set_first_id(!.Next))),
-		var_set_insert_id_cc(ID, !Next).
-
-
-% Set1 is empty and ID is the only element of Set2
-var_set_insert_id_cc(
-	first_var_id(Offset) @ last_var_id(Set), 
-	empty_var_set, 
-	var_set(Offset, Set)
-	).
-
-% ID is less than the element prior to the first element of Set1,
-% Set1 is the next set after Set2, and 
-% ID is the first and last element of Set2
-% Basically, insert ID before Set1
-var_set_insert_id_cc(ID, First, var_set(Offset, Set, First) ) :-
-	var_id_lt(ID, previous_var_id(var_set_first_id(First))),
-	ID = first_var_id(Offset) @ last_var_id(Set),
-	expect(var_id_ge(ID, first_var_id), $module, $pred,
-		"Attempted to insert invalid (less than one) var_id into var_set").
-
-% ID is the first elment of Set2 and one prior to the first element of Set1
-var_set_insert_id_cc(ID, var_set(!.Offset, Set), var_set(!:Offset, Set) ) :-
-	new_prepended_id(!Offset, ID).
+var_set_insert_id(ID::in, VS1::out, VS2::in) :-
+	var_set_contains_id(VS2, ID),
+	var_set_merge_id(ID, VS1, VS2).
 	
-var_set_insert_id_cc(ID, var_set(!.Offset, Set, Next), 
-	var_set(!:Offset, Set, Next) ) :-	
-		new_prepended_id(!Offset, ID).
+var_set_insert_id(ID::out, VS1::in, VS2::in) :- 
+	var_set_merge_id(ID, VS1, VS2).
+
+
+:- pragma promise_equivalent_clauses(var_set_merge_id/3).
 	
-
-% ID is the last element of Set2 and the one after the last element of Set1		
-var_set_insert_id_cc(ID, var_set(Offset, !.Set), var_set(Offset, !:Set) ) :-
-	not_empty_var_id_set(!.Set),
-	new_appended_id(!Set, ID).
+var_set_merge_id(ID::in, VS1::in, VS2::out) :-
+	var_set_union(VS1, singleton_var_set(ID), VS2).
 	
-% ID is more than the element after the last element of Set1
-% Set2 is Set1 with a next set composed of ID
-% Basically, insert ID after Set1
-var_set_insert_id_cc(
-	ID,
-	var_set(Offset, Set), 
-	var_set(Offset, Set, var_set(NextOffset, NextSet)) 
-	) :-
-		var_id_gt(ID, next_var_id(last_var_id(Set))),
-		ID = first_var_id(NextOffset) @ last_var_id(NextSet).
-
-% Add ID to the end of the first pair of Set1, ID is less than one element 
-% before the next pair of Set1
-var_set_insert_id_cc(
-	ID, 
-	var_set(Offset, !.Set, Next),
-	var_set(Offset, !:Set, Next)
-	) :-	
-		new_appended_id(!Set, ID),
-		var_id_lt(ID, previous_var_id(var_set_first_id(Next))).
-
-% ID is between the first pair of Set1 and the next pair
-% ID must be greater than the element after the last element of the first pair
-% and the element before the first element of the next pair
-var_set_insert_id_cc(
-	ID, 
-	var_set(Offset, Set, Next),
-	var_set(Offset, Set, var_set(NewOffset, NewSet, Next))
-	) :-	
-		var_id_gt(ID, next_var_id(last_var_id(Set))),
-		var_id_lt(ID, previous_var_id(var_set_first_id(Next))),
-		ID = first_var_id(NewOffset) @ last_var_id(NewSet).
-		
-% ID is the missing element between the first and next pairs of Set1
-% Set2 is the union of the first two pairs of Set1 and ID	
-var_set_insert_id_cc(
-	ID,
-	var_set(Offset, Set, var_set(NextOffset, NextSet)),
-	var_set(Offset, NextSet)
-	) :-
-	ID = next_var_id(last_var_id(Set)) @ 
-		previous_var_id(first_var_id(NextOffset)).
-		
-var_set_insert_id_cc(
-	ID,
-	var_set(Offset, Set, var_set(NextOffset, NextSet, NextNext)),
-	var_set(Offset, NextSet, NextNext)
-	) :-
-	ID = next_var_id(last_var_id(Set)) @ 
-		previous_var_id(first_var_id(NextOffset)).	
-
-
-		
-% If ID is greater than the element after the last element of the only pair in
-% Set1, insert it as the next set in Set2
-
-var_set_insert_id_cc(
-	ID, 
-	var_set(Offset, Set), 
-	var_set(Offset, Set, var_set(NextOffset, NextSet))
-	) :-
-		var_id_gt(ID, next_var_id(last_var_id(Set))),
-		ID = first_var_id(NextOffset) @ last_var_id(NextSet).
+var_set_merge_id(ID::in, VS1::out, VS2::in) :-
+	var_set_difference(VS2, singleton_var_set(ID), VS1).
 	
-*/	
+var_set_merge_id(ID::out, VS1::in, VS2::in) :-
+	var_set_difference(VS2, VS1, singleton_var_set(ID)).
+	
 	
 
 %-----------------------------------------------------------------------------%
@@ -486,7 +393,10 @@ var_set_union(var_set(O1, S1, Next1), var_set(O2, S2, Next2)) =
 	var_id_offset, var_id_set) = mh_var_set.
 
 var_set_union_pairs(O1, S1, O2, S2) =
-	(if var_id_gt(first_var_id(OG), next_var_id(last_var_id(SL)))
+	(if SL = empty_var_id_set
+	then
+		var_set(OG, SG)
+	else if var_id_gt(first_var_id(OG), next_var_id(last_var_id(SL)))
 	then
 		var_set(OL, SL, var_set(OG, SG))
 	else
@@ -507,10 +417,7 @@ var_set_intersection(VS1 @ var_set(O1, S1), var_set(O2, S2, Next)) =
 	var_set_union(
 		var_set_intersection_pairs(O1, S1, O2, S2),
 		var_set_intersection(VS1, Next)
-		)
-:-
-	offset_order(O1, O2, OL, OG),
-	var_id_set_order(S1, S2, SL, SG).
+		).
 	
 var_set_intersection(VS1 @ var_set(_, _, _), VS2 @ var_set(_, _)) =
 	var_set_intersection(VS2, VS1).
@@ -549,8 +456,8 @@ var_set_intersection_pairs(O1, S1, O2, S2) =
 	else var_set(OG, SL)
 	)
 :- 
-	offset_order(O1, O2, OL, OG),
-	var_id_set_order(S1, S2, SL, SG).
+	offset_order(O1, O2, _, OG),
+	var_id_set_order(S1, S2, SL, _).
 	
 :- pred var_set_intersection_pairs(
 	var_id_offset::in, var_id_set::in,
@@ -560,17 +467,93 @@ var_set_intersection_pairs(O1, S1, O2, S2) =
 var_set_intersection_pairs(O1, S1, O2, S2, 
 	var_set_intersection_pairs(O1, S1, O2, S2)).
 	
+%-----------------------------------------------------------------------------%
 
-:- pred var_set_intersection_pairs(
-	var_id_offset::in, var_id_set::in,
-	var_id_offset::in, var_id_set::in,
-	var_id_offset::out, var_id_set::out) is semidet.
+var_set_difference(VS1, VS2, var_set_difference(VS1, VS2)).
+
+var_set_difference(var_set(O1, S1), var_set(O2, S2)) =
+	var_set_difference_pairs(O1, S1, O2, S2).
 	
-var_set_intersection_pairs(
-	O1, S1,
-	O2, S2,
-	OG, SL) :-
+var_set_difference(VS1 @ var_set(O1, S1, N1), VS2 @ var_set(O2, S2)) =
+	(if var_id_lt(last_var_id(S2), first_var_id(O1))
+	then 
+		VS1
+	else if var_id_gt(first_var_id(O2), last_var_id(S1))
+	then
+		var_set_difference(N1, VS2)
+	else
+		var_set_union(
+			var_set_difference_pairs(O1, S1, O2, S2), 
+			var_set_difference(N1, VS2)
+		)
+	).
 	
-	offset_order(O1, O2, OL, OG),
-	var_id_set_order(S1, S2, SL, SG),
-	var_id_ge(last_var_id(SL), first_var_id(OG)).
+var_set_difference(VS1 @ var_set(O1, S1), var_set(O2, S2, N2)) =
+	(if var_id_gt(first_var_id(O2), last_var_id(S1))
+	then
+		VS1
+	else if var_id_lt(last_var_id(S2), first_var_id(O1))
+	then
+		var_set_difference(VS1, N2)
+	else
+		var_set_difference(var_set_difference_pairs(O1, S1, O2, S2), N2)
+	).
+	
+var_set_difference(VS1 @ var_set(O1, S1, N1), VS2 @ var_set(O2, S2, N2)) =
+	(if var_id_lt(last_var_id(S2), first_var_id(O1))
+	then 
+		var_set_difference(VS1, N2)
+	else if var_id_gt(first_var_id(O2), last_var_id(S1))
+	then
+		var_set_union(
+			VS1,
+			var_set_difference(N1, VS2)
+		)
+	else
+		var_set_union(
+			var_set_difference(var_set_difference_pairs(O1, S1, O2, S2), N2),
+			var_set_difference(N1, VS2)
+		)
+	).
+
+
+:- func var_set_difference_pairs(
+	var_id_offset, var_id_set, 
+	var_id_offset, var_id_set
+	) = mh_var_set.
+	
+	
+var_set_difference_pairs(O1, S1, O2, S2) = Diff :-
+	(if S1 = empty_var_id_set
+	then Diff = empty_var_set
+	
+	else if 
+		S2 = empty_var_id_set;
+		var_id_lt(last_var_id(S2), first_var_id(O1));
+		var_id_gt(first_var_id(O2), last_var_id(S1))
+	then Diff = var_set(O1, S1)
+	
+	else 
+	if	offset_gt(O2, O1)
+	then
+		last_var_id(S3) = previous_var_id(first_var_id(O2)),
+		(if var_id_set_lt(S2, S1)
+		then
+			Diff = var_set(O1, S3, var_set(O3, S1)),
+			first_var_id(O3) = next_var_id(last_var_id(S2))
+		else
+			Diff = var_set(O1, S3)
+		)
+		
+	else if var_id_set_lt(S2, S1)
+	then
+		Diff = var_set(O3, S1),
+		first_var_id(O3) = next_var_id(last_var_id(S2))
+	else
+		Diff = empty_var_set
+	).
+	
+	
+	
+	
+
