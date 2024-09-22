@@ -30,7 +30,7 @@
 	--->	nil_type
 	;		any
 	;		named_type(symbol) % type alias
-	;		bound_p_type(p_type, list(mh_type)) %bound parametric type
+	;		p_type(p_type, list(mh_type)) %bound parametric type
 	;		type_disjunction(set(mh_type))
 	;		type_conjunction(set(mh_type))
 	;		mr_type(type_desc)

@@ -1,21 +1,33 @@
 Outline
 Current goals
-
-	get a repl running
-		modes
-			insts?
+get a repl running
+	Define TOP level constructs
+		definitions for module, program and ... 'library'? 
+			A module is a component of a program or 'library'?
 		finish mh_term
 			implement unification
 				define environments/symbol substitution
 					scope
-						further define and integerate type system
 					finish substitutions 
-				hash out exact definitions and distinctrions for:   <- I am here
-					relations
-					predicates
-					functions
-				merge type system/constraints into mh_term
-					
+				hash out higher order types
+					further define and integerate type system
+							merge type system into mh_term <- I am here
+					define clauses
+					mode system
+						implement inst trees?
+compile to native using libgccjit
+	
+	
+
+types as terms
+value terms!?
+	
+	
+			
+Higher order constructs:
+	* A relation takes a substitution as input and returns a substitution
+	* A predicate takes a term as input and returns a substitution
+	* A function takes a term as input and returns a term
 					
 Notes:
 
