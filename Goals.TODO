@@ -11,10 +11,11 @@ get a repl running
 					finish substitutions 
 				hash out higher order types
 					further define and integerate type system
-							merge type system into mh_term <- I am here
+							merge type system into mh_term 
 					define clauses
 					mode system
 						implement inst trees?
+get parsing working <- I am here
 compile to native using libgccjit
 	
 	
@@ -22,6 +23,9 @@ compile to native using libgccjit
 types as terms
 value terms!?
 types as *relations*? promising
+
+I can't proceed until I finally hash out higher order terms, relations
+I am at a point where I could get parsing working.
 
 Type notes:
 
