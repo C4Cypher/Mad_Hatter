@@ -21,7 +21,6 @@
 :- import_module mh_var_id.
 :- import_module mh_symbol.
 :- import_module mh_tuple.
-:- import_module mh_type.
 :- import_module mh_relation.
 :- import_module mh_predicate.
 :- import_module mh_function.
@@ -50,10 +49,6 @@
 	% compound terms
 	;	cons(functor, mh_term)
 	;	tuple_term(mh_tuple)
-	
-	% Type terms
-	;	type_term(mh_type)
-	;	type_binding(type_term)
 	
 	% Higher order terms
 	;		relation(mh_relation)
@@ -198,16 +193,6 @@
 :- instance arity(tuple_term).
 % :- instance tuple(mercury_tuple).
 
-%-----------------------------------------------------------------------------%
-%	Tuple terms
-
-:- inst type_term ---> type_term(ground).
-
-:- type type_term =< mh_term
-	---> 	var(var_id)
-	;		anonymous
-	;		type_term(mh_type).
-	
 
 %-----------------------------------------------------------------------------%
 % Higher Order terms
@@ -251,7 +236,6 @@ apply_term_substitution(Sub, !Term) :- 	require_complete_switch [!.Term] (
 	;	!.Term = atom(_) 
 	;	!.Term = anonymous 
 	;	!.Term = mr_value(_) 
-	;	!.Term = type_term(_)
 	), !:Term = !.Term 
 	
 	;	!.Term = var(ID), sub_id_lookup(Sub, ID, !:Term)
@@ -264,12 +248,6 @@ apply_term_substitution(Sub, !Term) :- 	require_complete_switch [!.Term] (
 	;	!.Term = tuple_term(Tup0),
 		apply_tuple_substiution(Sub, Tup0, Tup),
 		!:Term = tuple_term(Tup)
-	
-	;	!.Term = type_binding(TypeTerm0),
-		apply_term_substitution(Sub, TypeTerm0, TypeTerm),
-		!:Term = type_binding(TypeTerm)
-		
-	
 	
 	;	!.Term = relation(Rel0), 
 		apply_relation_substitution(Sub, Rel0, Rel),
