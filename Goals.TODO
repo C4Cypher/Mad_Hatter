@@ -21,7 +21,29 @@ compile to native using libgccjit
 
 types as terms
 value terms!?
-	
+types as *relations*? promising
+
+Type notes:
+
+Currently my mh_type structure as written is largely reduntant with mh_term in structure
+It was suggested that I examine CUE to help me conceptualize types as terms
+
+X > Y :- X = >Y, Y = <X.
+
+X + Y = Z :- Z = X + Y, X = Z - Y, Y = Z - X. 
+
+How to handle mr_type(type_desc)?  
+* mr_term(univ) where typeof = type_desc?
+* or keep my original mr_type/1 constructor
+
+Conjecture:
+* Types are constraints when they aren't grounded by the target type checker
+	- examples being raw C types or Mercury types, primitive types
+* Constraints are neither completely semantically ground nor free
+	- akin to a variable being bound to a non-ground structure `X = foo(Y)`
+* Non primitive types can be represented by terms
+* Terms representing types and terms representing type constraints are distinct
+
 	
 			
 Higher order constructs:
@@ -29,7 +51,7 @@ Higher order constructs:
 	* A predicate takes a term as input and returns a substitution
 	* A function takes a term as input and returns a term
 					
-Notes:
+HO Notes:
 
 I just realized I can implement constraint solving (and thus types) by making
 'constraint terms' ... 
