@@ -1,22 +1,23 @@
 Outline
 Current goals
 get a repl running
-	Define TOP level constructs
-		definitions for module, program and ... 'library'? 
-			A module is a component of a program or 'library'?
-		finish mh_term
-			implement unification
-				define environments/symbol substitution
-					scope
-					finish substitutions 
-				hash out higher order types
-					further define and integerate type system
-							merge type system into mh_term 
-					define clauses
-					mode system
-						implement inst trees?
-get parsing working <- I am here
-compile to native using libgccjit
+		get parsing working
+			Define TOP level constructs <- I am here
+				definitions for module, program and ... 'library'? 
+					A module is a component of a program or 'library'?
+				finish mh_term
+					implement unification
+						define environments/symbol substitution
+							scope
+							finish substitutions 
+						hash out higher order types
+							further define and integerate type system
+									merge type system into mh_term 
+							define clauses
+							mode system
+								implement inst trees?
+ 
+compile to native at runtime
 	
 	
 
