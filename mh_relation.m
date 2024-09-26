@@ -15,6 +15,7 @@
 
 :- interface.
 
+:- import_module mh_clause.
 :- import_module mh_term.
 :- import_module mh_symbol.
 :- import_module mh_substitution.
@@ -24,9 +25,8 @@
 % Relation type
 
 :- type mh_relation 
-	--->	relation_fact(mh_term, mh_term) % \X = Y
-	;		relation_clause(mh_term, mh_term, mh_term) % \X = Y :- Z.
-	;		symbol_fact(symbol, lambda) % atom(S) -> Lambda
+	--->	det_relation(mh_clause)
+ 	;		nondet_relation(mh_clause_tree)
 	; 		some [T] mr_relation(T) => relation(T).
 	
 :- pred apply_relation_substitution(mh_substitution::in, mh_relation::in,
