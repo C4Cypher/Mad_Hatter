@@ -1,0 +1,18 @@
+Trying to break down my clauses syntactically so I can better understand and represent them denotationally and operationally.
+
+%predicate
+foo(X, Y). %named predicate fact clause
+foo(X, Z) :- bar(X, Y), baz(Y, Z). %named predicate rule clause
+\X :- foo(X). % single argument anonymous predicate rule clause
+\(X, Z) :- bar(X, Y, baz(Y, Z). %anonymous predicate rule clause
+ 
+%relation
+foo(X) = bar(X). %named relation fact clause (named foo), substitutes 'foo(X) for bar(X)'
+foo(X) = Y :- bar(X, Y) %named rleation rule clause.
+\X = bar(X). %etc
+\X = Y :- bar(X, Y).
+
+%function
+foo(X) -> bar(X) % named function fact clause, similar to relation but call must be deterministic and of mode 'foo(in) = out`
+foo(X) -> Y :- bar(X, Y) %named function rule clause
+\X -> bar(X) % etc
