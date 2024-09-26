@@ -82,7 +82,7 @@
 	--->	atom(ground)
 	;		relation(ground)
 	;		function(ground)
-	;		term_sub(ground, ground).
+	;		term_sub(functor, ground).
 
 :- type functor =< mh_term
 	% Atoms
@@ -143,12 +143,6 @@
 :- pred var_is_quantified(mh_var::is_quantified) is semidet.
 
 %-----------------------------------------------------------------------------%
-
-% :- type var_set.
-
-
-
-%-----------------------------------------------------------------------------%
 %	Values
 
 :- type mercury_value =< mh_term
@@ -191,8 +185,6 @@
 	--->	tuple_term(mh_tuple).
 	
 :- instance arity(tuple_term).
-% :- instance tuple(mercury_tuple).
-
 
 %-----------------------------------------------------------------------------%
 % Higher Order terms
@@ -204,7 +196,10 @@
 :- type lambda =< functor
 	--->	relation(mh_relation)
 	;		predicate(mh_predicate)
-	;		function(mh_function).
+	;		function(mh_function)
+
+  % Substitution
+	;		term_sub(lambda, mh_substitution).
 
 
 
