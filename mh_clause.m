@@ -46,9 +46,15 @@
 	--->	predicate_head(mh_term)				% X 	 :-
 	;		unification_head(mh_term, mh_term) 	% X = Y  :-
 	;		function_head(mh_term, mh_term).	% X -> Y :-
-	
+
+:- inst predicate_head(I) ---> predicate_head(I).
+:- inst predicate_head == predicate_head(ground).
+ 
 :- type predicate_head =< clause_head 
 	---> 	predicate_head(mh_term).
+
+:- inst unification_head(I) ---> unification_head(I, ground).
+:- inst unification_head == unification_head(ground).
 	
 :- type unification_head =< clause_head 
 	---> unification_head(mh_term, mh_term).
