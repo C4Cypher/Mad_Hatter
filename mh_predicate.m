@@ -15,14 +15,20 @@
 
 :- interface.
 
+:- import_module list.
+
+:- import_module mh_clause.
 :- import_module mh_term.
 :- import_module mh_substitution.
 :- import_module mh_arity.
 %-----------------------------------------------------------------------------%
 
 :- type mh_predicate 
-	--->	predicate_fact(mh_term) % \X
-	;		predicate_clause(mh_term, mh_term) % \X :- Y
+	--->	
+ 	;		true
+  	;		false
+   	;		predicate_clause(mh_clause)
+ 	;		predicate_conjunction(list(mh_predicate))
 	;		some [T] mr_predicate(T) => predicate(T).
 	
 	
