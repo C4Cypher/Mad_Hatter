@@ -25,7 +25,7 @@
 % Relation type
 
 :- type mh_relation 
-	--->	det_relation(mh_clause)
+	--->	expression(mh_clause)
  	;		nondet_relation(mh_clause_tree)
 	; 		some [T] mr_relation(T) => relation(T).
 	
