@@ -21,12 +21,12 @@
 %-----------------------------------------------------------------------------%
 % Clauses
 
-:- type mh_clause
-	--->	fact_clause(mh_term)
-	;		rule_clause(mh_term, mh_predicate).
+:- type mh_clause(T)
+	--->	fact_clause(T)					% X.
+	;		rule_clause(T, mh_predicate).		% X :- Y.
 	
-:- func clause_head(mh_clause) = mh_term.
-:- func clause_body(mh_clause) = mh_predicate.
+:- func clause_head(mh_clause(T)) = T.
+:- func clause_body(mh_clause(_T)) = mh_predicate.
 
 
 %-----------------------------------------------------------------------------%
