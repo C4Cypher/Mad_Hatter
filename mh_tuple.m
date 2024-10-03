@@ -32,6 +32,8 @@
 	--->	some [T] mr_tuple(T) => mr_tuple(T)
 	;		list_tuple(list(mh_term))
 	;		array_tuple(array(mh_term))
+	%;		trie_tuple(???)  data structure that organizes a tuple into a 
+	% 						 prefix tree structure?
 	;		tuple_sub(mh_tuple, mh_substitution).
 
 :- func tuple(T) = mh_tuple <= mr_tuple(T).
