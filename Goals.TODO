@@ -14,51 +14,26 @@ Current goals
 get a repl running
 		get parsing working
 			Define TOP level constructs 
-				definitions for module, program and ... 'library'? <- I am here
+				definitions for module, program and ... 'library'? 
 					method dispatch for top level atoms
 				finish mh_term
 					implement unification
 						define environments/symbol substitution
 							scope
 							finish substitutions 
-						hash out higher order types 
-							further define and integerate type system
-									merge type system into mh_term 
-							define clauses
-							mode system
-								implement inst trees?
+						term constraints <- I am here
+							hash out higher order types 
+								further define and integerate type system
+										merge type system into mh_term 
+								define clauses
+								mode system
+									implement inst trees?
  
 compile to native at runtime
 	
 	
 
-types as terms
-value terms!?
-types as *relations*? promising
-
-I can't proceed until I finally hash out higher order terms, relations
-I am at a point where I could get parsing working.
-
-Type notes:
-
-Currently my mh_type structure as written is largely reduntant with mh_term in structure
-It was suggested that I examine CUE to help me conceptualize types as terms
-
-X > Y :- X = >Y, Y = <X.
-
-X + Y = Z :- Z = X + Y, X = Z - Y, Y = Z - X. 
-
-How to handle mr_type(type_desc)?  
-* mr_term(univ) where typeof = type_desc?
-* or keep my original mr_type/1 constructor
-
-Conjecture:
-* Types are constraints when they aren't grounded by the target type checker
-	- examples being raw C types or Mercury types, primitive types
-* Constraints are neither completely semantically ground nor free
-	- akin to a variable being bound to a non-ground structure `X = foo(Y)`
-* Non primitive types can be represented by terms
-* Terms representing types and terms representing type constraints are distinct
+Constraints
 
 	
 			
