@@ -24,7 +24,7 @@
 %-----------------------------------------------------------------------------%
 
 :- type mh_predicate 
-	--->	
+	--->	invalid_predicate(mh_term, string)
  	;		true
   	;		false
    	;		predicate_clause(mh_clause)
