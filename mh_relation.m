@@ -15,22 +15,45 @@
 
 :- interface.
 
-:- import_module mh_clause.
+:- import_module array.
+
 :- import_module mh_term.
-:- import_module mh_symbol.
+:- import_module mh_clause.
+:- import_module mh_tuple.
 :- import_module mh_substitution.
 :- import_module mh_arity.
 
 %-----------------------------------------------------------------------------%
 % Relation type
 
+
 :- type mh_relation 
-	--->	expression(mh_clause)
- 	;		nondet_relation(mh_clause_tree)
+	--->	invalid_relation(mh_term, string)
+	;		relation(mh_term) % X = Y
+ 	;		relation_disjunction(mh_tuple) % X = A ; B ; C ; ...
+	;		relation_radix(mh_term, array(mh_relation)) % X = (A ; B) ; (...)
 	; 		some [T] mr_relation(T) => relation(T).
 	
 :- pred apply_relation_substitution(mh_substitution::in, mh_relation::in,
 	mh_relation::out) is det.
+	
+%-----------------------------------------------------------------------------%
+% Radix tree
+
+:- inst relation_leaf ---> relation_unification(ground).
+
+:- type relation_leaf =< mh_relation
+	---> relation(mh_term).
+	
+:- inst relation_branch
+	--->	relation_disjunction(ground)
+	;		relation_radix(ground, ground).
+	
+:- type relation_branch
+	---> 	relation_disjunction(mh_tuple)
+	;		relation_radix(mh_term, array(mh_relation)).
+	
+:- type relation_branch
 	
 
 %-----------------------------------------------------------------------------%
