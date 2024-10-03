@@ -36,12 +36,14 @@
 	% nil, the abscence of term
 	---> 	nil
 	
+	% anonymous terms
+	;	anonymous
+	
 	% atomic values
 	;	atom(symbol)
 
 	% variables
 	;	var(var_id)
-	;	anonymous
 	
 		% values
 	;	mr_value(univ)
@@ -114,33 +116,16 @@
 %	Variables
 
 :- inst mh_var 
-	--->	var(ground)
-	;		anonymous.
+	--->	var(ground).
 	
 :- type mh_var =< mh_term 
-	---> 	var(var_id)
-	;		anonymous.
+	---> 	var(var_id).
 	
 	
 :- mode is_var == ground >> mh_var.
 
 :- pred is_var(mh_term::is_var) is semidet.
 
-
-%-----------------------------------------------------------------------------%
-% 	Quantified Variables
-
-:- inst quantified_var ---> var(ground).
-	
-:- type quantified_var =< mh_var ---> var(var_id).
-
-:- func var_id(quantified_var) = var_id is det.
-
-:- mode is_quantified == ground >> quantified_var.
-
-:- pred is_quantified_var(mh_term::is_quantified) is semidet.
-
-:- pred var_is_quantified(mh_var::is_quantified) is semidet.
 
 %-----------------------------------------------------------------------------%
 %	Values
@@ -326,16 +311,7 @@ is_atom(atom(_)).
 %-----------------------------------------------------------------------------%
 %	Variables
 
-is_var(T) :- T = anonymous ; T = var(_).
-
-%-----------------------------------------------------------------------------%
-% 	Quantified Variables
-
-var_id(var(ID)) = ID.
-
-is_quantified_var(var(_)).
-var_is_quantified(var(_)).
-
+is_var(var(_)).
 
 %-----------------------------------------------------------------------------%
 %	Values
@@ -373,10 +349,7 @@ var_is_quantified(var(_)).
 		) 
 ].
 
-
 	
-% :- instance tuple(mh_compound) where [ ].	
-		
 	
 %-----------------------------------------------------------------------------%
 %	Relations

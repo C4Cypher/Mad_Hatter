@@ -100,15 +100,6 @@
 :- pred sub_var_lookup(mh_substitution::in, mh_var::in, mh_term::out) is det.
 :- func sub_var_lookup(mh_substitution, mh_var) = mh_term.
 
-:- pred sub_quantified_search(mh_substitution::in, quantified_var::in, 
-	mh_term::out) is semidet.
-:- func sub_quantified_search(mh_substitution, quantified_var) = mh_term
-	is semidet.
-	
-:- pred sub_quantified_lookup(mh_substitution::in, quantified_var::in, 
-	mh_term::out) is det.
-:- func sub_quantified_lookup(mh_substitution, quantified_var) = mh_term.
-
 
 %-----------------------------------------------------------------------------%
 % Substitution composition
@@ -171,16 +162,6 @@
 
 :- pred ren_var_lookup(mh_renaming::in, mh_var::in, mh_var::out) is det.
 :- func ren_var_lookup(mh_renaming, mh_var) = mh_var.
-
-:- pred ren_quantified_search(mh_renaming::in, quantified_var::in, 
-	var_id::out) is semidet.
-:- func ren_quantified_search(mh_renaming, quantified_var) = var_id is semidet.
-
-:- pred ren_quantified_lookup(mh_renaming::in, quantified_var::in, 
-	quantified_var::out) is det.
-:- func ren_quantified_lookup(mh_renaming, quantified_var) = quantified_var.
-
-
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -352,26 +333,9 @@ sub_var_search(Sub, Var) = Term :- sub_var_search(Sub, Var, Term).
 
 %-----------------------------------------------------------------------------%
 
-sub_var_lookup(_, anonymous, anonymous).
-
 sub_var_lookup(Sub, var(ID), Term) :- sub_id_lookup(Sub, ID, Term).
 
 sub_var_lookup(Sub, Var) = Term :- sub_var_lookup(Sub, Var, Term).
-
-%-----------------------------------------------------------------------------%
-
-sub_quantified_search(Sub, var(ID), Term) :- sub_id_search(Sub, ID, Term).
-
-sub_quantified_search(Sub, Var) = Term :- 
-	sub_quantified_search(Sub, Var, Term).
-	
-%-----------------------------------------------------------------------------%
-
-sub_quantified_lookup(Sub, var(ID), Term) :- sub_id_lookup(Sub, ID, Term).
-
-sub_quantified_lookup(Sub, Var) = Term :- 
-	sub_quantified_lookup(Sub, Var, Term).
-
 
 	
 %-----------------------------------------------------------------------------%
@@ -579,11 +543,6 @@ empty_renaming(ren_offset(null_var_id_offset, _)).
 %-----------------------------------------------------------------------------%
 % Looking up variables in renamings
 
-
-
-
-%-----------------------------------------------------------------------------%
-
 ren_contains_id(ren_empty, _) :- fail.
 ren_contains_id(ren_single(ID, _), ID).
 
@@ -640,25 +599,9 @@ ren_var_search(Ren, Var) = ID :- ren_var_search(Ren, Var, ID).
 
 %-----------------------------------------------------------------------------%
 
-ren_var_lookup(_, anonymous, anonymous).
-
 ren_var_lookup(Ren, var(!.ID), var(!:ID)) :- ren_id_lookup(Ren, !ID).
 
 ren_var_lookup(Ren, !.Var) = !:Var :- ren_var_lookup(Ren, !Var).
-
-%-----------------------------------------------------------------------------%
-
-ren_quantified_search(Ren, var(!.ID), !:ID) :- ren_id_search(Ren, !ID).
-
-ren_quantified_search(Ren, Var) = ID :- 
-	ren_quantified_search(Ren, Var, ID).
-
-%-----------------------------------------------------------------------------%
-
-ren_quantified_lookup(Ren, var(!.ID), var(!:ID)) :- ren_id_lookup(Ren, !ID).
-
-ren_quantified_lookup(Ren, !.Var) = !:Var :- ren_quantified_lookup(Ren, !Var). 
-	
 
 
 %-----------------------------------------------------------------------------%
