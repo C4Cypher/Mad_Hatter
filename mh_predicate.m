@@ -17,7 +17,6 @@
 
 :- import_module list.
 
-:- import_module mh_clause.
 :- import_module mh_term.
 :- import_module mh_substitution.
 :- import_module mh_arity.
@@ -27,7 +26,7 @@
 	--->	invalid_predicate(mh_term, string)
  	;		true
   	;		false
-   	;		predicate_clause(mh_clause)
+   	;		predicate_clause
  	;		predicate_conjunction(list(mh_predicate))
 	;		some [T] mr_predicate(T) => predicate(T).
 	
