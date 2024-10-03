@@ -155,7 +155,7 @@
 :- inst compound_term
 	--->	cons(ground, ground)
 	;		tuple_term(ground)
-	;		term_sub(ground, ground).
+	;		term_sub(compound_term, ground).
 
 :- type compound_term =< mh_term
 	--->	cons(functor, mh_term)
@@ -191,6 +191,7 @@
 
 :- inst lambda
 	--->	relation(ground)
+	;		predicate(ground)
 	;		function(ground).
 
 :- type lambda =< functor
