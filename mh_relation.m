@@ -35,7 +35,7 @@
 :- pred apply_relation_substitution(mh_substitution::in, mh_relation::in,
 	mh_relation::out) is det.
 	
-:- func relation_arity(mh_relation) = int.
+% :- func relation_arity(mh_relation) = int.
  
 
 %-----------------------------------------------------------------------------%
