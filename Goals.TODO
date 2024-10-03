@@ -1,3 +1,14 @@
+Design Goals:
+* Purely declarative
+* Unordered clauses
+* Allow binding of free variables
+* Refinement+Dependent type system
+* Multiple compilation models with  
+
+
+
+
+
 Outline
 Current goals
 get a repl running
