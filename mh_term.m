@@ -21,6 +21,7 @@
 :- import_module mh_var_id.
 :- import_module mh_symbol.
 :- import_module mh_tuple.
+:- import_module mh_constraint.
 :- import_module mh_relation.
 :- import_module mh_predicate.
 :- import_module mh_function.
@@ -52,13 +53,16 @@
 	;	cons(functor, mh_term)
 	;	tuple_term(mh_tuple)
 	
+	% term constraints
+	;	constraint(mh_constraint)
+	
 	% Higher order terms
-	;		relation(mh_relation)
-	;		predicate(mh_predicate)
-	;		function(mh_function)
+	;	relation(mh_relation)
+	;	predicate(mh_predicate)
+	;	function(mh_function)
 	
 	% Term substitutions (lazy)
-	;		term_sub(mh_term, mh_substitution).
+	;	term_sub(mh_term, mh_substitution).
 	
 :- func functor(mh_term) = functor is semidet.
 
