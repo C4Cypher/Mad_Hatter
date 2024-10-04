@@ -15,18 +15,32 @@
 
 :- interface.
 
+:- import_module array.
+
 :- import_module mh_term.
 :- import_module mh_predicate.
+:- import_module mh_tuple.
+:- import_module mh_var_set.
+:- import_module mh_arity.
 
 %-----------------------------------------------------------------------------%
 % Clauses
 
-:- type mh_clause(T)
-	--->	fact_clause(T)					% X.
-	;		rule_clause(T, mh_predicate).		% X :- Y.
-	
-:- func clause_head(mh_clause(T)) = T.
-:- func clause_body(mh_clause(_T)) = mh_predicate.
+:- type mh_clause
+	--->	clause(
+			clause_arity:int,  %number of vars in the clause head. 
+			clause_body:mh_predicate, 
+			var_names:array(string)
+).		
+
+	% the clause head is the term that unifies with the vars less than or
+	% equal to the clause's arity.  If the arity is greater than 1, the term
+	% is a tuple representing the terms in the clause's head. Fails if arity
+	% is zero.   TODO: throw exception if the arity is negative?
+:- func clause_head(mh_clause) = mh_term is semidet.
+
+
+% TODO: apply substitutions
 
 
 %-----------------------------------------------------------------------------%
@@ -34,12 +48,11 @@
 
 :- implementation.
 
+:- import_module require.
+
 %-----------------------------------------------------------------------------%
 % Clauses
 
-clause_head(fact_clause(Head)) = Head.
-clause_head(rule_clause(Head, _)) = Head.
 
-clause_body(fact_clause(_)) = true.
-clause_body(rule_clause(_, Body)) = Body.
+clause_head(_Arity, _Body, _) :- sorry($module, $pred).
 
