@@ -19,13 +19,12 @@ get a repl running
 				finish mh_term
 					implement unification
 						define environments/symbol substitution
-							scope
 							finish substitutions 
-						term constraints <- I am here
-							hash out higher order types 
-								further define and integerate type system
-										merge type system into mh_term 
-								define clauses
+								term constraints 	
+						hash out higher order types 
+							define clauses
+								scope <- I am here
+								term constraints			
 								mode system
 									implement inst trees?
  
