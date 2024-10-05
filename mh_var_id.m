@@ -16,7 +16,8 @@
 
 :- import_module list.
 :- import_module array.
-% :- import_module sparse_bitset.
+
+:- import_module mh_arity.
 
 %-----------------------------------------------------------------------------%
 % Variable ID's
@@ -77,6 +78,7 @@
 :- mode var_id_set_offset(in, out) = in is det.
 
 :- func offset_from_id_set(var_id_set) = var_id_offset.
+:- func offset_from_arity(T) = var_id_offset <= arity(T).
 
 :- func null_var_id_offset = var_id_offset.
 
@@ -109,6 +111,8 @@
 
 :- pred empty_var_id_set(var_id_set::in) is semidet.
 :- pred not_empty_var_id_set(var_id_set::in) is semidet.
+
+:- func var_id_set_from_arity(T) = var_id_set <= arity(T).
 
 :- pred var_id_set_lt(var_id_set::in, var_id_set::in) is semidet.
 :- pred var_id_set_le(var_id_set::in, var_id_set::in) is semidet.
@@ -306,6 +310,7 @@ var_id_set_offset(Set, Offset) = Set + Offset.
 null_var_id_offset = 0.
 
 offset_from_id_set(S) = S - 1.
+offset_from_arity(T) = arity(T).
 
 offset_lt(Offset1, Offset2) :- Offset1 < Offset2.
 offset_le(Offset1, Offset2) :- Offset1 =< Offset2.
@@ -343,6 +348,8 @@ valid_var_id_set(Set) :- Set >= 0.
 
 empty_var_id_set(0).
 not_empty_var_id_set(Set) :- Set > 0.
+
+var_id_set_from_arity(T) = arity(T).
 
 var_id_set_lt(Set1, Set2) :- Set1 < Set2.
 var_id_set_le(Set1, Set2) :- Set1 =< Set2.
