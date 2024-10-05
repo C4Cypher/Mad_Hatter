@@ -24,10 +24,9 @@
 
 :- type mh_predicate 
 	--->	invalid_predicate(mh_term, string)
- 	;		true
-  	;		false
-   	;		predicate_clause
- 	;		predicate_conjunction(list(mh_predicate))
+ 	;		pred_success(mh_substitution)
+  	;		pred_fail(pred_fail_reason)
+	;		pred_clause(mh_clause)
 	;		some [T] mr_predicate(T) => predicate(T).
 	
 	

@@ -53,8 +53,9 @@
 	;	cons(functor, mh_term)
 	;	tuple_term(mh_tuple)
 	
-	% term constraints
-	;	constraint(mh_constraint)
+	% constraints
+	;	constraint_application(mh_term) % ?Term
+	;	constraint_term(mh_constraint)
 	
 	% Higher order terms
 	;	relation(mh_relation)

@@ -30,14 +30,15 @@
 	;		mr_type_constraint(type_desc) % mercury type constraint
 	%;		mr_ptype_constraint(pseudo_type_desc)
 	
-	% @X
-	% constrains term to term without being ground, if the term or var in the
-	% constraint is a normal term, the term constrained is unified as normal,
-	% if the constraint term is a constraint, handle as if it were another 
-	% branch of this type
-	;		constraint_term(mh_term)
-	
 	% X:Y :- Body
 	% Airty 2 clause handling the application of constraint rules, differs
 	% from unification in that the rhs *replaces* the lhs in substitutions
-	;		constraint_clause(mh_term, mh_term, mh_clause).
+	;		constraint_clause(mh_term, mh_term, mh_clause)
+	;		mr_constraint(pred(mh_term::in, mh_term::out) is semidet).
+	
+	
+%-----------------------------------------------------------------------------%
+% Constraint mercury predicates
+
+:- type mr_constraint_pred == pred(mh_term, mh_term).
+:- inst mr_constraint_pred == pred(in, out) is semidet.

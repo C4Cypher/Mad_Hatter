@@ -29,7 +29,7 @@
 :- type mh_clause
 	--->	clause(
 			clause_arity:int,  %number of vars in the clause head. 
-			clause_body:mh_predicate, 
+			clause_body:mh_term, 
 			var_names:array(string)
 ).		
 
