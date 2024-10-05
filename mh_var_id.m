@@ -89,7 +89,7 @@
 	var_id_offset::out) is det.
 
 %-----------------------------------------------------------------------------%
-% Variable sets
+% Variable id sets
 
 :- type var_id_set.
 
@@ -323,7 +323,7 @@ offset_order(O1, O2, OL, OG) :-
 	).
 
 %-----------------------------------------------------------------------------%
-% Variable sets
+% Variable id sets
 
 :- type var_id_set == int.
 
