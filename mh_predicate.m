@@ -20,7 +20,17 @@
 :- import_module mh_term.
 :- import_module mh_substitution.
 :- import_module mh_arity.
+
+% In prolog and many other logic programming languages, a predicate is
+% represented by a clause, either a fact clause 'foo(X,Y).' or a rule clause
+% 'foo(X) :- bar(X)'.
+%
+% Not so in Mad Hatter, instead a 'predicate' represents a relational term
+% after the arguments have been applied.  The application of arguments is the
+% realm of relations, which produce predicates after evaluation.
+
 %-----------------------------------------------------------------------------%
+% Predicates
 
 :- type mh_predicate 
 	--->	invalid_predicate(mh_term, string)
