@@ -27,6 +27,7 @@
 :- import_module mh_function.
 :- import_module mh_substitution.
 :- import_module mh_arity.
+:- import_module mh_scope.
 
 
 %-----------------------------------------------------------------------------%
@@ -68,6 +69,12 @@
 :- func functor(mh_term) = functor is semidet.
 
 :- pred functor(mh_term::in, functor::out) is semidet.
+
+:- pred ground_term(mh_term::in) is semidet.
+
+:- func ground_term(mh_term) = mh_term.
+:- mode ground_term(in) = out is semidet.
+:- mode ground_term(out) = in is semidet.
 
 
 % Apply a substitution to a term, if the term is a variable, replace the
@@ -211,7 +218,12 @@ functor(term_sub(T, S)) = term_sub(functor(T), S).
 
 functor(Term, functor(Term)).
 
-
+ground_term(T) :-
+	T = atom(_);
+	T = mr_value(_);
+	T = cons(_, C), ground_term(C);
+	T = tuple_term(U), 
+	
 
 %-----------------------------------------------------------------------------%
 
