@@ -40,6 +40,12 @@
 
 :- pred fold_list_index(pred(T, A, A), list(T), A, A). 
 :- mode fold_list_index(pred(in, in, out) is det, in, in, out) is det.
+:- mode fold_list_index(pred(in, mdi, muo) is det, in, mdi, muo) is det.
+:- mode fold_list_index(pred(in, di, uo) is det, in, di, uo) is det.
+:- mode fold_list_index(pred(in, in, out) is semidet, in, in, out) is semidet.
+:- mode fold_list_index(pred(in, mdi, muo) is semidet, in, mdi, muo) is semidet.
+:- mode fold_list_index(pred(in, di, uo) is semidet, in, di, uo) is semidet.
+
 
 :- pred map_list_index(pred(T, T), list(T), list(T)).
 :- mode map_list_index(pred(in, out) is det, in, out) is det.
@@ -57,6 +63,12 @@
 
 :- pred fold_array_index(pred(T, A, A), array(T), A, A). 
 :- mode fold_array_index(pred(in, in, out) is det, in, in, out) is det.
+:- mode fold_array_index(pred(in, mdi, muo) is det, in, mdi, muo) is det.
+:- mode fold_array_index(pred(in, di, uo) is det, in, di, uo) is det.
+:- mode fold_array_index(pred(in, in, out) is semidet, in, in, out) is semidet.
+:- mode fold_array_index(pred(in, mdi, muo) is semidet, in, mdi, muo) is semidet.
+:- mode fold_array_index(pred(in, di, uo) is semidet, in, di, uo) is semidet.
+
 
 :- pred map_array_index(pred(T, T), array(T), array(T)).
 :- mode map_array_index(pred(in, out) is det, in, out) is det.
@@ -103,12 +115,24 @@ set_list_index(I + 1, T, [V | !.Vs], [V | !:Vs], Len) :-
 	Len > 1,
 	set_list_index(I, T, !Vs, Len - 1).
 	
+	
 fold_list_index(_, [], !A).
 
 fold_list_index(Closure, [T | L], !A) :-
 	Closure(T, !A),
 	fold_list_index(Closure, L, !A).
-	
+
+/* Not the behavior I wanted
+fold_list_index(Closure, [T | L], A0, A3) :-
+	A3 = (if 
+			Closure(T, A0, A1),
+			fold_list_index(Closure, L, A1, A2)
+		then
+			A2
+		else
+			A0
+		).
+*/  
 map_list_index(_, [], []).
 
 map_list_index(Closure, [ !.T | !.L ], [ !:T | !:L]) :-
