@@ -18,6 +18,8 @@
 :- import_module array.
 
 :- import_module mh_term.
+:- import_module mh_scope.
+:- import_module mh_symbol.
 :- import_module mh_predicate.
 :- import_module mh_tuple.
 :- import_module mh_var_set.
@@ -27,18 +29,10 @@
 % Clauses
 
 :- type mh_clause
-	--->	clause(
-			clause_arity:int,  %number of vars in the clause head. 
-			clause_body:mh_term, 
-			var_names:array(string)
-).		
-
-	% the clause head is the term that unifies with the vars less than or
-	% equal to the clause's arity.  If the arity is greater than 1, the term
-	% is a tuple representing the terms in the clause's head. Fails if arity
-	% is zero.   TODO: throw exception if the arity is negative?
-:- func clause_head(mh_clause) = mh_term is semidet.
-
+	--->	named_clause(symbol, mh_term) 		% name = Term.
+	;		fact_clause(mh_predicate, mh_scope) % Pred.
+	;		rule_clause(mh_term, mh_predicate, mh_scope) % Term :- Pred.
+	;		unification_clause(mh_term, mh_term, mh_scope). % Term = Term.
 
 % TODO: apply substitutions
 
