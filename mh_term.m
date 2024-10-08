@@ -85,10 +85,18 @@
 	mh_term::in, mh_term::out) is det.
 :- func apply_term_substitution(mh_substitution, mh_term) = mh_term.
 
-:- instance arity(mh_term).
+
 % :- instance tuple(mh_term).
 % :- instance substitutable(mh_term).
 
+%-----------------------------------------------------------------------------%
+% Term Arity
+
+:- func term_arity(mh_term) = int.
+
+:- pred term_arity(mh_term::in, int::out)  is det.
+
+:- instance arity(mh_term).
 %-----------------------------------------------------------------------------%
 %  Functor
 
@@ -222,22 +230,32 @@ ground_term(T) :-
 	T = atom(_);
 	T = mr_value(_);
 	T = cons(_, C), ground_term(C);
-	T = tuple_term(U), 
+	T = tuple_term(U), ground_tuple(U);
+	T = relation(R), ground_relation(R);
+	T = predicate(P), ground_predicate(P);
+	T = function(F), ground_function(F);
+	T = term_sub(T0, Sub),
+		apply_term_substitution(Sub, T0, T1),
+		ground_term(T1).
+		
+ground_term(T) = T :- ground_term(T).
 	
 
 %-----------------------------------------------------------------------------%
 
 
-apply_term_substitution(Sub, !Term) :- 	require_complete_switch [!.Term] (
-	( 
-		!.Term = nil 
-	;	!.Term = atom(_) 
-	;	!.Term = anonymous 
-	;	!.Term = mr_value(_) 
-	), !:Term = !.Term 
-	
-	;	!.Term = var(ID), sub_id_lookup(Sub, ID, !:Term)
+apply_term_substitution(Sub, !Term) :- 	require_complete_switch [!.Term] 
+	(
+		( 
+			!.Term = nil 
+		;	!.Term = atom(_) 
+		;	!.Term = anonymous 
+		;	!.Term = mr_value(_) 
+		), 
+		!:Term = !.Term 
 		
+	;	!.Term = var(ID), sub_id_lookup(Sub, ID, !:Term)
+			
 	;	!.Term = cons(Car0, Cdr0),
 		apply_functor_substitution(Sub, Car0, Car),
 		apply_term_substitution(Sub, Cdr0, Cdr),
@@ -246,6 +264,14 @@ apply_term_substitution(Sub, !Term) :- 	require_complete_switch [!.Term] (
 	;	!.Term = tuple_term(Tup0),
 		apply_tuple_substiution(Sub, Tup0, Tup),
 		!:Term = tuple_term(Tup)
+		
+	;	!.Term = constraint_application(ConTerm0),
+		apply_term_substitution(Sub, ConTerm0, ConTerm),
+		!:Term = constraint_application(ConTerm)
+		
+	;	!.Term = constraint_term(Const0),
+		apply_constraint_substitution(Sub, Const0, Const),
+		!:Term = constraint_term(Const)
 	
 	;	!.Term = relation(Rel0), 
 		apply_relation_substitution(Sub, Rel0, Rel),
@@ -262,33 +288,51 @@ apply_term_substitution(Sub, !Term) :- 	require_complete_switch [!.Term] (
 	;	!.Term = term_sub(SubTerm, Sub0),
 		compose_substitutions(Sub0, Sub, Sub1),
 		!:Term = term_sub(SubTerm, Sub1)
-).
+	).
 
 apply_term_substitution(S, !.T) = !:T :- apply_term_substitution(S, !T).
 
 %-----------------------------------------------------------------------------%
+% Term Arity
 
-:- instance arity(mh_term) where [
-	arity(T, A) :- require_complete_switch [T] (
+% The arity of a term is the count of free variables in the term given the
+% current scope, for terms with their own scopes (lambdas) not all of the free
+% variables will be visible to the current scope, 
+% a ground term should have arity 0
+
+term_arity(T) = A :- require_complete_switch [T] (
 		(	T = nil
+		;	T = anonymous
 		;	T = atom(_)
 		;	T = var(_)
-		;	T = anonymous
 		;	T = mr_value(_)
+	
+
 		;	T = predicate(_)
 		;	T = relation(_)
 		;	T = function(_)
 		), A = 0
-		
+	
+	;	T = constraint_application(Ct), A = term_arity(Ct)
+	;	T = constraint_term(C), A = arity(C)
+	
 	;	T = cons(_, Arg), 
-		(	if Arg = tuple_term(Tuple)
-			then A = arity(Tuple)
-			else A = 1
+		( if Arg = tuple_term(Tuple)
+		then A = arity(Tuple)
+		else A = 1
 		)
 	;	T = tuple_term(R), A = arity(R)
 	;	T = term_sub(Term, _), A = arity(Term)
-	)
-].
+	).
+
+term_arity(T, term_arity(T)).
+
+:- instance arity(mh_term) where [ pred(arity/2) is term_arity ].
+
+% TODO: I need to re-think what 'arity' explicitly means at a term level
+% especially in relation to tuples, constraints and predicates
+% if predicates don't take arguments directly, but through relations, they should
+% be arity zr
 
 %-----------------------------------------------------------------------------%
 		
@@ -392,20 +436,24 @@ mr_type_name(T) = type_name(type_of(T)).
 :- func term_description(mh_term) = string.
 
 term_description(nil) = "nil term".
+term_description(anonymous) = "anonymous term".
 term_description(atom(Symbol)) = "atom """ ++ to_string(Symbol) ++ """".
 term_description(var(V)) = "variable with id " ++ string(V).
-term_description(anonymous) = "anonymous variable".
 term_description(mr_value(M)) = 
 	"mercury value term of type " ++ mr_type_name(M).
 term_description(cons(A, R)) = 
 	"constructor " ++ string(A) ++ "(" ++ mr_type_name(R) ++ ")".
-term_description(tuple_term(R)) = 
-	"mercury tuple term of type " ++	mr_type_name(R).
-term_description(predicate(P)) = 
-	"mercury predicate term of type " ++ mr_type_name(P).
-term_description(relation(F)) =
-	"mercury relation term of type " ++ mr_type_name(F).
-term_description(function(F)) =
-	"mercury function term of type " ++ mr_type_name(F).
+term_description(constraint_application(_)) =
+	"constraint application term".
+term_description(constraint_term(_)) =
+	"term constraint".
+term_description(tuple_term(_)) = 
+	"mercury tuple term".
+term_description(predicate(_)) = 
+	"mercury predicate term".
+term_description(relation(_)) =
+	"mercury relation term".
+term_description(function(_)) =
+	"mercury function term of type ".
 term_description(term_sub(Term, _)) =
 	"substitution of " ++ term_description(Term).

@@ -27,6 +27,8 @@
 
 :- typeclass function(T) where [].
 
+:- pred ground_function(mh_function::in) is semidet.
+
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
@@ -40,3 +42,7 @@ apply_function_substitution(_, _, _) :- sorry($module, $pred,
 	"apply_function_substitution/3").
 	
 :- pragma no_determinism_warning(apply_function_substitution/3).
+
+ground_function(_) :- sorry($module, $pred, "ground_function/1").
+
+:- pragma no_determinism_warning(ground_function/1).

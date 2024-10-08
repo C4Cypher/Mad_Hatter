@@ -20,6 +20,7 @@
 :- import_module mh_term.
 :- import_module mh_substitution.
 :- import_module mh_arity.
+:- import_module mh_tuple.
 
 % In prolog and many other logic programming languages, a predicate is
 % represented by a clause, either a fact clause 'foo(X,Y).' or a rule clause
@@ -35,15 +36,29 @@
 :- type mh_predicate 
 	--->	invalid_predicate(mh_term, string)
  	;		pred_success(mh_substitution)
-  	;		pred_fail(pred_fail_reason)
+  	;		pred_failure(pred_fail_reason)
 	;		some [T] mr_predicate(T) => predicate(T).
 	
 	
 :- pred apply_predicate_substitution(mh_substitution::in, mh_predicate::in,
 	mh_predicate::out) is det.
+	
+ :- pred ground_predicate(mh_predicate::in) is semidet.
+	
+%-----------------------------------------------------------------------------%
+% Predicate failure
+
+:- type pred_fail_reason
+	--->	value_unification_failure(mh_term, mh_term) % 1 \= 2
+	;		constraint_unification_failure(mh_term, mh_term) % 5:string
+	;		flounder(mh_term) % ?- foo(1) where foo(A) :- foo(A).
+	;		conjunction_failure(mh_tuple, int, pred_fail_reason)
+	;		disjunction_failure(mh_tuple, list(pred_fail_reason))
+	;		mr_predicate_failure(mh_term, string)
+	;		mr_relation_failure(mh_term, string).
 
 %-----------------------------------------------------------------------------%
-
+% Predicate typeclass
 
 
 :- typeclass predicate(T) <= arity(T)  where 
@@ -64,3 +79,8 @@ apply_predicate_substitution(_, _, _) :- sorry($module, $pred,
 	"apply_predicate_substitution/3").
 
 :- pragma no_determinism_warning(apply_predicate_substitution/3).
+
+
+ground_predicate(_) :- sorry($module, $pred, "ground_predicate/1").
+
+:- pragma no_determinism_warning(ground_predicate/1).

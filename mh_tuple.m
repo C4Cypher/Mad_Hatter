@@ -69,9 +69,14 @@
 
 :- pred fold_tuple(pred(mh_term, A, A), mh_tuple, A, A).
 :- mode fold_tuple(pred(in, in, out) is det, in, in, out) is det.
+:- mode fold_tuple(pred(in, in, out) is semidet, in, in, out) is semidet.
 
 :- func fold_tuple(pred(mh_term, A, A), mh_tuple, A) = A.
 :- mode fold_tuple(pred(in, in, out) is det, in, in) = out is det.
+:- mode fold_tuple(pred(in, in, out) is semidet, in, in) = out is semidet.
+
+:- pred all_tuple(pred(mh_term), mh_tuple).
+:- mode all_tuple(pred(in) is semidet, in) is semidet.
 
 
 %-----------------------------------------------------------------------------%
@@ -93,11 +98,18 @@
 	pred mr_tuple_index(T, int, mh_term),
 	mode mr_tuple_index(in, in, out) is det,
 	
-	% fold_tuple(Closure, Relation, !Accumulator)
-	% perform a left fold from index 1 to arity(Relation), calling Closure on
-	% each term in Relation with !Accumulator
+	% fold_tuple(Closure, Tuple, !Accumulator)
+	% perform a left fold from index 1 to arity(Tuple), calling Closure on
+	% each term in Tuple with !Accumulator
 	pred fold_mr_tuple(pred(mh_term, A, A), T, A, A),
-	mode fold_mr_tuple(pred(in, in, out) is det, in, in, out) is det
+	mode fold_mr_tuple(pred(in, in, out) is det, in, in, out) is det,
+	mode fold_mr_tuple(pred(in, in, out) is semidet, in, in, out) is semidet,
+	
+	% all_mr_tuple(Predicate, Tuple)
+	% call Predicate for each term in Tuple, failing on the first term that
+	% Predicate fails on
+	pred all_mr_tuple(pred(mh_term), T),
+	mode all_mr_tuple(pred(in) is semidet, in) is semidet
 	
 ].
 
@@ -161,21 +173,9 @@ tuple_size(tuple_sub(Tup, _), S) :- tuple_size(Tup, S).
 
 tuple_size(T) = S :- tuple_size(T, S).
 
-ground_tuple(T) :-
-	(if	T = list_tuple(L), (
-			L = []
-		;
-			L = [ground_term(_) | ground_tuple(_)])
-		)
-	;
-		T = array_tuple(A),  all_true(ground_tuple, A)
-	then true
-	else
-		T = %TODO: Stopping poitn
-	)
+ground_tuple(T) :-  all_tuple(ground_term, T).
 
-
-:- pred ground_terms(mh_term::in, bool::in, bool::out).
+ground_tuple(T) = T :- ground_tuple(T).
 
 :- instance arity(mh_tuple) where [
 	pred(arity/2) is tuple_size
@@ -184,7 +184,8 @@ ground_tuple(T) :-
 
 :- instance mr_tuple(mh_tuple) where [
 	pred(mr_tuple_index/3) is tuple_index,
-	pred(fold_mr_tuple/4) is fold_tuple
+	pred(fold_mr_tuple/4) is fold_tuple,
+	pred(all_mr_tuple/2) is all_tuple
 ].
 
 
@@ -234,7 +235,13 @@ fold_tuple(Closure, tuple_sub(Tup0, S), !A) :-
 		
 fold_tuple(Closure, Tuple, !.A) = !:A :- fold_tuple(Closure, Tuple, !A).
 
+all_tuple(Pred, T) :- all_mr_tuple(Pred, T).
+all_tuple(Pred, list_tuple(L)) :- all_list_index(Pred, L).
+all_tuple(Pred, array_tuple(A)) :- all_array_index(Pred, A).
 
+all_tuple(Pred, tuple_sub(Tup0, Sub)) :- 
+	apply_tuple_substiution(Sub, Tup0, Tup),
+	all_tuple(Pred, Tup).
 
 %-----------------------------------------------------------------------------%
 % Tuple substitutions

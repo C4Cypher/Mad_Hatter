@@ -55,9 +55,6 @@
 :- func var_set_first(mh_var_set) = mh_var.
 :- func var_set_last(mh_var_set) = mh_var.
 
-:- func var_set_first_quantified(mh_var_set) = quantified_var.
-:- func var_set_last_quantified(mh_var_set) = quantified_var.
-
 %-----------------------------------------------------------------------------%
 % Var Set membership
 
@@ -68,10 +65,6 @@
 :- pred var_set_contains(mh_var_set, mh_var).
 :- mode var_set_contains(in, in) is semidet.
 :- mode var_set_contains(in, out) is nondet.
-
-:- pred var_set_contains_quantified(mh_var_set, quantified_var).
-:- mode var_set_contains_quantified(in, in) is semidet.
-:- mode var_set_contains_quantified(in, out) is nondet.
 
 %-----------------------------------------------------------------------------%
 % Var Set insertion and removal
@@ -241,9 +234,6 @@ var_set_last_id(var_set(_,_, Next)) = var_set_last_id(Next).
 var_set_first(Set) = var(var_set_first_id(Set)).
 var_set_last(Set) = var(var_set_last_id(Set)).
 
-var_set_first_quantified(Set) = var(var_set_first_id(Set)).
-var_set_last_quantified(Set) = var(var_set_last_id(Set)).
-
 %-----------------------------------------------------------------------------%
 % Var Set membership
 
@@ -255,7 +245,7 @@ var_set_contains_id(var_set(Offset, Set, Next), ID) :-
 	var_set_contains_id(Next, ID).
 	
 var_set_contains(Set, var(ID)) :- var_set_contains_id(Set, ID).
-var_set_contains_quantified(Set, var(ID)) :- var_set_contains_id(Set, ID).
+
 
 %-----------------------------------------------------------------------------%
 % Var Set insertion and removal

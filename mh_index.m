@@ -49,6 +49,9 @@
 
 :- pred map_list_index(pred(T, T), list(T), list(T)).
 :- mode map_list_index(pred(in, out) is det, in, out) is det.
+
+:- pred all_list_index(pred(T), list(T)).
+:- mode all_list_index(pred(in) is semidet, in) is semidet.
 	
 %-----------------------------------------------------------------------------%
 % Array index implementation methods
@@ -72,6 +75,9 @@
 
 :- pred map_array_index(pred(T, T), array(T), array(T)).
 :- mode map_array_index(pred(in, out) is det, in, out) is det.
+
+:- pred all_array_index(pred(T), array(T)).
+:- mode all_array_index(pred(in) is semidet, in) is semidet.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -138,6 +144,10 @@ map_list_index(_, [], []).
 map_list_index(Closure, [ !.T | !.L ], [ !:T | !:L]) :-
 	Closure(!T),
 	map_list_index(Closure, !L).
+
+all_list_index(_, []).
+
+all_list_index(Pred, [ T | L ]) :- Pred(T), all_list_index(Pred, L).
 	
 %-----------------------------------------------------------------------------%
 % Array index implementation methods
@@ -166,3 +176,5 @@ fold_array_index(Closure, Array, !A) :- foldl(Closure, Array, !A).
 :- pragma inline(map_array_index/3).
 
 map_array_index(Closure, !Array) :- map(Closure, !Array).
+
+all_array_index(Pred, Array) :- all_true(Pred, Array).

@@ -27,12 +27,15 @@
 :- type mh_scope 
 	--->	scope(mh_var_set, mh_var_set, scope_context, var_names)
 	;		scope(mh_var_set, mh_var_set, scope_context, var_names, mh_scope).
-	
+
+
+/*	
 :- func scope_args(mh_scope) = mh_var_set.
 :- func scope_local(mh_scope) = mh_var_set.
 :- func scope_context(mh_scope) = scope_context.
 :- func scope_var_names(mh_scope) = var_names.
 :- func parent_scope(mh_scope) = mh_scope is semidet.
+*/
 
 %-----------------------------------------------------------------------------%
 % Variable names
