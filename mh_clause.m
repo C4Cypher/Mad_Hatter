@@ -48,5 +48,3 @@
 % Clauses
 
 
-clause_head(_Arity, _Body, _) :- sorry($module, $pred).
-
