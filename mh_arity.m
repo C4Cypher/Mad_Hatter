@@ -30,7 +30,7 @@
 
 :- func arity(T) = int <= arity(T).
 
-/* Template
+/* Template, 12 occurances of "foo"
 
  :- func foo_arity(mh_foo) = int.
  
