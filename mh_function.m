@@ -17,6 +17,7 @@
 
 :- import_module mh_relation.
 :- import_module mh_substitution.
+:- import_module mh_arity.
 
 :- type mh_function
 	--->	mh_function(mh_relation)
