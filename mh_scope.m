@@ -19,14 +19,24 @@
 :- use_module term.
 
 :- import_module mh_term.
+:- import_module var_id.
 :- import_module mh_var_set.
+:- import_module mh_arity.
 
 %-----------------------------------------------------------------------------%
 % Scope
 
 :- type mh_scope 
-	--->	scope(mh_var_set, mh_var_set, scope_context, var_names)
-	;		scope(mh_var_set, mh_var_set, scope_context, var_names, mh_scope).
+	--->	root_scope(var_id_set, scope_context, var_names)
+	
+	% All child scopes contain a refrence to their parent scope
+	;		rule_scope(
+				head_var_set:mh_var_set
+				body_var_set:mh_var_set, 
+				scope_context, 
+				mh_scope) % parent scope
+	;		
+	.
 
 
 /*	
@@ -36,6 +46,16 @@
 :- func scope_var_names(mh_scope) = var_names.
 :- func parent_scope(mh_scope) = mh_scope is semidet.
 */
+
+%-----------------------------------------------------------------------------%
+% Global scope
+
+% Variable names are root to named clauses
+
+:- inst root_scope ---> root_scope(ground, ground, ground).
+
+:- type root_scope =< mh_scope
+	--->	root_scope(var_id_set, scope_context, var_names).
 
 %-----------------------------------------------------------------------------%
 % Variable names

@@ -29,12 +29,33 @@
 % Clauses
 
 :- type mh_clause
-	--->	named_clause(symbol, mh_term) 		% name = Term.
-	;		fact_clause(mh_predicate, mh_scope) % Pred.
-	;		rule_clause(mh_term, mh_predicate, mh_scope) % Term :- Pred.
-	;		unification_clause(mh_term, mh_term, mh_scope). % Term = Term.
+
+	% name = ( clause ).  
+	% Symbol assignment occurs above any local clause scope
+	--->	atom_clause(symbol, lambda_clause, root_scope) 		
+	
+	% name(Term) = apply( clause, Term ).  
+	%  All vars in Term are universally quantified, produces scope
+	;		cons_clause(symbol, mh_term, lambda_clause, root_scope) 
+	
+	% \( predicate ).
+	;		fact_clause(mh_predicate) 			
+	
+	% \(Term :- Pred). | 
+	;		rule_clause(head_clause, mh_predicate) 
+	
+
+	
+	
 
 % TODO: apply substitutions
+
+%-----------------------------------------------------------------------------%
+% Expressions
+
+:- type clause_expression
+	--->	unification_exp(mh_term, mh_term) % (term = term)
+	;		
 
 
 %-----------------------------------------------------------------------------%
