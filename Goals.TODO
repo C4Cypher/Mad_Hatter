@@ -3,7 +3,8 @@ Design Goals:
 * Unordered clauses
 * Allow binding of free variables
 * Refinement+Dependent type system
-* Multiple compilation models with  
+* 'true' first-class constraints and procedures 
+* Multiple compilation models   
 
 
 
@@ -16,7 +17,7 @@ get a repl running
 			Define TOP level constructs 
 				definitions for module, program and ... 'library'? 
 					method dispatch for top level atoms
-				finish mh_term
+				finish mh_term, my high level AST
 					implement unification
 						define environments/symbol substitution
 							finish substitutions 
