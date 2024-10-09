@@ -41,7 +41,11 @@
 :- pred apply_constraint_substitution(mh_substitution::in, mh_constraint::in,
 	mh_constraint::out) is det.
 	
-:- instance arity(mh_constraint).
+ :- func constraint_arity(mh_constraint) = int.
+ 
+ :- pred constraint_arity(mh_constraint::in, int::out) is det.
+ 
+ :- instance arity(mh_constraint).
 	
 	
 %-----------------------------------------------------------------------------%
@@ -65,5 +69,10 @@ apply_constraint_substitution(_, _, _) :- sorry($module, $pred,
 	
 :- pragma no_determinism_warning(apply_constraint_substitution/3).
 
-:- instance arity(mh_constraint) where [ arity(_, _) :- sorry($module, $pred,
-	"arity/2") ].
+constraint_arity(_) = _ :- sorry($module, $pred, "constraint_arity/1").
+
+:- pragma no_determinism_warning(constraint_arity/1).
+
+constraint_arity(T, constraint_arity(T)).
+
+:- instance arity(mh_constraint) where [ pred(arity/2) is constraint_arity ].
