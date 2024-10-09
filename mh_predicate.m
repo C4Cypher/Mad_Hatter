@@ -23,8 +23,8 @@
 :- import_module mh_tuple.
 
 % In prolog and many other logic programming languages, a predicate is
-% represented by a clause, either a fact clause 'foo(X,Y).' or a rule clause
-% 'foo(X) :- bar(X)'.
+% represented by a clause, either a fact clause 'predicate(X,Y).' or a rule clause
+% 'predicate(X) :- bar(X)'.
 %
 % Not so in Mad Hatter, instead a 'predicate' represents a relational term
 % after the arguments have been applied.  The application of arguments is the
@@ -44,6 +44,12 @@
 	mh_predicate::out) is det.
 	
  :- pred ground_predicate(mh_predicate::in) is semidet.
+ 
+ :- func predicate_arity(mh_predicate) = int.
+ 
+ :- pred predicate_arity(mh_predicate::in, int::out) is det.
+ 
+ :- instance arity(mh_predicate).
 	
 %-----------------------------------------------------------------------------%
 % Predicate failure
@@ -51,11 +57,13 @@
 :- type pred_fail_reason
 	--->	value_unification_failure(mh_term, mh_term) % 1 \= 2
 	;		constraint_unification_failure(mh_term, mh_term) % 5:string
-	;		flounder(mh_term) % ?- foo(1) where foo(A) :- foo(A).
+	;		flounder(mh_term) % ?- predicate(1) where predicate(A) :- predicate(A).
 	;		conjunction_failure(mh_tuple, int, pred_fail_reason)
 	;		disjunction_failure(mh_tuple, list(pred_fail_reason))
 	;		mr_predicate_failure(mh_term, string)
 	;		mr_relation_failure(mh_term, string).
+	
+
 
 %-----------------------------------------------------------------------------%
 % Predicate typeclass
@@ -84,3 +92,11 @@ apply_predicate_substitution(_, _, _) :- sorry($module, $pred,
 ground_predicate(_) :- sorry($module, $pred, "ground_predicate/1").
 
 :- pragma no_determinism_warning(ground_predicate/1).
+
+predicate_arity(_) = _ :- sorry($module, $pred, "predicate_arity/1").
+
+:- pragma no_determinism_warning(predicate_arity/1).
+
+predicate_arity(T, predicate_arity(T)).
+
+:- instance arity(mh_predicate) where [ pred(arity/2) is predicate_arity ].

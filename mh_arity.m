@@ -30,6 +30,28 @@
 
 :- func arity(T) = int <= arity(T).
 
+/* Template
+
+ :- func foo_arity(mh_foo) = int.
+ 
+ :- pred foo_arity(mh_foo::in, int::out) is det.
+ 
+ :- instance arity(mh_foo).
+	
+%-----------------------------------------------------------------------------%
+
+foo_arity(_) = _ :- sorry($module, $pred, "foo_arity/1").
+
+:- pragma no_determinism_warning(foo_arity/1).
+
+foo_arity(T, foo_arity(T)).
+
+:- instance arity(mh_foo) where [ pred(arity/2) is foo_arity ].
+
+*/
+
+
+
 %-----------------------------------------------------------------------------%
 % Indexing values with arity
 

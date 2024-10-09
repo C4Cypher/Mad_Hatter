@@ -24,10 +24,22 @@
 	
 :- pred apply_function_substitution(mh_substitution::in, mh_function::in,
 	mh_function::out) is det.
+	
+:- pred ground_function(mh_function::in) is semidet.
+
+
+ :- func function_arity(mh_function) = int.
+ 
+ :- pred function_arity(mh_function::in, int::out) is det.
+ 
+ :- instance arity(mh_function).
+	
+	
+%-----------------------------------------------------------------------------%
+% Function typeclass
 
 :- typeclass function(T) where [].
 
-:- pred ground_function(mh_function::in) is semidet.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -46,3 +58,12 @@ apply_function_substitution(_, _, _) :- sorry($module, $pred,
 ground_function(_) :- sorry($module, $pred, "ground_function/1").
 
 :- pragma no_determinism_warning(ground_function/1).
+
+
+function_arity(_) = _ :- sorry($module, $pred, "function_arity/1").
+
+:- pragma no_determinism_warning(function_arity/1).
+
+function_arity(T, function_arity(T)).
+
+:- instance arity(mh_function) where [ pred(arity/2) is function_arity ].

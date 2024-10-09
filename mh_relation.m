@@ -38,6 +38,12 @@
 % :- func relation_arity(mh_relation) = int.
  
  :- pred ground_relation(mh_relation::in) is semidet.
+ 
+  :- func relation_arity(mh_relation) = int.
+ 
+ :- pred relation_arity(mh_relation::in, int::out) is det.
+ 
+ :- instance arity(mh_relation).
 
 %-----------------------------------------------------------------------------%
 % Relation typeclass
@@ -66,3 +72,11 @@ apply_relation_substitution(_, _, _) :- sorry($module, $pred,
 ground_relation(_) :- sorry($module, $pred, "ground_relation/1").
 
 :- pragma no_determinism_warning(ground_relation/1).
+
+relation_arity(_) = _ :- sorry($module, $pred, "relation_arity/1").
+
+:- pragma no_determinism_warning(relation_arity/1).
+
+relation_arity(T, relation_arity(T)).
+
+:- instance arity(mh_relation) where [ pred(arity/2) is relation_arity ].
