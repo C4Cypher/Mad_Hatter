@@ -343,7 +343,7 @@ term_arity(T, term_arity(T)).
 % TODO: I need to re-think what 'arity' explicitly means at a term level
 % especially in relation to tuples, constraints and predicates
 % if predicates don't take arguments directly, but through relations, they should
-% be arity zr
+% be arity zero
 
 
 	
@@ -352,7 +352,7 @@ term_arity(T, term_arity(T)).
 
 ground_functor(F) :- ground_term(coerce(F)).
 
-ground_functor(T) = T :- ground_functor(T).
+ground_functor(F) = F :- ground_functor(F).
 
 apply_functor_substitution(Sub, !Fun) :-
 		!.Fun = atom(_), !:Fun = !.Fun
