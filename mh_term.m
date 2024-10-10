@@ -97,11 +97,13 @@
 :- pred term_arity(mh_term::in, int::out)  is det.
 
 :- instance arity(mh_term).
+
 %-----------------------------------------------------------------------------%
 %  Functor
 
 :- inst functor 
 	--->	atom(ground)
+	;		var(ground)
 	;		relation(ground)
 	;		function(ground)
 	;		term_sub(functor, ground).
@@ -110,6 +112,9 @@
 	% Atoms
 	---> 	atom(symbol)
 	
+	% Variables
+	;		var(var_id)
+	
 	% Higher order terms
 	;		relation(mh_relation)
 	;		predicate(mh_predicate)
@@ -117,6 +122,12 @@
 	
 	% Substitution
 	;		term_sub(functor, mh_substitution).
+	
+:- pred ground_functor(functor::in) is semidet.
+
+:- func ground_functor(functor) = mh_functor.
+:- mode ground_functor(in) = out is semidet.
+:- mode ground_functor(out) = in is semidet.
 	
 :- pred apply_functor_substitution(mh_substitution::in, 
 	functor::in, functor::out) is det.
@@ -229,7 +240,7 @@ functor(Term, functor(Term)).
 ground_term(T) :-
 	T = atom(_);
 	T = mr_value(_);
-	T = cons(_, C), ground_term(C);
+	T = cons(F, C), ground_term(C);
 	T = tuple_term(U), ground_tuple(U);
 	T = relation(R), ground_relation(R);
 	T = predicate(P), ground_predicate(P);
@@ -334,12 +345,14 @@ term_arity(T, term_arity(T)).
 % if predicates don't take arguments directly, but through relations, they should
 % be arity zr
 
-%-----------------------------------------------------------------------------%
-		
-% :- instance tuple(mh_term) where [ ].
+
 	
 %-----------------------------------------------------------------------------%
 %  Functor
+
+ground_functor(F) :- ground_term(coerce(F)).
+
+ground_functor(T) = T :- ground_functor(T).
 
 apply_functor_substitution(Sub, !Fun) :-
 		!.Fun = atom(_), !:Fun = !.Fun
