@@ -30,19 +30,53 @@
 
 :- type mh_clause
 
-	% name = ( clause ).  
-	% Symbol assignment occurs above any local clause scope
-	--->	atom_clause(symbol, lambda_clause, root_scope) 		
+	%% root clauses
+
+	% name = \( clause ).  | name(term) = relation | name(term) :- ...
+	--->	atom_clause(symbol, lambda_clause, root_scope)
 	
-	% name(Term) = apply( clause, Term ).  
-	%  All vars in Term are universally quantified, produces scope
-	;		cons_clause(symbol, mh_term, lambda_clause, root_scope) 
+	% forall term \( clause ).
+	;		quantified_assertion_clause(mh_term, predicate_clause, root_scope)
+	
+	%% lambda clauses
 	
 	% \( predicate ).
-	;		fact_clause(mh_predicate) 			
+	;		fact_clause(mh_predicate)
+
 	
-	% \(Term :- Pred). | 
-	;		rule_clause(head_clause, mh_predicate) 
+	% \(Head :- Pred). | 
+	;		rule_clause(head_clause, mh_predicate)  		
+	
+	%% head clauses
+	
+	% forall term | \( term body )    
+	;	quantification_clause(lhs_clause)
+	
+		% term = term | term @ term
+	;	unification_clause(mh_term, mh_term)
+	
+	;
+	
+:- type root_clause =< mh_clause
+	--->	atom_clause(symbol, lambda_clause, root_scope)
+	;		quantified_assertion_clause(mh_term, lambda_clause, root_scope).
+	
+:- type lambda_clause =< mh_clause
+	---> 	fact_clause()
+	;		rule_clause()
+	
+	
+:- type head_clause =<
+	
+:- type lhs_clause =<
+
+
+:- type relation_clause =<
+
+:- type predicate_clause =<
+	--->	fact_clause(mh_predicate)
+
+:- type function_clause =<
 	
 
 	
