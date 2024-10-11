@@ -31,65 +31,86 @@
 :- type mh_clause
 
 	%% root clauses
+	
+	% name(term)			[ :- body].	=> named predicate clause
+	% name(term) = term 	[ :- body].	=> named relation clause
+	% name(term) -> term 	[ :- body].	=> named function clause
+	% term:name = term 		[ :- body].	=> named constraint clause
+	
+	% all [terms] body. 				=> assertion_clause
 
-	% name = \( clause ).  | name(term) = relation | name(term) :- ...
+	% name = \( clause ).  | name(Term) = relation(Term)
 	--->	atom_clause(symbol, lambda_clause, root_scope)
 	
-	% forall term \( clause ).
-	;		quantified_assertion_clause(mh_term, predicate_clause, root_scope)
+	% fact clause.
+	;		assertion_clause(mh_predicate, root_scope)
 	
 	%% lambda clauses
 	
+	% \( term 				[ :- body]) => lambda predicate
+	% \( term = term 		[ :- body]) => lambda relation
+	% \( clause ; clause..)	[ :- body]) => lambda relation (disjunctve)
+	% \( term -> term 		[ :- body]) => lambda function
+	% \( term @ term = term	[ :- body]) => lambda constraint 
+	
+		
 	% \( predicate ).
-	;		fact_clause(mh_predicate)
+	;		fact_clause(head_clause)
+	
+	% \( forall term predicate_clause )
+	;		quantified_fact_clause(mh_var_set, mh_predicate)
 
 	
-	% \(Head :- Pred). | 
-	;		rule_clause(head_clause, mh_predicate)  		
+	% \( head :- predicate).
+	;		rule_clause(head_clause, mh_predicate)
+
+	%% head_clauses
 	
-	%% head clauses
+	% X | { A, B, C ...}
+	;		term_clause(mh_term)
 	
-	% forall term | \( term body )    
-	;	quantification_clause(lhs_clause)
+	% X = Y
+	;		unification_clause(mh_term, mh_term)
 	
-		% term = term | term @ term
-	;	unification_clause(mh_term, mh_term)
+	% X -> Y
+	;		arrow_clause(mh_term, mh_term).
 	
-	;
+	% X @ Y = Z => (X ; Y) = ?(_)
+	;		constraint_clause(mh_term, mh_term, mh_term)
+	
+
 	
 :- type root_clause =< mh_clause
 	--->	atom_clause(symbol, lambda_clause, root_scope)
-	;		quantified_assertion_clause(mh_term, lambda_clause, root_scope).
+	;		assertion_clause(mh_term, lambda_clause, root_scope).
 	
 :- type lambda_clause =< mh_clause
-	---> 	fact_clause()
-	;		rule_clause()
+	---> 	fact_clause(mh_predicate)
+	;		quantified_fact_clause(mh_var_set, mh_predicate)
+	;		rule_clause(head_clause, mh_predicate)
+	;		term_clause(mh_term)
+	;		unification_clause(mh_term, mh_term)
+	;		arrow_clause(mh_term, mh_term).
+	
+:- type complete_lambda_clause =< lambda_clause
+	---> 	fact_clause(mh_predicate)
+	;		quantified_fact_clause(mh_var_set, mh_predicate)
+	;		rule_clause(head_clause, mh_predicate).
+	
+:- type head_clause =< lambda_clause
+	---> 	term_clause(mh_term)
+	;		unification_clause(mh_term, mh_term)
+	;		arrow_clause(mh_term, mh_term)
+	;		constraint_clause(mh_term, mh_term, mh_term).
 	
 	
-:- type head_clause =<
-	
-:- type lhs_clause =<
 
-
-:- type relation_clause =<
-
-:- type predicate_clause =<
-	--->	fact_clause(mh_predicate)
-
-:- type function_clause =<
 	
 
 	
 	
 
 % TODO: apply substitutions
-
-%-----------------------------------------------------------------------------%
-% Expressions
-
-:- type clause_expression
-	--->	unification_exp(mh_term, mh_term) % (term = term)
-	;		
 
 
 %-----------------------------------------------------------------------------%
