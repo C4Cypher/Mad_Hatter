@@ -16,9 +16,10 @@
 :- interface.
 
 :- import_module array.
-:- use_module term.
+
 
 % :- import_module mh_term.
+:- import_module mh_mercury_term.
 :- import_module mh_var_id.
 :- import_module mh_var_set.
 % :- import_module mh_arity.
@@ -59,7 +60,7 @@
 %-----------------------------------------------------------------------------%
 % Scope context
 
-:- type scope_context == term.context.
+:- type scope_context == mr_context.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%

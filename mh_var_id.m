@@ -17,19 +17,18 @@
 :- import_module list.
 :- import_module array.
 
+:- import_module mh_mercury_term.
 :- import_module mh_arity.
 
 %-----------------------------------------------------------------------------%
 % Variable ID's
 
+
 :- type var_id.
 
-:- type var_ids == list(var_id).
+:- type var_ids == list(var_id). 
 
-% Breaks encapsulation, code smell
-% :- func construct_var_id(int) = var_id.
-
-% :- func deconstruct_var_id(var_id) = int.
+:- func mr_var_id(mr_var(_)) = var_id.
 
 
 :- pred valid_var_id(var_id::in) is semidet.
@@ -246,6 +245,7 @@
 :- implementation.
 
 :- import_module int.
+:- use_module term.
 :- import_module require.
 :- import_module string.
 :- import_module bitmap.
@@ -259,13 +259,7 @@
 
 :- type var_id == int.
 
-% construct_var_id(ID) = ID.
-
-% :- pragma inline(construct_var_id/1).
-
-% deconstruct_var_id(ID) = ID.
-
-% :- pragma inline(deconstruct_var_id/1).
+mr_var_id(V) = term.var_to_int(V).
 
 valid_var_id(I) :- I > 0.
 
