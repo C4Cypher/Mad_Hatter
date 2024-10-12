@@ -125,7 +125,7 @@
 	
 :- pred ground_functor(functor::in) is semidet.
 
-:- func ground_functor(functor) = mh_functor.
+:- func ground_functor(functor) = functor.
 :- mode ground_functor(in) = out is semidet.
 :- mode ground_functor(out) = in is semidet.
 	

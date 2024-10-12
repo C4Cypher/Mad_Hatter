@@ -15,8 +15,8 @@
 
 :- interface.
 
-:- import_module set.
-:- import_module list.
+% :- import_module set.
+% :- import_module list.
 :- import_module type_desc.
 
 :- import_module mh_term.

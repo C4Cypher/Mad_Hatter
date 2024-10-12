@@ -18,10 +18,10 @@
 :- import_module array.
 :- use_module term.
 
-:- import_module mh_term.
-:- import_module var_id.
+% :- import_module mh_term.
+:- import_module mh_var_id.
 :- import_module mh_var_set.
-:- import_module mh_arity.
+% :- import_module mh_arity.
 
 %-----------------------------------------------------------------------------%
 % Scope
@@ -30,13 +30,7 @@
 	--->	root_scope(var_id_set, scope_context, var_names)
 	
 	% All child scopes contain a refrence to their parent scope
-	;		rule_scope(
-				head_var_set:mh_var_set
-				body_var_set:mh_var_set, 
-				scope_context, 
-				mh_scope) % parent scope
-	;		
-	.
+	;		rule_scope(mh_var_set, mh_var_set, scope_context, mh_scope). 
 
 
 /*	

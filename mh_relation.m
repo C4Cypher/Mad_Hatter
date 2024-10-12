@@ -15,7 +15,7 @@
 
 :- interface.
 
-:- import_module array.
+% :- import_module array.
 
 :- import_module mh_term.
 :- import_module mh_tuple.

@@ -15,15 +15,15 @@
 
 :- interface.
 
-:- import_module array.
+% :- import_module array.
 
 :- import_module mh_term.
 :- import_module mh_scope.
 :- import_module mh_symbol.
 :- import_module mh_predicate.
-:- import_module mh_tuple.
+% :- import_module mh_tuple.
 :- import_module mh_var_set.
-:- import_module mh_arity.
+% :- import_module mh_arity.
 
 %-----------------------------------------------------------------------------%
 % Clauses
@@ -73,27 +73,28 @@
 	;		unification_clause(mh_term, mh_term)
 	
 	% X -> Y
-	;		arrow_clause(mh_term, mh_term).
+	;		arrow_clause(mh_term, mh_term)
 	
 	% X @ Y = Z => (X ; Y) = ?(_)
-	;		constraint_clause(mh_term, mh_term, mh_term)
+	;		constraint_clause(mh_term, mh_term, mh_term).
 	
 
 	
 :- type root_clause =< mh_clause
 	--->	atom_clause(symbol, lambda_clause, root_scope)
-	;		assertion_clause(mh_term, lambda_clause, root_scope).
+	;		assertion_clause(mh_predicate, root_scope).
 	
 :- type lambda_clause =< mh_clause
-	---> 	fact_clause(mh_predicate)
+	---> 	fact_clause(head_clause)
 	;		quantified_fact_clause(mh_var_set, mh_predicate)
 	;		rule_clause(head_clause, mh_predicate)
 	;		term_clause(mh_term)
 	;		unification_clause(mh_term, mh_term)
-	;		arrow_clause(mh_term, mh_term).
+	;		arrow_clause(mh_term, mh_term)
+	;		constraint_clause(mh_term, mh_term, mh_term).
 	
 :- type complete_lambda_clause =< lambda_clause
-	---> 	fact_clause(mh_predicate)
+	---> 	fact_clause(head_clause)
 	;		quantified_fact_clause(mh_var_set, mh_predicate)
 	;		rule_clause(head_clause, mh_predicate).
 	
