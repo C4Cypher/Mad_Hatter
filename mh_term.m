@@ -27,7 +27,7 @@
 :- import_module mh_function.
 :- import_module mh_substitution.
 :- import_module mh_arity.
-:- import_module mh_scope.
+% :- import_module mh_scope.
 
 
 %-----------------------------------------------------------------------------%
@@ -70,11 +70,11 @@
 
 :- pred functor(mh_term::in, functor::out) is semidet.
 
-:- pred ground_term(mh_term::in) is semidet.
+% :- pred ground_term(mh_term::in) is semidet.
 
-:- func ground_term(mh_term) = mh_term.
-:- mode ground_term(in) = out is semidet.
-:- mode ground_term(out) = in is semidet.
+% :- func ground_term(mh_term) = mh_term.
+% :- mode ground_term(in) = out is semidet.
+% :- mode ground_term(out) = in is semidet.
 
 
 % Apply a substitution to a term, if the term is a variable, replace the
@@ -123,11 +123,11 @@
 	% Substitution
 	;		term_sub(functor, mh_substitution).
 	
-:- pred ground_functor(functor::in) is semidet.
+% :- pred ground_functor(functor::in) is semidet.
 
-:- func ground_functor(functor) = functor.
-:- mode ground_functor(in) = out is semidet.
-:- mode ground_functor(out) = in is semidet.
+% :- func ground_functor(functor) = functor.
+% :- mode ground_functor(in) = out is semidet.
+% :- mode ground_functor(out) = in is semidet.
 	
 :- pred apply_functor_substitution(mh_substitution::in, 
 	functor::in, functor::out) is det.
@@ -237,19 +237,19 @@ functor(term_sub(T, S)) = term_sub(functor(T), S).
 
 functor(Term, functor(Term)).
 
-ground_term(T) :-
-	T = atom(_);
-	T = mr_value(_);
-	T = cons(F, C), ground_term(C);
-	T = tuple_term(U), ground_tuple(U);
-	T = relation(R), ground_relation(R);
-	T = predicate(P), ground_predicate(P);
-	T = function(F), ground_function(F);
-	T = term_sub(T0, Sub),
-		apply_term_substitution(Sub, T0, T1),
-		ground_term(T1).
+% ground_term(T) :-
+	% T = atom(_);
+	% T = mr_value(_);
+	% T = cons(F, C), ground_term(C);
+	% T = tuple_term(U), ground_tuple(U);
+	% T = relation(R), ground_relation(R);
+	% T = predicate(P), ground_predicate(P);
+	% T = function(F), ground_function(F);
+	% T = term_sub(T0, Sub),
+		% apply_term_substitution(Sub, T0, T1),
+		% ground_term(T1).
 		
-ground_term(T) = T :- ground_term(T).
+% ground_term(T) = T :- ground_term(T).
 	
 
 %-----------------------------------------------------------------------------%
@@ -350,12 +350,14 @@ term_arity(T, term_arity(T)).
 %-----------------------------------------------------------------------------%
 %  Functor
 
-ground_functor(F) :- ground_term(coerce(F)).
+% ground_functor(F) :- ground_term(coerce(F)).
 
-ground_functor(F) = F :- ground_functor(F).
+% ground_functor(T) = T :- ground_functor(T).
 
 apply_functor_substitution(Sub, !Fun) :-
 		!.Fun = atom(_), !:Fun = !.Fun
+		
+	;	!:Fun = !.Fun @ var(_)
 	
 	;	!.Fun = relation(Rel0), 
 		apply_relation_substitution(Sub, Rel0, Rel),

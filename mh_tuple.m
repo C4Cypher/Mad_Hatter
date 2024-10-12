@@ -43,11 +43,11 @@
 :- pred tuple_size(mh_tuple::in, int::out) is det.
 :- func tuple_size(mh_tuple) = int.
 
-:- pred ground_tuple(mh_tuple::in) is semidet.
+% :- pred ground_tuple(mh_tuple::in) is semidet.
 
-:- func ground_tuple(mh_tuple) = mh_tuple.
-:- mode ground_tuple(in) = out is semidet.
-:- mode ground_tuple(out) = in is semidet.
+% :- func ground_tuple(mh_tuple) = mh_tuple.
+% :- mode ground_tuple(in) = out is semidet.
+% :- mode ground_tuple(out) = in is semidet.
 
 :- instance arity(mh_tuple).
 :- instance mr_tuple(mh_tuple).
@@ -173,9 +173,9 @@ tuple_size(tuple_sub(Tup, _), S) :- tuple_size(Tup, S).
 
 tuple_size(T) = S :- tuple_size(T, S).
 
-ground_tuple(T) :-  all_tuple(ground_term, T).
+% ground_tuple(T) :-  all_tuple(ground_term, T).
 
-ground_tuple(T) = T :- ground_tuple(T).
+% ground_tuple(T) = T :- ground_tuple(T).
 
 :- instance arity(mh_tuple) where [
 	pred(arity/2) is tuple_size
