@@ -13,21 +13,24 @@ Design Goals:
 Outline
 Current goals
 get a repl running
-		get parsing working
+		get parsing working !! Term parsing working!
+			convert mr_terms to mr_primitives
 			Define TOP level constructs 
 				definitions for module, program and ... 'library'? 
 					method dispatch for top level atoms
 				finish mh_term, my high level AST
-					implement unification
-						define environments/symbol substitution
-							finish substitutions 
-								term constraints 	
-						hash out higher order types 
-							define clauses
-								scope <- I am here
-								term constraints			
-								mode system
-									implement inst trees?
+					define environments/symbol substitution
+						finish substitutions 
+							term constraints 	
+					hash out higher order types 
+						relations
+							propositional language
+								implement unification  <- I am here
+						define clauses
+							scope
+							term constraints			
+							mode system
+								implement inst trees?
  
 compile to native at runtime
 	
@@ -47,7 +50,7 @@ HO Notes:
 I just realized I can implement constraint solving (and thus types) by making
 'constraint terms' ... 
 
-Id' have to re-think the rules to unification.
+Id' have to re-think the rules to unification in relation to constraints.
 * A free variable unified with a constraint binds the variable to the constraint the same as if bound to a ground value.
 * A constraint unifies with another constraint to produce a new constraint, and may result in constraint propogation, resulting in more unifications
 * A constraint unifying with a ground value either fails if the constraint is not met, or results in a binding to said ground value if it succeeds
@@ -68,8 +71,9 @@ of the form pred(in, in, in, out) => func(in, in, in) -> out OR
 pred(args) => func(substitutions) -> substitutions
 
 Loose ideas:
-Relations can resolve to predicates or functions
+Relations can resolve to predicates or functions (or constraints)
 Relations propogate constraints if they can't resolve to a higher order call?
-Constraints == types?
+Rleations represent a disjunction of higher order calls based on input.
+Constraints == types? No, types are a *kind* of constraint.
 Constraints ARE higher order constructts?
 
