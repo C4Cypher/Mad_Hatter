@@ -24,8 +24,10 @@
 % Mercury terms
 
 :- type mr_term(T) == term.term(T).
+:- type mr_term == term.term.
 
 :- type mr_var(T) == term.var(T).
+:- type mr_var == term.var.
 
 :- type mr_context == term.context.
 
