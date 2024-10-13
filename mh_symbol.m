@@ -19,7 +19,7 @@
 :- type symbol.
 :- type symbols == list(symbol).
 
-:- inst symbol(I) ---> \I.
+:- inst symbol(I) ---> ~I.
 
 
 
@@ -33,11 +33,11 @@
 
 :- pragma require_feature_set([memo]).
 
-:- type symbol ---> \string.
+:- type symbol ---> ~string.
 
-symbol(String) = \String.
+symbol(String) = '~'(String).
 
-to_string(\String) = String.
+to_string('~'(String)) = String.
 
 :- pragma memo(symbol(in) = out).
 
