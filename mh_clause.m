@@ -40,7 +40,7 @@
 	% all [terms] body. 				=> assertion_clause
 
 	% name = \( clause ).  | name(Term) = relation(Term)
-	--->	atom_clause(symbol, lambda_clause, root_scope)
+	--->	atom_clause(mh_symbol, lambda_clause, root_scope)
 	
 	% fact clause.
 	;		assertion_clause(mh_predicate, root_scope)
@@ -81,7 +81,7 @@
 
 	
 :- type root_clause =< mh_clause
-	--->	atom_clause(symbol, lambda_clause, root_scope)
+	--->	atom_clause(mh_symbol, lambda_clause, root_scope)
 	;		assertion_clause(mh_predicate, root_scope).
 	
 :- type lambda_clause =< mh_clause

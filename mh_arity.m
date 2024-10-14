@@ -62,9 +62,9 @@ foo_arity(T, foo_arity(T)).
 %-----------------------------------------------------------------------------%
 % Symbols with arity
 
-:- type symbol_arity ---> symbol/int.
+:- type symbol_arity ---> mh_symbol/int.
 
-:- func symbol_arity(symbol, T) = symbol_arity <= arity(T).
+:- func symbol_arity(mh_symbol, T) = symbol_arity <= arity(T).
 
 %-----------------------------------------------------------------------------%
 %	Arity instances

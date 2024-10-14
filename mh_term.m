@@ -42,7 +42,7 @@
 	;	anonymous
 	
 	% atomic values
-	;	atom(symbol)
+	;	atom(mh_symbol)
 
 	% variables
 	;	var(var_id)
@@ -110,7 +110,7 @@
 
 :- type functor =< mh_term
 	% Atoms
-	---> 	atom(symbol)
+	---> 	atom(mh_symbol)
 	
 	% Variables
 	;		var(var_id)
@@ -138,7 +138,7 @@
 
 :- inst atom ---> atom(ground).
 
-:- type atom =< functor ---> atom(symbol).
+:- type atom =< functor ---> atom(mh_symbol).
 
 :- mode is_atom == ground >> atom.
 

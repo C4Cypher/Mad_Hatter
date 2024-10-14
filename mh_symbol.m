@@ -16,24 +16,24 @@
 
 :- import_module list.
 
-:- type symbol.
-:- type symbols == list(symbol).
+:- type mh_symbol.
+:- type mh_symbols == list(mh_symbol).
 
-:- inst symbol(I) ---> ~I.
+:- inst mh_symbol(I) ---> ~I.
 
 
 
-:- func symbol(string) = symbol.
+:- func symbol(string) = mh_symbol.
 :- mode symbol(in) = out is det.
 :- mode symbol(out) = in is det.
 
-:- func to_string(symbol) = string.
+:- func to_string(mh_symbol) = string.
 
 :- implementation.
 
 :- pragma require_feature_set([memo]).
 
-:- type symbol ---> ~string.
+:- type mh_symbol ---> ~string.
 
 symbol(String) = '~'(String).
 
