@@ -36,15 +36,14 @@ compile to native at runtime
 	
 	
 
-Constraints
 
-	
 			
 Higher order constructs:
-	* A relation takes a substitution as input and returns a substitution
-	* A predicate takes a term as input and returns a substitution
-	* A function takes a term as input and returns a term
-					
+	* A relation is unification with a disjunction of higher order terms
+	% A predicate represents a truth value
+	% A function represents a one way transformation from one term to another
+	% A constraint represents a non-ground value a term can unify with
+	
 HO Notes:
 
 I just realized I can implement constraint solving (and thus types) by making
