@@ -19,6 +19,7 @@
 :- import_module type_desc.
 
 :- import_module mh_term.
+:- import_module mh_environment.
 :- import_module mh_symbol.
 
 
@@ -37,16 +38,20 @@
 :- func module_name(mh_module) = string.
 
 %-----------------------------------------------------------------------------%
-% Module level atom substitution
+% Module environment
 
-:- pred insert_atom(mh_symbol::in, mh_term::in, mh_module::in, mh_module::out)
-	is det.
-	
-:- func atom_lookup(mh_module, mh_symbol) = mh_term.
-:- pred atom_lookup(mh_module::in, mh_symbol::in, mh_term::out) is det.
+:- pred environment(mh_module::in, mh_environment::out) is det.
+:- func environment(mh_module) = mh_environment.
 
-:- func atom_search(mh_module, mh_symbol) = mh_term is semidet.
-:- pred atom_search(mh_module::in, mh_symbol::in, mh_term::out) is semidet.
+% Insert a new atom to the module's environment, fail if it already exists
+:- pred insert_atom_substitution(mh_symbol::in, mh_term::in, 
+	mh_module::in, mh_module::out)	is semidet.
+
+% Replace an existing atom in the module's environment, fail if the atom
+% does not exist in the environment
+:- pred replace_atom_substitution(mh_symbol::in, mh_term::in,
+	mh_module::in, mh_module::out)	is semidet.
+
 
 
 %-----------------------------------------------------------------------------%
@@ -71,16 +76,16 @@
 :- import_module set.
 
 
+
 %-----------------------------------------------------------------------------%
 % Mad Hatter modules
 
-:- type symbol_map == map(mh_symbol, mh_term). 
 :- type mr_type_set == set(type_desc).
 
 :- type mh_module
 	--->	symbolic_module(
 				mh_symbol, 		% module name
-				symbol_map, 	% map of atoms to terms
+				mh_environment, % map of atoms to terms
 				mr_type_set		% set of mercury types to convert from terms
 				% declarations
 				% imported modules
@@ -89,24 +94,31 @@
 			
 init_module(Name, init_module(Name)).
 
-init_module(Name) = symbolic_module(symbol(Name), map.init, set.init).
+init_module(Name) = symbolic_module(symbol(Name), new_env(map.init), set.init).
 
 module_name(symbolic_module(symbol(Name), _, _)) = Name.
 
 %-----------------------------------------------------------------------------%
-% Module level atom substitution
+% Module environment
 
-insert_atom(Symbol, Term, 
-	symbolic_module(Name, !.Map, Types),
-	symbolic_module(Name, !:Map, Types)
+environment(M, environment(M)).
+
+environment(symbolic_module(_, Env, _)) = Env.
+
+insert_atom_substitution(Symb, Term, 
+	symbolic_module(Name, map_env(!.Env), Types),
+	symbolic_module(Name, map_env(!:Env), Types)
 ) :-
-	det_insert(Symbol, Term, !Map).
+	map.insert(Symb, Term, !Env).
 	
-atom_lookup(symbolic_module(_, Map, _), Symbol) = map.lookup(Map, Symbol).
-atom_lookup(Module, Symbol, atom_lookup(Module, Symbol)).
+	
+replace_atom_substitution(Symb, Term, 
+	symbolic_module(Name, map_env(!.Env), Types),
+	symbolic_module(Name, map_env(!:Env), Types)
+) :-
+	map.update(Symb, Term, !Env).
 
-atom_search(symbolic_module(_, Map, _), Symbol) = map.search(Map, Symbol).
-atom_search(Module, Symbol, atom_search(Module, Symbol)).
+
 
 
 
