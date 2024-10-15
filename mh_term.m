@@ -39,32 +39,32 @@
 	---> 	nil
 	
 	% anonymous terms
-	;	anonymous
+	;		anonymous
 	
 	% atomic values
-	;	atom(mh_symbol)
+	;		atom(mh_symbol)
 
 	% variables
-	;	var(var_id)
+	;		var(var_id)
 	
 	% values
-	;	mr_value(univ)
+	;		mr_value(univ)
 	
 	% compound terms
-	;	cons(functor, mh_term)
-	;	tuple_term(mh_tuple)
+	;		cons(functor, mh_term)
+	;		tuple_term(mh_tuple)
 	
-	% constraints
-	;	constraint_application(mh_term) % ?Term
-	;	constraint_term(mh_constraint)
+	% lazy constraints
+	;		lazy(mh_term) % X = ?Term => X:Term
 	
 	% Higher order terms
-	;	relation(mh_relation)
-	;	predicate(mh_predicate)
-	;	function(mh_function)
+	;		relation(mh_relation)
+	;		predicate(mh_predicate)
+	;		function(mh_function)
+	;		constraint(mh_constraint)
 	
 	% Term substitutions (lazy)
-	;	term_sub(mh_term, mh_substitution).
+	;		term_sub(mh_term, mh_substitution).
 	
 :- func functor(mh_term) = functor is semidet.
 
@@ -106,6 +106,7 @@
 	;		var(ground)
 	;		relation(ground)
 	;		function(ground)
+	;		constraint(ground)
 	;		term_sub(functor, ground).
 
 :- type functor =< mh_term
@@ -119,6 +120,7 @@
 	;		relation(mh_relation)
 	;		predicate(mh_predicate)
 	;		function(mh_function)
+	;		constraint(mh_constraint)
 	
 	% Substitution
 	;		term_sub(functor, mh_substitution).
@@ -212,12 +214,15 @@
 :- inst lambda
 	--->	relation(ground)
 	;		predicate(ground)
-	;		function(ground).
+	;		function(ground)
+	;		constraint(ground)
+	;		term_sub(lambda, ground).
 
 :- type lambda =< functor
 	--->	relation(mh_relation)
 	;		predicate(mh_predicate)
 	;		function(mh_function)
+	;		constraint(mh_constraint)
 
   % Substitution
 	;		term_sub(lambda, mh_substitution).
@@ -280,13 +285,8 @@ apply_term_substitution(Sub, !Term) :- 	require_complete_switch [!.Term]
 		apply_tuple_substiution(Sub, Tup0, Tup),
 		!:Term = tuple_term(Tup)
 		
-	;	!.Term = constraint_application(ConTerm0),
-		apply_term_substitution(Sub, ConTerm0, ConTerm),
-		!:Term = constraint_application(ConTerm)
-		
-	;	!.Term = constraint_term(Const0),
-		apply_constraint_substitution(Sub, Const0, Const),
-		!:Term = constraint_term(Const)
+	;	!.Term = lazy(ConTerm),
+		!:Term = lazy(term_sub(ConTerm, Sub))
 	
 	;	!.Term = relation(Rel0), 
 		apply_relation_substitution(Sub, Rel0, Rel),
@@ -299,6 +299,10 @@ apply_term_substitution(Sub, !Term) :- 	require_complete_switch [!.Term]
 	;	!.Term = function(Func0),
 		apply_function_substitution(Sub, Func0, Func),
 		!:Term = function(Func)
+		
+	;	!.Term = constraint(Const0),
+		apply_constraint_substitution(Sub, Const0, Const),
+		!:Term = constraint(Const)
 		
 	;	!.Term = term_sub(SubTerm, Sub0),
 		compose_substitutions(Sub0, Sub, Sub1),
@@ -323,13 +327,13 @@ term_arity(T) = A :- require_complete_switch [T] (
 		;	T = mr_value(_)
 	
 
-		;	T = predicate(_)
+		;	T = predicate(_) % TODO: proper HO arity
 		;	T = relation(_)
 		;	T = function(_)
+		;	T = constraint(_)
 		), A = 0
 	
-	;	T = constraint_application(Ct), A = term_arity(Ct)
-	;	T = constraint_term(C), A = arity(C)
+	;	T = lazy(Ct), A = term_arity(Ct)
 	
 	;	T = cons(_, Arg), 
 		( if Arg = tuple_term(Tuple)
@@ -472,10 +476,8 @@ term_description(mr_value(M)) =
 	"mercury value term of type " ++ mr_type_name(M).
 term_description(cons(A, R)) = 
 	"constructor " ++ string(A) ++ "(" ++ mr_type_name(R) ++ ")".
-term_description(constraint_application(_)) =
-	"constraint application term".
-term_description(constraint_term(_)) =
-	"term constraint".
+term_description(lazy(Term)) =
+	"lazy " ++ term_description(Term).
 term_description(tuple_term(_)) = 
 	"mercury tuple term".
 term_description(predicate(_)) = 
@@ -484,5 +486,7 @@ term_description(relation(_)) =
 	"mercury relation term".
 term_description(function(_)) =
 	"mercury function term of type ".
+term_description(constraint(_)) =
+	"term constraint".
 term_description(term_sub(Term, _)) =
 	"substitution of " ++ term_description(Term).
