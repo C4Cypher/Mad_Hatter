@@ -28,13 +28,15 @@
 
 % Represents an indexable tuple of terms
 
+% TODO: Internalize tuple structure, implement lazy caching of different forms
+
 :- type mh_tuple
 	--->	some [T] mr_tuple(T) => mr_tuple(T)
 	;		list_tuple(list(mh_term))
 	;		array_tuple(array(mh_term))
-	%;		trie_tuple(???)  data structure that organizes a tuple into a 
+	%;		set_tuple(???)  data structure that organizes a tuple into a 
 	% 						 prefix tree structure?
-	;		tuple_sub(mh_tuple, mh_substitution).
+	;		tuple_sub(mh_tuple, mh_substitution).  % remove, make eager?
 
 :- func tuple(T) = mh_tuple <= mr_tuple(T).
 :- mode tuple(in) = out is det.

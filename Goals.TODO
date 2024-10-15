@@ -13,11 +13,16 @@ Design Goals:
 Outline
 Current goals
 get a repl running
-		get parsing working !! Term parsing working!
+		get parsing working !! Term parsing working! need to flesh out
 			convert mr_terms to mr_primitives
 			Define TOP level constructs 
-				definitions for module, program and ... 'library'? 
-					method dispatch for top level atoms
+				definitions for module, done*  basic structure finished
+					method dispatch for top level atoms, done, mh_environment
+				declarations
+					pragmas
+					promises
+					fact assertions
+					mercury types
 				finish mh_term, my high level AST
 					define environments/symbol substitution
 						finish substitutions 
@@ -26,6 +31,8 @@ get a repl running
 						relations
 							propositional language
 								implement unification  <- I am here
+									redesign tuples lazily
+									refactor substitutions
 						define clauses
 							scope
 							term constraints			
