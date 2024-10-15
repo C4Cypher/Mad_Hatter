@@ -20,6 +20,8 @@
 
 :- import_module mh_arity.
 :- import_module mh_term.
+:- import_module mh_var_set.
+:- import_module mh_var_id.
 :- import_module mh_substitution.
 
 
@@ -30,20 +32,46 @@
 
 % TODO: Internalize tuple structure, implement lazy caching of different forms
 
-:- type mh_tuple
-	--->	some [T] mr_tuple(T) => mr_tuple(T)
-	;		list_tuple(list(mh_term))
-	;		array_tuple(array(mh_term))
-	%;		set_tuple(???)  data structure that organizes a tuple into a 
-	% 						 prefix tree structure?
-	;		tuple_sub(mh_tuple, mh_substitution).  % remove, make eager?
+:- type mh_tuple.
+
+:- instance arity(mh_tuple).
+:- instance mr_tuple(mh_tuple).
+
+%-----------------------------------------------------------------------------%
+% Tuple constructors
+
+% reverse modes fail on type mismatch
 
 :- func tuple(T) = mh_tuple <= mr_tuple(T).
 :- mode tuple(in) = out is det.
-:- mode tuple(out) = in is semidet.
+:- mode tuple(out) = in is semidet. 
+
+:- func tuple_list(T) = mh_tuple <= mr_tuple(T).
+:- mode tuple_list(in) = out is det.
+:- mode tuple_list(out) = in is semidet. 
+
+:- func tuple_array(T) = mh_tuple <= mr_tuple(T).
+:- mode tuple_array(in) = out is det.
+:- mode tuple_array(out) = in is semidet. 
+
+:- func tuple_list(T) = mh_tuple <= mr_tuple(T).
+:- mode tuple_list(in) = out is det.
+:- mode tuple_list(out) = in is semidet. 
+
+%-----------------------------------------------------------------------------%
+% Tuple properties
 
 :- pred tuple_size(mh_tuple::in, int::out) is det.
 :- func tuple_size(mh_tuple) = int.
+
+:- pred tuple_var_set(mh_tuple::in, mh_var_set::out) is det.
+:- func tuple_var_set(mh_tuple) = mh_var_set.
+
+:- pred tuple_var_id_set(mh_tuple::in, var_id_set::out) is det.
+:- func tuple_var_id_set(mh_tuple) = var_id_set.
+
+:- pred tuple_offset(mh_tuple::in, var_id_offset::out) is det.
+:- func tuple_offset(mh_tuple) = var_id_offset.
 
 :- pred ground_tuple(mh_tuple::in) is semidet.
 
@@ -51,8 +79,6 @@
 :- mode ground_tuple(in) = out is semidet.
 :- mode ground_tuple(out) = in is semidet.
 
-:- instance arity(mh_tuple).
-:- instance mr_tuple(mh_tuple).
 
 %-----------------------------------------------------------------------------%
 % Tuple indexing
@@ -142,15 +168,28 @@
 %-----------------------------------------------------------------------------%
 % Tuple type
 
+:- type mh_tuple
+	--->	some [T] mr_tuple(T) => mr_tuple(T)
+	;		list_tuple(list(mh_term))
+	;		array_tuple(array(mh_term))
+	%;		set_tuple(???)  data structure that organizes a tuple into a 
+	% 						 prefix tree structure?
+	
+
+
+%-----------------------------------------------------------------------------%
+% Tuple constructors
+
 :- pragma promise_equivalent_clauses(tuple/1).
 
 tuple(T::in) = (Tuple::out) :-
-	( if promise_equivalent_solutions [U] (
+	( if 
+		promise_equivalent_solutions [U] (
 			dynamic_cast(T, U:mh_tuple);
 			dynamic_cast(T, V:list(mh_term)), U = list_tuple(V);
 			dynamic_cast(T, V:array(mh_term)), U = array_tuple(V);
 			dynamic_cast(T, tuple_term(V):mh_term), U = tuple(V);
-			dynamic_cast(T, tuple_term(V):compound_term), U = tuple(V)
+			dynamic_cast(T, tuple_term(V):compound_term), U = tuple(V) %smelly
 		)
 	then
 		Tuple = U
@@ -167,6 +206,9 @@ tuple(T::out) = (Tuple::in) :-
 			apply_tuple_substiution(Sub, Tup0, Tup1),
 			Tup1 = tuple(T)
 	).
+	
+%-----------------------------------------------------------------------------%
+% Tuple properties	
 	
 tuple_size(mr_tuple(T), S) :- arity(T, S).
 tuple_size(list_tuple(L), S) :- length(L, S).
@@ -189,6 +231,8 @@ ground_tuple(T) = T :- ground_tuple(T).
 	pred(fold_mr_tuple/4) is fold_tuple,
 	pred(all_mr_tuple/2) is all_tuple
 ].
+
+
 
 
 %-----------------------------------------------------------------------------%
