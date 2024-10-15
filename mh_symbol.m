@@ -16,6 +16,8 @@
 
 :- import_module list.
 
+%-----------------------------------------------------------------------------%
+
 :- type mh_symbol.
 :- type mh_symbols == list(mh_symbol).
 
@@ -29,9 +31,16 @@
 
 :- func to_string(mh_symbol) = string.
 
+%-----------------------------------------------------------------------------%
+%-----------------------------------------------------------------------------%
+
 :- implementation.
 
-:- pragma require_feature_set([memo]).
+% TODO: Revisit symbol memoization.  Hashing?
+
+:- pragma require_feature_set([memo]). 
+%-----------------------------------------------------------------------------%
+
 
 :- type mh_symbol ---> ~string.
 
@@ -41,6 +50,3 @@ to_string('~'(String)) = String.
 
 :- pragma memo(symbol(in) = out).
 
-% I don't like using '\' as the internal constructor for symbols, but Mercury
-% doesn't have a more suitable bultin operator at present. The reason I'm
-% using it is that, at this point it should result in more readable output
