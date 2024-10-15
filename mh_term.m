@@ -38,9 +38,6 @@
 	% nil, the abscence of term
 	---> 	nil
 	
-	% anonymous terms
-	;		anonymous
-	
 	% atomic values
 	;		atom(mh_symbol)
 
@@ -269,7 +266,6 @@ apply_term_substitution(Sub, !Term) :- 	require_complete_switch [!.Term]
 		( 
 			!.Term = nil 
 		;	!.Term = atom(_) 
-		;	!.Term = anonymous 
 		;	!.Term = mr_value(_) 
 		), 
 		!:Term = !.Term 
@@ -321,7 +317,6 @@ apply_term_substitution(S, !.T) = !:T :- apply_term_substitution(S, !T).
 
 term_arity(T) = A :- require_complete_switch [T] (
 		(	T = nil
-		;	T = anonymous
 		;	T = atom(_)
 		;	T = var(_)
 		;	T = mr_value(_)
@@ -469,7 +464,6 @@ mr_type_name(T) = type_name(type_of(T)).
 :- func term_description(mh_term) = string.
 
 term_description(nil) = "nil term".
-term_description(anonymous) = "anonymous term".
 term_description(atom(Symbol)) = "atom """ ++ to_string(Symbol) ++ """".
 term_description(var(V)) = "variable with id " ++ string(V).
 term_description(mr_value(M)) = 
