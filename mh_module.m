@@ -16,7 +16,7 @@
 :- interface.
 
 
-:- import_module type_desc.
+% :- import_module type_desc.
 
 :- import_module mh_term.
 :- import_module mh_environment.
@@ -80,12 +80,15 @@
 %-----------------------------------------------------------------------------%
 % Mad Hatter modules
 
+:- type type_desc ---> placeholder.
+
+:- type symbol_table == map(mh_symbol, mh_term).
 :- type mr_type_set == set(type_desc).
 
 :- type mh_module
 	--->	symbolic_module(
 				mh_symbol, 		% module name
-				mh_environment, % map of atoms to terms
+				symbol_table, % map of atoms to terms
 				mr_type_set		% set of mercury types to convert from terms
 				% declarations
 				% imported modules
@@ -94,7 +97,7 @@
 			
 init_module(Name, init_module(Name)).
 
-init_module(Name) = symbolic_module(symbol(Name), new_env(map.init), set.init).
+init_module(Name) = symbolic_module(symbol(Name), map.init, set.init).
 
 module_name(symbolic_module(symbol(Name), _, _)) = Name.
 
@@ -103,18 +106,18 @@ module_name(symbolic_module(symbol(Name), _, _)) = Name.
 
 environment(M, environment(M)).
 
-environment(symbolic_module(_, Env, _)) = Env.
+environment(symbolic_module(_, Env, _)) = new_env(Env).
 
 insert_atom_substitution(Symb, Term, 
-	symbolic_module(Name, map_env(!.Env), Types),
-	symbolic_module(Name, map_env(!:Env), Types)
+	symbolic_module(Name, !.Env, Types),
+	symbolic_module(Name, !:Env, Types)
 ) :-
 	map.insert(Symb, Term, !Env).
 	
 	
 replace_atom_substitution(Symb, Term, 
-	symbolic_module(Name, map_env(!.Env), Types),
-	symbolic_module(Name, map_env(!:Env), Types)
+	symbolic_module(Name, !.Env, Types),
+	symbolic_module(Name, !:Env, Types)
 ) :-
 	map.update(Symb, Term, !Env).
 

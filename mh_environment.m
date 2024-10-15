@@ -23,8 +23,7 @@
 %-----------------------------------------------------------------------------%
 % Environment
 
-:- type mh_environment
-	--->	map_env(map(mh_symbol, mh_term)).
+:- type mh_environment.
 
 :- func new_env(map(mh_symbol, mh_term)) = mh_environment.
 
@@ -41,7 +40,8 @@
 
 %-----------------------------------------------------------------------------%
 
-
+:- type mh_environment
+	--->	map_env(map(mh_symbol, mh_term)).
 	
 new_env(Map) = map_env(Map).
 	
