@@ -36,13 +36,15 @@
 
 :- implementation.
 
-% TODO: Revisit symbol memoization.  Hashing?
+% TODO: Memo grades may not be thread safe or compatable.
+% Revisit symbol memoization.  Hashing?
 
 :- pragma require_feature_set([memo]). 
 %-----------------------------------------------------------------------------%
 
 
 :- type mh_symbol ---> ~string.
+% ; symbol_hash(uint)   ??
 
 symbol(String) = '~'(String).
 
