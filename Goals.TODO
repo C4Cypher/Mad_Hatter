@@ -25,11 +25,12 @@ get a repl running
 					mercury types
 				finish mh_term, my high level AST
 					refactor substitutions
-						refactor tuples
-							internalize representation
-								implement set tuples  <- I am here
-									hash table?
-								cache mr->list->array->set->list conversion
+						implement term sets  <- I am here
+							refactor tuples
+								internalize representation
+									implement set tuples
+										hash table?
+									cache mr->list->array->set->list conversion
 					define environments/symbol substitution
 						finish substitutions 
 							term constraints 	
