@@ -166,6 +166,29 @@
 :- func new_value_term(T) = mh_term.	
 :- func new_value(T) = mercury_value.
 
+%-----------------------------------------------------------------------------%
+%	Simple terms
+
+:- inst simple_term
+	--->	nil
+	;		atom(ground)
+	;		var(ground)
+	;		mr_value(ground)
+	;		lazy(simple_term)
+	;		term_sub(simple_term, ground).
+	
+:- type simple_term =< mh_term
+	--->	nil
+	;		atom(mh_symbol)
+	;		var(var_id)
+	;		mr_value(univ)
+	;		lazy(simple_term)
+	;		term_sub(simple_term, mh_substitution).
+	
+:- mode simple_term == ground >> simple_term.
+
+:- pred simple_term(mh_term::simple_term) is semidet.
+
 	
 
 %-----------------------------------------------------------------------------%
@@ -180,6 +203,10 @@
 	--->	cons(functor, mh_term)
 	;		tuple_term(mh_tuple)
 	;		term_sub(compound_term, mh_substitution).
+	
+:- mode compound_term == ground >> compound_term.
+
+:- pred compound_term(mh_term::compound_term) is semidet.
 
 :- instance arity(compound_term).
 % :- instance tuple(compound_term).
@@ -187,10 +214,14 @@
 %-----------------------------------------------------------------------------%
 %	Mad Hatter constructors
 	
-:- 	inst mh_constructor ---> cons(ground, ground).
+:- inst mh_constructor ---> cons(ground, ground).
 	
 :- type mh_constructor =< compound_term
 	--->	cons(functor, mh_term).
+	
+:- mode mh_constructor == ground >> mh_constructor.
+
+:- pred mh_constructor(mh_term::mh_constructor) is semidet.
 
 :- instance arity(mh_constructor).
 % :- instance tuple(mh_constructor).
@@ -204,6 +235,10 @@
 	--->	tuple_term(mh_tuple).
 	
 :- instance arity(tuple_term).
+
+:- mode tuple_term == ground >> tuple_term.
+
+:- pred tuple_term(mh_term::tuple_term) is semidet.
 
 %-----------------------------------------------------------------------------%
 % Higher Order terms
@@ -223,6 +258,8 @@
 
   % Substitution
 	;		term_sub(lambda, mh_substitution).
+	
+
 
 
 
@@ -406,7 +443,23 @@ new_value_term(T) = mr_value(univ(T)).
 new_value(T) = mr_value(univ(T)).
 
 %-----------------------------------------------------------------------------%
+%	Simple terms
+
+simple_term(T) :-
+	T = nil;
+	T = atom(_);
+	T = var(_);
+	T = mr_value(_);
+	T = lazy(L), simple_term(L);
+	T = term_sub(S, _), simple_term(S).
+
+%-----------------------------------------------------------------------------%
 %	Compound terms
+
+compound_term(T) :-
+	T = cons(_, _);
+	T = tuple_term(_);
+	T = term_sub(S, _), compound_term(S).
 
 :- instance arity(compound_term) where [
 	arity(T, A) :- require_complete_switch [T] 
@@ -422,13 +475,12 @@ new_value(T) = mr_value(univ(T)).
 	)
 ].
 
-
-
-
 % :- instance tuple(compound_term) where [ ].
 
 %-----------------------------------------------------------------------------%
-%	Mad Hatter compound terms
+%	Mad Hatter constructors
+
+mh_constructor(cons(_, _)). .
 
 :- instance arity(mh_constructor) where [ 
 	arity(cons(_, T), Arg) :-
@@ -437,16 +489,18 @@ new_value(T) = mr_value(univ(T)).
 			else Arg = 1
 		) 
 ].
-
-	
 	
 %-----------------------------------------------------------------------------%
-%	Relations
+%	Tuple terms
+
+tuple_term(tuple_term(_)).
 
 :- instance arity(tuple_term) where [ arity(tuple_term(R), arity(R)) ].
 
-
 % :- instance tuple(mercury_tuple) where [ ].
+
+%-----------------------------------------------------------------------------%
+% Higher Order terms
 
 %-----------------------------------------------------------------------------%
 % Utility
