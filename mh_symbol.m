@@ -17,6 +17,7 @@
 :- import_module list.
 
 %-----------------------------------------------------------------------------%
+% Symbols
 
 :- type mh_symbol.
 :- type mh_symbols == list(mh_symbol).
@@ -40,8 +41,10 @@
 % Revisit symbol memoization.  Hashing?
 
 :- pragma require_feature_set([memo]). 
-%-----------------------------------------------------------------------------%
 
+
+%-----------------------------------------------------------------------------%
+% Symbols
 
 :- type mh_symbol ---> ~string.
 % ; symbol_hash(uint)   ??
