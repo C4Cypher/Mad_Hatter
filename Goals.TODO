@@ -25,7 +25,9 @@ get a repl running
 					mercury types
 				finish mh_term, my high level AST
 					refactor substitutions
-						implement term sets  <- I am here
+						implement term sets 
+							disjunctive ordering? Weights?
+							value sets <- I am here
 							refactor tuples
 								internalize representation
 									implement set tuples
@@ -37,6 +39,9 @@ get a repl running
 					hash out higher order types 
 						relations
 							propositional language
+								disjunctions as sets
+								conjunctions as lists? sets?
+								evaluation order?
 								implement unification
 									redesign tuples lazily
 									refactor substitutions
@@ -45,7 +50,11 @@ get a repl running
 							term constraints			
 							mode system
 								implement inst trees?
- 
+optimize terms
+	re-order mh_term constructors for optimal ordering
+optimize symbols
+	user defined symbol equality (see where it breaks the code)
+	make symbols thread safe (implement memoization manually)
 compile to native at runtime
 	
 	
