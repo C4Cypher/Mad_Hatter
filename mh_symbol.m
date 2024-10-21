@@ -22,8 +22,6 @@
 :- type mh_symbol.
 :- type mh_symbols == list(mh_symbol).
 
-:- inst mh_symbol(I) ---> ~I.
-
 
 
 :- func symbol(string) = mh_symbol.
@@ -46,12 +44,58 @@
 %-----------------------------------------------------------------------------%
 % Symbols
 
-:- type mh_symbol ---> ~string.
-% ; symbol_hash(uint)   ??
+:- type mh_symbol ---> s(symbol_ptr).
 
-symbol(String) = '~'(String).
+:- pragma promise_equivalent_clauses(symbol/1).
 
-to_string('~'(String)) = String.
+symbol(String::in) = (s(Ptr)::out) :- construct_ptr(String, Ptr).
 
-:- pragma memo(symbol(in) = out).
+symbol(String::out) = (Symbol::in) :-
+	Symbol = s(Ptr),
+	promise_equivalent_solutions [String] deconstruct_ptr(Ptr, String).
+
+to_string(symbol(String)) = String.
+
+%-----------------------------------------------------------------------------%
+% Symbol pointers
+
+:- type symbol_ptr ---> ~string 
+	where equality is ptr_equality, comparison is ptr_comparison.
+
+:- pred ptr_equality(symbol_ptr::in, symbol_ptr::in) is semidet.
+
+ptr_equality(A, B) :- private_builtin.pointer_equal(A, B).
+
+:- pred ptr_comparison(comparison_result::uo, symbol_ptr::in, symbol_ptr::in) 
+	is det.
+	
+ptr_comparison(R, A, B) :-
+	(if ptr_equality(A, B)
+	then R = (=)
+	else ptr_inequality(R, A, B)
+	).
+	
+:- pred ptr_inequality(comparison_result::uo,
+	symbol_ptr::in, symbol_ptr::in)	is det.
+	
+ptr_inequality(R, A, B) :-
+	promise_equivalent_solutions [Astring, Bstring] (
+		deconstruct_ptr(A, Astring), 
+		deconstruct_ptr(B, Bstring)
+	),
+	(if compare((>), Astring, Bstring)
+	then R = (>)
+	else R = (<)
+	).
+
+:- pred construct_ptr(string::in, symbol_ptr::out) is det.
+
+:- pragma memo(construct_ptr/2).
+
+construct_ptr(S, '~'(S)).
+
+:- pred deconstruct_ptr(symbol_ptr::in, string::out) is cc_multi.
+
+deconstruct_ptr('~'(S), S).
+
 
