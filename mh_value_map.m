@@ -87,13 +87,15 @@
 	% Remove values from the map, starting frorm the smallest type in the 
 	% standard ordering, removing the smallest value of that type, fail if
 	% the map is empty
-:- pred remove_ordered(univ::out, V::out, 
+:- some [K] pred remove_ordered(K::out, V::out, 
 	mh_value_map(V)::in, mh_value_map(V)::out) 	is semidet.
 	
 %-----------------------------------------------------------------------------%
 % Nondeterminsitic lookup
 
+:- some [K] pred member(mh_value_map(V)::in, K::out, V::out) is nondet.
 
+:- pred member_univ(mh_value_map(V)::in, univ::out, V::out) is nondet.
 
 
 %-----------------------------------------------------------------------------%
@@ -252,16 +254,30 @@ remove_smallest(K, V, value_map(!.VM), value_map(!:VM)) :-
 	else map.det_update(Ktype, 'new type_map'(TM), !VM)
 	).
 	
-remove_ordered(univ(K), V, value_map(!.VM), value_map(!:VM)) :-
+remove_ordered(K, V, value_map(!.VM), value_map(!:VM)) :-
 	Ktype = min_key(!.VM),
 	map.search(!.VM, Ktype, type_map(TM0)),
-	map.remove_smallest(K, V, TM0, TM),
+	( if remove_ordered_empty_type_map_check, is_empty(TM0)
+	then unexpected($module, $pred, 
+		"Empty type map found in value map when attempting ordered removal.")
+	else true
+	),
+	map.remove_smallest(K, V, TM0, TM),	
 	( if map.is_empty(TM)
 	then map.delete(Ktype, !VM)
 	else map.det_update(Ktype, 'new type_map'(TM), !VM)
 	).
 
-	
+:- pred remove_ordered_empty_type_map_check is semidet.
+
+:- pragma no_determinism_warning(remove_ordered_empty_type_map_check/0).
+
+remove_ordered_empty_type_map_check :- true.
 %-----------------------------------------------------------------------------%
 % Nondeterminsitic lookup
 	
+member(value_map(VM), K, V) :-
+	map.member(VM, _, type_map(TM)),
+	map.member(TM, K, V).
+	
+member_univ(VM, U, V) :- member(VM, K,V), type_to_univ(K, U).
