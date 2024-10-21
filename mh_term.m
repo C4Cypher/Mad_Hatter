@@ -33,7 +33,10 @@
 %-----------------------------------------------------------------------------%
 % Terms
 
-:- type mh_term 
+%NOTE: the ordering of constructors is relevant for structure traversal
+% top- down is smallest to largest with comparison of different constructors
+
+:- type mh_term  
 
 	% nil, the abscence of term
 	---> 	nil
@@ -174,16 +177,14 @@
 	;		atom(ground)
 	;		var(ground)
 	;		mr_value(ground)
-	;		lazy(simple_term)
-	;		term_sub(simple_term, ground).
+	;		lazy(simple_term).
 	
 :- type simple_term =< mh_term
 	--->	nil
 	;		atom(mh_symbol)
 	;		var(var_id)
 	;		mr_value(univ)
-	;		lazy(simple_term)
-	;		term_sub(simple_term, mh_substitution).
+	;		lazy(simple_term).
 	
 :- mode simple_term == ground >> simple_term.
 
@@ -259,7 +260,15 @@
   % Substitution
 	;		term_sub(lambda, mh_substitution).
 	
+%-----------------------------------------------------------------------------%
+% Term substitutions (lazy)
 
+:- inst term_sub(I) ---> term_sub(I, ground).
+
+:- inst term_sub ---> term_sub(ground, ground).
+
+:- type term_sub =< mh_term
+	--->	term_sub(mh_term, mh_substitution).
 
 
 
@@ -450,8 +459,7 @@ simple_term(T) :-
 	T = atom(_);
 	T = var(_);
 	T = mr_value(_);
-	T = lazy(L), simple_term(L);
-	T = term_sub(S, _), simple_term(S).
+	T = lazy(L), simple_term(L).
 
 %-----------------------------------------------------------------------------%
 %	Compound terms
@@ -501,6 +509,11 @@ tuple_term(tuple_term(_)).
 
 %-----------------------------------------------------------------------------%
 % Higher Order terms
+
+
+%-----------------------------------------------------------------------------%
+% Term substitutions (lazy)
+
 
 %-----------------------------------------------------------------------------%
 % Utility

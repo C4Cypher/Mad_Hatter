@@ -13,6 +13,9 @@
 
 :- module mh_set.
 
+:- import_module mh_term.
+:- import_module mh_var_id.
+
 :- interface.
 
 %-----------------------------------------------------------------------------%
@@ -20,8 +23,12 @@
 
 :- type mh_set.
 
-:- pred init(mh_set::out) is det.
-:- func init = mh_set.
+% :- pred init(mh_set::out) is det.
+% :- func init = mh_set.
+
+% :- func singleton(mh_term) = mh_set.
+
+
 
 
 %-----------------------------------------------------------------------------%
@@ -29,9 +36,81 @@
 
 :- implementation.
 
+:- import_module set.
+:- import_module type_desc.
+:- import_module univ.
+
+:- import_module mh_tuple.
+:- import_module mh_symbol.
+
 %-----------------------------------------------------------------------------%
 % Term sets
 
+:- type mh_set
+
+	% un-treed ancestors
+	--->	empty_set
+	;		singleton_set(mh_term)
+	;		set_tuple(mh_tuple) % input tuple of ordered terms
+	
+	% simple sets
+	;		nil_set	% the set of nil values
+	;		atom_set(symbol_set)
+	;		var_set(var_id_offset, var_id_set)
+	;		var_set(var_id_offset, var_id_set, mh_var_set)
+	;		mr_value_set(univ_set)
+	;		simple_set()
+	
+%-----------------------------------------------------------------------------%
+% Simple sets
+
+:- inst mh_simple_set
+	--->	empty_set
+	;		nil_set	% the set of nil values
+	;		atom_set(ground)
+	;		var_set(ground, ground)
+	;		var_set(ground, ground, ground)
+	;		mr_value_set(ground).
+	
+:- type mh_simple_set =< mh_set
+	--->	empty_set
+	;		nil_set	% the set of nil values
+	;		atom_set(symbol_set)
+	;		var_set(var_id_offset, var_id_set)
+	;		var_set(var_id_offset, var_id_set, mh_var_set)
+	;		mr_value_set(univ_set).
+	
+%-----------------------------------------------------------------------------%
+% Nil set
+
+:- inst nil_set
+	--->	empty_set
+	;		nil_set.
+	
+:- type nil_set =< simple_set
+	--->	empty_set
+	;		nil_set.
 
 %-----------------------------------------------------------------------------%
-% Term prefixes
+% Atom sets
+
+:- type symbol_set == set(mh_symbol).
+
+%-----------------------------------------------------------------------------%
+% Var sets
+
+:- inst mh_var_set
+	--->	empty_set
+	;		var_set(ground, ground)
+	;		var_set(ground, ground, ground).
+	
+:- type mh_var_set =< mh_simple_set
+	--->	empty_set
+	;		var_set(var_id_offset, var_id_set)
+	;		var_set(var_id_offset, var_id_set, mh_var_set).
+
+
+%-----------------------------------------------------------------------------%
+% Value sets
+
+:- type univ_set == set(univ).
