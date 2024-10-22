@@ -31,9 +31,17 @@
 :- func to_string(mh_symbol) = string.
 
 %-----------------------------------------------------------------------------%
+% Symbol hashes
+
+:- pred symbol_hash(mh_symbol::in, int::out) is det.
+
+%-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
 :- implementation.
+
+:- import_module fnv_hash.
+:- import_module uint.
 
 % TODO: Memo grades may not be thread safe or compatable.
 % Revisit symbol memoization.  Hashing?
@@ -108,3 +116,9 @@ ptr_inequality(R, A, B) :-
 	else R = (>)
 	).
 
+%-----------------------------------------------------------------------------%
+% Symbol hashes
+
+symbol_hash(s(Ptr), cast_to_int(H)) :-
+	( promise_equivalent_solutions [String] deconstruct_ptr(Ptr, String) ),
+	fnv1a_hash(String, H).
