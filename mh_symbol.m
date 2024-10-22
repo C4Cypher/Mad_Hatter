@@ -101,8 +101,8 @@ ptr_inequality(R, A, B) :-
 		deconstruct_ptr(A, Astring), 
 		deconstruct_ptr(B, Bstring)
 	),
-	(if compare((>), Astring, Bstring)
-	then R = (>)
-	else R = (<)
+	(if compare((<), Astring, Bstring)
+	then R = (<)
+	else R = (>)
 	).
 
