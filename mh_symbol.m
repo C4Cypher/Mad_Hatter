@@ -47,6 +47,7 @@
 :- type mh_symbol ---> s(symbol_ptr).
 
 :- pragma promise_equivalent_clauses(symbol/1).
+:- pragma inline(symbol/1).
 
 symbol(String::in) = (s(Ptr)::out) :- construct_ptr(String, Ptr).
 
@@ -62,12 +63,29 @@ to_string(symbol(String)) = String.
 :- type symbol_ptr ---> ~string 
 	where equality is ptr_equality, comparison is ptr_comparison.
 
+:- pred construct_ptr(string::in, symbol_ptr::out) is det.
+
+:- pragma memo(construct_ptr/2).
+
+construct_ptr(S, '~'(S)).
+
+:- pred deconstruct_ptr(symbol_ptr::in, string::out) is cc_multi.
+
+:- pragma inline(deconstruct_ptr/2).
+
+deconstruct_ptr('~'(S), S).
+
+
 :- pred ptr_equality(symbol_ptr::in, symbol_ptr::in) is semidet.
 
 ptr_equality(A, B) :- private_builtin.pointer_equal(A, B).
 
+:- pragma inline(ptr_equality/2).
+
 :- pred ptr_comparison(comparison_result::uo, symbol_ptr::in, symbol_ptr::in) 
 	is det.
+	
+:- pragma inline(ptr_comparison/3).
 	
 ptr_comparison(R, A, B) :-
 	(if ptr_equality(A, B)
@@ -87,15 +105,4 @@ ptr_inequality(R, A, B) :-
 	then R = (>)
 	else R = (<)
 	).
-
-:- pred construct_ptr(string::in, symbol_ptr::out) is det.
-
-:- pragma memo(construct_ptr/2).
-
-construct_ptr(S, '~'(S)).
-
-:- pred deconstruct_ptr(symbol_ptr::in, string::out) is cc_multi.
-
-deconstruct_ptr('~'(S), S).
-
 
