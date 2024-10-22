@@ -6,12 +6,12 @@
 % Public License - see the file COPYING.LIB in the Mercury distribution.
 %-----------------------------------------------------------------------------%
 % 
-% File: mh_map.m
+% File: mh_term_map.m
 % Main author: C4Cypher.
 % Stability: low.
 %-----------------------------------------------------------------------------%
 
-:- module mh_map.
+:- module mh_term_map.
 
 :- interface.
 
@@ -22,7 +22,7 @@
 %-----------------------------------------------------------------------------%
 % Term maps
 
-:- type mh_map.
+:- type mh_term_map.
 
 
 
@@ -43,7 +43,7 @@
 %-----------------------------------------------------------------------------%
 % Term maps
 
-:- type mh_map(T)
+:- type mh_term_map(T)
 
 	% un-treed ancestors
 	--->	empty_map
@@ -66,7 +66,7 @@
 
 :- inst nil_map ---> nil_map(ground).
 
-:- type nil_map(T) =< mh_map(T) ---> nil_map(T).
+:- type nil_map(T) =< mh_term_map(T) ---> nil_map(T).
 
 %-----------------------------------------------------------------------------%
 % Atom maps

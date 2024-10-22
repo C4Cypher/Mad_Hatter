@@ -6,12 +6,12 @@
 % Public License - see the file COPYING.LIB in the Mercury distribution.
 %-----------------------------------------------------------------------------%
 % 
-% File: mh_set.m
+% File: mh_term_set.m
 % Main author: C4Cypher.
 % Stability: low.
 %-----------------------------------------------------------------------------%
 
-:- module mh_set.
+:- module mh_term_set.
 
 :- import_module mh_term.
 :- import_module mh_var_id.
@@ -21,12 +21,12 @@
 %-----------------------------------------------------------------------------%
 % Term sets
 
-:- type mh_set.
+:- type mh_term_set.
 
-% :- pred init(mh_set::out) is det.
-% :- func init = mh_set.
+% :- pred init(mh_term_set::out) is det.
+% :- func init = mh_term_set.
 
-% :- func singleton(mh_term) = mh_set.
+% :- func singleton(mh_term) = mh_term_set.
 
 
 
@@ -46,7 +46,7 @@
 %-----------------------------------------------------------------------------%
 % Term sets
 
-:- type mh_set
+:- type mh_term_set
 
 	% un-treed ancestors
 	--->	empty_set
@@ -72,7 +72,7 @@
 	;		var_set(ground, ground, ground)
 	;		mr_value_set(ground).
 	
-:- type mh_simple_set =< mh_set
+:- type mh_simple_set =< mh_term_set
 	--->	empty_set
 	;		nil_set	% the set of nil values
 	;		atom_set(symbol_set)
