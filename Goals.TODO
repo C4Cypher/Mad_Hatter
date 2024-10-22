@@ -53,8 +53,8 @@ get a repl running
 optimize terms
 	re-order mh_term constructors for optimal ordering
 optimize symbols
-	user defined symbol equality (see where it breaks the code)
-	make symbols thread safe (implement memoization manually)
+	hash table for symbol pointers? HAMT? GC safe?
+	ensurre symbols are thread safe 
 compile to native at runtime
 	
 	
