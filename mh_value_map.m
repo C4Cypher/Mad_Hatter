@@ -81,13 +81,13 @@
 	
 	% Remove the smallest value of a given type, fail if there are no
 	% values of the given type
-:- pred remove_smallest(K::out, V::out, 
+:- pred remove_smallest_typed(K::out, V::out, 
 	mh_value_map(V)::in, mh_value_map(V)::out) 	is semidet.
 	
 	% Remove values from the map, starting frorm the smallest type in the 
 	% standard ordering, removing the smallest value of that type, fail if
 	% the map is empty
-:- some [K] pred remove_ordered(K::out, V::out, 
+:- some [K] pred remove_smallest(K::out, V::out, 
 	mh_value_map(V)::in, mh_value_map(V)::out) 	is semidet.
 	
 %-----------------------------------------------------------------------------%
@@ -244,7 +244,7 @@ remove(K, V, value_map(!.VM), value_map(!:VM)) :-
 remove_univ(U, V, !M) :-
 	remove(univ_value(U), V,  !M).
 	
-remove_smallest(K, V, value_map(!.VM), value_map(!:VM)) :-
+remove_smallest_typed(K, V, value_map(!.VM), value_map(!:VM)) :-
 	Ktype = type_of(K),
 	map.search(!.VM, Ktype, type_map(TM0)),
 	map.remove_smallest(U, V, TM0, TM),
@@ -254,10 +254,10 @@ remove_smallest(K, V, value_map(!.VM), value_map(!:VM)) :-
 	else map.det_update(Ktype, 'new type_map'(TM), !VM)
 	).
 	
-remove_ordered(K, V, value_map(!.VM), value_map(!:VM)) :-
+remove_smallest(K, V, value_map(!.VM), value_map(!:VM)) :-
 	Ktype = min_key(!.VM),
 	map.search(!.VM, Ktype, type_map(TM0)),
-	( if remove_ordered_empty_type_map_check, is_empty(TM0)
+	( if remove_smallest_empty_type_map_check, is_empty(TM0)
 	then unexpected($module, $pred, 
 		"Empty type map found in value map when attempting ordered removal.")
 	else true
@@ -268,11 +268,11 @@ remove_ordered(K, V, value_map(!.VM), value_map(!:VM)) :-
 	else map.det_update(Ktype, 'new type_map'(TM), !VM)
 	).
 
-:- pred remove_ordered_empty_type_map_check is semidet.
+:- pred remove_smallest_empty_type_map_check is semidet.
 
-:- pragma no_determinism_warning(remove_ordered_empty_type_map_check/0).
+:- pragma no_determinism_warning(remove_smallest_empty_type_map_check/0).
 
-remove_ordered_empty_type_map_check :- true.
+remove_smallest_empty_type_map_check :- true.
 %-----------------------------------------------------------------------------%
 % Nondeterminsitic lookup
 	
