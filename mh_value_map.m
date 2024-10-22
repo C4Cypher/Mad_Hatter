@@ -86,7 +86,7 @@
 	
 	% Remove values from the map, starting frorm the smallest type in the 
 	% standard ordering, removing the smallest value of that type, fail if
-	% the map is empty
+	% the map is empty, this should align with the standard ordering
 :- some [K] pred remove_smallest(K::out, V::out, 
 	mh_value_map(V)::in, mh_value_map(V)::out) 	is semidet.
 	
