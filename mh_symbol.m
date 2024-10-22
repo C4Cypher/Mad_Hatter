@@ -96,6 +96,8 @@ ptr_comparison(R, A, B) :-
 :- pred ptr_inequality(comparison_result::uo,
 	symbol_ptr::in, symbol_ptr::in)	is det.
 	
+:- pragma inline(ptr_inequality/3).
+	
 ptr_inequality(R, A, B) :-
 	promise_equivalent_solutions [Astring, Bstring] (
 		deconstruct_ptr(A, Astring), 
