@@ -54,7 +54,7 @@
 	;		atom_map(symbol_map)
 	;		var_map(var_id_offset, array(T)) % id set derived from array size
 	;		var_map(var_id_offset, array(T), mh_var_map)
-	;		mr_value_map(univ_map)
+	;		mr_value_map(mh_value_map)
 	;		simple_map()
 	
 %-----------------------------------------------------------------------------%
@@ -63,6 +63,10 @@
 
 %-----------------------------------------------------------------------------%
 % Nil map
+
+:- inst nil_map ---> nil_map(ground).
+
+:- type nil_map(T) =< mh_map(T) ---> nil_map(T).
 
 %-----------------------------------------------------------------------------%
 % Atom maps
