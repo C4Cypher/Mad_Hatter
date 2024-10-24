@@ -22,7 +22,10 @@
 %-----------------------------------------------------------------------------%
 % Term maps
 
-:- type mh_term_map.
+:- type mh_term_map(T).
+
+:- type key_term_func(T) == func(T) = mh_term.
+
 
 
 
@@ -32,6 +35,7 @@
 :- implementation.
 
 :- import_module array.
+:
 :- import_module map.
 :- import_module type_desc.
 :- import_module univ.
@@ -55,7 +59,7 @@
 	;		var_map(var_id_offset, array(T)) % id set derived from array size
 	;		var_map(var_id_offset, array(T), mh_var_map)
 	;		mr_value_map(mh_value_map)
-	;		simple_map()
+	;		simple_map.
 	
 %-----------------------------------------------------------------------------%
 % Simple maps
