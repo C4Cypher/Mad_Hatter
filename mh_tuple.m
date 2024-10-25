@@ -171,7 +171,7 @@
 :- type mh_tuple
 	--->	some [T] mr_tuple(T) => mr_tuple(T)
 	;		list_tuple(list(mh_term))
-	;		array_tuple(array(mh_term))
+	;		array_tuple(array(mh_term)).
 	%;		set_tuple(???)  data structure that organizes a tuple into a 
 	% 						 prefix tree structure?
 	

@@ -68,5 +68,4 @@ to_string(symbol(String)) = String.
 % Symbol hashes
 
 
-
-symbol_hash(symbol(String), cast_to_int(H)) :- fnv1a_hash(String, H).
+symbol_hash(symbol(String), cast_to_int(Hash)) :- fnv1a_hash(String, Hash).

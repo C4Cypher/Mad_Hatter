@@ -488,7 +488,7 @@ compound_term(T) :-
 %-----------------------------------------------------------------------------%
 %	Mad Hatter constructors
 
-mh_constructor(cons(_, _)). .
+mh_constructor(cons(_, _)).
 
 :- instance arity(mh_constructor) where [ 
 	arity(cons(_, T), Arg) :-
