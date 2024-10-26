@@ -57,6 +57,8 @@
 
 :- type bitmap == uint.
 
+:- type shift == int.
+
 :- func hash_size = int.
 
 hash_size = bits_per_uint.
@@ -81,13 +83,59 @@ hash_size = bits_per_uint.
 :- type leaf_array(K, V) == array(hashmap_leaf(K, V)).
 
 %-----------------------------------------------------------------------------%
+% Bit twiddling
+
+:- func bits_per_subkey = int.
+bits_per_subkey = 5.
+
+:- func maxchildren = int.
+maxchildren = unchecked_left_shift(1, bits_per_subkey).
+
+:- func subkey_mask = bitmap.
+subkey_mask = unchecked_right_shift(1, bits_per_subkey - 1).
+
+:- func index(bitmap, shift) = int.
+index(B, S) = cast_to_int(unchecked_right_shift(B, S) /\ subkey_mask).
+
+:- pragma inline(index/2).
+
+:- func mask(bitmap, shift) = bitmap.
+mask(H, S) = unchecked_left_shift(1, index(H, S)).
+
+:- pragma inline(mask/2).
+
+% This array index is computed by counting the number of 1-bits below the
+% 'index' represented by the mask.
+%
+% >>> sparseIndex 0b0110_0110 0b0010_0000
+% 2
+
+:- func sparse_index(bitmap, bitmap) = int.
+sparse_index(B, M) = weight(B /\ (M - 1) ).
+
+:- pragma inline(sparse_index/2).
+
+
+% Hamming weight, or 'popcount'
+:- func weight(uint) = int.
+
+weight(I) = 
+	(if I =< 1
+	then 
+		cast_to_int(I)
+	else 
+		weight(I /\ (I-1) ) + 1
+	).
+	
+	
+%-----------------------------------------------------------------------------%
 % Insertion
 
 insert(K, V, hm(!.HT, HashPred), hm(!:HT, HashPred)) :- 
 	insert_tree(hash(HashPred, K), K, V, 0, no, !HT).
 
-%  pred insert_tree(Hash, Key, Value, ??, Replace, !HashTree) is semidet.
-:- pred insert_tree(hash::in, K::in, V::in, int::in, bool::in
+%  pred insert_tree(Hash, Key, Value, Shift, Replace, !HashTree) is semidet.
+:- pred insert_tree(hash::in, K::in, V::in, shift::in, bool::in
 	ht(K, V)::in, ht(K, V)::out) is semidet.
 
 insert_tree(H, K, V, _, _, empty_tree, leaf(H, K, V)).
@@ -111,11 +159,15 @@ insert_tree(H, K, V, Shift, Replace, !.HT@leaf(LH, LK, LV), !:HT) :-
 
 :- func collision(hash, hashmap_leaf(K, V), hashmap_leaf(K, V)) = ht(K, V).
 
-collision(Hash, L1, L2) = collsision(Hash, !:Array) :-
-	array.init(2, L1, !.Array),
-	array.set(1, L2, !Array).
+collision(Hash, L1, L2) = collsision(Hash, Array) :-
+	array.init(2, L1, Array0),
+	array.set(1, L2, Array0, Array).
 	
-:- func two()
+% two :: Shift -> Hash -> k -> v -> Hash -> HashMap k v -> ST s (HashMap k v)
+:- func two(shift, hash, K, V, hashmap_leaf) = ht(K, V).
+
+two(S, H1, K1, V1, L2@leaf(H2, K2, V2)) = indexed_branch(Bitmap, Array) :-
+	
 
 %-----------------------------------------------------------------------------%
 % Utilites
@@ -124,20 +176,3 @@ collision(Hash, L1, L2) = collsision(Hash, !:Array) :-
 
 hash(P, T) = H :- P(T, H).
 
-%-----------------------------------------------------------------------------%
-% Hamming weight
-
-:- func uint_weight(uint) = int.
-
-uint_weight(I) = 
-	(if I =< 1
-	then 
-		cast_to_int(I)
-	else 
-		weight(I /\ (I-1) ) + 1
-	).
-	
-:- func bitmap_weight(bitmap) = int.
-
-bitmap_weight(B) = W :-
-	
