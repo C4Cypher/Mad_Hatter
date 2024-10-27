@@ -135,6 +135,7 @@ two(S, H1, K1, V1, L2@leaf(H2, K2, V2)) = indexed_branch(Bitmap, Array) :-
 		Bitmap = Bp1 \/ Bp2		
 	).
 	
+:- pragma inline(two/5).
 	
 
 
