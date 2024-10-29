@@ -20,12 +20,6 @@
 
 % :- import_module mh_arity.
 
-%-----------------------------------------------------------------------------%
-
-% This module was originally for the index(T -> U) typeclass, however that 
-% typeclass structure ended up being unworkable, now it's to store common
-% implementations of index operations for lists and arrays
-
 
 %-----------------------------------------------------------------------------%
 % List index implementation methods
@@ -79,6 +73,8 @@
 :- pred all_array_index(pred(T), array(T)).
 :- mode all_array_index(pred(in) is semidet, in) is semidet.
 
+
+	
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
