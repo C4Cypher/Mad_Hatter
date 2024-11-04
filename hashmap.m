@@ -52,7 +52,32 @@
 
 :- interface.
 
-:- use_module hash_table.
+%-----------------------------------------------------------------------------%
+% Hash Array Mapped Table
+
+:- type hashmap(K, V).
+
+:- type hash_func(K) == (func(K) = uint).
+
+
+%-----------------------------------------------------------------------------%
+% Insertion
+
+:- pred insert(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) is semidet.
+:- func insert(K, V, hashmap(K, V)) = hashmap(K, V) is semidet.
+
+%-----------------------------------------------------------------------------%
+%-----------------------------------------------------------------------------%
+
+:- implementation.
+
+:- import_module int.
+:- import_module uint.
+:- import_module array.
+:- import_module bool.
+:- import_module require.
+
+:- import_module mh_util.
 
 %-----------------------------------------------------------------------------%
 % Hash Array Mapped Table
@@ -60,30 +85,8 @@
 :- type hashmap(K, V)
 	--->	hm(
 				root :: hashmap_tree(K, V),
-				hash :: hash_pred(K)
+				hash :: hash_func(K)
 			).
-
-:- type hash_pred(K) == hash_table.hash_pred(K).
-:- inst hash_pred == hash_table.hash_pred.
-
-:- type hashmap_tree(K, V).
-
-%-----------------------------------------------------------------------------%
-% Insertion
-
-:- pred insert(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) is semidet.
-
-%-----------------------------------------------------------------------------%
-%-----------------------------------------------------------------------------%
-
-:- implementation.
-
-:- import_module uint.
-:- import_module array.
-:- import_module bool.
-
-%-----------------------------------------------------------------------------%
-% Hash Array Mapped Table
 
 %-----------------------------------------------------------------------------%
 % Hash map tree
@@ -111,61 +114,212 @@ hash_size = bits_per_uint.
 
 :- inst hashmap_leaf
 	--->	leaf(ground, ground, ground).
+	
+:- mode hashmap_leaf == ground >> hashmap_leaf.
 
-:- type hashmap_leaf(K, V) =< hashmap_tree
+:- pred is_hashmap_leaf(hashmap_tree(_K, _V)::hashmap_leaf) is semidet.
+
+is_hashmap_leaf(leaf(_, _, _)).
+	
+:- func coerce_leaf(hashmap_tree(K, V)) = hashmap_leaf(K, V) is semidet.
+
+coerce_leaf(L) = coerce(L) :- is_hashmap_leaf(L).
+
+:- func det_coerce_leaf(hashmap_tree(K, V)) = hashmap_leaf(K, V).
+
+det_coerce_leaf(L) = coerce(L) :- 
+	(if is_hashmap_leaf(L) 
+	then true
+	else unexpected($module, $pred, 
+		"Could not coerce hashmap tree to leaf, was not a leaf constructor.")
+	).
+
+
+:- type hashmap_leaf(K, V) =< hashmap_tree(K, V)
 	---> 	leaf(hash, K, V).
 	
 :- type leaf_array(K, V) == array(hashmap_leaf(K, V)).
 	
-	
 %-----------------------------------------------------------------------------%
 % Insertion
 
-insert(K, V, hm(!.HT, HashPred), hm(!:HT, HashPred)) :- 
-	insert_tree(hash(HashPred, K), K, V, 0, no, !HT).
+insert(K, V, hm(!.HT, HashFunc), hm(!:HT, HashFunc)) :- 
+	insert_tree(hash(HashFunc, K), K, V, 0, no, !HT).
+	
+insert(K, V, hm(!.HT, HashFunc)) = hm(!:HT, HashFunc) :-
+	insert_tree(hash(HashFunc, K), K, V, 0, no, !HT).
 
 %  pred insert_tree(Hash, Key, Value, Shift, Replace, !HashTree) is semidet.
-:- pred insert_tree(hash::in, K::in, V::in, shift::in, bool::in
+:- pred insert_tree(hash::in, K::in, V::in, shift::in, bool::in,
 	ht(K, V)::in, ht(K, V)::out) is semidet.
 
 insert_tree(H, K, V, _, _, empty_tree, leaf(H, K, V)).
 
-insert_tree(H, K, V, Shift, Replace, !.HT@leaf(LH, LK, LV), !:HT) :-
+insert_tree(H, K, V, S, R, !.HT@leaf(LH, LK, LV), !:HT) :-
 	(if H = LH
 	then
 		(if K = LK
 		then
 			(if V = LV
 			then !:HT = !.HT
-			else Replace = yes, 
+			else R = yes, 
 				!:HT = leaf(H, K, V)
 			)
 		else
-		!:HT = collision(H, leaf(H, K, V), coerce(!.HT))	
+		!:HT = collision(H, leaf(H, K, V), det_coerce_leaf(!.HT))	
 		)
 	else
-		!:HT = two(S, H, K, V, !.HT)
+		!:HT = two(S, H, K, V, leaf(LH, LK, LV))
 	).
 	
 insert_tree(H, K, V, S, R, !.HT@indexed_branch(B, !.Array), !:HT) :-
 	M = mask(H, S),
 	I = sparse_index(B, M),
-	( if B /\ M = 0
+	( if B /\ M = 0u
 	then
-		
+		array_insert(I, leaf(H, K, V), !Array),
+		!:HT = indexed_or_full_branch(B \/ M, !.Array)
+	else 
+		lookup(!.Array, I, St0),
+		insert_tree(H, K, V, next_shift(S), R, St0, St1),
+		(if private_builtin.pointer_equal(St1, St0)
+		then
+			!:HT = !.HT
+		else
+			slow_set(I, St1, !Array),
+			!:HT = indexed_branch(B, !.Array)
+		)
+	).
+	
+insert_tree(H, K, V, S, R, !.HT@full_branch(!.Array), !:HT) :-
+	I = index(H, S),
+	lookup(!.Array, I, St0),
+	insert_tree(H, K, V, next_shift(S), R, St0, St1),
+	(if private_builtin.pointer_equal(St1, St0)
+	then
+		!:HT = !.HT
 	else
-	)
+		slow_set(I, St1, !Array),
+		!:HT = full_branch(!.Array)
+	).
+
+insert_tree(H, K, V, S, R, !.HT@collision(CH, Array), !:HT) :-
+	(if H = CH
+	then
+		!:HT = collision(H, collision_insert(R, leaf(H, K, V), Array))
+	else
+		array.init(1, !.HT, BArray),
+		insert_tree(H, K, V, S, R, indexed_branch(mask(H, S), BArray), !:HT)
+	).
+
+%-----------------------------------------------------------------------------%
+% Node creation
+
+% Create a 'Collision' value with two 'Leaf' values.
 
 :- func collision(hash, hashmap_leaf(K, V), hashmap_leaf(K, V)) = ht(K, V).
 
-collision(Hash, L1, L2) = collsision(Hash, Array) :-
+collision(Hash, L1, L2) = collision(Hash, Array) :-
 	array.init(2, L1, Array0),
 	array.set(1, L2, Array0, Array).
+
+:- func collision_insert(bool, hashmap_leaf(K,V), leaf_array(K,V)) = 
+	leaf_array(K,V)	is semidet.
+	
+collision_insert(R, L@leaf(_, K, V), A) = 
+	collision_insert(R, 0, max(A), K, V, L, A).
+	
+:- func collision_insert(bool, int, int, K, V, hashmap_leaf(K,V), leaf_array(K,V)) 
+	= leaf_array(K,V) is semidet.
+	
+collision_insert(R, I, Ub, K, V, L, A) = 
+	(if K = K2
+	then
+		(if	V = V2
+		then A
+		else 
+			(if	R = yes
+			then
+				slow_set(A, I, L)
+			else collision_insert_failure
+			)
+		)
+	else if I < Ub
+	then
+		collision_insert(R, I + 1, Ub, K, V, L, A)
+	else
+		array_snoc(L, A)
+	) :-
+	unsafe_lookup(A, I, leaf(_, K2, V2) ).
+	
+	
+:- func collision_insert_failure = leaf_array(K, V) is failure.
+
+collision_insert_failure = make_empty_array :- fail.
+
+
+	
+:- func collision_merge( 
+		(func(hashmap_leaf(K, V), hashmap_leaf(K, V)) = bool ),
+		hashmap_leaf(K, V),
+		leaf_array(K, V)
+	) = leaf_array(K, V).
+	
+:- mode collision_merge( (func(in, in) = out is det), in, in) = out is det.
+:- mode collision_merge( (func(in, in) = out is semidet), in, in) = out
+	is semidet.
+	
+collision_merge(R, L@leaf(_, K, V), A) = 
+	collision_merge(R, 0, max(A), K, V, L, A).
+	
+:- func collision_merge(
+		(func(hashmap_leaf(K, V), hashmap_leaf(K, V)) = bool ),
+		int, int, K, V, hashmap_leaf(K,V), leaf_array(K,V)
+	) = leaf_array(K,V).
+	
+:- mode collision_merge( (func(in, in) = out is det), in, in, in, in, in, in)
+	= out is det.
+:- mode collision_merge( (func(in, in) = out is semidet), in, in, in, in, in, 
+	in) = out is semidet.
+	
+collision_merge(R, I, Ub, K, V, L, A) = 
+	(if K = K2
+	then
+		(if	V = V2
+		then A
+		else 
+			(if Replace = yes
+			then
+				slow_set(A, I, L)
+			else 
+				A
+			)
+		)
+	else if I < Ub
+	then
+		collision_merge(R, I + 1, Ub, K, V, L, A)
+	else
+		array_snoc(L, A)
+	) :-
+	unsafe_lookup(A, I, L2@leaf(_, K2, V2) ), 
+	R(L, L2) = Replace.
+		
+
+% Create a indexed_branch or full_branch node.
+:- func indexed_or_full_branch(bitmap, hash_array(K, V)) = hashmap_tree(K, V).
+
+indexed_or_full_branch(Bitmap, Array) = 
+	( if Bitmap = full_bitmap 
+	then
+		full_branch(Array)
+	else
+		indexed_branch(Bitmap, Array)
+	).
 	
 % two :: Shift -> Hash -> k -> v -> Hash -> HashMap k v -> ST s (HashMap k v)
-:- func two(shift, hash, K, V, hashmap_leaf) = ht(K, V).
+:- func two(shift, hash, K, V, hashmap_leaf(K, V)) = ht(K, V).
 
-two(S, H1, K1, V1, L2@leaf(H2, K2, V2)) = indexed_branch(Bitmap, Array) :-
+two(S, H1, K1, V1, L2@leaf(H2, _, _)) = indexed_branch(Bitmap, Array) :-
 	mask(H1, S, Bp1),
 	mask(H2, S, Bp2),
 	( if Bp1 = Bp2
@@ -175,7 +329,7 @@ two(S, H1, K1, V1, L2@leaf(H2, K2, V2)) = indexed_branch(Bitmap, Array) :-
 	else
 		array.init(2, leaf(H1, K1, V1), Array0),
 		Index = (index(Bp1, S) < index(Bp2, S) -> 1 ; 0),
-		array.set(Index, L2, Array0, Array),
+		array.set(Index, coerce(L2), Array0, Array),
 		Bitmap = Bp1 \/ Bp2		
 	).
 	
@@ -193,11 +347,12 @@ bits_per_subkey = 5.
 
 % The size of a 'Full' node, i.e. @2 ^ 'bitsPerSubkey'@.
 
-:- func maxchildren = int.
-maxchildren = unchecked_left_shift(1, bits_per_subkey).
+:- func max_children = int.
+max_children = unchecked_left_shift(1, bits_per_subkey).
+:- pragma inline(max_children/0).
 
 :- func subkey_mask = bitmap.
-subkey_mask = unchecked_right_shift(1, bits_per_subkey) - 1.
+subkey_mask = unchecked_right_shift(1u, bits_per_subkey) - 1u.
 
 % | Given a 'Hash' and a 'Shift' that indicates the level in the tree, compute
 % the index into a 'Full' node or into the bitmap of a `BitmapIndexed` node.
@@ -219,7 +374,7 @@ index(B, S) = cast_to_int(unchecked_right_shift(B, S) /\ subkey_mask).
  % 0b0100
 
 :- func mask(hash, shift) = bitmap.
-mask(H, S) = unchecked_left_shift(1, index(H, S)).
+mask(H, S) = unchecked_left_shift(1u, index(H, S)).
 :- pragma inline(mask/2).
 
 :- pred mask(hash::in, shift::in, bitmap::out) is det.
@@ -234,7 +389,7 @@ mask(H, S, mask(H, S)).
 % 2
 
 :- func sparse_index(bitmap, bitmap) = int.
-sparse_index(B, M) = weight(B /\ (M - 1) ).
+sparse_index(B, M) = weight(B /\ (M - 1u) ).
 :- pragma inline(sparse_index/2).
 
 % A bitmap with the 'maxChildren' least significant bits set, i.e.
@@ -247,13 +402,13 @@ sparse_index(B, M) = weight(B /\ (M - 1) ).
 %-- See issue #412.
 % So I'm using <</2 instead of unchecked_left_shift/2
 
-full_bitmap = \ ( \ 0 << max_children).
+full_bitmap = \ ( \ 0u << max_children).
 :- pragma inline(full_bitmap/0).
 
 
 % Increment a 'Shift' for use at the next deeper level.
-func next_shift(shift) = shift.
-next_shift(S) = S + bitsPerSubkey.
+:- func next_shift(shift) = shift.
+next_shift(S) = S + bits_per_subkey.
 
 :- pragma inline(next_shift/1).
 
@@ -262,18 +417,30 @@ next_shift(S) = S + bitsPerSubkey.
 :- func weight(uint) = int.
 
 weight(I) = 
-	(if I =< 1
+	(if I =< 1u
 	then 
 		cast_to_int(I)
 	else 
-		weight(I /\ (I-1) ) + 1
+		weight(I /\ (I-1u), 1)
+	).
+	
+:- pragma inline(weight/1).
+
+:- func weight(uint, int) = int.
+
+weight(I, N) =
+	(if I =< 1u
+	then 
+		cast_to_int(I) + N
+	else
+		weight(I /\ (I-1u), N+1)
 	).
 	
 
 %-----------------------------------------------------------------------------%
 % Utilites
 
-:- func hash(hash_pred(T), T) = hash.
+:- func hash(hash_func(T), T) = hash.
 
-hash(P, T) = H :- P(T, H).
+hash(F, T) = F(T).
 
