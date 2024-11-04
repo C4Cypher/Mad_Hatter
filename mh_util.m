@@ -60,6 +60,14 @@
 :- func unsafe_array_insert(int::in, T::in, array(T)::in) = 
 	(array(T)::array_uo) is det.
 
+% array_[cons|snoc](T, Source, Result)
+% Insert T as the [first|last] element of Source 
+:- pred array_cons(T::in, array(T)::in, array(T)::array_uo) is det.
+:- func array_cons(T::in, array(T)::in) = (array(T)::array_uo) is det.
+
+:- pred array_snoc(T::in, array(T)::in, array(T)::array_uo) is det.
+:- func array_snoc(T::in, array(T)::in) = (array(T)::array_uo) is det.
+
 
 % array_copy_range(Source, SrcFirst, SrcLast, TgtFirst, !Array)
 % Copy elements from a Source array ranging from indexes SrcFirst to SrcLast
@@ -165,10 +173,18 @@ insert_loop(I, T, Src, Current, Last, !Array) :-
 	(if I = Current
 	then
 		unsafe_set(I, T, !Array),
-		array_copy_range(Src, Current, Last, Next, !Array)
+		unsafe_copy_array_range(Src, Current, Last, Next, !Array)
 	else
 		insert_loop(I, T, Src, Next,  Last, !Array)
 	).
+	
+array_cons(T, Src, array_cons(T, Src)).
+
+array_cons(T, Src) = unsafe_array_insert(0, T, Src).
+
+array_snoc(T, Src, array_snoc(T, Src)).
+
+array_snoc(T, Src) = unsafe_array_insert(max(Src) + 1, T, Src).
 
 
 array_copy_range(Src, SrcF, SrcL, TgtF, !Array) :-
@@ -193,7 +209,7 @@ unsafe_copy_array_range(Src, SrcF, SrcL, TgtF, !Array) :-
 	unsafe_set(TgtF, Src ^ elem(SrcF), !Array),
 	(if SrcF < SrcL
 	then 
-		array_copy_range(Src, SrcF + 1, SrcL, TgtF + 1, !Array)
+		unsafe_copy_array_range(Src, SrcF + 1, SrcL, TgtF + 1, !Array)
 	else
 		!:Array = !.Array
 	).
