@@ -18,8 +18,10 @@
 %-----------------------------------------------------------------------------%
 % FNV Hash functions
 
+:- func fnv1_hash(string) = uint.
 :- pred fnv1_hash(string::in, uint::out) is det.
 
+:- func fnv1a_hash(string) = uint.
 :- pred fnv1a_hash(string::in, uint::out) is det.
 
 %-----------------------------------------------------------------------------%
@@ -42,12 +44,14 @@
 %-----------------------------------------------------------------------------%
 % FNV Hash functions
 
+fnv1_hash(String) = Hash :-  fnv1_hash(String, Hash).
+
 fnv1_hash(String, Hash) :-
 	length(String, Length),
 	fnv1_loop(String, 0, Length, fnv_offset, Hash).
 	
 	
-:- pred fnv_loop(string::in, int::in, int::in, uint::in, uint::out)
+:- pred fnv1_loop(string::in, int::in, int::in, uint::in, uint::out)
     is det.
 	
 fnv1_loop(String, Index, Length, !Hash) :- 
@@ -63,7 +67,8 @@ fnv1_loop(String, Index, Length, !Hash) :-
 	
 %-----------------------------------------------------------------------------%
 	
-	
+fnv1a_hash(String) = Hash :-  fnv1a_hash(String, Hash).	
+
 fnv1a_hash(String, Hash) :-
 	length(String, Length),
 	fnv1a_loop(String, 0, Length, fnv_offset, Hash).
