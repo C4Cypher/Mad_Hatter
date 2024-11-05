@@ -59,6 +59,15 @@
 
 :- type hash_func(K) == (func(K) = uint).
 
+%-----------------------------------------------------------------------------%
+% Creation
+
+:- func init(hash_func(K)) = hashmap(K, _V).
+:- pred init(hash_func(K)::in, hashmap(K, _)::out) is det.
+
+% :- func singleton(K, V, hash_func(K)) = hashmap(K, V).
+% :- pred 
+
 
 %-----------------------------------------------------------------------------%
 % Insertion
@@ -139,6 +148,12 @@ det_coerce_leaf(L) = coerce(L) :-
 	---> 	leaf(hash, K, V).
 	
 :- type leaf_array(K, V) == array(hashmap_leaf(K, V)).
+
+%-----------------------------------------------------------------------------%
+% Creation
+
+init(Hash) = hm(empty_tree, Hash).
+init(Hash, init(Hash)).
 	
 %-----------------------------------------------------------------------------%
 % Insertion
@@ -214,6 +229,7 @@ insert_tree(H, K, V, S, R, !.HT@collision(CH, Array), !:HT) :-
 
 %-----------------------------------------------------------------------------%
 % Node creation
+
 
 % Create a 'Collision' value with two 'Leaf' values.
 
