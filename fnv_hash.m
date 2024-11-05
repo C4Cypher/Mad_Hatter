@@ -18,7 +18,7 @@
 %-----------------------------------------------------------------------------%
 % FNV Hash functions
 
-:- pred fnv_hash(string::in, uint::out) is det.
+:- pred fnv1_hash(string::in, uint::out) is det.
 
 :- pred fnv1a_hash(string::in, uint::out) is det.
 
@@ -42,21 +42,21 @@
 %-----------------------------------------------------------------------------%
 % FNV Hash functions
 
-fnv_hash(String, Hash) :-
+fnv1_hash(String, Hash) :-
 	length(String, Length),
-	fnv_loop(String, 0, Length, fnv_offset, Hash).
+	fnv1_loop(String, 0, Length, fnv_offset, Hash).
 	
 	
 :- pred fnv_loop(string::in, int::in, int::in, uint::in, uint::out)
     is det.
 	
-fnv_loop(String, Index, Length, !Hash) :- 
+fnv1_loop(String, Index, Length, !Hash) :- 
 	( if Index < Length 
 	then
         unsafe_index_code_unit(String, Index, Char),
         !:Hash = !.Hash * fnv_prime,
         !:Hash = !.Hash `xor` det_from_int(Char),
-        fnv_loop(String, Index + 1, Length, !Hash)
+        fnv1_loop(String, Index + 1, Length, !Hash)
     else
         true
     ).
