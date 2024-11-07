@@ -80,24 +80,37 @@
 % Succeeds if the given key can be found in a hashmap
 % :- pred contains(hashmap(K, _V)::in, K::in) is semidet.
 
+% Succeeds if two hashmaps contain the same elements, regardless of internal
+% structure
+:- pred equal(hashmap(K, V)::in, hashmap(K, V)::in) is semidet.
+
 %-----------------------------------------------------------------------------%
 % Search
+
+:- pred lookup(hashmap(K, V)::in, K::in, V::out) is semidet <= hashable(K).
+:- func lookup(hashmap(K, V), K) = V is semidet <= hashable(K).
 
 %-----------------------------------------------------------------------------%
 % Insertion
 
 :- pred insert(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) is semidet
 	<= hashable(K).
-:- func insert(K, V, hashmap(K, V)) = hashmap(K, V) is semidet <= hashable(K).
+:- func insert(hashmap(K, V), K, V) = hashmap(K, V) is semidet <= hashable(K).
+
+
+:- pred set(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) is det
+	<= hashable(K).
+:- func set(hashmap(K, V), K, V) = hashmap(K, V) <= hashable(K).
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
 :- implementation.
 
+:- import_module array.
+:- use_module map.
 :- import_module int.
 :- import_module uint.
-:- import_module array.
 :- import_module bool.
 :- import_module require.
 
@@ -111,7 +124,7 @@
 	;		indexed_branch(bitmap, hash_array(K, V))
 	;		leaf(hash, K, V)
 	;		full_branch(hash_array(K, V))
-	;		collision(hash, leaf_array(K, V)).
+	;		collision(hash, bucket(K, V)).
 
 :- type hash == uint.
 
@@ -125,9 +138,11 @@ hash_size = bits_per_uint.
 
 :- type hash_array(K, V) == array(hashmap(K, V)).
 
+:- type bucket(K, V) == map.map(K, V).
+
 :- type hm(K, V) == hashmap(K, V).
 	
-	
+
 %-----------------------------------------------------------------------------%
 % Hashmap Leaf
 
@@ -137,8 +152,6 @@ hash_size = bits_per_uint.
 
 :- type hashmap_leaf(K, V) =< hashmap(K, V)
 	---> 	leaf(hash, K, V).
-	
-:- type leaf_array(K, V) == array(hashmap_leaf(K, V)).
 	
 :- mode hashmap_leaf == ground >> hashmap_leaf.
 
@@ -182,15 +195,53 @@ count(empty_tree, N) 				= N.
 count(leaf(_, _, _), N) 			= N + 1.
 count(indexed_branch(_, Array), N) 	= array.foldl(count, Array, N).
 count(full_branch(Array), N) 		= array.foldl(count, Array, N).
-count(collision(_, Array), N) 			= N + array.size(Array).
+count(collision(_, Bucket), N) 			= N + map.count(Bucket).
 
 % contains(HM, K) :- search(HM, K, _).
+
+equal(empty_tree, empty_tree).
+equal(indexed_branch(B, A1), indexed_branch(B, A2)) :- array_equal(A1, A2).
+equal(leaf(H, K, V), leaf(H, K, V)).
+equal(full_branch(A1), full_branch(A2)) :- array_equal(A1, A2).
+equal(collision(H, B1), collision(H, B2)) :- map.equal(B1, B2).
+
+
+% Call equal/2 on every element of two arrays, respectively
+:- pred array_equal(hash_array(K, V)::in, hash_array(K, V)::in) is semidet.
+
+array_equal(A1, A2) :-
+	Size@size(A1) = size(A2),
+	all [I] (
+		nondet_int_in_range(0, Size, I),
+		unsafe_lookup(A1, I, Elem1),
+		unsafe_lookup(A2, I, Elem2),
+		equal(Elem1, Elem2)
+	).
 
 %-----------------------------------------------------------------------------%
 % Search
 
+lookup(HM, K, lookup(HM, K)).
 
+lookup(HM, K) = lookup(HM, K, hash(K), 0).
+
+:- func lookup(hashmap(K, V), K, hash, shift) = V is semidet <= hashable(K).
+
+lookup(leaf(H, K, V), K, H, _) = V.
+
+lookup(indexed_branch(B, Array), K, H, S) =
+	lookup(array.lookup(Array, sparse_index(B, M)), K, H, next_shift(S))
+:- 
+	mask(B, S, M),
+	B /\ M \= 0u. 
 	
+lookup(full_branch(Array), K, H, S) =
+	lookup(array.lookup(Array, index(H, S)), K, H, next_shift(S)).
+	
+lookup(collision(H, Bucket), K, H,  _) = map.search(Bucket, K).
+	
+	
+
 %-----------------------------------------------------------------------------%
 % Insertion
 
@@ -199,10 +250,27 @@ insert(K, V, !HM) :-
 	
 :- pragma inline(insert/4).
 	
-insert(K, V, !.HM) = !:HM :-
+insert(!.HM, K, V) = !:HM :-
 	insert(K, V, !HM).
 	
 :- pragma inline(insert/3).
+
+set(K, V, !HM) :- 
+	(if insert_tree(hash(K), K, V, 0, yes, !HM)
+	then
+		!:HM = !.HM
+	else
+		unexpected($module, $pred, 
+			"Failure on insert_tree/6 with Replace = yes")
+	).
+
+
+:- pragma inline(set/4).
+	
+set(!.HM, K, V) = !:HM :-
+	set(K, V, !HM).
+	
+:- pragma inline(set/3).
 
 %  pred insert_tree(Key, Value, Shift, Replace, !HashTree) is semidet.
 :- pred insert_tree(hash::in, K::in, V::in, shift::in, bool::in,
@@ -216,12 +284,14 @@ insert_tree(H, K, V, S, R, !.HM@leaf(LH, LK, LV), !:HM) :-
 		(if K = LK
 		then
 			(if V = LV
-			then !:HM = !.HM
-			else R = yes, 
+			then 
+				!:HM = !.HM
+			else 
+				R = yes, 
 				!:HM = leaf(H, K, V)
 			)
 		else
-		!:HM = collision(H, leaf(H, K, V), det_coerce_leaf(!.HM))	
+			!:HM = collision(H, K, V, LK, LV)	
 		)
 	else
 		!:HM = two(S, H, K, V, leaf(LH, LK, LV))
@@ -235,33 +305,40 @@ insert_tree(H, K, V, S, R, !.HM@indexed_branch(B, !.Array), !:HM) :-
 		array_insert(I, leaf(H, K, V), !Array),
 		!:HM = indexed_or_full_branch(B \/ M, !.Array)
 	else 
-		lookup(!.Array, I, St0),
-		insert_tree(H, K, V, next_shift(S), R, St0, St1),
-		(if private_builtin.pointer_equal(St1, St0)
+		lookup(!.Array, I, Branch0),
+		insert_tree(H, K, V, next_shift(S), R, Branch0, Branch1),
+		(if private_builtin.pointer_equal(Branch1, Branch0)
 		then
 			!:HM = !.HM
 		else
-			slow_set(I, St1, !Array),
+			slow_set(I, Branch1, !Array),
 			!:HM = indexed_branch(B, !.Array)
 		)
 	).
 	
 insert_tree(H, K, V, S, R, !.HM@full_branch(!.Array), !:HM) :-
 	I = index(H, S),
-	lookup(!.Array, I, St0),
-	insert_tree(H, K, V, next_shift(S), R, St0, St1),
-	(if private_builtin.pointer_equal(St1, St0)
+	lookup(!.Array, I, Branch0),
+	insert_tree(H, K, V, next_shift(S), R, Branch0, Branch1),
+	(if private_builtin.pointer_equal(Branch1, Branch0)
 	then
 		!:HM = !.HM
 	else
-		slow_set(I, St1, !Array),
+		slow_set(I, Branch1, !Array),
 		!:HM = full_branch(!.Array)
 	).
 
-insert_tree(H, K, V, S, R, !.HM@collision(CH, Array), !:HM) :-
+insert_tree(H, K, V, S, R, !.HM@collision(CH, Bucket), !:HM) :-
 	(if H = CH
 	then
-		!:HM = collision(H, collision_insert(R, H, K, V, Array))
+		!:HM = collision(H, 
+			(if R = yes
+			then
+				map.set(Bucket, K, V)
+			else
+				map.insert(Bucket, K, V)
+			)
+		)
 	else
 		array.init(1, !.HM, BArray),
 		insert_tree(H, K, V, S, R, indexed_branch(mask(H, S), BArray), !:HM)
@@ -271,96 +348,14 @@ insert_tree(H, K, V, S, R, !.HM@collision(CH, Array), !:HM) :-
 % Node creation
 
 
+
+% collision(Hash, Key1, Value1, Key2, Value2) = HashMap.
 % Create a 'Collision' value with two 'Leaf' values.
+% Throws an exception if K1 = K2
+:- func collision(hash, K, V, K, V) = hm(K, V).
 
-:- func collision(hash, hashmap_leaf(K, V), hashmap_leaf(K, V)) = hm(K, V).
-
-collision(Hash, L1, L2) = collision(Hash, Array) :-
-	array.init(2, L1, Array0),
-	array.set(1, L2, Array0, Array).
-	
-% collision_insert(Replace, Hash, Key, Value, !.Array) = !:Array.
-:- func collision_insert(bool, hash, K, V, leaf_array(K,V)) = 
-	leaf_array(K,V)	is semidet.
-	
-collision_insert(R, H, K, V, A) = 
-	collision_insert(R, 0, max(A), K, V, leaf(H, K, V), A).
-
-% collision_insert(Replace, LBound, UBound, K, V, Leaf, !.Array) = !:Array.
-:- func collision_insert(bool, int, int, K, V, hashmap_leaf(K,V), 
-	leaf_array(K,V) ) = leaf_array(K,V) is semidet.
-	
-collision_insert(R, I, Ub, K, V, L, A) = 
-	(if K = K2
-	then
-		(if	V = V2
-		then A
-		else 
-			(if	R = yes
-			then
-				slow_set(A, I, L)
-			else collision_insert_failure
-			)
-		)
-	else if I < Ub
-	then
-		collision_insert(R, I + 1, Ub, K, V, L, A)
-	else
-		array_snoc(L, A)
-	) :-
-	unsafe_lookup(A, I, leaf(_, K2, V2) ).
-	
-	
-:- func collision_insert_failure = leaf_array(K, V) is failure.
-
-collision_insert_failure = make_empty_array :- fail.
-
-
-	
-:- func collision_merge( 
-		(func(hashmap_leaf(K, V), hashmap_leaf(K, V)) = bool ),
-		hashmap_leaf(K, V),
-		leaf_array(K, V)
-	) = leaf_array(K, V).
-	
-:- mode collision_merge( (func(in, in) = out is det), in, in) = out is det.
-:- mode collision_merge( (func(in, in) = out is semidet), in, in) = out
-	is semidet.
-	
-collision_merge(R, L@leaf(_, K, V), A) = 
-	collision_merge(R, 0, max(A), K, V, L, A).
-	
-:- func collision_merge(
-		(func(hashmap_leaf(K, V), hashmap_leaf(K, V)) = bool ),
-		int, int, K, V, hashmap_leaf(K,V), leaf_array(K,V)
-	) = leaf_array(K,V).
-	
-:- mode collision_merge( (func(in, in) = out is det), in, in, in, in, in, in)
-	= out is det.
-:- mode collision_merge( (func(in, in) = out is semidet), in, in, in, in, in, 
-	in) = out is semidet.
-	
-collision_merge(R, I, Ub, K, V, L, A) = 
-	(if K = K2
-	then
-		(if	V = V2
-		then A
-		else 
-			(if Replace = yes
-			then
-				slow_set(A, I, L)
-			else 
-				A
-			)
-		)
-	else if I < Ub
-	then
-		collision_merge(R, I + 1, Ub, K, V, L, A)
-	else
-		array_snoc(L, A)
-	) :-
-	unsafe_lookup(A, I, L2@leaf(_, K2, V2) ), 
-	R(L, L2) = Replace.
+collision(Hash, K1, V1, K2, V2) = collision(Hash, Bucket) :-
+	map.det_insert(K2, V2, map.singleton(K1, V1), Bucket).
 		
 
 % Create a indexed_branch or full_branch node.
@@ -374,8 +369,8 @@ indexed_or_full_branch(Bitmap, Array) =
 		indexed_branch(Bitmap, Array)
 	).
 	
-% two :: Shift -> Hash -> k -> v -> Hash -> HashMap k v -> ST s (HashMap k v)
-:- func two(shift, hash, K, V, hashmap_leaf(K, V)) = hm(K, V).
+% two(Shift, Hash, Key, Value, Leaf) = hashmap(K, V)
+:- func two(shift, hash, K, V, hashmap_leaf(K, V)) = hashmap(K, V).
 
 two(S, H1, K1, V1, L2@leaf(H2, _, _)) = indexed_branch(Bitmap, Array) :-
 	mask(H1, S, Bp1),
@@ -410,7 +405,7 @@ max_children = unchecked_left_shift(1, bits_per_subkey).
 :- pragma inline(max_children/0).
 
 :- func subkey_mask = bitmap.
-subkey_mask = unchecked_right_shift(1u, bits_per_subkey) - 1u.
+subkey_mask = unchecked_left_shift(1u, bits_per_subkey) - 1u.
 
 % | Given a 'Hash' and a 'Shift' that indicates the level in the tree, compute
 % the index into a 'Full' node or into the bitmap of a `BitmapIndexed` node.
