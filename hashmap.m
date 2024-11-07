@@ -77,7 +77,8 @@
 :- func count(hashmap(_, _)) = int is det.
 :- pred count(hashmap(_, _)::in, int::out) is det.
 
-:- pred contains(map(K, _V)::in, K::in) is semidet.
+% Succeeds if the given key can be found in a hashmap
+% :- pred contains(hashmap(K, _V)::in, K::in) is semidet.
 
 %-----------------------------------------------------------------------------%
 % Search
@@ -173,6 +174,7 @@ singleton(K, V, singleton(K, V)).
 is_empty(empty_tree).
 
 count(HM) = count(HM, 0).
+count(HM, count(HM)).
 
 :- func count(hashmap(_, _), int) = int.
 
@@ -180,9 +182,9 @@ count(empty_tree, N) 				= N.
 count(leaf(_, _, _), N) 			= N + 1.
 count(indexed_branch(_, Array), N) 	= array.foldl(count, Array, N).
 count(full_branch(Array), N) 		= array.foldl(count, Array, N).
-count(collision(Array), N) 			= N + array.size(Array).
+count(collision(_, Array), N) 			= N + array.size(Array).
 
-contains(HM, K) :- search(HM, K, _).
+% contains(HM, K) :- search(HM, K, _).
 
 %-----------------------------------------------------------------------------%
 % Search
