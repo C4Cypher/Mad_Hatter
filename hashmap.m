@@ -254,7 +254,7 @@ lookup(HM, K) =
 	then 
 		Found
 	else
-		func_error($pred, "Key not present in map.")
+		report_lookup_error("hashmap.lookup: key not found", K)
 	).
 
 %-----------------------------------------------------------------------------%
