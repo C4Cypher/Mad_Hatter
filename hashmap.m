@@ -108,6 +108,20 @@
 :- func set(hashmap(K, V), K, V) = hashmap(K, V) <= hashable(K).
 
 %-----------------------------------------------------------------------------%
+% Removal
+
+% Remove a key-value pair from a map and return the value.
+% Fail if the key is not present.
+:- pred remove(K::in, V::out, hashmap(K, V)::in, hashmap(K, V)::out) 
+	is semidet <= hashable(K).
+
+% Delete a key-value pair from a map.
+% If the key is not present, leave the map unchanged.	
+:- pred delete(K::in, hashmap(K, V)::in, hashmap(K, V)::out) is det
+	<= hashable(K).
+:- func delete(hashmap(K, V), K) = hashmap(K, V) <= hashable(K).
+
+%-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
 :- implementation.
@@ -134,6 +148,8 @@
 :- type hash == uint.
 
 :- type bitmap == uint.
+
+:- type mask == uint.
 
 :- type shift == int.
 
@@ -313,8 +329,8 @@ insert_tree(H, K, V, S, R, !.HM@leaf(LH, LK, LV), !:HM) :-
 	).
 	
 insert_tree(H, K, V, S, R, !.HM@indexed_branch(B, !.Array), !:HM) :-
-	M = mask(H, S),
-	I = sparse_index(B, M),
+	mask(H, S, M),
+	sparse_index(B, M, I),
 	( if B /\ M = 0u
 	then
 		array_insert(I, leaf(H, K, V), !Array),
@@ -332,7 +348,7 @@ insert_tree(H, K, V, S, R, !.HM@indexed_branch(B, !.Array), !:HM) :-
 	).
 	
 insert_tree(H, K, V, S, R, !.HM@full_branch(!.Array), !:HM) :-
-	I = index(H, S),
+	index(H, S, I),
 	array.lookup(!.Array, I, Branch0),
 	insert_tree(H, K, V, next_shift(S), R, Branch0, Branch1),
 	(if private_builtin.pointer_equal(Branch1, Branch0)
@@ -402,8 +418,62 @@ two(S, H1, K1, V1, L2@leaf(H2, _, _)) = indexed_branch(Bitmap, Array) :-
 	).
 	
 :- pragma inline(two/5).
-	
 
+%-----------------------------------------------------------------------------%
+% Removal
+
+:- pred remove(K::in, V::out, hash::in, shift::in, hashmap(K, V)::in, 
+	hashmap(K, V)::out)	is semidet <= hashable(K).
+
+search(leaf(H, K, V), K, H, _) = V.
+
+search(indexed_branch(B, Array), K, H, S) =
+	search(array.lookup(Array, sparse_index(B, M)), K, H, next_shift(S))
+:- 
+	mask(B, S, M),
+	B /\ M \= 0u. 
+	
+search(full_branch(Array), K, H, S) =
+	search(array.lookup(Array, index(H, S)), K, H, next_shift(S)).
+	
+search(collision(H, Bucket), K, H,  _) = map.search(Bucket, K).
+
+%-----------------------------------------------------------------------------%
+
+
+delete(K, HM, delete(HM, K)).
+:- pragma inline(delete/3).
+
+delete(HM, K) = delete(HM, hash(K) K, 0).
+:- pragma inline(delete/2).
+:- func delete(hashmap(K, V), hash, K, shift) = hashmap(K, V).
+
+delete(empty_tree, _, _, _) = empty_tree.
+
+delete(L@leaf(LH, LK, _), H, K, _) =
+	(if 
+		LH = H,
+		LK = K,
+	then
+		empty_tree
+	else
+		L
+	).
+
+delete(HM@indexed_branch(B, Array), H, K, S) =
+	(if B /\ M = 0u
+	then
+		HM
+	else
+		array.unsafe_lookup(Array, I, Branch0)
+		
+		
+	)
+:-
+	mask(H, S, M),
+	sparse_index(B, M, I).
+	
+:- pragma inline(delete/4).
 
 %-----------------------------------------------------------------------------%
 % Bit twiddling
@@ -441,7 +511,7 @@ index(B, S) = cast_to_int(unchecked_right_shift(B, S) /\ subkey_mask).
  % >>> mask 0b0010_0010 0
  % 0b0100
 
-:- func mask(hash, shift) = bitmap.
+:- func mask(hash, shift) = mask.
 mask(H, S) = unchecked_left_shift(1u, index(H, S)).
 :- pragma inline(mask/2).
 
@@ -456,9 +526,13 @@ mask(H, S, mask(H, S)).
 % >>> sparseIndex 0b0110_0110 0b0010_0000
 % 2
 
-:- func sparse_index(bitmap, bitmap) = int.
+:- func sparse_index(bitmap, mask) = int.
 sparse_index(B, M) = weight(B /\ (M - 1u) ).
 :- pragma inline(sparse_index/2).
+
+:- pred sparse_index(bitmap::in, mask::in, int::out) is det.
+sparse_index(B, M, sparse_index(B, M)).
+:- pragma inline(sparse_index/3).
 
 % A bitmap with the 'maxChildren' least significant bits set, i.e.
 % @0xFF_FF_FF_FF@.
