@@ -87,17 +87,18 @@
 %-----------------------------------------------------------------------------%
 % Search
 
-:- pred lookup(hashmap(K, V)::in, K::in, V::out) is semidet <= hashable(K).
-:- func lookup(hashmap(K, V), K) = V is semidet <= hashable(K).
+:- pred search(hashmap(K, V)::in, K::in, V::out) is semidet <= hashable(K).
+:- func search(hashmap(K, V), K) = V is semidet <= hashable(K).
 
 %-----------------------------------------------------------------------------%
 % Insertion
 
+% Fails if the element already exists in the hash map
 :- pred insert(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) is semidet
 	<= hashable(K).
 :- func insert(hashmap(K, V), K, V) = hashmap(K, V) is semidet <= hashable(K).
 
-
+% Inserts an element into a hashmap, overwriting element if it already exists
 :- pred set(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) is det
 	<= hashable(K).
 :- func set(hashmap(K, V), K, V) = hashmap(K, V) <= hashable(K).
@@ -213,32 +214,32 @@ array_equal(A1, A2) :-
 	Size@size(A1) = size(A2),
 	all [I] (
 		nondet_int_in_range(0, Size, I),
-		unsafe_lookup(A1, I, Elem1),
-		unsafe_lookup(A2, I, Elem2),
+		array.unsafe_lookup(A1, I, Elem1),
+		array.unsafe_lookup(A2, I, Elem2),
 		equal(Elem1, Elem2)
 	).
 
 %-----------------------------------------------------------------------------%
 % Search
 
-lookup(HM, K, lookup(HM, K)).
+search(HM, K, search(HM, K)).
 
-lookup(HM, K) = lookup(HM, K, hash(K), 0).
+search(HM, K) = search(HM, K, hash(K), 0).
 
-:- func lookup(hashmap(K, V), K, hash, shift) = V is semidet <= hashable(K).
+:- func search(hashmap(K, V), K, hash, shift) = V is semidet <= hashable(K).
 
-lookup(leaf(H, K, V), K, H, _) = V.
+search(leaf(H, K, V), K, H, _) = V.
 
-lookup(indexed_branch(B, Array), K, H, S) =
-	lookup(array.lookup(Array, sparse_index(B, M)), K, H, next_shift(S))
+search(indexed_branch(B, Array), K, H, S) =
+	search(array.lookup(Array, sparse_index(B, M)), K, H, next_shift(S))
 :- 
 	mask(B, S, M),
 	B /\ M \= 0u. 
 	
-lookup(full_branch(Array), K, H, S) =
-	lookup(array.lookup(Array, index(H, S)), K, H, next_shift(S)).
+search(full_branch(Array), K, H, S) =
+	search(array.lookup(Array, index(H, S)), K, H, next_shift(S)).
 	
-lookup(collision(H, Bucket), K, H,  _) = map.search(Bucket, K).
+search(collision(H, Bucket), K, H,  _) = map.search(Bucket, K).
 	
 	
 
@@ -305,7 +306,7 @@ insert_tree(H, K, V, S, R, !.HM@indexed_branch(B, !.Array), !:HM) :-
 		array_insert(I, leaf(H, K, V), !Array),
 		!:HM = indexed_or_full_branch(B \/ M, !.Array)
 	else 
-		lookup(!.Array, I, Branch0),
+		array.lookup(!.Array, I, Branch0),
 		insert_tree(H, K, V, next_shift(S), R, Branch0, Branch1),
 		(if private_builtin.pointer_equal(Branch1, Branch0)
 		then
@@ -318,7 +319,7 @@ insert_tree(H, K, V, S, R, !.HM@indexed_branch(B, !.Array), !:HM) :-
 	
 insert_tree(H, K, V, S, R, !.HM@full_branch(!.Array), !:HM) :-
 	I = index(H, S),
-	lookup(!.Array, I, Branch0),
+	array.lookup(!.Array, I, Branch0),
 	insert_tree(H, K, V, next_shift(S), R, Branch0, Branch1),
 	(if private_builtin.pointer_equal(Branch1, Branch0)
 	then
