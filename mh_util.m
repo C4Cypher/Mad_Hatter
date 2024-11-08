@@ -100,6 +100,8 @@
 % Call report_lookup_error/2 as an erroneous function.
 :- func report_lookup_error(string, K) = _ is erroneous.
 
+:- func report_lookup_error(string, K, V) = _ is erroneous.
+
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
@@ -235,3 +237,6 @@ format_bounds_error(Pred, Msg, Vars) :-
 	
 report_lookup_error(Msg, K) = _ :-
 	report_lookup_error(Msg, K).
+	
+report_lookup_error(Msg, K, V) = _ :-
+	report_lookup_error(Msg, K, V).
