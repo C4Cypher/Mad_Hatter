@@ -90,6 +90,10 @@
 :- pred search(hashmap(K, V)::in, K::in, V::out) is semidet <= hashable(K).
 :- func search(hashmap(K, V), K) = V is semidet <= hashable(K).
 
+% Throws an exception if the key is not found
+:- pred lookup(hashmap(K, V)::in, K::in, V::out) is det <= hashable(K).
+:- func lookup(hashmap(K, V), K) = V is det <= hashable(K).
+
 %-----------------------------------------------------------------------------%
 % Insertion
 
@@ -240,8 +244,18 @@ search(full_branch(Array), K, H, S) =
 	search(array.lookup(Array, index(H, S)), K, H, next_shift(S)).
 	
 search(collision(H, Bucket), K, H,  _) = map.search(Bucket, K).
-	
-	
+
+
+
+lookup(HM, K, lookup(HM, K)).
+
+lookup(HM, K) = 
+	(if search(HM, K) = Found
+	then 
+		Found
+	else
+		func_error($pred, "Key not present in map.")
+	).
 
 %-----------------------------------------------------------------------------%
 % Insertion
