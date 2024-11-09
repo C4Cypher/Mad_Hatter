@@ -51,22 +51,31 @@
 % Copy an array and insert an element T at Index, shifting elements right
 % Throws an exception if Index is out of bounds
 :- pred array_insert(int::in, T::in, array(T)::in, array(T)::array_uo) is det.
-:- func array_insert(int::in, T::in, array(T)::in) = (array(T)::array_uo)
+:- func array_insert(array(T)::in, int::in, T::in) = (array(T)::array_uo)
 	is det.
 
 % Does not check bounds 	
 :- pred unsafe_array_insert(int::in, T::in, array(T)::in, array(T)::array_uo) 
 	is det.
-:- func unsafe_array_insert(int::in, T::in, array(T)::in) = 
+:- func unsafe_array_insert(array(T)::in, int::in, T::in) = 
 	(array(T)::array_uo) is det.
+	
+% array_delete(Index, Source, Result)
+% Remove an element from an array, shifting elements left
+:- pred array_delete(int::in, array(T)::in, array(T)::array_uo) is det.
+:- func array_delete(array(T)::in, int::in) = (array(T)::array_uo) is det.
+
+:- pred unsafe_array_delete(int::in, array(T)::in, array(T)::array_uo) is det.
+:- func unsafe_array_delete(array(T)::in, int::in) = (array(T)::array_uo) 
+	is det.
 
 % array_[cons|snoc](T, Source, Result)
 % Insert T as the [first|last] element of Source 
 :- pred array_cons(T::in, array(T)::in, array(T)::array_uo) is det.
-:- func array_cons(T::in, array(T)::in) = (array(T)::array_uo) is det.
+:- func array_cons(array(T)::in, T::in) = (array(T)::array_uo) is det.
 
 :- pred array_snoc(T::in, array(T)::in, array(T)::array_uo) is det.
-:- func array_snoc(T::in, array(T)::in) = (array(T)::array_uo) is det.
+:- func array_snoc(array(T)::in, T::in) = (array(T)::array_uo) is det.
 
 
 % array_copy_range(Source, SrcFirst, SrcLast, TgtFirst, !Array)
@@ -145,21 +154,21 @@ det_dynamic_cast(T, det_dynamic_cast(T)).
 %-----------------------------------------------------------------------------%
 % Array Manipulation
 
-array_insert(I, T, Src, array_insert(I, T, Src)).
+array_insert(I, T, Src, array_insert(Src, I, T)).
 
-array_insert(I, T, Src) = Result :-
+array_insert(Src, I, T) = Result :-
 	bounds(Src, Min, Max - 1),
 	(if I >= Min, I =< Max 
 	then
-		Result = unsafe_array_insert(I, T, Src)
+		unsafe_array_insert(I, T, Src, Result)
 	else
 		format_bounds_error($pred, "index %d not in range [%d, %d]",
         [i(I), i(Min), i(Max)])
 	).
 
-unsafe_array_insert(I, T, Src, array_insert(I, T, Src)).
+unsafe_array_insert(I, T, Src, array_insert(Src, I, T)).
 
-unsafe_array_insert(I, T, Src) = Result :-
+unsafe_array_insert(Src, I, T) = Result :-
 	Size = size(Src),
 	NewSize = Size + 1,
 	(if Size = 0
@@ -178,18 +187,60 @@ insert_loop(I, T, Src, Current, Last, !Array) :-
 	(if I = Current
 	then
 		unsafe_set(I, T, !Array),
-		unsafe_copy_array_range(Src, Current, Last, Next, !Array)
+		(if Next > Last
+		then
+			!:Array = !.Array
+		else
+			unsafe_copy_array_range(Src, Current, Last, Next, !Array)
+		)
 	else
 		insert_loop(I, T, Src, Next,  Last, !Array)
 	).
 	
-array_cons(T, Src, array_cons(T, Src)).
+array_delete(I, Src, array_delete(Src, I)).
 
-array_cons(T, Src) = unsafe_array_insert(0, T, Src).
+array_delete(Src, I) = Result :-
+	bounds(Src, Min, Max),
+	(if I >= Min, I =< Max 
+	then
+		unsafe_array_delete(I, Src, Result)
+	else
+		format_bounds_error($pred, "index %d not in range [%d, %d]",
+        [i(I), i(Min), i(Max)])
+	).
+	
+unsafe_array_delete(I, Src, unsafe_array_delete(Src, I)).
 
-array_snoc(T, Src, array_snoc(T, Src)).
+unsafe_array_delete(Src, I) = Result :-
+	Size = size(Src),
+	NewSize = Size - 1,
+	(if NewSize = 0
+	then 
+		Result = make_empty_array
+	else if I = Size
+	then
+		init(NewSize, Src ^ elem(0), Result0),
+		unsafe_copy_array_range(Src, 1, NewSize, 1, Result0, Result)
+	else
+		(if I = 0
+		then
+			init(NewSize, Src ^ elem(1), Result1),
+			CpyStart = 1
+		else
+			init(NewSize, Src ^ elem(0), Result0),
+			unsafe_copy_array_range(Src, 0, I - 1, 1, Result0, Result1),
+			CpyStart = I
+		),
+		unsafe_copy_array_range(Src, I + 1, Size, CpyStart, Result1, Result)
+	).
+	
+array_cons(T, Src, array_cons(Src, T)).
 
-array_snoc(T, Src) = unsafe_array_insert(max(Src) + 1, T, Src).
+array_cons(Src, T) = unsafe_array_insert(Src, 0, T).
+
+array_snoc(T, Src, array_snoc(Src, T)).
+
+array_snoc(Src, T) = unsafe_array_insert(Src, max(Src) + 1, T).
 
 
 array_copy_range(Src, SrcF, SrcL, TgtF, !Array) :-
