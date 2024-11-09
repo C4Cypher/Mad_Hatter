@@ -18,6 +18,7 @@
 :- import_module array.
 :- import_module list.
 :- import_module string.
+:- import_module map.
 
 
 %-----------------------------------------------------------------------------%
@@ -87,6 +88,11 @@
 	
 :- pred unsafe_copy_array_range(array(T)::in, int::in, int::in, int::in,
 	array(T)::array_di, array(T)::array_uo) is det.
+
+%-----------------------------------------------------------------------------%
+% Map Manipulation
+
+:- pred is_singleton(map(_, _)::in) is semidet.
 	
 %-----------------------------------------------------------------------------%
 % Exceptions
@@ -118,6 +124,7 @@
 
 
 :- import_module int.
+:- import_module solutions.
 :- import_module require.
 :- import_module exception.
 
@@ -270,7 +277,10 @@ unsafe_copy_array_range(Src, SrcF, SrcL, TgtF, !Array) :-
 		!:Array = !.Array
 	).
 
+%-----------------------------------------------------------------------------%
+% Map Manipulation
 
+is_singleton(Map) :- keys(Map, [_]).
 	
 %-----------------------------------------------------------------------------%
 % Exceptions
