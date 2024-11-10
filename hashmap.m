@@ -96,7 +96,7 @@
 :- func lookup(hashmap(K, V), K) = V is det <= hashable(K).
 
 % All key value pairs stored in the hashmap, order is not garunteed
-:- pred member(hashmap(K, V), K, V).
+:- pred member(hashmap(K, V), K, V) <= hashable(K).
 :- mode member(in, in, out) is semidet.
 :- mode member(in, out, out) is nondet.
 
@@ -144,6 +144,7 @@
 :- import_module bool.
 :- import_module require.
 :- import_module assoc_list.
+:- import_module list.
 :- import_module pair.
 
 :- import_module mh_util.
@@ -262,9 +263,9 @@ array_equal(A1, A2) :-
 
 search(HM, K, search(HM, K)).
 
-search(HM, K) = search(HM, K, hash(K), 0).
+search(HM, K) = search(HM, hash(K), K, 0).
 
-:- func search(hashmap(K, V),hash, K, shift) = V is semidet <= hashable(K).
+:- func search(hashmap(K, V), hash, K, shift) = V is semidet.
 
 search(leaf(H, K, V), H,  K,_) = V.
 
@@ -417,7 +418,7 @@ update(HM, K, V) = update(HM, hash(K), K, V, 0).
 
 update(leaf(H, K, _), H,  K, V, _) = leaf(H, K, V).
 
-update(indexed_branch(B, Array), H, K, V S) =
+update(indexed_branch(B, Array), H, K, V, S) =
 	update(array.lookup(Array, sparse_index(B, M)), H,  K, V, next_shift(S))
 :- 
 	mask(B, S, M),
@@ -477,6 +478,8 @@ two(S, H1, K1, V1, L2@leaf(H2, _, _)) = indexed_branch(Bitmap, Array) :-
 %-----------------------------------------------------------------------------%
 % Removal
 
+remove(K, V, !HM) :- remove(hash(K), K, 0, V, !HM).
+
 :- pred remove(hash::in, K::in, shift::in, V::out, hashmap(K, V)::in, 
 	hashmap(K, V)::out)	is semidet <= hashable(K).
 
@@ -523,14 +526,14 @@ remove(H, K, S, V, full_branch(Array), HM) :-
 	(if Branch1 = empty_tree
 	then
 		B = full_bitmap /\ \ unchecked_left_shift(1u, I),
-		!:HM = indexed_branch(B array_delete(Array, I))
+		HM = indexed_branch(B, array_delete(Array, I))
 	else
-		!:HM = full_branch(slow_set(Array, I Branch1))
+		HM = full_branch(slow_set(Array, I, Branch1))
 	).
 	
 remove(H, K, _, V, collision(H, Bucket), HM) :- 
-	map.delete(K, V, Bucket, NewBucket),
-	(if to_assoc_list(NewBucket, [(NK - NV)])
+	map.remove(K, V, Bucket, NewBucket),
+	(if map.to_assoc_list(NewBucket, [(NK - NV)])
 	then
 		HM = leaf(H, NK, NV)
 	else
@@ -543,7 +546,7 @@ remove(H, K, _, V, collision(H, Bucket), HM) :-
 delete(K, HM, delete(HM, K)).
 :- pragma inline(delete/3).
 
-delete(HM, K) = delete(HM, hash(K) K, 0).
+delete(HM, K) = delete(HM, hash(K), K, 0).
 :- pragma inline(delete/2).
 
 :- func delete(hashmap(K, V), hash, K, shift) = hashmap(K, V).
@@ -553,7 +556,7 @@ delete(empty_tree, _, _, _) = empty_tree.
 delete(HM@leaf(LH, LK, _), H, K, _) =
 	(if 
 		LH = H,
-		LK = K,
+		LK = K
 	then
 		empty_tree
 	else
@@ -613,19 +616,19 @@ delete(!.HM@full_branch(Array), H, K, S) = !:HM :-
 	else if Branch1 = empty_tree
 	then
 		B = full_bitmap /\ \ unchecked_left_shift(1u, I),
-		!:HM = indexed_branch(B array_delete(Array, I))
+		!:HM = indexed_branch(B, array_delete(Array, I))
 	else
-		!:HM = full_branch(slow_set(Array, I Branch1))
+		!:HM = full_branch(slow_set(Array, I, Branch1))
 	).
 	
 delete(HM@collision(CH, Bucket), H, K, _) = 
 	(if H = CH
 	then
-		(if to_assoc_list(NewBucket, [(NK - NV)])
+		(if map.to_assoc_list(NewBucket, [(NK - NV)])
 		then
 			leaf(H, NK, NV)
 		else
-			NewBucket
+			collision(H, NewBucket)
 		)
 	else
 		HM
@@ -636,8 +639,6 @@ delete(HM@collision(CH, Bucket), H, K, _) =
 	
 
 :- pragma inline(delete/4).
-
-:- pred
 
 %-----------------------------------------------------------------------------%
 % Bit twiddling
@@ -665,6 +666,10 @@ subkey_mask = unchecked_left_shift(1u, bits_per_subkey) - 1u.
 :- func index(bitmap, shift) = int.
 index(B, S) = cast_to_int(unchecked_right_shift(B, S) /\ subkey_mask).
 :- pragma inline(index/2).
+
+:- pred index(bitmap::in, shift::in, int::out) is det.
+index(B, S, index(B, S)).
+:- pragma inline(index/3).
 
  % Given a 'Hash' and a 'Shift' that indicates the level in the tree, compute
  % the bitmap that contains only the 'index' of the hash at this level.
