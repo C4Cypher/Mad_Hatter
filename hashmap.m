@@ -97,7 +97,7 @@
 %-----------------------------------------------------------------------------%
 % Insertion
 
-% Fails if the element already exists in the hash map
+% Insert an element into a hashmap, fails if the element already exists 
 :- pred insert(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) is semidet
 	<= hashable(K).
 :- func insert(hashmap(K, V), K, V) = hashmap(K, V) is semidet <= hashable(K).
@@ -106,6 +106,11 @@
 :- pred set(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) is det
 	<= hashable(K).
 :- func set(hashmap(K, V), K, V) = hashmap(K, V) <= hashable(K).
+
+% Overwrite an already existing element in a hashmap, fail if key not found
+:- pred update(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) 
+	is semidet	<= hashable(K).
+:- func update(hashmap(K, V), K, V) = hashmap(K, V) is semidet <= hashable(K).
 
 %-----------------------------------------------------------------------------%
 % Removal
@@ -253,12 +258,12 @@ search(HM, K, search(HM, K)).
 
 search(HM, K) = search(HM, K, hash(K), 0).
 
-:- func search(hashmap(K, V),hash,  K, shift) = V is semidet <= hashable(K).
+:- func search(hashmap(K, V),hash, K, shift) = V is semidet <= hashable(K).
 
 search(leaf(H, K, V), H,  K,_) = V.
 
 search(indexed_branch(B, Array), H, K, S) =
-	search(array.lookup(Array, sparse_index(B, M)), H,  K,next_shift(S))
+	search(array.lookup(Array, sparse_index(B, M)), H,  K, next_shift(S))
 :- 
 	mask(B, S, M),
 	B /\ M \= 0u. 
@@ -381,6 +386,27 @@ insert_tree(H, K, V, S, R, !.HM@collision(CH, Bucket), !:HM) :-
 		array.init(1, !.HM, BArray),
 		insert_tree(H, K, V, S, R, indexed_branch(mask(H, S), BArray), !:HM)
 	).
+	
+update(K, V, HM, update(HM, K, V)).
+
+update(HM, K, V) = update(HM, hash(K), K, V, 0).
+
+:- func update(hashmap(K, V), hash, K, V, shift) = hashmap(K, V) is semidet.
+
+update(leaf(H, K, _), H,  K, V, _) = leaf(H, K, V).
+
+update(indexed_branch(B, Array), H, K, V S) =
+	update(array.lookup(Array, sparse_index(B, M)), H,  K, V, next_shift(S))
+:- 
+	mask(B, S, M),
+	B /\ M \= 0u. 
+	
+update(full_branch(Array), H, K, V, S) =
+	update(array.lookup(Array, index(H, S)), H, K, V, next_shift(S)).
+	
+update(collision(H, Bucket), H, K, V, _) = 
+	collision(H, map.update(Bucket, K, V)).
+	
 
 %-----------------------------------------------------------------------------%
 % Node creation
