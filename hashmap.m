@@ -87,12 +87,18 @@
 %-----------------------------------------------------------------------------%
 % Search
 
+% Fails if the key is not found
 :- pred search(hashmap(K, V)::in, K::in, V::out) is semidet <= hashable(K).
 :- func search(hashmap(K, V), K) = V is semidet <= hashable(K).
 
 % Throws an exception if the key is not found
 :- pred lookup(hashmap(K, V)::in, K::in, V::out) is det <= hashable(K).
 :- func lookup(hashmap(K, V), K) = V is det <= hashable(K).
+
+% All key value pairs stored in the hashmap, order is not garunteed
+:- pred member(hashmap(K, V), K, V).
+:- mode member(in, in, out) is semidet.
+:- mode member(in, out, out) is nondet.
 
 %-----------------------------------------------------------------------------%
 % Insertion
@@ -147,8 +153,8 @@
 
 :- type hashmap(K, V)
 	--->	empty_tree
-	;		indexed_branch(bitmap, hash_array(K, V))
 	;		leaf(hash, K, V)
+	;		indexed_branch(bitmap, hash_array(K, V))
 	;		full_branch(hash_array(K, V))
 	;		collision(hash, bucket(K, V)).
 
@@ -284,6 +290,22 @@ lookup(HM, K) =
 	else
 		report_lookup_error("hashmap.lookup: key not found", K)
 	).
+	
+:- pragma promise_equivalent_clauses(member/3).
+
+member(HM::in, K::in, V::out) :- search(HM, K, V).
+
+member(leaf(_, K, V)::in, K::out, V::out).
+
+member(indexed_branch(_, Array)::in, K::out, V::out) :-
+	array.member(Array, HM),
+	member(HM, K, V).
+	
+member(full_branch(Array)::in, K::out, V::out) :-
+	array.member(Array, HM),
+	member(HM, K, V).
+	
+member(collision(_, Bucket)::in, K::out, V::out) :- map.member(Bucket, K, V).
 
 %-----------------------------------------------------------------------------%
 % Insertion
