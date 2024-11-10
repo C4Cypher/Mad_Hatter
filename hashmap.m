@@ -132,6 +132,8 @@
 :- import_module uint.
 :- import_module bool.
 :- import_module require.
+:- import_module assoc_list.
+:- import_module pair.
 
 :- import_module mh_util.
 
@@ -162,6 +164,11 @@ hash_size = bits_per_uint.
 :- type bucket(K, V) == map.map(K, V).
 
 :- type hm(K, V) == hashmap(K, V).
+
+:- pred is_leaf_or_collision(hashmap(K, V)::in) is semidet.
+
+is_leaf_or_collision(leaf(_, _,_)).
+is_leaf_or_collision(collision(_, _)).
 	
 
 %-----------------------------------------------------------------------------%
@@ -246,20 +253,20 @@ search(HM, K, search(HM, K)).
 
 search(HM, K) = search(HM, K, hash(K), 0).
 
-:- func search(hashmap(K, V), K, hash, shift) = V is semidet <= hashable(K).
+:- func search(hashmap(K, V),hash,  K, shift) = V is semidet <= hashable(K).
 
-search(leaf(H, K, V), K, H, _) = V.
+search(leaf(H, K, V), H,  K,_) = V.
 
-search(indexed_branch(B, Array), K, H, S) =
-	search(array.lookup(Array, sparse_index(B, M)), K, H, next_shift(S))
+search(indexed_branch(B, Array), H, K, S) =
+	search(array.lookup(Array, sparse_index(B, M)), H,  K,next_shift(S))
 :- 
 	mask(B, S, M),
 	B /\ M \= 0u. 
 	
-search(full_branch(Array), K, H, S) =
-	search(array.lookup(Array, index(H, S)), K, H, next_shift(S)).
+search(full_branch(Array), H,  K, S) =
+	search(array.lookup(Array, index(H, S)), H, K, next_shift(S)).
 	
-search(collision(H, Bucket), K, H,  _) = map.search(Bucket, K).
+search(collision(H, Bucket), H, K,  _) = map.search(Bucket, K).
 
 
 
@@ -422,21 +429,65 @@ two(S, H1, K1, V1, L2@leaf(H2, _, _)) = indexed_branch(Bitmap, Array) :-
 %-----------------------------------------------------------------------------%
 % Removal
 
-:- pred remove(K::in, V::out, hash::in, shift::in, hashmap(K, V)::in, 
+:- pred remove(hash::in, K::in, shift::in, V::out, hashmap(K, V)::in, 
 	hashmap(K, V)::out)	is semidet <= hashable(K).
 
-search(leaf(H, K, V), K, H, _) = V.
+remove(H, K, _, V, leaf(H, K, V), empty_tree).
 
-search(indexed_branch(B, Array), K, H, S) =
-	search(array.lookup(Array, sparse_index(B, M)), K, H, next_shift(S))
-:- 
-	mask(B, S, M),
-	B /\ M \= 0u. 
+remove(H, K, S, V, indexed_branch(B, Array), HM) :-
+	mask(H, S, M),
+	B /\ M \= 0u,
+	sparse_index(B, M, I),
+	array.unsafe_lookup(Array, I, Branch0),
+	remove(H, K, S, V, Branch0, Branch1),
+	Length = size(Array),
+	(if Branch1 = empty_tree 
+	then
+		(if Length = 1
+		then
+			HM = empty_tree
+		else if 
+			Length = 2,
+			(
+				I = 0, 
+				array.unsafe_lookup(Array, 1, L)
+			;
+				I = 1,
+				array.unsafe_lookup(Array, 0, L)
+			), 
+			is_leaf_or_collision(L)
+		then
+			HM = L
+		else 
+			HM = indexed_branch(B /\ \ M, array_delete(Array, I))
+		)
+	else if Length = 1, is_leaf_or_collision(Branch1)
+	then
+		HM = Branch1
+	else
+		HM = indexed_branch(B, array.slow_set(Array, I, Branch1))
+	).
 	
-search(full_branch(Array), K, H, S) =
-	search(array.lookup(Array, index(H, S)), K, H, next_shift(S)).
+remove(H, K, S, V, full_branch(Array), HM) :-
+	index(H, S, I),
+	array.unsafe_lookup(Array, I, Branch0),
+	remove(H, K, S, V, Branch0, Branch1),
+	(if Branch1 = empty_tree
+	then
+		B = full_bitmap /\ \ unchecked_left_shift(1u, I),
+		!:HM = indexed_branch(B array_delete(Array, I))
+	else
+		!:HM = full_branch(slow_set(Array, I Branch1))
+	).
 	
-search(collision(H, Bucket), K, H,  _) = map.search(Bucket, K).
+remove(H, K, _, V, collision(H, Bucket), HM) :- 
+	map.delete(K, V, Bucket, NewBucket),
+	(if to_assoc_list(NewBucket, [(NK - NV)])
+	then
+		HM = leaf(H, NK, NV)
+	else
+		HM = collision(H, NewBucket)
+	).
 
 %-----------------------------------------------------------------------------%
 
@@ -446,34 +497,99 @@ delete(K, HM, delete(HM, K)).
 
 delete(HM, K) = delete(HM, hash(K) K, 0).
 :- pragma inline(delete/2).
+
 :- func delete(hashmap(K, V), hash, K, shift) = hashmap(K, V).
 
 delete(empty_tree, _, _, _) = empty_tree.
 
-delete(L@leaf(LH, LK, _), H, K, _) =
+delete(HM@leaf(LH, LK, _), H, K, _) =
 	(if 
 		LH = H,
 		LK = K,
 	then
 		empty_tree
 	else
-		L
+		HM
 	).
 
-delete(HM@indexed_branch(B, Array), H, K, S) =
+% holy hell the haskell case statement for this clause was ugly, not that I 
+% think my chain of if statements is any prettier
+delete(!.HM@indexed_branch(B, Array), H, K, S) = !:HM :-
+	mask(H, S, M),
 	(if B /\ M = 0u
 	then
-		HM
+		!:HM = !.HM
 	else
-		array.unsafe_lookup(Array, I, Branch0)
-		
-		
-	)
-:-
-	mask(H, S, M),
-	sparse_index(B, M, I).
+		sparse_index(B, M, I),
+		array.unsafe_lookup(Array, I, Branch0),
+		Branch1 = delete(Branch0, H, K, S),
+		Length = size(Array),
+		(if private_builtin.pointer_equal(Branch1, Branch0)
+		then
+			!:HM = !.HM
+		else if Branch1 = empty_tree 
+		then
+			(if Length = 1
+			then
+				!:HM = empty_tree
+			else if 
+				Length = 2,
+				(
+					I = 0, 
+					array.unsafe_lookup(Array, 1, L)
+				;
+					I = 1,
+					array.unsafe_lookup(Array, 0, L)
+				), 
+				is_leaf_or_collision(L)
+			then
+				!:HM = L
+			else 
+				!:HM = indexed_branch(B /\ \ M, array_delete(Array, I))
+			)
+		else if Length = 1, is_leaf_or_collision(Branch1)
+		then
+			!:HM = Branch1
+		else
+			!:HM = indexed_branch(B, array.slow_set(Array, I, Branch1))
+		)
+	).
 	
+delete(!.HM@full_branch(Array), H, K, S) = !:HM :-
+	index(H, S, I),
+	array.unsafe_lookup(Array, I, Branch0),
+	Branch1 = delete(Branch0, H, K, S),
+	(if private_builtin.pointer_equal(Branch1, Branch0)
+	then
+		!:HM = !.HM
+	else if Branch1 = empty_tree
+	then
+		B = full_bitmap /\ \ unchecked_left_shift(1u, I),
+		!:HM = indexed_branch(B array_delete(Array, I))
+	else
+		!:HM = full_branch(slow_set(Array, I Branch1))
+	).
+	
+delete(HM@collision(CH, Bucket), H, K, _) = 
+	(if H = CH
+	then
+		(if to_assoc_list(NewBucket, [(NK - NV)])
+		then
+			leaf(H, NK, NV)
+		else
+			NewBucket
+		)
+	else
+		HM
+	) :- 
+	map.delete(K, Bucket, NewBucket).
+	 
+		
+	
+
 :- pragma inline(delete/4).
+
+:- pred
 
 %-----------------------------------------------------------------------------%
 % Bit twiddling
