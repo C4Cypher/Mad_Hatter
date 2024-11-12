@@ -173,17 +173,27 @@ array_insert(Src, I, T) = Result :-
         [i(I), i(Min), i(Max)])
 	).
 
-unsafe_array_insert(I, T, Src, array_insert(Src, I, T)).
+unsafe_array_insert(I, T, Src, unsafe_array_insert(Src, I, T)).
 
 unsafe_array_insert(Src, I, T) = Result :-
+	First = min(Src),
+	Next = First + 1,
 	Size = size(Src),
+	Last = max(Src),
 	NewSize = Size + 1,
-	(if Size = 0
+	(if I = First
 	then
-		init(NewSize, T, Result)
+		init(NewSize, T, Result0),
+		(if Size = 0
+		then
+			Result = Result0
+		else
+			unsafe_copy_array_range(Src, First, Last, Next, 
+				Result0, Result)
+		)		
 	else
-		init(NewSize, Src ^ elem(0), Result0),
-		insert_loop(I, T, Src, 1, Size, Result0, Result)	
+		init(NewSize, Src ^ elem(First), Result0),
+		insert_loop(I, T, Src, Next, Last, Result0, Result)	
 	).
 		
 :- pred insert_loop(int::in, T::in, array(T)::in, int::in, int::in,
@@ -191,8 +201,11 @@ unsafe_array_insert(Src, I, T) = Result :-
 	
 insert_loop(I, T, Src, Current, Last, !Array) :-
 	Next = Current + 1,
-	(if I = Current
+	(if I < Current
 	then
+		unsafe_set(Current, Src ^ elem(Current), !Array),
+		insert_loop(I, T, Src, Next,  Last, !Array)
+	else
 		unsafe_set(I, T, !Array),
 		(if Next > Last
 		then
@@ -200,8 +213,6 @@ insert_loop(I, T, Src, Current, Last, !Array) :-
 		else
 			unsafe_copy_array_range(Src, Current, Last, Next, !Array)
 		)
-	else
-		insert_loop(I, T, Src, Next,  Last, !Array)
 	).
 	
 array_delete(I, Src, array_delete(Src, I)).

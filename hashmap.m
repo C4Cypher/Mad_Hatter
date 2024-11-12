@@ -368,7 +368,7 @@ insert_tree(H, K, V, S, R, !.HM@indexed_branch(B, !.Array), !:HM) :-
 	sparse_index(B, M, I),
 	( if B /\ M = 0u
 	then
-		array_insert(I, leaf(H, K, V), !Array),
+		array_insert(I, leaf(H, K, V), !Array), %TODO: change this to unsafe_?
 		!:HM = indexed_or_full_branch(B \/ M, !.Array)
 	else 
 		array.lookup(!.Array, I, Branch0),
