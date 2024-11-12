@@ -86,7 +86,7 @@
 :- pred array_copy_range(array(T)::in, int::in, int::in, int::in,
 	array(T)::array_di, array(T)::array_uo) is det.
 	
-:- pred unsafe_copy_array_range(array(T)::in, int::in, int::in, int::in,
+:- pred unsafe_array_copy_range(array(T)::in, int::in, int::in, int::in,
 	array(T)::array_di, array(T)::array_uo) is det.
 
 %-----------------------------------------------------------------------------%
@@ -188,7 +188,7 @@ unsafe_array_insert(Src, I, T) = Result :-
 		then
 			Result = Result0
 		else
-			unsafe_copy_array_range(Src, First, Last, Next, 
+			unsafe_array_copy_range(Src, First, Last, Next, 
 				Result0, Result)
 		)		
 	else
@@ -201,7 +201,7 @@ unsafe_array_insert(Src, I, T) = Result :-
 	
 insert_loop(I, T, Src, Current, Last, !Array) :-
 	Next = Current + 1,
-	(if I < Current
+	(if Current < I
 	then
 		unsafe_set(Current, Src ^ elem(Current), !Array),
 		insert_loop(I, T, Src, Next,  Last, !Array)
@@ -211,7 +211,7 @@ insert_loop(I, T, Src, Current, Last, !Array) :-
 		then
 			!:Array = !.Array
 		else
-			unsafe_copy_array_range(Src, Current, Last, Next, !Array)
+			unsafe_array_copy_range(Src, Current, Last, Next, !Array)
 		)
 	).
 	
@@ -238,7 +238,7 @@ unsafe_array_delete(Src, I) = Result :-
 	else if I = Size
 	then
 		init(NewSize, Src ^ elem(0), Result0),
-		unsafe_copy_array_range(Src, 1, NewSize, 1, Result0, Result)
+		unsafe_array_copy_range(Src, 1, NewSize, 1, Result0, Result)
 	else
 		(if I = 0
 		then
@@ -246,10 +246,11 @@ unsafe_array_delete(Src, I) = Result :-
 			CpyStart = 1
 		else
 			init(NewSize, Src ^ elem(0), Result0),
-			unsafe_copy_array_range(Src, 0, I - 1, 1, Result0, Result1),
+			unsafe_array_copy_range(Src, 0, I - 1, 1, Result0, Result1),
 			CpyStart = I
 		),
-		unsafe_copy_array_range(Src, I + 1, Size, CpyStart, Result1, Result)
+		%unsafe_array_copy_range(Src, I + 1, Size, CpyStart, Result1, Result)
+		array_copy_range(Src, I + 1, Size, CpyStart, Result1, Result)
 	).
 	
 array_cons(T, Src, array_cons(Src, T)).
@@ -262,28 +263,28 @@ array_snoc(Src, T) = unsafe_array_insert(Src, max(Src) + 1, T).
 
 
 array_copy_range(Src, SrcF, SrcL, TgtF, !Array) :-
-	(if SrcF < SrcL
+	(if SrcF > SrcL
 	then
 		format_error($pred, 
 			"erroneous source range, first index %d must be smaller " ++
 			"than last index %d", [i(SrcF), i(SrcL)])
-	else if in_bounds(Src, SrcF) then
+	else if not in_bounds(Src, SrcF) then
 		bounds_error($pred, "range start out of bounds of source array")
-	else if in_bounds(Src, SrcL) then
+	else if not in_bounds(Src, SrcL) then
 		bounds_error($pred, "range end out of bounds of source array")
-	else if in_bounds(!.Array, TgtF) then
+	else if not in_bounds(!.Array, TgtF) then
 		bounds_error($pred, "target index start out of bounds of target array")
-	else if in_bounds(!.Array, TgtF + SrcL - SrcF) then
+	else if not in_bounds(!.Array, TgtF + SrcL - SrcF) then
 		bounds_error($pred, "range end out of bounds of target array")
 	else
-		unsafe_copy_array_range(Src, SrcF, SrcL, TgtF, !Array)
+		unsafe_array_copy_range(Src, SrcF, SrcL, TgtF, !Array)
 	).
 
-unsafe_copy_array_range(Src, SrcF, SrcL, TgtF, !Array) :-
+unsafe_array_copy_range(Src, SrcF, SrcL, TgtF, !Array) :-
 	unsafe_set(TgtF, Src ^ elem(SrcF), !Array),
 	(if SrcF < SrcL
 	then 
-		unsafe_copy_array_range(Src, SrcF + 1, SrcL, TgtF + 1, !Array)
+		unsafe_array_copy_range(Src, SrcF + 1, SrcL, TgtF + 1, !Array)
 	else
 		!:Array = !.Array
 	).
