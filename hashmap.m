@@ -253,8 +253,8 @@ array_equal(A1, A2) :-
 	Size@size(A1) = size(A2),
 	all [I] (
 		nondet_int_in_range(0, Size, I),
-		array.unsafe_lookup(A1, I, Elem1),
-		array.unsafe_lookup(A2, I, Elem2),
+		array.\*unsafe_*\lookup(A1, I, Elem1),
+		array.\*unsafe_*\lookup(A2, I, Elem2),
 		equal(Elem1, Elem2)
 	).
 
@@ -489,7 +489,7 @@ remove(H, K, S, V, indexed_branch(B, Array), HM) :-
 	mask(H, S, M),
 	B /\ M \= 0u,
 	sparse_index(B, M, I),
-	array.unsafe_lookup(Array, I, Branch0),
+	array.\*unsafe_*\lookup(Array, I, Branch0),
 	remove(H, K, S, V, Branch0, Branch1),
 	Length = size(Array),
 	(if Branch1 = empty_tree 
@@ -501,10 +501,10 @@ remove(H, K, S, V, indexed_branch(B, Array), HM) :-
 			Length = 2,
 			(
 				I = 0, 
-				array.unsafe_lookup(Array, 1, L)
+				array.\*unsafe_*\lookup(Array, 1, L)
 			;
 				I = 1,
-				array.unsafe_lookup(Array, 0, L)
+				array.\*unsafe_*\lookup(Array, 0, L)
 			), 
 			is_leaf_or_collision(L)
 		then
@@ -521,7 +521,7 @@ remove(H, K, S, V, indexed_branch(B, Array), HM) :-
 	
 remove(H, K, S, V, full_branch(Array), HM) :-
 	index(H, S, I),
-	array.unsafe_lookup(Array, I, Branch0),
+	array.\*unsafe_*\lookup(Array, I, Branch0),
 	remove(H, K, S, V, Branch0, Branch1),
 	(if Branch1 = empty_tree
 	then
@@ -572,7 +572,7 @@ delete(!.HM@indexed_branch(B, Array), H, K, S) = !:HM :-
 		!:HM = !.HM
 	else
 		sparse_index(B, M, I),
-		array.unsafe_lookup(Array, I, Branch0),
+		array.\*unsafe_*\lookup(Array, I, Branch0),
 		Branch1 = delete(Branch0, H, K, S),
 		Length = size(Array),
 		(if private_builtin.pointer_equal(Branch1, Branch0)
@@ -587,10 +587,10 @@ delete(!.HM@indexed_branch(B, Array), H, K, S) = !:HM :-
 				Length = 2,
 				(
 					I = 0, 
-					array.unsafe_lookup(Array, 1, L)
+					array.\*unsafe_*\lookup(Array, 1, L)
 				;
 					I = 1,
-					array.unsafe_lookup(Array, 0, L)
+					array.\*unsafe_*\lookup(Array, 0, L)
 				), 
 				is_leaf_or_collision(L)
 			then
@@ -608,7 +608,7 @@ delete(!.HM@indexed_branch(B, Array), H, K, S) = !:HM :-
 	
 delete(!.HM@full_branch(Array), H, K, S) = !:HM :-
 	index(H, S, I),
-	array.unsafe_lookup(Array, I, Branch0),
+	array.\*unsafe_*\lookup(Array, I, Branch0),
 	Branch1 = delete(Branch0, H, K, S),
 	(if private_builtin.pointer_equal(Branch1, Branch0)
 	then
