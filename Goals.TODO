@@ -27,11 +27,11 @@ get a repl running
 					refactor substitutions
 						implement term sets 
 							disjunctive ordering? Weights?
-							value sets <- I am here
+							value sets
 							refactor tuples
 								internalize representation
 									implement set tuples
-										hash table?
+										Implement HAMT <- I am here
 									cache mr->list->array->set->list conversion
 					define environments/symbol substitution
 						finish substitutions 
