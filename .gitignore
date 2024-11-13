@@ -12,3 +12,6 @@ Mercury.modules
 *.d
 *.c_date
 test.m
+hashmap_test2.m
+hashmap_test.m
+hashmap_test.m
