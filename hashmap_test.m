@@ -21,9 +21,7 @@
 :- import_module require.
 :- import_module string.
 
-
 :- import_module hashmap.
-% :- import_module fnv_hash.
 :- import_module hashable.
 
 %---------------------------------------------------------------------------%
@@ -32,32 +30,88 @@
 	hash(I) = cast_from_int(int.hash(I))
 ].
 
+:- pred print_key_stats(T::in, int::in, uint::in, uint::out, io::di, io::uo) 
+	is det <= hashable(T).
+
+print_key_stats(T, S, !B, !IO) :-
+	io.write_string("\n\nKey value: " ++ string(T), !IO),
+	Hash:uint = hashable.hash(T),
+	io.write_string("\nHash: " ++ string(Hash), !IO),
+	index(Hash, S, Index),
+	io.write_string("\nIndex at shift " ++ string(S) ++ ": " ++ string(Index), 
+		!IO),
+	mask(Hash, S, Mask),
+	io.write_string("\nMask at shift " ++ string(S) ++ ": " ++ string(Mask),
+		!IO),
+	MaskBinary = int_to_base_string(cast_to_int(Mask), 2),
+	io.write_string("\nMask in binary: " ++ MaskBinary, !IO),
+	!:B = !.B \/ Mask,
+	io.write_string("\nNew Bitmap: " ++ string(!.B), !IO),
+	BitmapBinary = int_to_base_string(cast_to_int(!.B), 2),
+	io.write_string("\nBitmap in binary: " ++ BitmapBinary, !IO),
+	io.write_string("\nBitmap weight: " ++ string(weight(!.B)), !IO),
+	io.write_string("\nSparse index: " ++ string(sparse_index(!.B, Mask):int), 
+		!IO),
+	Mminus1Binary:string = int_to_base_string(cast_to_int(Mask - 1u), 2),
+	BandMminus1 = !.B /\ (Mask - 1u),
+	io.write_string("\nB /\\ (M - 1) = " ++ string(BandMminus1:uint), !IO).
+
 main(!IO) :-
     io.command_line_arguments(Args, !IO),
     (
-	
         Args = [],
         A = "1000000"
         % B = "0.9"
-    ;
-	/*
+    ;/*
         Args = [A],
-        % B = "0.9"
-    ;
-	*/
+        B = "0.9"
+    ;*/
         Args = [A | _]
     ),
     Max = string.det_to_int(A),
     % MaxOccupancy = string.det_to_float(B),
+	
+	/*
+	io.write_string("Subkey mask in bin: " ++ 
+		int_to_base_string(cast_to_int(subkey_mask), 2), !IO),
+	*/
+	
+	/*
+	some [!B] (
+		!.B = 0u,
+		print_key_stats(0, 0, !B, !IO),
+		print_key_stats(1, 0, !B, !IO),
+		print_key_stats(2, 0, !B, !IO)
+	),
+	*/
+	
+	/*
+	some [!HM] (
+		!:HM = hashmap.init,
+		det_insert(0, 0, !HM),
+		det_insert(1, 1, !HM),
+		det_insert(2, 2, !HM),
+		io.write_string("\nHash table with 0, 1, 2 keys and values:\n" ++ 
+			string(!.HM), !IO),
+			
+		Bitmap = 1130496u,
+		io.write_string("\nIndexed Branch Bitmap: " ++ string(Bitmap), !IO),
+		io.write_string("\nBitmap in binary: " ++
+			int_to_base_string(cast_to_int(Bitmap), 2), !IO),
+		io.write_string("\nBitmap weight:" ++ string(weight(Bitmap)), !IO),
+		io.write_string("\nKey 2 Mask: " ++ 
+			string(Mask2@mask(Hash2@hash(2):uint, 0):uint), !IO)
+		
+	),
+	*/
     some [!HT] (
         !:HT = hashmap.init,
 
-        io.write_string("Inserting elements\n", !IO),
+        io.write_string("\n\nInserting elements\n", !IO),
         inst_preserving_fold_up(do_insert, 0, Max - 1, !HT),
         trace [runtime(env("HASH_TABLE_STATS"))] (
             impure report_stats
         ),
-		
 
         io.write_string("Looking up elements\n", !IO),
         inst_preserving_fold_up(do_lookup, 0, Max - 1, !HT),
@@ -69,7 +123,8 @@ main(!IO) :-
         ( if NumOccupants0 = Max then
             true
         else
-            error("count failed")
+            error("count failed Occupants: " ++ string(NumOccupants0)
+				++ " Max: " ++ string(Max))
         ),
 
         Half = Max / 2,
@@ -83,17 +138,16 @@ main(!IO) :-
         ( if NumOccupants = Max - Half then
             true
         else
-            error("count failed")
+            error("count failed Occupants: " ++ string(NumOccupants)
+				++ " Max - Half: " ++ string(Max))
         ),
-
-		/*
+/*
         AL = hashmap.to_assoc_list(!.HT),
         ( if list.length(AL) = NumOccupants then
             true
         else
             error("to_assoc_list failed")
         ),
-		
 
         io.write_string("Setting negative elements\n", !IO),
         inst_preserving_fold_up(do_set_neg, 0, Max - 1, !HT),
@@ -106,13 +160,11 @@ main(!IO) :-
         trace [runtime(env("HASH_TABLE_STATS"))] (
             impure report_stats
         ),
-		*/
-		
+*/
         _ = !.HT
     ).
 
-
-    % Or simply hashmap_di, hashmap_uo.
+    % Or simply in, out.
 :- pred inst_preserving_fold_up(pred(int, T, T), int, int, T, T).
 :- mode inst_preserving_fold_up(pred(in, di(I), out(I)) is det,
     in, in, di(I), out(I)) is det.
@@ -125,12 +177,11 @@ inst_preserving_fold_up(P, Lo, Hi, !A) :-
         true
     ).
 
-
 :- pred do_insert(int::in, hashmap(int, int)::in,
     hashmap(int, int)::out) is det.
 
 do_insert(I, !HT) :-
-	(if hashmap.insert(I, I, !HT)
+    (if hashmap.insert(I, I, !HT)
 	then
 		!:HT = !.HT
 	else

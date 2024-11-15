@@ -118,6 +118,11 @@
 :- func report_lookup_error(string, K, V) = _ is erroneous.
 
 %-----------------------------------------------------------------------------%
+% Misc
+
+:- func func_fail = _ is failure.
+
+%-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
 :- implementation.
@@ -164,8 +169,8 @@ det_dynamic_cast(T, det_dynamic_cast(T)).
 array_insert(I, T, Src, array_insert(Src, I, T)).
 
 array_insert(Src, I, T) = Result :-
-	bounds(Src, Min, Max - 1),
-	(if I >= Min, I =< Max 
+	bounds(Src, Min, Max),
+	(if I >= Min, I =< Max + 1 
 	then
 		unsafe_array_insert(I, T, Src, Result)
 	else
@@ -188,7 +193,8 @@ unsafe_array_insert(Src, I, T) = Result :-
 		then
 			Result = Result0
 		else
-			unsafe_array_copy_range(Src, First, Last, Next, 
+			%unsafe_array_copy_range(Src, First, Last, Next,
+			array_copy_range(Src, First, Last, Next,
 				Result0, Result)
 		)		
 	else
@@ -205,13 +211,19 @@ insert_loop(I, T, Src, Current, Last, !Array) :-
 	then
 		unsafe_set(Current, Src ^ elem(Current), !Array),
 		insert_loop(I, T, Src, Next,  Last, !Array)
-	else
+	else 
 		unsafe_set(I, T, !Array),
-		(if Next > Last
-		then
-			!:Array = !.Array
-		else
-			unsafe_array_copy_range(Src, Current, Last, Next, !Array)
+		compare(Compare, I, Last),
+		(
+			Compare = (<),
+			%unsafe_array_copy_range(Src, Current, Last, Next, !Array)
+			array_copy_range(Src, Current, Last, Next, !Array)
+		;
+			Compare = (=),
+			unsafe_set(Last + 1, Src ^ elem(Last), !Array)
+		;
+			Compare = (>),
+			!:Array = !.Array		
 		)
 	).
 	
@@ -232,25 +244,40 @@ unsafe_array_delete(I, Src, unsafe_array_delete(Src, I)).
 unsafe_array_delete(Src, I) = Result :-
 	Size = size(Src),
 	NewSize = Size - 1,
+	Last = max(Src),
 	(if NewSize = 0
 	then 
 		Result = make_empty_array
-	else if I = Size
+	else if NewSize = 1
+	then
+		Remaining = (I = 0 -> 1 ; 0),
+		init(NewSize, Src ^ elem(Remaining), Result)
+	else if I = Last
 	then
 		init(NewSize, Src ^ elem(0), Result0),
-		unsafe_array_copy_range(Src, 1, NewSize, 1, Result0, Result)
+		%unsafe_array_copy_range(Src, 1, Last, 1, Result0, Result)
+		array_copy_range(Src, 1, Last - 1, 1, Result0, Result)
 	else
 		(if I = 0
 		then
 			init(NewSize, Src ^ elem(1), Result1),
+			First = 2,
 			CpyStart = 1
 		else
+			First = I + 1,
 			init(NewSize, Src ^ elem(0), Result0),
-			unsafe_array_copy_range(Src, 0, I - 1, 1, Result0, Result1),
-			CpyStart = I
+			(if I = 1
+			then
+				Result1 = Result0,
+				CpyStart = 1
+			else
+				%unsafe_array_copy_range(Src, 1, I - 1, 1, Result0, Result1),
+				array_copy_range(Src, 1, I - 1, 1, Result0, Result1),
+				CpyStart = I
+			)
 		),
-		%unsafe_array_copy_range(Src, I + 1, Size, CpyStart, Result1, Result)
-		array_copy_range(Src, I + 1, Size, CpyStart, Result1, Result)
+		%unsafe_array_copy_range(Src, I + 1, Last, CpyStart, Result1, Result)
+		array_copy_range(Src, First, Last, CpyStart, Result1, Result)
 	).
 	
 array_cons(T, Src, array_cons(Src, T)).
@@ -269,13 +296,28 @@ array_copy_range(Src, SrcF, SrcL, TgtF, !Array) :-
 			"erroneous source range, first index %d must be smaller " ++
 			"than last index %d", [i(SrcF), i(SrcL)])
 	else if not in_bounds(Src, SrcF) then
-		bounds_error($pred, "range start out of bounds of source array")
+		bounds(Src, Min, Max),
+		format_bounds_error($pred, 
+			"range start %d out of bounds of source array %d - %d",
+			[i(SrcF), i(Min), i(Max)])
 	else if not in_bounds(Src, SrcL) then
-		bounds_error($pred, "range end out of bounds of source array")
+		bounds(Src, Min, Max),
+		format_bounds_error($pred, 
+			"range end %d out of bounds of source array %d - %d",
+			[i(SrcL), i(Min), i(Max)])
 	else if not in_bounds(!.Array, TgtF) then
-		bounds_error($pred, "target index start out of bounds of target array")
-	else if not in_bounds(!.Array, TgtF + SrcL - SrcF) then
-		bounds_error($pred, "range end out of bounds of target array")
+		bounds(!.Array, Min, Max),
+		format_bounds_error($pred, 
+			"target index %d start out of bounds of target array %d - %d",
+			[i(TgtF), i(Min), i(Max)])
+	else if 
+		TgtL = TgtF + SrcL - SrcF,
+		not in_bounds(!.Array, TgtL) 
+	then
+		bounds(!.Array, Min, Max),
+		format_bounds_error($pred, 
+			"target index %d end out of bounds of target array %d - %d",
+			[i(TgtL), i(Min), i(Max)])
 	else
 		unsafe_array_copy_range(Src, SrcF, SrcL, TgtF, !Array)
 	).
@@ -313,3 +355,8 @@ report_lookup_error(Msg, K) = _ :-
 	
 report_lookup_error(Msg, K, V) = _ :-
 	report_lookup_error(Msg, K, V).
+	
+%-----------------------------------------------------------------------------%
+% Misc
+
+func_fail = _ :- fail.

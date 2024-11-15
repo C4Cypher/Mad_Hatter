@@ -108,6 +108,10 @@
 	<= hashable(K).
 :- func insert(hashmap(K, V), K, V) = hashmap(K, V) is semidet <= hashable(K).
 
+:- pred det_insert(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) is det
+	<= hashable(K).
+:- func det_insert(hashmap(K, V), K, V) = hashmap(K, V) is det <= hashable(K).
+
 % Inserts an element into a hashmap, overwriting element if it already exists
 :- pred set(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) is det
 	<= hashable(K).
@@ -118,6 +122,10 @@
 	is semidet	<= hashable(K).
 :- func update(hashmap(K, V), K, V) = hashmap(K, V) is semidet <= hashable(K).
 
+:- pred det_update(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) 
+	is det	<= hashable(K).
+:- func det_update(hashmap(K, V), K, V) = hashmap(K, V) is det <= hashable(K).
+
 %-----------------------------------------------------------------------------%
 % Removal
 
@@ -126,11 +134,83 @@
 :- pred remove(K::in, V::out, hashmap(K, V)::in, hashmap(K, V)::out) 
 	is semidet <= hashable(K).
 
+:- pred det_remove(K::in, V::out, hashmap(K, V)::in, hashmap(K, V)::out) 
+	is det <= hashable(K).
+
 % Delete a key-value pair from a map.
 % If the key is not present, leave the map unchanged.	
 :- pred delete(K::in, hashmap(K, V)::in, hashmap(K, V)::out) is det
 	<= hashable(K).
 :- func delete(hashmap(K, V), K) = hashmap(K, V) <= hashable(K).
+
+
+%-----------------------------------------------------------------------------%
+% Bit twiddling
+
+:- type hash == uint.
+
+:- type bitmap == uint.
+
+:- type mask == uint.
+
+:- type shift == int.
+
+% Bit width of hash type
+:- func hash_size = int.
+
+% Number of bits that are inspected at each level of the hash tree.
+:- func bits_per_subkey = int.
+
+
+% The size of a 'Full' node, i.e. @2 ^ 'bitsPerSubkey'@.
+:- func max_children = int.
+
+% Bit mask with the lowest 'bitsPerSubkey' bits set, i.e. @0b11111@.
+:- func subkey_mask = bitmap.
+
+% | Given a 'Hash' and a 'Shift' that indicates the level in the tree, compute
+% the index into a 'Full' node or into the bitmap of a `BitmapIndexed` node.
+%
+% >>> index 0b0010_0010 0
+% 0b0000_0010
+
+:- func index(hash, shift) = int.
+
+:- pred index(hash::in, shift::in, int::out) is det.
+
+% Given a 'Hash' and a 'Shift' that indicates the level in the tree, compute
+ % the bitmap that contains only the 'index' of the hash at this level.
+
+ % The result can be used for constructing one-element 'BitmapIndexed' nodes or
+ % to check whether a 'BitmapIndexed' node may possibly contain the 'Hash'.
+
+ % >>> mask 0b0010_0010 0
+ % 0b0100
+
+:- func mask(hash, shift) = mask.
+
+
+:- pred mask(hash::in, shift::in, mask::out) is det.
+
+% This array index is computed by counting the number of 1-bits below the
+% 'index' represented by the mask.
+%
+% >>> sparseIndex 0b0110_0110 0b0010_0000
+% 2
+:- func sparse_index(bitmap, mask) = int.
+
+:- pred sparse_index(bitmap::in, mask::in, int::out) is det.
+
+% A bitmap with the 'maxChildren' least significant bits set, i.e.
+% @0xFF_FF_FF_FF@.
+:- func full_bitmap = bitmap.
+
+% Increment a 'Shift' for use at the next deeper level.
+:- func next_shift(shift) = shift.
+
+
+% Hamming weight, or 'popcount'
+:- func weight(bitmap) = int.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -159,15 +239,6 @@
 	;		full_branch(hash_array(K, V))
 	;		collision(hash, bucket(K, V)).
 
-:- type hash == uint.
-
-:- type bitmap == uint.
-
-:- type mask == uint.
-
-:- type shift == int.
-
-:- func hash_size = int.
 
 hash_size = bits_per_uint.
 
@@ -253,8 +324,8 @@ array_equal(A1, A2) :-
 	Size@size(A1) = size(A2),
 	all [I] (
 		nondet_int_in_range(0, Size, I),
-		array.\*unsafe_*\lookup(A1, I, Elem1),
-		array.\*unsafe_*\lookup(A2, I, Elem2),
+		array.lookup(A1, I, Elem1), % unsafe_
+		array.lookup(A2, I, Elem2), % unsafe_
 		equal(Elem1, Elem2)
 	).
 
@@ -267,13 +338,17 @@ search(HM, K) = search(HM, hash(K), K, 0).
 
 :- func search(hashmap(K, V), hash, K, shift) = V is semidet.
 
-search(leaf(H, K, V), H,  K,_) = V.
+search(leaf(H, K, V), H,  K, _) = V.
 
 search(indexed_branch(B, Array), H, K, S) =
-	search(array.lookup(Array, sparse_index(B, M)), H,  K, next_shift(S))
+	(if B /\ M = 0u
+	then
+		func_fail
+	else
+		search(array.lookup(Array, sparse_index(B, M)), H,  K, next_shift(S))
+	) 
 :- 
-	mask(B, S, M),
-	B /\ M \= 0u. 
+	mask(H, S, M).
 	
 search(full_branch(Array), H,  K, S) =
 	search(array.lookup(Array, index(H, S)), H, K, next_shift(S)).
@@ -318,6 +393,17 @@ insert(K, V, !HM) :-
 	
 insert(!.HM, K, V) = !:HM :-
 	insert(K, V, !HM).
+	
+det_insert(K, V, !HM) :-
+	( if insert(K, V, !.HM, NewMap) then
+        !:HM = NewMap
+    else
+        report_lookup_error("hashmap.det_insert: key already present", K, V)
+    ).
+	
+det_insert(!.HM, K, V) = !:HM :- 
+	det_insert(K, V, !HM).
+	
 	
 :- pragma inline(insert/3).
 
@@ -368,7 +454,8 @@ insert_tree(H, K, V, S, R, !.HM@indexed_branch(B, !.Array), !:HM) :-
 	sparse_index(B, M, I),
 	( if B /\ M = 0u
 	then
-		array_insert(I, leaf(H, K, V), !Array), %TODO: change this to unsafe_?
+		%unsafe_array_insert(I, leaf(H, K, V), !Array), 
+		array_insert(I, leaf(H, K, V), !Array), 
 		!:HM = indexed_or_full_branch(B \/ M, !.Array)
 	else 
 		array.lookup(!.Array, I, Branch0),
@@ -414,6 +501,17 @@ update(K, V, HM, update(HM, K, V)).
 
 update(HM, K, V) = update(HM, hash(K), K, V, 0).
 
+	
+det_update(K, V, !HM) :-
+	( if update(K, V, !.HM, NewMap) then
+        !:HM = NewMap
+    else
+        report_lookup_error("hashmap.det_update: key not found", K, V)
+    ).
+	
+det_update(!.HM, K, V) = !:HM :- 
+	det_update(K, V, !HM).
+
 :- func update(hashmap(K, V), hash, K, V, shift) = hashmap(K, V) is semidet.
 
 update(leaf(H, K, _), H,  K, V, _) = leaf(H, K, V).
@@ -421,7 +519,7 @@ update(leaf(H, K, _), H,  K, V, _) = leaf(H, K, V).
 update(indexed_branch(B, Array), H, K, V, S) =
 	update(array.lookup(Array, sparse_index(B, M)), H,  K, V, next_shift(S))
 :- 
-	mask(B, S, M),
+	mask(H, S, M),
 	B /\ M \= 0u. 
 	
 update(full_branch(Array), H, K, V, S) =
@@ -468,7 +566,7 @@ two(S, H1, K1, V1, L2@leaf(H2, _, _)) = indexed_branch(Bitmap, Array) :-
 		Bitmap = Bp1
 	else
 		array.init(2, leaf(H1, K1, V1), Array0),
-		Index = (index(Bp1, S) < index(Bp2, S) -> 1 ; 0),
+		Index = (index(H1, S) < index(H2, S) -> 1 ; 0),
 		array.set(Index, coerce(L2), Array0, Array),
 		Bitmap = Bp1 \/ Bp2		
 	).
@@ -480,6 +578,15 @@ two(S, H1, K1, V1, L2@leaf(H2, _, _)) = indexed_branch(Bitmap, Array) :-
 
 remove(K, V, !HM) :- remove(hash(K), K, 0, V, !HM).
 
+det_remove(K, V, !HM) :- 
+	( if remove(K, Found, !.HM, NewMap) then
+        V = Found,
+		!:HM = NewMap
+    else
+        report_lookup_error("hashmap.det_remove: key not found", K)
+    ).
+	
+
 :- pred remove(hash::in, K::in, shift::in, V::out, hashmap(K, V)::in, 
 	hashmap(K, V)::out)	is semidet <= hashable(K).
 
@@ -489,7 +596,7 @@ remove(H, K, S, V, indexed_branch(B, Array), HM) :-
 	mask(H, S, M),
 	B /\ M \= 0u,
 	sparse_index(B, M, I),
-	array.\*unsafe_*\lookup(Array, I, Branch0),
+	array.lookup(Array, I, Branch0), % unsafe_
 	remove(H, K, S, V, Branch0, Branch1),
 	Length = size(Array),
 	(if Branch1 = empty_tree 
@@ -501,10 +608,10 @@ remove(H, K, S, V, indexed_branch(B, Array), HM) :-
 			Length = 2,
 			(
 				I = 0, 
-				array.\*unsafe_*\lookup(Array, 1, L)
+				array.lookup(Array, 1, L) % unsafe_
 			;
 				I = 1,
-				array.\*unsafe_*\lookup(Array, 0, L)
+				array.lookup(Array, 0, L) % unsafe_
 			), 
 			is_leaf_or_collision(L)
 		then
@@ -521,7 +628,7 @@ remove(H, K, S, V, indexed_branch(B, Array), HM) :-
 	
 remove(H, K, S, V, full_branch(Array), HM) :-
 	index(H, S, I),
-	array.\*unsafe_*\lookup(Array, I, Branch0),
+	array.lookup(Array, I, Branch0), % unsafe_
 	remove(H, K, S, V, Branch0, Branch1),
 	(if Branch1 = empty_tree
 	then
@@ -572,7 +679,7 @@ delete(!.HM@indexed_branch(B, Array), H, K, S) = !:HM :-
 		!:HM = !.HM
 	else
 		sparse_index(B, M, I),
-		array.\*unsafe_*\lookup(Array, I, Branch0),
+		array.lookup(Array, I, Branch0), % unsafe_
 		Branch1 = delete(Branch0, H, K, S),
 		Length = size(Array),
 		(if private_builtin.pointer_equal(Branch1, Branch0)
@@ -587,10 +694,10 @@ delete(!.HM@indexed_branch(B, Array), H, K, S) = !:HM :-
 				Length = 2,
 				(
 					I = 0, 
-					array.\*unsafe_*\lookup(Array, 1, L)
+					array.lookup(Array, 1, L) % unsafe_
 				;
 					I = 1,
-					array.\*unsafe_*\lookup(Array, 0, L)
+					array.lookup(Array, 0, L) % unsafe_
 				), 
 				is_leaf_or_collision(L)
 			then
@@ -608,7 +715,7 @@ delete(!.HM@indexed_branch(B, Array), H, K, S) = !:HM :-
 	
 delete(!.HM@full_branch(Array), H, K, S) = !:HM :-
 	index(H, S, I),
-	array.\*unsafe_*\lookup(Array, I, Branch0),
+	array.lookup(Array, I, Branch0), % unsafe_
 	Branch1 = delete(Branch0, H, K, S),
 	(if private_builtin.pointer_equal(Branch1, Branch0)
 	then
@@ -643,70 +750,34 @@ delete(HM@collision(CH, Bucket), H, K, _) =
 %-----------------------------------------------------------------------------%
 % Bit twiddling
 
-% Number of bits that are inspected at each level of the hash tree.
-
-:- func bits_per_subkey = int.
 bits_per_subkey = 5.
 
-% The size of a 'Full' node, i.e. @2 ^ 'bitsPerSubkey'@.
-
-:- func max_children = int.
 max_children = unchecked_left_shift(1, bits_per_subkey).
 :- pragma inline(max_children/0).
 
-:- func subkey_mask = bitmap.
 subkey_mask = unchecked_left_shift(1u, bits_per_subkey) - 1u.
 
-% | Given a 'Hash' and a 'Shift' that indicates the level in the tree, compute
-% the index into a 'Full' node or into the bitmap of a `BitmapIndexed` node.
-%
-% >>> index 0b0010_0010 0
-% 0b0000_0010
 
-:- func index(bitmap, shift) = int.
 index(B, S) = cast_to_int(unchecked_right_shift(B, S) /\ subkey_mask).
 :- pragma inline(index/2).
 
-:- pred index(bitmap::in, shift::in, int::out) is det.
 index(B, S, index(B, S)).
 :- pragma inline(index/3).
 
- % Given a 'Hash' and a 'Shift' that indicates the level in the tree, compute
- % the bitmap that contains only the 'index' of the hash at this level.
-
- % The result can be used for constructing one-element 'BitmapIndexed' nodes or
- % to check whether a 'BitmapIndexed' node may possibly contain the 'Hash'.
-
- % >>> mask 0b0010_0010 0
- % 0b0100
-
-:- func mask(hash, shift) = mask.
+ 
 mask(H, S) = unchecked_left_shift(1u, index(H, S)).
 :- pragma inline(mask/2).
 
-:- pred mask(hash::in, shift::in, bitmap::out) is det.
 mask(H, S, mask(H, S)).
 :- pragma inline(mask/3).
 
 
-% This array index is computed by counting the number of 1-bits below the
-% 'index' represented by the mask.
-%
-% >>> sparseIndex 0b0110_0110 0b0010_0000
-% 2
-
-:- func sparse_index(bitmap, mask) = int.
 sparse_index(B, M) = weight(B /\ (M - 1u) ).
 :- pragma inline(sparse_index/2).
 
-:- pred sparse_index(bitmap::in, mask::in, int::out) is det.
 sparse_index(B, M, sparse_index(B, M)).
 :- pragma inline(sparse_index/3).
 
-% A bitmap with the 'maxChildren' least significant bits set, i.e.
-% @0xFF_FF_FF_FF@.
-
-:- func full_bitmap = bitmap.
 
 % From the original documentation of Data.Hashmap, 
 %-- This needs to use 'shiftL' instead of 'unsafeShiftL', to avoid UB.
@@ -717,15 +788,10 @@ full_bitmap = \ ( \ 0u << max_children).
 :- pragma inline(full_bitmap/0).
 
 
-% Increment a 'Shift' for use at the next deeper level.
-:- func next_shift(shift) = shift.
 next_shift(S) = S + bits_per_subkey.
 
 :- pragma inline(next_shift/1).
 
-
-% Hamming weight, or 'popcount'
-:- func weight(uint) = int.
 
 weight(I) = 
 	(if I =< 1u
