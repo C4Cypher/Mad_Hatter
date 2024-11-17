@@ -109,13 +109,13 @@ main(!IO) :-
 
         io.write_string("\n\nInserting elements\n", !IO),
         inst_preserving_fold_up(do_insert, 0, Max - 1, !HT),
-        trace [runtime(env("HASH_TABLE_STATS"))] (
+        trace [ runtime(env("HASH_TABLE_STATS")) ] (
             impure report_stats
         ),
 
         io.write_string("Looking up elements\n", !IO),
         inst_preserving_fold_up(do_lookup, 0, Max - 1, !HT),
-        trace [runtime(env("HASH_TABLE_STATS"))] (
+        trace [ runtime(env("HASH_TABLE_STATS")) ] (
             impure report_stats
         ),
 
@@ -130,7 +130,7 @@ main(!IO) :-
         Half = Max / 2,
         io.write_string("Deleting some elements\n", !IO),
         inst_preserving_fold_up(do_delete, 0, Half - 1, !HT),
-        trace [runtime(env("HASH_TABLE_STATS"))] (
+        trace [ runtime(env("HASH_TABLE_STATS")) ] (
             impure report_stats
         ),
 
@@ -214,7 +214,22 @@ do_lookup_neg(I, !HT) :-
     hashmap(int, int)::out) is det.
 
 do_delete(I, !HT) :-
+	% Before = count(!.HT),
     hashmap.delete(I, !HT).
+	
+	/*
+	After = count(!.HT),
+	(if After = Before - 1
+	then
+		true
+	else
+		error("hashmap.delete failed to delete element " ++ string(I) ++ 
+			" Count before: " ++ string(Before) ++ " Count after: " ++ 
+			string(After)) 
+	).		
+	*/
+			
+	
 
 :- pred do_set_neg(int::in, hashmap(int, int)::in,
     hashmap(int, int)::out) is det.
