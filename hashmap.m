@@ -324,8 +324,8 @@ array_equal(A1, A2) :-
 	Size@size(A1) = size(A2),
 	all [I] (
 		nondet_int_in_range(0, Size, I),
-		array.lookup(A1, I, Elem1), % unsafe_
-		array.lookup(A2, I, Elem2), % unsafe_
+		array.unsafe_lookup(A1, I, Elem1),
+		array.unsafe_lookup(A2, I, Elem2),
 		equal(Elem1, Elem2)
 	).
 
@@ -345,13 +345,14 @@ search(indexed_branch(B, Array), H, K, S) =
 	then
 		func_fail
 	else
-		search(array.lookup(Array, sparse_index(B, M)), H,  K, next_shift(S))
+		search(array.unsafe_lookup(Array, sparse_index(B, M)), H,  K,
+			next_shift(S))
 	) 
 :- 
 	mask(H, S, M).
 	
 search(full_branch(Array), H,  K, S) =
-	search(array.lookup(Array, index(H, S)), H, K, next_shift(S)).
+	search(array.unsafe_lookup(Array, index(H, S)), H, K, next_shift(S)).
 	
 search(collision(H, Bucket), H, K,  _) = map.search(Bucket, K).
 
@@ -457,7 +458,7 @@ insert_tree(H, K, V, S, R, !.HM@indexed_branch(B, !.Array), !:HM) :-
 		unsafe_array_insert(I, leaf(H, K, V), !Array), 
 		!:HM = indexed_or_full_branch(B \/ M, !.Array)
 	else 
-		array.lookup(!.Array, I, Branch0),
+		array.unsafe_lookup(!.Array, I, Branch0),
 		insert_tree(H, K, V, next_shift(S), R, Branch0, Branch1),
 		(if private_builtin.pointer_equal(Branch1, Branch0)
 		then
@@ -470,7 +471,7 @@ insert_tree(H, K, V, S, R, !.HM@indexed_branch(B, !.Array), !:HM) :-
 	
 insert_tree(H, K, V, S, R, !.HM@full_branch(!.Array), !:HM) :-
 	index(H, S, I),
-	array.lookup(!.Array, I, Branch0),
+	array.unsafe_lookup(!.Array, I, Branch0),
 	insert_tree(H, K, V, next_shift(S), R, Branch0, Branch1),
 	(if private_builtin.pointer_equal(Branch1, Branch0)
 	then
@@ -516,13 +517,14 @@ det_update(!.HM, K, V) = !:HM :-
 update(leaf(H, K, _), H,  K, V, _) = leaf(H, K, V).
 
 update(indexed_branch(B, Array), H, K, V, S) =
-	update(array.lookup(Array, sparse_index(B, M)), H,  K, V, next_shift(S))
+	update(array.unsafe_lookup(Array, sparse_index(B, M)), H,  K, V,
+		next_shift(S))
 :- 
 	mask(H, S, M),
 	B /\ M \= 0u. 
 	
 update(full_branch(Array), H, K, V, S) =
-	update(array.lookup(Array, index(H, S)), H, K, V, next_shift(S)).
+	update(array.unsafe_lookup(Array, index(H, S)), H, K, V, next_shift(S)).
 	
 update(collision(H, Bucket), H, K, V, _) = 
 	collision(H, map.update(Bucket, K, V)).
@@ -627,7 +629,7 @@ remove(H, K, S, V, indexed_branch(B, Array), HM) :-
 	
 remove(H, K, S, V, full_branch(Array), HM) :-
 	index(H, S, I),
-	array.lookup(Array, I, Branch0), % unsafe_
+	array.unsafe_lookup(Array, I, Branch0),
 	remove(H, K, next_shift(S), V, Branch0, Branch1),
 	(if Branch1 = empty_tree
 	then
