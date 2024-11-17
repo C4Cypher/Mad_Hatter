@@ -454,8 +454,7 @@ insert_tree(H, K, V, S, R, !.HM@indexed_branch(B, !.Array), !:HM) :-
 	sparse_index(B, M, I),
 	( if B /\ M = 0u
 	then
-		%unsafe_array_insert(I, leaf(H, K, V), !Array), 
-		array_insert(I, leaf(H, K, V), !Array), 
+		unsafe_array_insert(I, leaf(H, K, V), !Array), 
 		!:HM = indexed_or_full_branch(B \/ M, !.Array)
 	else 
 		array.lookup(!.Array, I, Branch0),
@@ -596,7 +595,7 @@ remove(H, K, S, V, indexed_branch(B, Array), HM) :-
 	mask(H, S, M),
 	B /\ M \= 0u,
 	sparse_index(B, M, I),
-	array.lookup(Array, I, Branch0), % unsafe_
+	array.unsafe_lookup(Array, I, Branch0),
 	remove(H, K, next_shift(S), V, Branch0, Branch1),
 	Length = size(Array),
 	(if Branch1 = empty_tree 
@@ -608,18 +607,16 @@ remove(H, K, S, V, indexed_branch(B, Array), HM) :-
 			Length = 2,
 			(
 				I = 0, 
-				%unsafe_array.lookup(Array, 1, L)
-				array.lookup(Array, 1, L)
+				array.unsafe_lookup(Array, 1, L)
 			;
 				I = 1,
-				%array.unsafe_lookup(Array, 0, L)
-				array.lookup(Array, 0, L)
+				array.unsafe_lookup(Array, 0, L)
 			), 
 			is_leaf_or_collision(L)
 		then
 			HM = L
 		else 
-			HM = indexed_branch(B /\ \ M, array_delete(Array, I))
+			HM = indexed_branch(B /\ \ M, unsafe_array_delete(Array, I))
 		)
 	else if Length = 1, is_leaf_or_collision(Branch1)
 	then
@@ -635,7 +632,7 @@ remove(H, K, S, V, full_branch(Array), HM) :-
 	(if Branch1 = empty_tree
 	then
 		B = full_bitmap /\ (\ unchecked_left_shift(1u, I)),
-		HM = indexed_branch(B, array_delete(Array, I))
+		HM = indexed_branch(B, unsafe_array_delete(Array, I))
 	else
 		HM = full_branch(slow_set(Array, I, Branch1))
 	).
@@ -681,8 +678,7 @@ delete(!.HM@indexed_branch(B, Array), H, K, S) = !:HM :-
 		!:HM = !.HM
 	else
 		sparse_index(B, M, I),
-		%array.unsafe_lookup(Array, I, Branch0),
-		array.lookup(Array, I, Branch0), 
+		array.unsafe_lookup(Array, I, Branch0),
 		Branch1 = delete(Branch0, H, K, next_shift(S)),
 		Length = size(Array),
 		(if private_builtin.pointer_equal(Branch1, Branch0)
@@ -697,16 +693,17 @@ delete(!.HM@indexed_branch(B, Array), H, K, S) = !:HM :-
 				Length = 2,
 				(
 					I = 0, 
-					array.lookup(Array, 1, L) % unsafe_
+					array.unsafe_lookup(Array, 1, L)
 				;
 					I = 1,
-					array.lookup(Array, 0, L) % unsafe_
+					array.unsafe_lookup(Array, 0, L)
 				), 
 				is_leaf_or_collision(L)
 			then
 				!:HM = L
 			else 
-				!:HM = indexed_branch(B /\ \ M, array_delete(Array, I))
+				!:HM = indexed_branch(B /\ \ M, 
+					unsafe_array_delete(Array, I))
 			)
 		else if Length = 1, is_leaf_or_collision(Branch1)
 		then
@@ -720,8 +717,7 @@ delete(!.HM@indexed_branch(B, Array), H, K, S) = !:HM :-
 
 delete(!.HM@full_branch(Array), H, K, S) = !:HM :-
 	index(H, S, I),
-	%array.unsafe_lookup(Array, I, Branch0),
-	array.lookup(Array, I, Branch0),
+	array.unsafe_lookup(Array, I, Branch0),
 	Branch1 = delete(Branch0, H, K, next_shift(S)),
 	(if private_builtin.pointer_equal(Branch1, Branch0)
 	then
@@ -729,7 +725,7 @@ delete(!.HM@full_branch(Array), H, K, S) = !:HM :-
 	else if Branch1 = empty_tree
 	then
 		B = full_bitmap /\ (\ unchecked_left_shift(1u, I)),
-		!:HM = indexed_branch(B, array_delete(Array, I))
+		!:HM = indexed_branch(B, unsafe_array_delete(Array, I))
 	else
 		!:HM = full_branch(slow_set(Array, I, Branch1))
 	).
