@@ -47,10 +47,15 @@
 
 :- module hashmap.
 
-% An attempt at implementing Haskell's implementation of a HAMT in Merrcury
+% An attempt at implementing Haskell's Unordered Containers package
+% implementation of a HAMT in Merrcury
 % Original implementation found in Data.HashMap.Internal by Johan Tibell
 
 :- interface.
+
+:- import_module list.
+:- import_module assoc_list.
+:- import_module maybe.
 
 :- import_module hashable.
 
@@ -87,6 +92,9 @@
 %-----------------------------------------------------------------------------%
 % Search
 
+% Succeeds if the main contains the given key
+:- pred contains(hashmap(K, _V)::in, K::in) is semidet <= hashable(K).
+
 % Fails if the key is not found
 :- pred search(hashmap(K, V)::in, K::in, V::out) is semidet <= hashable(K).
 :- func search(hashmap(K, V), K) = V is semidet <= hashable(K).
@@ -111,6 +119,19 @@
 :- pred det_insert(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) is det
 	<= hashable(K).
 :- func det_insert(hashmap(K, V), K, V) = hashmap(K, V) is det <= hashable(K).
+
+:- func det_insert_from_corresponding_lists(hashmap(K, V), list(K), list(V))
+    = hashmap(K, V) <= hashable(K).
+:- pred det_insert_from_corresponding_lists(list(K)::in,
+    list(V)::in, hashmap(K, V)::in, hashmap(K, V)::out) is det <= hashable(K).
+	
+:- func det_insert_from_assoc_list(hashmap(K, V), assoc_list(K, V)) = 
+	hashmap(K, V) <= hashable(K).
+:- pred det_insert_from_assoc_list(assoc_list(K, V)::in,
+    hashmap(K, V)::in, hashmap(K, V)::out) is det <= hashable(K).
+	
+:- pred search_insert(K::in, V::in, maybe(V)::out,
+    hashmap(K, V)::in, hashmap(K, V)::out) is det <= hashable(K).
 
 % Inserts an element into a hashmap, overwriting element if it already exists
 :- pred set(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) is det
@@ -223,11 +244,9 @@
 :- import_module uint.
 :- import_module bool.
 :- import_module require.
-:- import_module assoc_list.
-:- import_module list.
 :- import_module pair.
 
-:- import_module mh_util.
+:- import_module util.
 
 %-----------------------------------------------------------------------------%
 % Hash Array Mapped Table
@@ -332,6 +351,8 @@ array_equal(A1, A2) :-
 %-----------------------------------------------------------------------------%
 % Search
 
+contains(Map, K) :- search(Map, K, _).
+
 search(HM, K, search(HM, K)).
 
 search(HM, K) = search(HM, hash(K), K, 0).
@@ -345,18 +366,18 @@ search(indexed_branch(B, Array), H, K, S) =
 	then
 		func_fail
 	else
-		search(array.unsafe_lookup(Array, sparse_index(B, M)), H,  K,
-			next_shift(S))
+		search(Next, H, K, next_shift(S))
 	) 
 :- 
-	mask(H, S, M).
+	mask(H, S, M),
+	array.unsafe_lookup(Array, sparse_index(B, M), Next).
 	
 search(full_branch(Array), H,  K, S) =
-	search(array.unsafe_lookup(Array, index(H, S)), H, K, next_shift(S)).
+	search(Next, H, K, next_shift(S))
+:-
+	array.unsafe_lookup(Array, index(H, S), Next).
 	
 search(collision(H, Bucket), H, K,  _) = map.search(Bucket, K).
-
-
 
 lookup(HM, K, lookup(HM, K)).
 
@@ -395,35 +416,6 @@ insert(K, V, !HM) :-
 insert(!.HM, K, V) = !:HM :-
 	insert(K, V, !HM).
 	
-det_insert(K, V, !HM) :-
-	( if insert(K, V, !.HM, NewMap) then
-        !:HM = NewMap
-    else
-        report_lookup_error("hashmap.det_insert: key already present", K, V)
-    ).
-	
-det_insert(!.HM, K, V) = !:HM :- 
-	det_insert(K, V, !HM).
-	
-	
-:- pragma inline(insert/3).
-
-set(K, V, !HM) :- 
-	(if insert_tree(hash(K), K, V, 0, yes, !HM)
-	then
-		!:HM = !.HM
-	else
-		unexpected($module, $pred, 
-			"Failure on insert_tree/6 with Replace = yes")
-	).
-
-
-:- pragma inline(set/4).
-	
-set(!.HM, K, V) = !:HM :-
-	set(K, V, !HM).
-	
-:- pragma inline(set/3).
 
 %  pred insert_tree(Key, Value, Shift, Replace, !HashTree) is semidet.
 :- pred insert_tree(hash::in, K::in, V::in, shift::in, bool::in,
@@ -494,8 +486,155 @@ insert_tree(H, K, V, S, R, !.HM@collision(CH, Bucket), !:HM) :-
 		)
 	else
 		array.init(1, !.HM, BArray),
-		insert_tree(H, K, V, S, R, indexed_branch(mask(H, S), BArray), !:HM)
+		insert_tree(H, K, V, next_shift(S), R, indexed_branch(mask(CH, S), 
+			BArray), !:HM)
 	).
+
+:- pragma inline(insert/3).	
+
+det_insert(K, V, !HM) :-
+	( if insert(K, V, !.HM, NewMap) then
+        !:HM = NewMap
+    else
+        report_lookup_error("hashmap.det_insert: key already present", K, V)
+    ).
+	
+:- pragma inline(det_insert/4).
+	
+det_insert(!.HM, K, V) = !:HM :- 
+	det_insert(K, V, !HM).
+	
+:- pragma inline(det_insert/3).
+	
+det_insert_from_corresponding_lists(M0, Ks, Vs) = M :-
+    det_insert_from_corresponding_lists(Ks, Vs, M0, M).
+
+det_insert_from_corresponding_lists([], [], !Map).
+det_insert_from_corresponding_lists([], [_ | _], _, _) :-
+    unexpected($pred, "list length mismatch").
+det_insert_from_corresponding_lists([_ | _], [], _, _) :-
+    unexpected($pred, "list length mismatch").
+det_insert_from_corresponding_lists([K | Ks], [V | Vs], !Map) :-
+    det_insert(K, V, !Map),
+    det_insert_from_corresponding_lists(Ks, Vs, !Map).
+
+det_insert_from_assoc_list(M0, AL) = M :-
+    det_insert_from_assoc_list(AL, M0, M).
+
+det_insert_from_assoc_list([], !Map).
+det_insert_from_assoc_list([K - V | KVs], !Map) :-
+    det_insert(K, V, !Map),
+    det_insert_from_assoc_list(KVs, !Map).	
+
+% search_insert(K, V, MaybOldV, !HM)
+search_insert(K, V, MaybOldV, !HM) :-
+	search_insert_tree(hash(K), K, V, 0, MaybOldV, !HM).
+
+	
+%  pred search_insert_tree(Key, Value, Shift, MaybOldV, !HashTree) 
+:- pred search_insert_tree(hash::in, K::in, V::in, shift::in, maybe(V)::out,
+	hashmap(K, V)::in, hashmap(K, V)::out) is det.	
+ 
+ search_insert_tree(H, K, V, _, no, empty_tree, leaf(H, K, V)).
+ 
+ search_insert_tree(H, K, V, S, Old, !.HM@leaf(LH, LK, LV), !:HM) :-
+	(if H = LH
+	then
+		(if K = LK
+		then
+			(if V = LV
+			then 
+				Old = no,
+				!:HM = !.HM
+			else 
+				Old = yes(LV), 
+				!:HM = leaf(H, K, V)
+			)
+		else
+			Old = no,
+			!:HM = collision(H, K, V, LK, LV)	
+		)
+	else
+		Old = no,
+		!:HM = two(S, H, K, V, leaf(LH, LK, LV))
+	).
+ 
+ 	
+search_insert_tree(H, K, V, S, Old, !.HM@indexed_branch(B, !.Array), !:HM) :-
+	mask(H, S, M),
+	sparse_index(B, M, I),
+	( if B /\ M = 0u
+	then
+		Old = no,
+		unsafe_array_insert(I, leaf(H, K, V), !Array), 
+		!:HM = indexed_or_full_branch(B \/ M, !.Array)
+	else 
+		array.unsafe_lookup(!.Array, I, Branch0),
+		search_insert_tree(H, K, V, next_shift(S), Old, Branch0, Branch1),
+		(if private_builtin.pointer_equal(Branch1, Branch0)
+		then
+			!:HM = !.HM
+		else
+			slow_set(I, Branch1, !Array),
+			!:HM = indexed_branch(B, !.Array)
+		)
+	).
+	
+search_insert_tree(H, K, V, S, Old, !.HM@full_branch(!.Array), !:HM) :-
+	index(H, S, I),
+	array.unsafe_lookup(!.Array, I, Branch0),
+	search_insert_tree(H, K, V, next_shift(S), Old, Branch0, Branch1),
+	(if private_builtin.pointer_equal(Branch1, Branch0)
+	then
+		!:HM = !.HM
+	else
+		slow_set(I, Branch1, !Array),
+		!:HM = full_branch(!.Array)
+	).
+
+search_insert_tree(H, K, V, S, Old, !.HM@collision(CH, Bucket), !:HM) :-
+	(if H = CH
+	then
+		map.search_insert(K, V, Old, Bucket, NewBucket),
+		(if private_builtin.pointer_equal(Bucket, NewBucket)
+		then
+			!:HM = !.HM
+		else
+			!:HM = collision(H, NewBucket)
+		)
+	else
+		Old = no,
+		array.init(1, !.HM, BArray),
+		(if 
+			insert_tree(H, K, V, next_shift(S), yes, 
+				indexed_branch(mask(CH, S), 
+				BArray), NewBranch)
+		then
+			!:HM = NewBranch
+		else
+			unexpected($module, $pred, 
+				"Failure on insert_tree/6 with Replace = yes")
+		)
+	).
+ 
+
+set(K, V, !HM) :- 
+	(if insert_tree(hash(K), K, V, 0, yes, !HM)
+	then
+		!:HM = !.HM
+	else
+		unexpected($module, $pred, 
+			"Failure on insert_tree/6 with Replace = yes")
+	).
+
+
+:- pragma inline(set/4).
+	
+set(!.HM, K, V) = !:HM :-
+	set(K, V, !HM).
+	
+:- pragma inline(set/3).
+
 	
 update(K, V, HM, update(HM, K, V)).
 
@@ -517,14 +656,20 @@ det_update(!.HM, K, V) = !:HM :-
 update(leaf(H, K, _), H,  K, V, _) = leaf(H, K, V).
 
 update(indexed_branch(B, Array), H, K, V, S) =
-	update(array.unsafe_lookup(Array, sparse_index(B, M)), H,  K, V,
-		next_shift(S))
+	(if B /\ M \= 0u
+	then
+		update(Next, H,  K, V, next_shift(S))
+	else
+		func_fail
+	)
 :- 
 	mask(H, S, M),
-	B /\ M \= 0u. 
+	array.unsafe_lookup(Array, sparse_index(B, M), Next).
 	
 update(full_branch(Array), H, K, V, S) =
-	update(array.unsafe_lookup(Array, index(H, S)), H, K, V, next_shift(S)).
+	update(Next, H, K, V, next_shift(S))
+:-
+	array.unsafe_lookup(Array, index(H, S), Next).
 	
 update(collision(H, Bucket), H, K, V, _) = 
 	collision(H, map.update(Bucket, K, V)).
