@@ -138,6 +138,16 @@
 	<= hashable(K).
 :- func set(hashmap(K, V), K, V) = hashmap(K, V) <= hashable(K).
 
+:- func set_from_corresponding_lists(hashmap(K, V), list(K), list(V)) = 
+	hashmap(K, V) <= hashable(K).
+:- pred set_from_corresponding_lists(list(K)::in, list(V)::in,
+    hashmap(K, V)::in, hashmap(K, V)::out) is det <= hashable(K).
+	
+:- func set_from_assoc_list(hashmap(K, V), assoc_list(K, V)) = 
+	hashmap(K, V) <= hashable(K).
+:- pred set_from_assoc_list(assoc_list(K, V)::in,
+    hashmap(K, V)::in, hashmap(K, V)::out) is det <= hashable(K).
+
 % Overwrite an already existing element in a hashmap, fail if key not found
 :- pred update(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) 
 	is semidet	<= hashable(K).
@@ -507,7 +517,7 @@ det_insert(!.HM, K, V) = !:HM :-
 :- pragma inline(det_insert/3).
 	
 det_insert_from_corresponding_lists(M0, Ks, Vs) = M :-
-    det_insert_from_corresponding_lists(Ks, Vs, M0, M).
+    hashmap.det_insert_from_corresponding_lists(Ks, Vs, M0, M).
 
 det_insert_from_corresponding_lists([], [], !Map).
 det_insert_from_corresponding_lists([], [_ | _], _, _) :-
@@ -515,16 +525,16 @@ det_insert_from_corresponding_lists([], [_ | _], _, _) :-
 det_insert_from_corresponding_lists([_ | _], [], _, _) :-
     unexpected($pred, "list length mismatch").
 det_insert_from_corresponding_lists([K | Ks], [V | Vs], !Map) :-
-    det_insert(K, V, !Map),
-    det_insert_from_corresponding_lists(Ks, Vs, !Map).
+    hashmap.det_insert(K, V, !Map),
+    hashmap.det_insert_from_corresponding_lists(Ks, Vs, !Map).
 
 det_insert_from_assoc_list(M0, AL) = M :-
-    det_insert_from_assoc_list(AL, M0, M).
+    hashmap.det_insert_from_assoc_list(AL, M0, M).
 
 det_insert_from_assoc_list([], !Map).
 det_insert_from_assoc_list([K - V | KVs], !Map) :-
-    det_insert(K, V, !Map),
-    det_insert_from_assoc_list(KVs, !Map).	
+    hashmap.det_insert(K, V, !Map),
+    hashmap.det_insert_from_assoc_list(KVs, !Map).	
 
 % search_insert(K, V, MaybOldV, !HM)
 search_insert(K, V, MaybOldV, !HM) :-
@@ -634,6 +644,26 @@ set(!.HM, K, V) = !:HM :-
 	set(K, V, !HM).
 	
 :- pragma inline(set/3).
+
+set_from_corresponding_lists(M0, Ks, Vs) = M :-
+    hashmap.set_from_corresponding_lists(Ks, Vs, M0, M).
+
+set_from_corresponding_lists([], [], !Map).
+set_from_corresponding_lists([], [_ | _], _, _) :-
+    unexpected($pred, "list length mismatch").
+set_from_corresponding_lists([_ | _], [], _, _) :-
+    unexpected($pred, "list length mismatch").
+set_from_corresponding_lists([K | Ks], [V | Vs], !Map) :-
+    hashmap.set(K, V, !Map),
+    hashmap.set_from_corresponding_lists(Ks, Vs, !Map).
+
+set_from_assoc_list(M0, AL) = M :-
+    hashmap.set_from_assoc_list(AL, M0, M).
+
+set_from_assoc_list([], !Map).
+set_from_assoc_list([K - V | KVs], !Map) :-
+    hashmap.set(K, V, !Map),
+    hashmap.set_from_assoc_list(KVs, !Map).
 
 	
 update(K, V, HM, update(HM, K, V)).
