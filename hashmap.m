@@ -174,6 +174,10 @@
 	<= hashable(K).
 :- func delete(hashmap(K, V), K) = hashmap(K, V) <= hashable(K).
 
+:- func delete_list(hashmap(K, V), list(K)) = hashmap(K, V) <= hashable(K).
+:- pred delete_list(list(K)::in, hashmap(K, V)::in, hashmap(K, V)::out)
+	is det <= hashable(K).
+
 
 %-----------------------------------------------------------------------------%
 % Bit twiddling
@@ -921,10 +925,15 @@ delete(HM@collision(CH, Bucket), H, K, _) =
 	) :- 
 	map.delete(K, Bucket, NewBucket).
 	 
-		
-	
-
 :- pragma inline(delete/4).
+
+delete_list(M0, Ks) = M :-
+    hashmap.delete_list(Ks, M0, M).
+
+delete_list([], !Map).
+delete_list([DeleteKey | DeleteKeys], !Map) :-
+    hashmap.delete(DeleteKey, !Map),
+    hashmap.delete_list(DeleteKeys, !Map).
 
 %-----------------------------------------------------------------------------%
 % Bit twiddling
