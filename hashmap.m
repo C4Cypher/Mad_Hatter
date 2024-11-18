@@ -486,7 +486,7 @@ insert_tree(H, K, V, S, R, !.HM@collision(CH, Bucket), !:HM) :-
 		)
 	else
 		array.init(1, !.HM, BArray),
-		insert_tree(H, K, V, next_shift(S), R, indexed_branch(mask(CH, S), 
+		insert_tree(H, K, V, S, R, indexed_branch(mask(CH, S), 
 			BArray), !:HM)
 	).
 
@@ -606,7 +606,7 @@ search_insert_tree(H, K, V, S, Old, !.HM@collision(CH, Bucket), !:HM) :-
 		Old = no,
 		array.init(1, !.HM, BArray),
 		(if 
-			insert_tree(H, K, V, next_shift(S), yes, 
+			insert_tree(H, K, V, S, yes, 
 				indexed_branch(mask(CH, S), 
 				BArray), NewBranch)
 		then
