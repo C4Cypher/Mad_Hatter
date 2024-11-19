@@ -56,6 +56,7 @@
 :- import_module list.
 :- import_module assoc_list.
 :- import_module maybe.
+:- import_module set.
 
 :- import_module hashable.
 
@@ -102,11 +103,6 @@
 % Throws an exception if the key is not found
 :- pred lookup(hashmap(K, V)::in, K::in, V::out) is det <= hashable(K).
 :- func lookup(hashmap(K, V), K) = V is det <= hashable(K).
-
-% All key value pairs stored in the hashmap, order is not garunteed
-:- pred member(hashmap(K, V), K, V) <= hashable(K).
-:- mode member(in, in, out) is semidet.
-:- mode member(in, out, out) is nondet.
 
 %-----------------------------------------------------------------------------%
 % Insertion
@@ -178,6 +174,61 @@
 :- pred delete_list(list(K)::in, hashmap(K, V)::in, hashmap(K, V)::out)
 	is det <= hashable(K).
 
+%-----------------------------------------------------------------------------%
+% Field selection for maps.
+
+% Map ^ elem(Key) = search(Map, Key).
+:- func elem(K, hashmap(K, V)) = V is semidet <= hashable(K).
+
+% Map ^ det_elem(Key) = lookup(Map, Key).
+:- func det_elem(K, hashmap(K, V)) = V <= hashable(K).
+
+% (Map ^ elem(Key) := Value) = set(Map, Key, Value).
+:- func 'elem :='(K, hashmap(K, V), V) = hashmap(K, V) <= hashable(K).
+
+% (Map ^ det_elem(Key) := Value) = det_update(Map, Key, Value).
+:- func 'det_elem :='(K, hashmap(K, V), V) = hashmap(K, V) <= hashable(K).
+
+%-----------------------------------------------------------------------------%
+% Returning keys and values.
+
+% All key value pairs stored in the hashmap, order is not garunteed
+:- pred member(hashmap(K, V), K, V) <= hashable(K).
+:- mode member(in, in, out) is semidet.
+:- mode member(in, out, out) is nondet.
+
+% Given a map, return a list of all the keys in the map.
+:- func keys(hashmap(K, _V)) = list(K) <= hashable(K).
+:- pred keys(hashmap(K, _V)::in, list(K)::out) is det <= hashable(K).
+
+:- func sorted_keys(hashmap(K, _V)) = list(K) <= hashable(K).
+:- pred sorted_keys(hashmap(K, _V)::in, list(K)::out) is det <= hashable(K).
+
+:- func keys_as_set(hashmap(K, _V)) = set(K) <= hashable(K).
+:- pred keys_as_set(hashmap(K, _V)::in, set(K)::out) is det <= hashable(K).
+
+:- func values(hashmap(_K, V)) = list(V).
+:- pred values(hashmap(_K, V)::in, list(V)::out) is det.
+
+:- pred keys_and_values(hashmap(K, V)::in, list(K)::out, list(V)::out)
+	is det <= hashable(K).
+
+%-----------------------------------------------------------------------------%
+% Operations on values.
+
+
+% Update the value at the given key by applying the supplied
+% transformation to it. Fails if the key is not found. This is faster
+% than first searching for the value and then updating it.
+:- pred transform_value(pred(V, V)::in(pred(in, out) is det), K::in,
+    hashmap(K, V)::in, hashmap(K, V)::out) is semidet <= hashable(K).
+
+% Same as transform_value/4, but throws an exception if the key is not
+% found.
+:- func det_transform_value(func(V) = V, K, map(K, V)) = map(K, V)
+	<= hashable(K).
+:- pred det_transform_value(pred(V, V)::in(pred(in, out) is det), K::in,
+    map(K, V)::in, map(K, V)::out) is det <= hashable(K).
 
 %-----------------------------------------------------------------------------%
 % Bit twiddling
@@ -195,7 +246,6 @@
 
 % Number of bits that are inspected at each level of the hash tree.
 :- func bits_per_subkey = int.
-
 
 % The size of a 'Full' node, i.e. @2 ^ 'bitsPerSubkey'@.
 :- func max_children = int.
@@ -224,7 +274,6 @@
 
 :- func mask(hash, shift) = mask.
 
-
 :- pred mask(hash::in, shift::in, mask::out) is det.
 
 % This array index is computed by counting the number of 1-bits below the
@@ -242,7 +291,6 @@
 
 % Increment a 'Shift' for use at the next deeper level.
 :- func next_shift(shift) = shift.
-
 
 % Hamming weight, or 'popcount'
 :- func weight(bitmap) = int.
@@ -292,7 +340,6 @@ is_leaf_or_collision(collision(_, _)).
 
 :- inst hashmap_leaf
 	--->	leaf(ground, ground, ground).
-
 
 :- type hashmap_leaf(K, V) =< hashmap(K, V)
 	---> 	leaf(hash, K, V).
@@ -402,22 +449,7 @@ lookup(HM, K) =
 	else
 		report_lookup_error("hashmap.lookup: key not found", K)
 	).
-	
-:- pragma promise_equivalent_clauses(member/3).
 
-member(HM::in, K::in, V::out) :- search(HM, K, V).
-
-member(leaf(_, K, V)::in, K::out, V::out).
-
-member(indexed_branch(_, Array)::in, K::out, V::out) :-
-	array.member(Array, HM),
-	member(HM, K, V).
-	
-member(full_branch(Array)::in, K::out, V::out) :-
-	array.member(Array, HM),
-	member(HM, K, V).
-	
-member(collision(_, Bucket)::in, K::out, V::out) :- map.member(Bucket, K, V).
 
 %-----------------------------------------------------------------------------%
 % Insertion
@@ -712,8 +744,6 @@ update(collision(H, Bucket), H, K, V, _) =
 %-----------------------------------------------------------------------------%
 % Node creation
 
-
-
 % collision(Hash, Key1, Value1, Key2, Value2) = HashMap.
 % Create a 'Collision' value with two 'Leaf' values.
 % Throws an exception if K1 = K2
@@ -934,6 +964,169 @@ delete_list([], !Map).
 delete_list([DeleteKey | DeleteKeys], !Map) :-
     hashmap.delete(DeleteKey, !Map),
     hashmap.delete_list(DeleteKeys, !Map).
+	
+%-----------------------------------------------------------------------------%
+% Field selection for maps.
+
+
+elem(Key, Map) = hashmap.search(Map, Key).
+
+det_elem(Key, Map) = hashmap.lookup(Map, Key).
+
+'elem :='(Key, Map, Value) = hashmap.set(Map, Key, Value).
+
+'det_elem :='(Key, Map, Value) = hashmap.det_update(Map, Key, Value).
+
+
+%-----------------------------------------------------------------------------%
+% Returning keys and values.
+	
+:- pragma promise_equivalent_clauses(member/3).
+
+member(HM::in, K::in, V::out) :- search(HM, K, V).
+
+member(leaf(_, K, V)::in, K::out, V::out).
+
+member(indexed_branch(_, Array)::in, K::out, V::out) :-
+	array.member(Array, HM),
+	member(HM, K, V).
+	
+member(full_branch(Array)::in, K::out, V::out) :-
+	array.member(Array, HM),
+	member(HM, K, V).
+	
+member(collision(_, Bucket)::in, K::out, V::out) :- map.member(Bucket, K, V).
+
+keys(HM) = Ks :- keys(HM, Ks).
+
+keys(HM, Ks) :- keys_acc(HM, [], Ks).
+
+:- pred keys_acc(hashmap(K, _V)::in, list(K)::in, list(K)::out) is det.
+
+keys_acc(empty_tree, !Ks).
+keys_acc(leaf(_H, K, _V), Ks, [K | Ks]).
+keys_acc(indexed_branch(_B, Array), !Ks) :- array.foldl(keys_acc, Array, !Ks).
+keys_acc(full_branch(Array), !Ks) :- array.foldl(keys_acc, Array, !Ks).
+keys_acc(collision(_H, Bucket), Ks, Ks ++ map.keys(Bucket)).
+
+sorted_keys(HM) = Ks :- sorted_keys(HM, Ks).
+
+sorted_keys(HM, Ks) :- to_sorted_list(keys_as_set(HM), Ks).
+	
+keys_as_set(HM) = Set :-
+    keys_as_set(HM, Set).
+	
+keys_as_set(HM, Set) :-
+	kset_acc(HM, set.init, Set).
+	
+:- pred kset_acc(hashmap(K, _V)::in, set(K)::in, set(K)::out) is det.
+
+kset_acc(empty_tree, !S).
+kset_acc(leaf(_H, K, _V), S, insert(S, K)).
+kset_acc(indexed_branch(_B, Array), !S) :- array.foldl(kset_acc, Array, !S).
+kset_acc(full_branch(Array), !S) :- array.foldl(kset_acc, Array, !S).
+kset_acc(collision(_H, Bucket), S, union(S, map.keys_as_set(Bucket))).
+
+values(HM) = Vs :- values(HM, Vs).
+
+values(HM, Vs) :- vals_acc(HM, [], Vs).
+
+:- pred keys_acc(hashmap(K, _V)::in, list(K)::in, list(K)::out) is det.
+
+vals_acc(empty_tree, !Vs).
+vals_acc(leaf(_H, _K, V), Vs, [V | Vs]).
+vals_acc(indexed_branch(_B, Array), !Vs) :- array.foldl(vals_acc, Array, !Vs).
+vals_acc(full_branch(Array), !Vs) :- array.foldl(vals_acc, Array, !Vs).
+vals_acc(collision(_H, Bucket), Vs, Vs ++ map.values(Bucket)).
+
+
+
+keys_and_values(HM, Ks, Vs) :- keys_and_values_acc(HM, [], Ks, [], Vs).
+
+:- pred keys_and_values_acc(hashmap(K, _V)::in, list(K)::in, list(K)::out, 
+	list(V)::in, list(K)::out) is det.
+
+keys_and_values_acc(empty_tree, !Ks, !Vs).
+keys_and_values_acc(leaf(_H, K, V), Ks, [K | Ks], Vs, [V | Vs]).
+keys_and_values_acc(indexed_branch(_B, Array), !Ks, !Vs) :- 
+	array.foldl2(keys_acc, Array, !Ks, !Vs).
+keys_and_values_acc(full_branch(Array), !Ks, !Vs) :- 
+	array.foldl2(keys_acc, Array, !Ks, !Vs).
+keys_and_values_acc(collision(_H, Bucket), !Ks, !Vs ) :-
+	map.keys_and_values(Bucket, BKs, BVs),
+	!:Ks = !.Ks ++ BKs,
+	!:Vs = !.Vs ++ BVs.
+	
+%-----------------------------------------------------------------------------%
+% Operations on values.
+
+transform_value(P, K, !HM) :- transform_value_tree(P, hash(K), K, 0, !HM).
+
+:- pred transform_value_tree(pred(V, V)::in(pred(in, out) is det), hash::in
+	K::in, shift::in, hashmap(K, V)::in, hashmap(K, V)::out) is semidet 
+	<= hashable(K). 
+
+transform_value_tree(P, H, K, _S, !HM) :-
+	!.HM = @leaf(H, K, V0)
+	P(V0, V),
+	(if private_builtin.pointer_equal(V0, V)
+	then
+		!:HM = !.HM
+	else
+		!:HM = leaf(H, K, V)
+	).
+		
+	
+transform_value_tree(P, H, K, S, R, !.HM@indexed_branch(B, !.Array), !:HM) :-
+	mask(H, S, M),
+	sparse_index(B, M, I),
+	( if B /\ M = 0u
+	then
+		fail
+	else 
+		array.unsafe_lookup(!.Array, I, Branch0),
+		transform_value_tree(P, H, K, next_shift(S), Branch0, Branch1),
+		(if private_builtin.pointer_equal(Branch1, Branch0)
+		then
+			!:HM = !.HM
+		else
+			slow_set(I, Branch1, !Array),
+			!:HM = indexed_branch(B, !.Array)
+		)
+	).
+	
+transform_value_tree(P, H, K, S, !.HM@full_branch(!.Array), !:HM) :-
+	index(H, S, I),
+	array.unsafe_lookup(!.Array, I, Branch0),
+	transform_value_tree(P, H, K, next_shift(S), Branch0, Branch1),
+	(if private_builtin.pointer_equal(Branch1, Branch0)
+	then
+		!:HM = !.HM
+	else
+		slow_set(I, Branch1, !Array),
+		!:HM = full_branch(!.Array)
+	).
+
+transform_value_tree(P,H, K, S, !HM) :-
+	!.HM = collision(H, Bucket0),
+	map.tranform_value(P, K, Bucket0, Bucket),
+	(if private_builtin.pointer_equal(Bucket0, Bucket)
+	then
+		!:HM = !.HM
+	else
+		!:HM = collision(H, Bucket)
+	).
+
+det_transform_value(F, K, !.HM) = !:HM :-
+    det_transform_value(pred(V0::in, V::out) is det :- V = F(V0), K,
+        !HM).
+
+det_transform_value(P, K, !HM) :-
+    ( if transform_value(P, K, !.HM, NewHM) then
+        !:HM = NewHM
+    else
+        report_lookup_error("map.det_transform_value: key not found", K)
+    ).
 
 %-----------------------------------------------------------------------------%
 % Bit twiddling
