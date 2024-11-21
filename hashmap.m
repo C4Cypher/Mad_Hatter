@@ -51,6 +51,11 @@
 % implementation of a HAMT in Merrcury
 % Original implementation found in Data.HashMap.Internal by Johan Tibell
 
+% Interface is made to reflect the same calls as the Mercury map.m library to
+% allow hashmap to be used as a 'drop-in' replacement for map.map.
+% Note that most, but not all of the calls from map.m have been replicated.
+
+
 :- interface.
 
 :- import_module list.
@@ -254,6 +259,42 @@
 % in the original map.
 :- func reverse_map(hashmap(K, V)) = hashmap(V, set(K))
 	<= (hashable(K), hashable(V)).
+	
+%-----------------------------------------------------------------------------%	
+% Selecting subsets of maps and lists.
+
+% select takes a map and a set of keys, and returns a map
+% containing the keys in the set and their corresponding values.
+:- func select(hashmap(K, V), set(K)) = hashmap(K, V) <= hashable(K).
+:- pred select(hashmap(K, V)::in, set(K)::in, hashmap(K, V)::out) is det
+	<= hashable(K).
+
+% Equivalent to select(Full, set.from_sorted_list(Keys), Selected).
+% Offers no performance benefit over select/2 and select/3
+:- func select_sorted_list(hashmap(K, V), list(K)) = hashmap(K, V) 
+	<= hashable(K).
+:- pred select_sorted_list(hashmap(K, V)::in, list(K)::in, hashmap(K, V)::out) 
+	is det <= hashable(K).
+	
+% select_unselect takes a map and a set of keys, and returns two maps:
+% the first containing the keys in the set and their corresponding values,
+% the second containing the keys NOT in the set and their corresponding
+% values.
+:- pred select_unselect(hashmap(K, V)::in, set(K)::in,
+    hashmap(K, V)::out, hashmap(K, V)::out) is det <= hashable(K).
+
+% See slect_sorted_list	
+:- pred select_unselect_sorted_list(hashmap(K, V)::in, list(K)::in,
+    hashmap(K, V)::out, hashmap(K, V)::out) is det <= hashable(K).
+	
+% Given a list of keys, produce a list of their corresponding
+% values in a specified map.
+:- func apply_to_list(list(K), hashmap(K, V)) = list(V) <= hashable(K).
+:- pred apply_to_list(list(K)::in, hashmap(K, V)::in, list(V)::out) is det
+	<= hashable(K).
+	
+%---------------------------------------------------------------------------%
+% Operations on two or more maps.
 
 %-----------------------------------------------------------------------------%
 % Bit twiddling
@@ -1290,7 +1331,71 @@ reverse_map_2(Key, Value, !RHM) :-
     else
         det_insert(Value, set.make_singleton_set(Key), !RHM)
     ).
+
+%-----------------------------------------------------------------------------%	
+% Selecting subsets of maps and lists.
+
+select(!.HM, S) = !:HM :- select(!.HM, S, !:HM).
+
+select(!.HM, S, !:HM) :- set.foldl(select_acc(!.HM), S, hashmap.init, !:HM).
+
+:- pred select_acc(hashmap(K, V)::in, K::in, 
+	hashmap(K, V)::in, hashmap(K, V)::out) is det <= hashable(K).
 	
+select_acc(Src, K, !HM) :-
+	H = hash(K),
+	!:HM =
+		(if V = search(Src, H, K, 0)
+		then
+			(if insert_tree(H, K, V, 0, no, !.HM, NewHM)
+			then 
+				NewHM
+			else
+				unexpected($module, $pred, "Selected Key already found in new
+					hashmap. This should not happen.")
+			)
+		else
+			!.HM
+		).
+		
+select_sorted_list(FullHM, Keys) = SelectHM :-
+    select_sorted_list(FullHM, Keys, SelectHM).
+	
+select_sorted_list(FullHM, Keys, SelectHM) :-
+	select(FullHM, set.from_sorted_list(Keys), SelectHM).
+	
+select_unselect(Src, Set, HM1, HM2) :- 
+	Init = hashmap.init,
+	foldl2(select_unselect_acc(Set), Src, Init, HM1, Init, HM2).
+	
+:- pred select_unselect_acc(set(K)::in, K::in, V::in, 
+	hashmap(K, V)::in, hashmap(K, V)::out,
+	hashmap(K, V)::in, hashmap(K, V)::out) is det <= hashable(K).
+	
+select_unselect_acc(S, K, V, !HM1, !HM2) :-
+	(if contains(S, K) 
+	then
+		det_insert(K, V, !HM1),
+		!:HM2 = !.HM2
+	else
+		det_insert(K, V, !HM2),
+		!:HM1 = !.HM1	
+	).
+	
+select_unselect_sorted_list(Src, Keys, HM1, HM2) :-
+	select_unselect(Src, set.from_sorted_list(Keys), HM1, HM2).
+	
+apply_to_list(Ks, HM) = Vs :-
+    apply_to_list(Ks, HM, Vs).
+
+apply_to_list([], _, []).
+apply_to_list([K | Ks], HM, [V | Vs]) :-
+    lookup(Map, K, V),
+    apply_to_list(Ks, HM, Vs).
+	
+%---------------------------------------------------------------------------%
+% Operations on two or more maps.
+
 %-----------------------------------------------------------------------------%
 % Bit twiddling
 
