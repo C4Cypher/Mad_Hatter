@@ -225,10 +225,35 @@
 
 % Same as transform_value/4, but throws an exception if the key is not
 % found.
-:- func det_transform_value(func(V) = V, K, map(K, V)) = map(K, V)
+:- func det_transform_value(func(V) = V, K, hashmap(K, V)) = hashmap(K, V)
 	<= hashable(K).
 :- pred det_transform_value(pred(V, V)::in(pred(in, out) is det), K::in,
-    map(K, V)::in, map(K, V)::out) is det <= hashable(K).
+    hashmap(K, V)::in, hashmap(K, V)::out) is det <= hashable(K).
+
+%-----------------------------------------------------------------------------%
+% Conversions
+
+ % Convert an association list to a map.
+:- func from_assoc_list(assoc_list(K, V)) = hashmap(K, V) <= hashable(K).
+:- pred from_assoc_list(assoc_list(K, V)::in, hashmap(K, V)::out) is det 
+	<= hashable(K).
+
+% Convert a pair of lists (which must be of the same length) to a map.
+:- func from_corresponding_lists(list(K), list(V)) = hashmap(K, V)
+	<= hashable(K).
+:- pred from_corresponding_lists(list(K)::in, list(V)::in, hashmap(K, V)::out)
+    is det <= hashable(K).
+
+% Convert a map to an association list.
+:- func to_assoc_list(hashmap(K, V)) = assoc_list(K, V) <= hashable(K).
+:- pred to_assoc_list(hashmap(K, V)::in, assoc_list(K, V)::out) is det
+	<= hashable(K).
+	
+% Consider the original map a set of key-value pairs. This predicate
+% returns a map that maps each value to the set of keys it is paired with
+% in the original map.
+:- func reverse_map(hashmap(K, V)) = hashmap(V, set(K))
+	<= (hashable(K), hashable(V)).
 
 %-----------------------------------------------------------------------------%
 % Bit twiddling
@@ -294,6 +319,85 @@
 
 % Hamming weight, or 'popcount'
 :- func weight(bitmap) = int.
+
+%-----------------------------------------------------------------------------%
+% Standard higher order functions on collections.
+
+% Commented modes not supported by current array library higher order calls,
+% custom implementation required.
+
+% Perform a traversal by key of the map, applying an accumulator
+% predicate for value. Order is arbitrary and cannot be garunteed.
+:- func foldl(func(K, V, A) = A, hashmap(K, V), A) = A.
+:- pred foldl(pred(K, V, A, A), hashmap(K, V), A, A).
+:- mode foldl(in(pred(in, in, in, out) is det), in, in, out) is det.
+:- mode foldl(in(pred(in, in, mdi, muo) is det), in, mdi, muo) is det.
+:- mode foldl(in(pred(in, in, di, uo) is det), in, di, uo) is det.
+:- mode foldl(in(pred(in, in, in, out) is semidet), in, in, out) is semidet.
+:- mode foldl(in(pred(in, in, mdi, muo) is semidet), in, mdi, muo) is semidet.
+:- mode foldl(in(pred(in, in, di, uo) is semidet), in, di, uo) is semidet.
+% :- mode foldl(in(pred(in, in, in, out) is cc_multi), in, in, out) is cc_multi.
+% :- mode foldl(in(pred(in, in, di, uo) is cc_multi), in, di, uo) is cc_multi.
+% :- mode foldl(in(pred(in, in, mdi, muo) is cc_multi), in, mdi, muo)
+    % is cc_multi.
+	
+:- pred foldl2(pred(K, V, A, A, B, B), hashmap(K, V), A, A, B, B).
+:- mode foldl2(in(pred(in, in, in, out, in, out) is det),
+    in, in, out, in, out) is det.
+:- mode foldl2(in(pred(in, in, in, out, mdi, muo) is det),
+    in, in, out, mdi, muo) is det.
+:- mode foldl2(in(pred(in, in, in, out, di, uo) is det),
+    in, in, out, di, uo) is det.
+% :- mode foldl2(in(pred(in, in, di, uo, di, uo) is det),
+    % in, di, uo, di, uo) is det.
+:- mode foldl2(in(pred(in, in, in, out, in, out) is semidet),
+    in, in, out, in, out) is semidet.
+:- mode foldl2(in(pred(in, in, in, out, mdi, muo) is semidet),
+    in, in, out, mdi, muo) is semidet.
+:- mode foldl2(in(pred(in, in, in, out, di, uo) is semidet),
+    in, in, out, di, uo) is semidet.
+% :- mode foldl2(in(pred(in, in, in, out, in, out) is cc_multi),
+    % in, in, out, in, out) is cc_multi.
+% :- mode foldl2(in(pred(in, in, in, out, mdi, muo) is cc_multi),
+    % in, in, out, mdi, muo) is cc_multi.
+% :- mode foldl2(in(pred(in, in, in, out, di, uo) is cc_multi),
+    % in, in, out, di, uo) is cc_multi.
+% :- mode foldl2(in(pred(in, in, di, uo, di, uo) is cc_multi),
+    % in, di, uo, di, uo) is cc_multi.
+	
+:- pred foldl3(pred(K, V, A, A, B, B, C, C), hashmap(K, V), A, A, B, B, C, C).
+:- mode foldl3(in(pred(in, in, in, out, in, out, in, out) is det),
+    in, in, out, in, out, in, out) is det.
+:- mode foldl3(in(pred(in, in, in, out, in, out, mdi, muo) is det),
+    in, in, out, in, out, mdi, muo) is det.
+:- mode foldl3(in(pred(in, in, in, out, in, out, di, uo) is det),
+    in, in, out, in, out, di, uo) is det.
+% :- mode foldl3(in(pred(in, in, in, out, di, uo, di, uo) is det),
+    % in, in, out, di, uo, di, uo) is det.
+% :- mode foldl3(in(pred(in, in, di, uo, di, uo, di, uo) is det),
+    % in, di, uo, di, uo, di, uo) is det.
+:- mode foldl3(in(pred(in, in, in, out, in, out, in, out) is semidet),
+    in, in, out, in, out, in, out) is semidet.
+:- mode foldl3(in(pred(in, in, in, out, in, out, mdi, muo) is semidet),
+    in, in, out, in, out, mdi, muo) is semidet.
+:- mode foldl3(in(pred(in, in, in, out, in, out, di, uo) is semidet),
+    in, in, out, in, out, di, uo) is semidet.
+	
+% Given that the hashmap stores key-value pairs in an order arbitrary to the
+% hash function used, I reasoned that implementing rfold calls would be
+% redundant.
+
+% Apply a transformation predicate to all the values in a map.
+:- func map_values(func(K, V) = W, hashmap(K, V)) = hashmap(K, W).
+:- pred map_values(pred(K, V, W), hashmap(K, V), hashmap(K, W)).
+:- mode map_values(in(pred(in, in, out) is det), in, out) is det.
+% :- mode map_values(in(pred(in, in, out) is semidet), in, out) is semidet.
+
+% Same as map_values, but do not pass the key to the given predicate.
+:- func map_values_only(func(V) = W, hashmap(K, V)) = hashmap(K, W).
+:- pred map_values_only(pred(V, W), hashmap(K, V), hashmap(K, W)).
+:- mode map_values_only(in(pred(in, out) is det), in, out) is det.
+% :- mode map_values_only(in(pred(in, out) is semidet), in, out) is semidet.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -1031,7 +1135,7 @@ values(HM) = Vs :- values(HM, Vs).
 
 values(HM, Vs) :- vals_acc(HM, [], Vs).
 
-:- pred keys_acc(hashmap(K, _V)::in, list(K)::in, list(K)::out) is det.
+:- pred vals_acc(hashmap(_K, V)::in, list(V)::in, list(V)::out) is det.
 
 vals_acc(empty_tree, !Vs).
 vals_acc(leaf(_H, _K, V), Vs, [V | Vs]).
@@ -1043,15 +1147,15 @@ vals_acc(collision(_H, Bucket), Vs, Vs ++ map.values(Bucket)).
 
 keys_and_values(HM, Ks, Vs) :- keys_and_values_acc(HM, [], Ks, [], Vs).
 
-:- pred keys_and_values_acc(hashmap(K, _V)::in, list(K)::in, list(K)::out, 
-	list(V)::in, list(K)::out) is det.
+:- pred keys_and_values_acc(hashmap(K, V)::in, list(K)::in, list(K)::out, 
+	list(V)::in, list(V)::out) is det.
 
 keys_and_values_acc(empty_tree, !Ks, !Vs).
 keys_and_values_acc(leaf(_H, K, V), Ks, [K | Ks], Vs, [V | Vs]).
 keys_and_values_acc(indexed_branch(_B, Array), !Ks, !Vs) :- 
-	array.foldl2(keys_acc, Array, !Ks, !Vs).
+	array.foldl2(keys_and_values_acc, Array, !Ks, !Vs).
 keys_and_values_acc(full_branch(Array), !Ks, !Vs) :- 
-	array.foldl2(keys_acc, Array, !Ks, !Vs).
+	array.foldl2(keys_and_values_acc, Array, !Ks, !Vs).
 keys_and_values_acc(collision(_H, Bucket), !Ks, !Vs ) :-
 	map.keys_and_values(Bucket, BKs, BVs),
 	!:Ks = !.Ks ++ BKs,
@@ -1062,12 +1166,12 @@ keys_and_values_acc(collision(_H, Bucket), !Ks, !Vs ) :-
 
 transform_value(P, K, !HM) :- transform_value_tree(P, hash(K), K, 0, !HM).
 
-:- pred transform_value_tree(pred(V, V)::in(pred(in, out) is det), hash::in
+:- pred transform_value_tree(pred(V, V)::in(pred(in, out) is det), hash::in,
 	K::in, shift::in, hashmap(K, V)::in, hashmap(K, V)::out) is semidet 
 	<= hashable(K). 
 
 transform_value_tree(P, H, K, _S, !HM) :-
-	!.HM = @leaf(H, K, V0)
+	!.HM = leaf(H, K, V0),
 	P(V0, V),
 	(if private_builtin.pointer_equal(V0, V)
 	then
@@ -1077,7 +1181,7 @@ transform_value_tree(P, H, K, _S, !HM) :-
 	).
 		
 	
-transform_value_tree(P, H, K, S, R, !.HM@indexed_branch(B, !.Array), !:HM) :-
+transform_value_tree(P, H, K, S, !.HM@indexed_branch(B, !.Array), !:HM) :-
 	mask(H, S, M),
 	sparse_index(B, M, I),
 	( if B /\ M = 0u
@@ -1107,9 +1211,9 @@ transform_value_tree(P, H, K, S, !.HM@full_branch(!.Array), !:HM) :-
 		!:HM = full_branch(!.Array)
 	).
 
-transform_value_tree(P,H, K, S, !HM) :-
+transform_value_tree(P,H, K, _S, !HM) :-
 	!.HM = collision(H, Bucket0),
-	map.tranform_value(P, K, Bucket0, Bucket),
+	map.transform_value(P, K, Bucket0, Bucket),
 	(if private_builtin.pointer_equal(Bucket0, Bucket)
 	then
 		!:HM = !.HM
@@ -1127,7 +1231,66 @@ det_transform_value(P, K, !HM) :-
     else
         report_lookup_error("map.det_transform_value: key not found", K)
     ).
+	
+%-----------------------------------------------------------------------------%
+% Conversions
 
+from_assoc_list(AL) = HM :-
+    from_assoc_list(AL, HM).
+	
+from_assoc_list(AL, HM) :- assoc_list_to_hashmap_acc(AL, empty_tree, HM).
+	
+:- pred assoc_list_to_hashmap_acc(assoc_list(K, V)::in,
+    hashmap(K, V)::in, hashmap(K, V)::out) is det <= hashable(K).
+
+assoc_list_to_hashmap_acc([], HM, HM).
+assoc_list_to_hashmap_acc([K - V | Rest], !HM) :-
+    set(K, V, !HM),
+    assoc_list_to_hashmap_acc(Rest, !HM).
+	
+from_corresponding_lists(Ks, Vs) = HM :-
+    from_corresponding_lists(Ks, Vs, HM).
+	
+from_corresponding_lists(Keys, Values, HashMap) :-
+    assoc_list.from_corresponding_lists(Keys, Values, AssocList),
+    from_assoc_list(AssocList, HashMap).
+	
+	
+to_assoc_list(HM) = AL :-
+    to_assoc_list(HM, AL).
+
+to_assoc_list(HM, AL) :-
+    to_assoc_list_acc(HM, [], AL).
+
+
+:- pred to_assoc_list_acc(hashmap(K, V)::in, assoc_list(K, V)::in, 
+	assoc_list(K, V)::out) is det.
+
+to_assoc_list_acc(empty_tree, !AL).
+to_assoc_list_acc(leaf(_H, K, V), ALs, [ (K - V) | ALs]).
+to_assoc_list_acc(indexed_branch(_B, Array), !ALs) :- 
+	array.foldl(to_assoc_list_acc, Array, !ALs).
+to_assoc_list_acc(full_branch(Array), !ALs) :- 
+	array.foldl(to_assoc_list_acc, Array, !ALs).
+to_assoc_list_acc(collision(_H, Bucket), ALs, 
+	ALs ++ map.to_assoc_list(Bucket)).
+	
+
+reverse_map(HM) = RHM :-
+    foldl(reverse_map_2, HM, init, RHM).
+
+:- pred reverse_map_2(K::in, V::in,
+    hashmap(V, set(K))::in, hashmap(V, set(K))::out) is det 
+	<= (hashable(K), hashable(V)).
+
+reverse_map_2(Key, Value, !RHM) :-
+    ( if search(!.RHM, Value, Keys0) then
+        set.insert(Key, Keys0, Keys),
+        det_update(Value, Keys, !RHM)
+    else
+        det_insert(Value, set.make_singleton_set(Key), !RHM)
+    ).
+	
 %-----------------------------------------------------------------------------%
 % Bit twiddling
 
@@ -1193,4 +1356,63 @@ weight(I, N) =
 	else
 		weight(I /\ (I-1u), N+1)
 	).
+
+
+%-----------------------------------------------------------------------------%
+% Standard higher order functions on collections.
+
+foldl(F, T, A) = B :-
+    P = (pred(W::in, X::in, Y::in, Z::out) is det :- Z = F(W, X, Y) ),
+    foldl(P, T, A, B).
+	
+foldl(_P, empty_tree, !A).
+foldl(P, leaf(_H, K, V), !A) :- P(K, V, !A).
+foldl(P, indexed_branch(_B, Array), !A) :- array.foldl(foldl(P), Array, !A).
+foldl(P, full_branch(Array), !A) :- array.foldl(foldl(P), Array, !A).
+foldl(P, collision(_H, Bucket), !A) :- 
+	map.foldl(P, Bucket, !A).
+
+foldl2(_P, empty_tree, !A, !B).
+foldl2(P, leaf(_H, K, V), !A, !B) :- P(K, V, !A, !B).
+foldl2(P, indexed_branch(_B, Array), !A, !B) :-
+	array.foldl2(foldl2(P), Array, !A, !B).
+foldl2(P, full_branch(Array), !A, !B) :- array.foldl2(foldl2(P), Array, !A, !B).
+foldl2(P, collision(_H, Bucket), !A, !B) :- map.foldl2(P, Bucket, !A, !B).
+
+foldl3(_P, empty_tree, !A, !B, !C).
+foldl3(P, leaf(_H, K, V), !A, !B, !C) :- P(K, V, !A, !B, !C).
+foldl3(P, indexed_branch(_B, Array), !A, !B, !C) :-
+	array.foldl3(foldl3(P), Array, !A, !B, !C).
+foldl3(P, full_branch(Array), !A, !B, !C) :-
+	array.foldl3(foldl3(P), Array, !A, !B, !C).
+foldl3(P, collision(_H, Bucket), !A, !B, !C) :-
+	map.foldl3(P, Bucket, !A, !B, !C).
+	
+map_values(F, !.HM) = !:HM :-
+    P = (pred(X::in, Y::in, Z::out) is det :- Z = F(X, Y) ),
+    map_values(P, !HM).
+	
+map_values(_P, empty_tree, empty_tree).
+map_values(P, leaf(H, K, V), leaf(H, K, W)) :- P(K, V, W).
+map_values(P, indexed_branch(B, !.Array), indexed_branch(B, !:Array)) :-
+	array.map(map_values(P), !Array).
+map_values(P, full_branch(!.Array), full_branch(!:Array)) :-
+	array.map(map_values(P), !Array).
+map_values(P, collision(H, !.Bucket), collision(H, !:Bucket)) :-
+	map.map_values(P, !Bucket).
+	
+map_values_only(F, !.HM) = !:HM :-
+    P = (pred(Y::in, Z::out) is det :- Z = F(Y) ),
+    map_values_only(P, !HM).
+	
+map_values_only(_P, empty_tree, empty_tree).
+map_values_only(P, leaf(H, K, V), leaf(H, K, W)) :- P(V, W).
+map_values_only(P, indexed_branch(B, !.Array), indexed_branch(B, !:Array)) :-
+	array.map(map_values_only(P), !Array).
+map_values_only(P, full_branch(!.Array), full_branch(!:Array)) :-
+	array.map(map_values_only(P), !Array).
+map_values_only(P, collision(H, !.Bucket), collision(H, !:Bucket)) :-
+	map.map_values_only(P, !Bucket).
+	
+	
 	
