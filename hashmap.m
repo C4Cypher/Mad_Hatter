@@ -3,7 +3,15 @@
 %-----------------------------------------------------------------------------%
 % Copyright (C) 2024 Charlie H. McGee IV.
 % This file may only be copied under the terms of the GNU Library General
-% Public License - see the file COPYING.LIB in the Mercury distribution.
+% Public License v3 as described in the file LICENCE.
+% 
+%
+% The interface and comments describing such from map.m of the 
+% Mercury Core Libraries (published under GPL2) are
+% Copyright (C) 1993-2012 The University of Melbourne.
+% Copyright (C) 2013-2015, 2017-2024 The Mercury team.
+%  - see the file COPYING.LIB in the Mercury distribution 
+% (also provided in this distribution)
 %
 % Additionally, this file uses comments and translated snippets from the 
 % Haskell Data.HashMap.Internal module by Johan Tibell under the BSD 3 licence
