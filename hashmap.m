@@ -4,7 +4,6 @@
 % Copyright (C) 2024 Charlie H. McGee IV.
 % This file may only be copied under the terms of the GNU Library General
 % Public License v3 as described in the file LICENCE.
-% 
 %
 % The interface and comments describing such from map.m of the 
 % Mercury Core Libraries (published under GPL2) are
@@ -190,16 +189,16 @@
 %-----------------------------------------------------------------------------%
 % Field selection for maps.
 
-% Map ^ elem(Key) = search(Map, Key).
+% Hashmap ^ elem(Key) = search(Hashmap, Key).
 :- func elem(K, hashmap(K, V)) = V is semidet <= hashable(K).
 
-% Map ^ det_elem(Key) = lookup(Map, Key).
+% Hashmap ^ det_elem(Key) = lookup(Hashmap, Key).
 :- func det_elem(K, hashmap(K, V)) = V <= hashable(K).
 
-% (Map ^ elem(Key) := Value) = set(Map, Key, Value).
+% (Hashmap ^ elem(Key) := Value) = set(Hashmap, Key, Value).
 :- func 'elem :='(K, hashmap(K, V), V) = hashmap(K, V) <= hashable(K).
 
-% (Map ^ det_elem(Key) := Value) = det_update(Map, Key, Value).
+% (Hashmap ^ det_elem(Key) := Value) = det_update(Hashmap, Key, Value).
 :- func 'det_elem :='(K, hashmap(K, V), V) = hashmap(K, V) <= hashable(K).
 
 %-----------------------------------------------------------------------------%
@@ -304,6 +303,74 @@
 %---------------------------------------------------------------------------%
 % Operations on two or more maps.
 
+% Merge the contents of the two maps.
+% Throws an exception if both sets of keys are not disjoint.
+
+% The cost of this predicate is proportional to the number of elements
+% in the second map, so for efficiency, you want to put the bigger map
+% first and the smaller map second.
+:- func merge(hashmap(K, V), hashmap(K, V)) = hashmap(K, V).
+:- pred merge(hashmap(K, V)::in, hashmap(K, V)::in, hashmap(K, V)::out) is det.
+
+% For overlay(MapA, MapB, Map), if MapA and MapB both contain the
+% same key, then Map will map that key to the value from MapB.
+% In other words, MapB takes precedence over MapA.
+:- func overlay(hashmap(K, V), hashmap(K, V)) = hashmap(K, V).
+:- pred overlay(hashmap(K, V)::in, hashmap(K, V)::in, hashmap(K, V)::out)
+	is det.
+	
+% overlay_large_map(MapA, MapB, Map) performs the same task as
+% overlay(MapA, MapB, Map). However, while overlay takes time
+% proportional to the size of MapB, overlay_large_map takes time
+% proportional to the size of MapA. In other words, it preferable when
+% MapB is the larger map.
+:- func overlay_large_map(hashmap(K, V), hashmap(K, V)) = hashmap(K, V).
+:- pred overlay_large_map(hashmap(K, V)::in, hashmap(K, V)::in, 
+	hashmap(K, V)::out)  is det.
+	
+	
+% Given two maps MapA and MapB, create a third map CommonMap that
+% has only the keys that occur in both MapA and MapB. For keys
+% that occur in both MapA and MapB, look up the corresponding values.
+% If they are the same, include the key/value pair in CommonMap.
+% If they differ, do not include the key in CommonMap.
+%
+% This predicate performs a fold of the elements of the second map over the 
+% first, therefore the cost of this predicate is proportional to the number of
+% elements in the second map, so for efficiency, you want to put the bigger map
+% first and the smaller map second.
+%
+% common_subset is very similar to intersect, but can succeed
+% even with an output map that does not contain an entry for a key
+% value that occurs in both input maps.
+:- func common_subset(hashmap(K, V), hashmap(K, V)) = hashmap(K, V).
+:- pred common_subset(hashmap(K, V)::in, hashmap(K, V)::in, 
+	hashmap(K, V)::out) is det.
+
+
+% Given two maps MapA and MapB, create a third map, IntersectMap,
+% that has only the keys that occur in both MapA and MapB. For keys
+% that occur in both MapA and MapB, compute the value in the final map
+% by applying the supplied function to the values associated with
+% the key in MapA and MapB.
+% on the values associated with some common key.
+:- func intersect(func(V, V) = V, hashmap(K, V), hashmap(K, V)) = 
+	hashmap(K, V).
+
+% Given two maps MapA and MapB, create a third map, IntersectMap,
+% that has only the keys that occur in both MapA and MapB. For keys
+% that occur in both MapA and MapB, compute the value in the final map
+% by applying the supplied predicate to the values associated with
+% the key in MapA and MapB. Fail if and only if this predicate fails
+% on the values associated with some common key.
+%
+% Again, the cost of this predicate is proportional to the number of
+% elements in the second map
+:- pred intersect(pred(V, V, V), hashmap(K, V), hashmap(K, V), hashmap(K, V)).
+:- mode intersect(in(pred(in, in, out) is det), in, in, out) is det.
+:- mode intersect(in(pred(in, in, out) is semidet), in, in, out) is semidet.
+
+
 %-----------------------------------------------------------------------------%
 % Bit twiddling
 
@@ -368,6 +435,13 @@
 
 % Hamming weight, or 'popcount'
 :- func weight(bitmap) = int.
+
+% Hacker's Delight implementation only counting the 32 least signifigant bits
+:- func weight32(bitmap) = int.
+
+% Hacker's Deligit implementation of the count trailing zeros operation
+% As above, this call disregards any leading bits before the 32 lsb
+:- func ctz32(bitmap) = int.
 
 %-----------------------------------------------------------------------------%
 % Standard higher order functions on collections.
@@ -474,9 +548,9 @@
 	;		collision(hash, bucket(K, V)).
 
 
-hash_size = bits_per_uint.
-
 :- type hash_array(K, V) == array(hashmap(K, V)).
+
+:- type hash_list(K, V) == list(hashmap(K, V)).
 
 :- type bucket(K, V) == map.map(K, V).
 
@@ -592,6 +666,11 @@ search(full_branch(Array), H,  K, S) =
 	array.unsafe_lookup(Array, index(H, S), Next).
 	
 search(collision(H, Bucket), H, K,  _) = map.search(Bucket, K).
+
+:- pred pre_hashed_search(hashmap(K, V)::in, hash::in, K::in, V::out) 
+	is semidet.
+
+pre_hashed_search(HM, H, K, search(HM, H, K, 0)).
 
 lookup(HM, K, lookup(HM, K)).
 
@@ -1355,12 +1434,12 @@ select_acc(Src, K, !HM) :-
 	!:HM =
 		(if V = search(Src, H, K, 0)
 		then
-			(if insert_tree(H, K, V, 0, no, !.HM, NewHM)
+			(if insert_tree(H, K, V, 0, yes, !.HM, NewHM)
 			then 
 				NewHM
 			else
-				unexpected($module, $pred, "Selected Key already found in new
-					hashmap. This should not happen.")
+				unexpected($module, $pred, "Insertion into new map failed."
+					++ " This should not happen.")
 			)
 		else
 			!.HM
@@ -1398,14 +1477,220 @@ apply_to_list(Ks, HM) = Vs :-
 
 apply_to_list([], _, []).
 apply_to_list([K | Ks], HM, [V | Vs]) :-
-    lookup(Map, K, V),
+    lookup(HM, K, V),
     apply_to_list(Ks, HM, Vs).
 	
 %---------------------------------------------------------------------------%
 % Operations on two or more maps.
 
+merge(HM1, HM2) = HM :- merge(HM1, HM2, HM).
+
+merge(HM1, HM2, HM) :- pre_hashed_foldl(pre_hashed_insert, HM2, HM1, HM).
+
+:- pred pre_hashed_insert(hash::in, K::in, V::in, hashmap(K, V)::in, 
+	hashmap(K, V)::out) is det.
+	
+pre_hashed_insert(H, K, V, !HM) :- 
+	(if insert_tree(H, K, V, 0, no, !HM)
+	then
+		!:HM = !.HM
+	else
+		error($pred, "Attempted to merge non-disjoint hashmaps.")
+	).
+	
+overlay(HM1, HM2) = HM :- overlay(HM1, HM2, HM).
+
+overlay(HM1, HM2, HM) :- pre_hashed_foldl(pre_hashed_set, HM2, HM1, HM).
+
+:- pred pre_hashed_set(hash::in, K::in, V::in, hashmap(K, V)::in, 
+	hashmap(K, V)::out) is det.
+	
+pre_hashed_set(H, K, V, !HM) :- 
+	(if insert_tree(H, K, V, 0, yes, !HM)
+	then
+		!:HM = !.HM
+	else
+		unexpected($module, $pred, 
+			"Failure on insert_tree/6 with Replace = yes")
+	).
+	
+overlay_large_map(HM1, HM2) = HM :- overlay_large_map(HM1, HM2, HM).
+
+overlay_large_map(HM1, HM2, HM) :- 
+	pre_hashed_foldl(pre_hashed_overlayl, HM1, HM2, HM).
+
+:- pred pre_hashed_overlayl(hash::in, K::in, V::in, hashmap(K, V)::in, 
+	hashmap(K, V)::out) is det.
+	
+pre_hashed_overlayl(H, K, V, !HM) :- 
+	(if insert_tree(H, K, V, 0, no, !.HM, NewHM)
+	then
+		!:HM = NewHM
+	else
+		!:HM = !.HM
+	).
+	
+	
+common_subset(HM1, HM2) = Sub :- common_subset(HM1, HM2, Sub).
+
+common_subset(HM1, HM2, Sub) :- 
+	pre_hashed_foldl(pre_hashed_subset, HM2, HM1, Sub).
+	
+:- pred pre_hashed_subset(hash::in, K::in, V::in, hashmap(K, V)::in, 
+	hashmap(K, V)::out) is det.
+	
+pre_hashed_subset(H, K, V, !Sub) :-
+	(if pre_hashed_search(!.Sub, H, K, V)
+	then 
+		!:Sub = !.Sub
+	else
+		!:Sub = delete(!.Sub, H, K, 0) 
+	).
+
+intersect(F, HM1, HM2) = Int :-
+    P = (pred(X::in, Y::in, Z::out) is det :- Z = F(X, Y) ),
+    intersect(P, HM1, HM2, Int).
+	
+intersect(P, HM1, HM2, Int) :- 
+	intersect_tree(0, P, HM1, HM2, Int).
+	
+:- pred intersect_tree(shift, pred(V, V, V), hashmap(K, V), 
+	hashmap(K, V), hashmap(K, V)).
+:- mode intersect_tree(in, in(pred(in, in, out) is det), in, in, out) 
+	is det.
+:- mode intersect_tree(in, in(pred(in, in, out) is semidet), in, in, out) 
+	is semidet.
+	
+intersect_tree(_S, _P, empty_tree, _HM, empty_tree).
+
+intersect_tree(_S, _P, HM1, empty_tree, empty_tree) :-
+	HM1 \= empty_tree.
+
+intersect_tree(_S, P, HM1@leaf(H1, K1, V1), HM2@leaf(H2, K2, V2), Int) :- 
+	(if H1 = H2, K1 = K2
+	then
+		P(V1, V2, V),
+		(if private_builtin.pointer_equal(V, V1)
+		then
+			Int = HM1
+		else if private_builtin.pointer_equal(V, V2)
+		then
+			Int = HM2		
+		else
+			Int = leaf(H1, K1, V)
+		)
+	else
+		Int = empty_tree
+	).
+	
+
+intersect_tree(S, P, L@leaf(H, _K, _V), indexed_branch(B, Array), Int) 
+:-
+	mask(H, S, M),
+	(if M /\ B = 0u
+	then
+		Int = empty_tree
+	else
+		sparse_index(B, M, I),
+		array.unsafe_lookup(Array, I, Child),
+		intersect_tree(next_shift(S), P, L, Child, Int)
+	).
+
+intersect_tree(S, P, L@leaf(H, _K, _V), full_branch(Array), Int) :-
+	index(H, S, I),
+	array.unsafe_lookup(Array, I, HMnext),
+	intersect_tree(next_shift(S), P, L, HMnext, Int).
+	
+intersect_tree(_S, P, L@leaf(H1, K, V1), collision(H2, Bucket), Int) :-
+	(if H1 = H2, map.search(Bucket, K, V2)
+	then
+		P(V1, V2, V),
+		(if private_builtin.pointer_equal(V, V1)
+		then
+			Int = L
+		else 
+			Int = leaf(H1, K, V)
+		)
+	else
+		Int = empty_tree
+	).	
+	
+intersect_tree(S, P, HM1, HM2@leaf(_, _, _), Int) :-
+	HM1 \= empty_tree,
+	intersect_tree(S, P, HM2, HM1, Int).
+	
+intersect_tree(S, P, indexed_branch(B1, A1), indexed_branch(B2, A2), Int) :-
+	B = B1 /\ B2,
+	(if B = 0u
+	then
+		Int = empty_tree
+	else
+		intersect_indexed_loop(S, P, B, IntB, 1u, B1, A1, B2, A2, [], L),
+		(
+			L = [],
+			Int = empty_tree
+		;
+			L = [ C | Cs ],
+			(if 
+				Cs = [], 
+				( C = leaf(_, _, _) ; C = collision(_, _) )
+			then
+				Int = C
+			else
+				array.from_reverse_list(L, IntArray),
+			(if IntB = full_bitmap
+			then
+				Int = full_bitmap(IntArray)
+			else
+				Int = indexed_branch(IntB, IntArray)
+			)
+		)
+	).
+	
+%intersect_indexed_loop(Shift, Pred, NextBit, !IntersectingBitmap, Mask,
+%	IndexBitmap1, Array1, 
+%	IndexBitmap2, Array2, 
+%	!RevList).
+:- pred intersect_indexed_loop(shift, pred(V, V, V), bitmap, bitmap, bitmap,
+	bitmap,	bitmap, hash_array(K, V), bitmap, hash_array(K, V),
+	hash_list(K, V), hash_list(K, V)).
+:- mode intersect_indexed_loop(in, in(pred(in, in, out) is det), in, in, out, 
+	in,	in, in, in,	in, out) is det.
+:- mode intersect_indexed_loop(in, in(pred(in, in, out) is semidet), in, in, 
+	out, in,	in, in, in,	in,	in, out) is semidet.
+	
+intersect_indexed_loop(S, P, NB, !B, M, B1, Array1, B2, Array2, !L) :-
+	(if M > full_bitmap
+	then !:L = !.L
+	else 
+		( if NB /\ 1u = 1u 
+		then 
+			sparse_index(B1, M, I1),
+			sparse_index(B2, M, I2),
+			array.unsafe_lookup(Array1, I1, Child1),
+			array.unsafe_lookup(Array2, I2, Child2),
+			intersect_tree(next_shift(S), P, Child1, Child2, ChildInt),
+			(if ChildInt = empty_tree
+			then
+				!:L = !.L,
+				!:B = xor(!.B, M) 
+			else
+				!:L = [ ChildInt | !.L ]
+				!:B = !.B
+			)
+		else
+			!:L = !.L,
+			!:B = !.B
+		),
+		intersect_indexed_loop(S, P, unchecked_right_shift(NB, 1), !B,
+			unchecked_left_shift(M, 1), B1, Array1, B2, Array2, !L)	
+	).
+	
+	
 %-----------------------------------------------------------------------------%
 % Bit twiddling
+
+hash_size = bits_per_uint.
 
 bits_per_subkey = 5.
 
@@ -1415,18 +1700,18 @@ max_children = unchecked_left_shift(1, bits_per_subkey).
 subkey_mask = unchecked_left_shift(1u, bits_per_subkey) - 1u.
 
 
-index(B, S) = cast_to_int(unchecked_right_shift(B, S) /\ subkey_mask).
+index(H, S) = cast_to_int(unchecked_right_shift(H, S) /\ subkey_mask).
 :- pragma inline(index/2).
 
-index(B, S, index(B, S)).
+index(H, S, index(H, S)).
 :- pragma inline(index/3).
 
- 
 mask(H, S) = unchecked_left_shift(1u, index(H, S)).
 :- pragma inline(mask/2).
 
 mask(H, S, mask(H, S)).
 :- pragma inline(mask/3).
+
 
 
 sparse_index(B, M) = weight(B /\ (M - 1u) ).
@@ -1469,6 +1754,73 @@ weight(I, N) =
 	else
 		weight(I /\ (I-1u), N+1)
 	).
+	
+/*
+int pop(unsigned x) {
+ x = x - ((x >> 1) & 0x55555555);
+ x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+ x = (x + (x >> 4)) & 0x0F0F0F0F;
+ x = x + (x >> 8);
+ x = x + (x >> 16);
+ return x & 0x0000003F;
+ }
+*/
+
+weight32(!.X) = !:X :-
+	%If word size is larger than 32, ensure all but the 32 lsb are set to zero
+	%DCE should remove the if branch at compile time
+	(if bits_per_uint > 32
+	then !:X = !.X /\ full_bitmap
+	else !:X = !.X),
+	!:X = !.X - (unchecked_right_shift(!.X, 1) /\ 0x55555555u),
+	!:X = (!.X /\ 0x33333333u) + (unchecked_right_shift(!.X,2) /\ 0x33333333u),
+	!:X = ( !.X + unchecked_right_shift(!.X, 4)) /\ 0x0F0F0F0Fu,
+	!:X = !.X + unchecked_right_shift(!.X, 8),
+	!:X = !.X  + unchecked_right_shift(!.X, 16),
+	!:X =  !.X /\ 0x0000003Fu,
+	!:X = cast_to_int(!.X).
+	
+/*
+int ntz(unsigned x) {
+ int n;
+ if (x == 0) return(32);
+ n = 1;
+ if ((x & 0x0000FFFF) == 0) {n = n + 16; x = x >>16;}
+ if ((x & 0x000000FF) == 0) {n = n +  8; x = x >> 8;}
+ if ((x & 0x0000000F) == 0) {n = n +  4; x = x >> 4;}
+ if ((x & 0x00000003) == 0) {n = n +  2; x = x >> 2;}
+ return n - (x & 1);
+ }
+*/ 
+	
+ctz32(!.X) = !:X :-
+	%If word size is larger than 32, ensure all but the 32 lsb are set to zero
+	%DCE should remove the if branch at compile time
+	(if bits_per_uint > 32
+	then !:X = !.X /\ full_bitmap
+	else !:X = !.X),
+	(if (!.X = 0u)
+	then
+		!:X = 32
+	else 
+		some [!N] (
+			!:N = 1,
+			(if !.X /\ 0x0000FFFFu = 0u 
+			then !:N = !.N + 16, !:X = unchecked_right_shift(!.X, 16)
+			else !:N = !.N, !:X = !.X),
+			(if !.X /\ 0x000000FFu = 0u 
+			then !:N = !.N +  8, !:X = unchecked_right_shift(!.X,  8)
+			else !:N = !.N, !:X = !.X),
+			(if !.X /\ 0x0000000Fu = 0u 
+			then !:N = !.N +  4, !:X = unchecked_right_shift(!.X,  4)
+			else !:N = !.N, !:X = !.X),
+			(if !.X /\ 0x00000003u = 0u 
+			then !:N = !.N +  2, !:X = unchecked_right_shift(!.X,  2)
+			else !:N = !.N, !:X = !.X),
+			!:X = !.N - cast_to_int(!.X /\ 1u)
+		)
+	).
+
 
 
 %-----------------------------------------------------------------------------%
@@ -1501,6 +1853,43 @@ foldl3(P, full_branch(Array), !A, !B, !C) :-
 foldl3(P, collision(_H, Bucket), !A, !B, !C) :-
 	map.foldl3(P, Bucket, !A, !B, !C).
 	
+	
+:- pred pre_hashed_foldl(pred(hash, K, V, A, A), hashmap(K, V), A, A).
+:- mode pre_hashed_foldl(in(pred(in, in, in, in, out) is det), in, in, out)
+	is det.
+:- mode pre_hashed_foldl(in(pred(in, in, in, in, out) is semidet), in, in, out)
+	is semidet.
+	
+pre_hashed_foldl(_P, empty_tree, !A).
+pre_hashed_foldl(P, leaf(H, K, V), !A) :- P(H, K, V, !A).
+pre_hashed_foldl(P, indexed_branch(_B, Array), !A) :-
+	array.foldl(pre_hashed_foldl(P), Array, !A).
+pre_hashed_foldl(P, full_branch(Array), !A) :-
+	array.foldl(pre_hashed_foldl(P), Array, !A).
+pre_hashed_foldl(P, collision(H, Bucket), !A) :- 
+	curry_hash(P, H, PH), 
+	map.foldl(PH, Bucket, !A).
+	
+:- pred curry_hash(pred(hash, K, V, A, A), hash, pred(K, V, A, A)).
+:- mode curry_hash(in(pred(in, in, in, in, out) is det), in,  
+	out(pred(in, in, in, out) is det)) is det.
+:- mode curry_hash(in(pred(in, in, in, in, out) is semidet), in, 
+	out(pred(in, in, in, out) is semidet)) is det.
+
+:- pragma promise_equivalent_clauses(curry_hash/3).
+
+curry_hash(P::in(pred(in, in, in, in, out) is det), H::in,
+	(pred(K0::in, V0::in, A0::in, A1::out) is det :- 
+		P(H, K0, V0, A0, A1)
+	)::out(pred(in, in, in, out) is det)
+).
+
+curry_hash(P::in(pred(in, in, in, in, out) is semidet), H::in,
+	(pred(K0::in, V0::in, A0::in, A1::out) is semidet :- 
+		P(H, K0, V0, A0, A1)
+	)::out(pred(in, in, in, out) is semidet)
+).
+
 map_values(F, !.HM) = !:HM :-
     P = (pred(X::in, Y::in, Z::out) is det :- Z = F(X, Y) ),
     map_values(P, !HM).
