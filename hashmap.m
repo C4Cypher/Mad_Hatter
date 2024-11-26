@@ -69,6 +69,7 @@
 :- import_module assoc_list.
 :- import_module maybe.
 :- import_module set.
+:- import_module bool. % TODO:remove the exports for bit twitddling alltogeter
 
 :- import_module hashable.
 
@@ -303,6 +304,16 @@
 %---------------------------------------------------------------------------%
 % Operations on two or more maps.
 
+/* THIS IS POTENTIALLY WRONG, REASSESS after the set operations are done
+% In the original map implementation, the cost of these predicates was
+% proportional to the number of elements in the second map, so for efficiency,
+% you wanted to put the bigger map first and the smaller map second.
+% 
+% In THIS library, there is no practical performance benefit to the ordering
+% Of the input arguments, overlay_large_map is simply a call to overlay and has
+% been included for completeness
+*/
+
 % Merge the contents of the two maps.
 % Throws an exception if both sets of keys are not disjoint.
 
@@ -335,10 +346,8 @@
 % If they are the same, include the key/value pair in CommonMap.
 % If they differ, do not include the key in CommonMap.
 %
-% This predicate performs a fold of the elements of the second map over the 
-% first, therefore the cost of this predicate is proportional to the number of
-% elements in the second map, so for efficiency, you want to put the bigger map
-% first and the smaller map second.
+% There is no difference in performance cost based on the ordering and size
+% of the arguments
 %
 % common_subset is very similar to intersect, but can succeed
 % even with an output map that does not contain an entry for a key
@@ -363,9 +372,6 @@
 % by applying the supplied predicate to the values associated with
 % the key in MapA and MapB. Fail if and only if this predicate fails
 % on the values associated with some common key.
-%
-% Again, the cost of this predicate is proportional to the number of
-% elements in the second map
 :- pred intersect(pred(V, V, V), hashmap(K, V), hashmap(K, V), hashmap(K, V)).
 :- mode intersect(in(pred(in, in, out) is det), in, in, out) is det.
 :- mode intersect(in(pred(in, in, out) is semidet), in, in, out) is semidet.
@@ -436,11 +442,19 @@
 % Hamming weight, or 'popcount'
 :- func weight(bitmap) = int.
 
+% If true, use the hacker's delight implementation for weight/1
+:- func hackers_delight_weight = bool.
+
+% Loop impleementation of popcount
+:- func weightn(bitmap) = int.
+
 % Hacker's Delight implementation only counting the 32 least signifigant bits
 :- func weight32(bitmap) = int.
 
 % Hacker's Deligit implementation of the count trailing zeros operation
-% As above, this call disregards any leading bits before the 32 lsb
+% Only counts the trailing zeros in the 32 least signifigant bits
+% Returns 32 on empty bitmap
+% Throws an exception if the value is greater than 2^32
 :- func ctz32(bitmap) = int.
 
 %-----------------------------------------------------------------------------%
@@ -531,7 +545,7 @@
 :- use_module map.
 :- import_module int.
 :- import_module uint.
-:- import_module bool.
+% :- import_module bool.
 :- import_module require.
 :- import_module pair.
 
@@ -1498,6 +1512,14 @@ pre_hashed_insert(H, K, V, !HM) :-
 		error($pred, "Attempted to merge non-disjoint hashmaps.")
 	).
 	
+/* For use when union is finished
+:- pred merge_pred(V::in, V::in, V::out) is det.
+	
+merge_pred(_V1, _V2, _V) :- 
+		require(false, "hashmap.merge/3: Attempted to merge non-disjoint " ++ "hashmaps."),
+	).
+*/
+	
 overlay(HM1, HM2) = HM :- overlay(HM1, HM2, HM).
 
 overlay(HM1, HM2, HM) :- pre_hashed_foldl(pre_hashed_set, HM2, HM1, HM).
@@ -1529,23 +1551,199 @@ pre_hashed_overlayl(H, K, V, !HM) :-
 	else
 		!:HM = !.HM
 	).
-	
+
+%-----------------------------------------------------------------------------%
+% Common Subset	
 	
 common_subset(HM1, HM2) = Sub :- common_subset(HM1, HM2, Sub).
 
-common_subset(HM1, HM2, Sub) :- 
-	pre_hashed_foldl(pre_hashed_subset, HM2, HM1, Sub).
-	
-:- pred pre_hashed_subset(hash::in, K::in, V::in, hashmap(K, V)::in, 
+common_subset(HM1, HM2, Sub) :- common_subset_tree(0, HM1, HM2, Sub).
+
+:- pred common_subset_tree(shift::in, hashmap(K, V)::in, hashmap(K, V)::in,
 	hashmap(K, V)::out) is det.
 	
-pre_hashed_subset(H, K, V, !Sub) :-
-	(if pre_hashed_search(!.Sub, H, K, V)
-	then 
-		!:Sub = !.Sub
+common_subset_tree(_S, empty_tree, empty_tree, empty_tree).
+
+common_subset_tree(_S, empty_tree, leaf(_, _, _), empty_tree).
+common_subset_tree(_S, leaf(_, _, _), empty_tree, empty_tree).
+
+common_subset_tree(_S, empty_tree, indexed_branch(_, _), empty_tree). 
+common_subset_tree(_S, indexed_branch(_, _), empty_tree, empty_tree).
+
+common_subset_tree(_S, empty_tree, full_branch(_), empty_tree).
+common_subset_tree(_S, full_branch(_), empty_tree, empty_tree).
+
+common_subset_tree(_S, empty_tree, collision(_, _), empty_tree).
+common_subset_tree(_S, collision(_, _), empty_tree, empty_tree).
+
+common_subset_tree(_S, L@leaf(H1, K1, V1), leaf(H2, K2, V2), Int) :- 
+	(if H1 = H2, K1 = K2, V1 = V2
+	then
+		Int = L
 	else
-		!:Sub = delete(!.Sub, H, K, 0) 
+		Int = empty_tree
 	).
+
+common_subset_tree(S, L@leaf(H, _K, _V), indexed_branch(B, Array), Int) 
+:-
+	mask(H, S, M),
+	(if M /\ B = 0u
+	then
+		Int = empty_tree
+	else
+		sparse_index(B, M, I),
+		array.unsafe_lookup(Array, I, Child),
+		common_subset_tree(next_shift(S), L, Child, Int)
+	).
+
+common_subset_tree(S, L@leaf(H, _K, _V), full_branch(Array), Int) :-
+	index(H, S, I),
+	array.unsafe_lookup(Array, I, HMnext),
+	common_subset_tree(next_shift(S), L, HMnext, Int).
+	
+common_subset_tree(_S, L@leaf(H1, K, V1), collision(H2, Bucket), Int) :-
+	(if H1 = H2, map.search(Bucket, K, V2), V1 = V2
+	then
+		Int = L
+	else
+		Int = empty_tree
+	).	
+	
+common_subset_tree(S, HM@indexed_branch(_, _), L@leaf(_, _, _), Int) :-
+	common_subset_tree(S, L, HM, Int).
+	
+common_subset_tree(S, HM@full_branch(_), L@leaf(_, _, _), Int) :-
+	common_subset_tree(S, L, HM, Int).
+	
+common_subset_tree(S, HM@collision(_, _), L@leaf(_, _, _), Int) :-
+	common_subset_tree(S, L, HM, Int).
+
+common_subset_tree(S, indexed_branch(B1, A1), indexed_branch(B2, A2), Int) :-
+	common_subset_branches(S, B1, A1, B2, A2, Int).
+	
+common_subset_tree(S, indexed_branch(B1, A1), full_branch(A2), Int) :-
+	common_subset_branches(S, B1, A1, full_bitmap, A2, Int).
+	
+common_subset_tree(S, full_branch(A1), indexed_branch(B2, A2), Int) :-
+	common_subset_branches(S, full_bitmap, A1, B2, A2, Int).
+	
+common_subset_tree(S, full_branch(A1), full_branch(A2), Int) :-
+	common_subset_branches(S, full_bitmap, A1, full_bitmap, A2, Int).
+
+% common_subset_branches(Shift, Bitmap1, Array1, Bitmap2, Array2, Intersect).
+:- pred common_subset_branches(shift::in, bitmap::in, hash_array(K, V)::in,
+	bitmap::in, hash_array(K, V)::in, hashmap(K, V)::out) is det.
+
+common_subset_branches(S, B1, A1, B2, A2, Int) :-
+	B = B1 /\ B2,
+	(if B = 0u
+	then
+		Int = empty_tree
+	else
+		NS = next_shift(S),
+		Zeros = ctz32(B),
+		NB = unchecked_right_shift(B, Zeros),
+		M = unchecked_left_shift(1u, Zeros),
+		common_subset_loop(NS, NB, B, IntB, M, B1, A1, B2, A2, [], L),
+		(
+			L = [],
+			Int = empty_tree
+		;
+			L = [ C | Cs ],
+			(if 
+				Cs = [], 
+				( C = leaf(_, _, _) ; C = collision(_, _) )
+			then
+				Int = C
+			else
+				array.from_reverse_list(L, IntArray),
+				(if IntB = full_bitmap
+				then
+					Int = full_branch(IntArray)
+				else
+					Int = indexed_branch(IntB, IntArray)
+				)
+			)
+		)
+	).
+	
+:- pragma inline(common_subset_branches/6).
+
+%common_subset_loop(Shift, CurrentBit, !IntersectingBitmap, Mask,
+%	IndexBitmap1, Array1, 
+%	IndexBitmap2, Array2, 
+%	!RevList).
+%common_subset_loop(S, CB, !IntB, M, B1, A1, B2, A2, !L).
+:- pred common_subset_loop(shift::in, bitmap::in, bitmap::in, bitmap::out,
+	bitmap::in,	bitmap::in, hash_array(K, V)::in, bitmap::in, 
+	hash_array(K, V)::in, hash_list(K, V)::in, hash_list(K, V)::out) is det.
+	
+common_subset_loop(S, CB, !B, M, B1, Array1, B2, Array2, !L) :-
+	sparse_index(B1, M, I1),
+	sparse_index(B2, M, I2),
+	array.unsafe_lookup(Array1, I1, Child1),
+	array.unsafe_lookup(Array2, I2, Child2),
+	common_subset_tree(S, Child1, Child2, ChildInt),
+	(if ChildInt = empty_tree
+	then
+		!:L = !.L,
+		!:B = xor(!.B, M) 
+	else
+		!:L = [ ChildInt | !.L ],
+		!:B = !.B
+	),
+	NextBit = unchecked_right_shift(CB, 1),
+	Zeros = unsafe_ctz32(NextBit),
+	(if Zeros < 32
+	then
+		common_subset_loop(S, unchecked_right_shift(NextBit, Zeros), !B,
+		unchecked_left_shift(M, 1 + Zeros), B1, Array1, B2, Array2, !L)
+	else
+		!:B = !.B,
+		!:L = !.L
+	).
+
+common_subset_tree(_S, collision(H1, B1), collision(H2, B2), Int) :-
+	(if H1 = H2
+	then
+		IntB = map.common_subset(B1, B2),
+		(if map.is_empty(IntB)
+		then
+			Int = empty_tree
+		else
+			Int = collision(H1, IntB)
+		)
+	else
+		Int = empty_tree
+	).
+	
+common_subset_tree(S, C@collision(H, _), indexed_branch(B, Array), Int) 
+:-
+	mask(H, S, M),
+	(if M /\ B = 0u
+	then
+		Int = empty_tree
+	else
+		sparse_index(B, M, I),
+		array.unsafe_lookup(Array, I, Child),
+		common_subset_tree(next_shift(S), C, Child, Int)
+	).
+
+common_subset_tree(S, C@collision(H, _), full_branch(Array), Int) :-
+	index(H, S, I),
+	array.unsafe_lookup(Array, I, HMnext),
+	common_subset_tree(next_shift(S), C, HMnext, Int).
+	
+common_subset_tree(S, HM@indexed_branch(_, _), C@collision(_, _), Int) :-
+	common_subset_tree(S, C, HM, Int).
+	
+common_subset_tree(S, HM@full_branch(_), C@collision(_, _), Int) :-
+	common_subset_tree(S, C, HM, Int).
+
+:- pragma inline(common_subset_tree/4).	
+	
+%-----------------------------------------------------------------------------%
+% Intersection
 
 intersect(F, HM1, HM2) = Int :-
     P = (pred(X::in, Y::in, Z::out) is det :- Z = F(X, Y) ),
@@ -1561,28 +1759,36 @@ intersect(P, HM1, HM2, Int) :-
 :- mode intersect_tree(in, in(pred(in, in, out) is semidet), in, in, out) 
 	is semidet.
 	
-intersect_tree(_S, _P, empty_tree, _HM, empty_tree).
+intersect_tree(_S, _P, empty_tree, empty_tree, empty_tree).
 
-intersect_tree(_S, _P, HM1, empty_tree, empty_tree) :-
-	HM1 \= empty_tree.
+intersect_tree(_S, _P, empty_tree, leaf(_, _, _), empty_tree).
+intersect_tree(_S, _P, leaf(_, _, _), empty_tree, empty_tree).
 
-intersect_tree(_S, P, HM1@leaf(H1, K1, V1), HM2@leaf(H2, K2, V2), Int) :- 
+intersect_tree(_S, _P, empty_tree, indexed_branch(_, _), empty_tree). 
+intersect_tree(_S, _P, indexed_branch(_, _), empty_tree, empty_tree).
+
+intersect_tree(_S, _P, empty_tree, full_branch(_), empty_tree).
+intersect_tree(_S, _P, full_branch(_), empty_tree, empty_tree).
+
+intersect_tree(_S, _P, empty_tree, collision(_, _), empty_tree).
+intersect_tree(_S, _P, collision(_, _), empty_tree, empty_tree).
+
+intersect_tree(_S, P, L1@leaf(H1, K1, V1), L2@leaf(H2, K2, V2), Int) :- 
 	(if H1 = H2, K1 = K2
 	then
 		P(V1, V2, V),
 		(if private_builtin.pointer_equal(V, V1)
 		then
-			Int = HM1
+			Int = L1
 		else if private_builtin.pointer_equal(V, V2)
 		then
-			Int = HM2		
+			Int = L2		
 		else
 			Int = leaf(H1, K1, V)
 		)
 	else
 		Int = empty_tree
 	).
-	
 
 intersect_tree(S, P, L@leaf(H, _K, _V), indexed_branch(B, Array), Int) 
 :-
@@ -1615,17 +1821,46 @@ intersect_tree(_S, P, L@leaf(H1, K, V1), collision(H2, Bucket), Int) :-
 		Int = empty_tree
 	).	
 	
-intersect_tree(S, P, HM1, HM2@leaf(_, _, _), Int) :-
-	HM1 \= empty_tree,
-	intersect_tree(S, P, HM2, HM1, Int).
+intersect_tree(S, P, HM@indexed_branch(_, _), L@leaf(_, _, _), Int) :-
+	intersect_tree(S, P, L, HM, Int).
 	
+intersect_tree(S, P, HM@full_branch(_), L@leaf(_, _, _), Int) :-
+	intersect_tree(S, P, L, HM, Int).
+	
+intersect_tree(S, P, HM@collision(_, _), L@leaf(_, _, _), Int) :-
+	intersect_tree(S, P, L, HM, Int).
+
 intersect_tree(S, P, indexed_branch(B1, A1), indexed_branch(B2, A2), Int) :-
+	intersect_branches(S, P, B1, A1, B2, A2, Int).
+	
+intersect_tree(S, P, indexed_branch(B1, A1), full_branch(A2), Int) :-
+	intersect_branches(S, P, B1, A1, full_bitmap, A2, Int).
+	
+intersect_tree(S, P, full_branch(A1), indexed_branch(B2, A2), Int) :-
+	intersect_branches(S, P, full_bitmap, A1, B2, A2, Int).
+	
+intersect_tree(S, P, full_branch(A1), full_branch(A2), Int) :-
+	intersect_branches(S, P, full_bitmap, A1, full_bitmap, A2, Int).
+
+% intersect_branches(Shift, Pred, Bitmap1, Array1, Bitmap2, Array2, Intersect).
+:- pred intersect_branches(shift, pred(V, V, V), bitmap, hash_array(K, V),
+	bitmap, hash_array(K, V), hashmap(K, V)).
+:- mode intersect_branches(in, in(pred(in, in, out) is det), in, in, in, in, 
+	out) is det.
+:- mode intersect_branches(in, in(pred(in, in, out) is semidet), in, in, in, 
+	in,	out) is semidet.
+
+intersect_branches(S, P, B1, A1, B2, A2, Int) :-
 	B = B1 /\ B2,
 	(if B = 0u
 	then
 		Int = empty_tree
 	else
-		intersect_indexed_loop(S, P, B, IntB, 1u, B1, A1, B2, A2, [], L),
+		NS = next_shift(S),
+		Zeros = ctz32(B),
+		NB = unchecked_right_shift(B, Zeros),
+		M = unchecked_left_shift(1u, Zeros),
+		intersect_loop(NS, P, NB, B, IntB, M, B1, A1, B2, A2, [], L),
 		(
 			L = [],
 			Int = empty_tree
@@ -1638,53 +1873,97 @@ intersect_tree(S, P, indexed_branch(B1, A1), indexed_branch(B2, A2), Int) :-
 				Int = C
 			else
 				array.from_reverse_list(L, IntArray),
-			(if IntB = full_bitmap
-			then
-				Int = full_bitmap(IntArray)
-			else
-				Int = indexed_branch(IntB, IntArray)
+				(if IntB = full_bitmap
+				then
+					Int = full_branch(IntArray)
+				else
+					Int = indexed_branch(IntB, IntArray)
+				)
 			)
 		)
 	).
 	
-%intersect_indexed_loop(Shift, Pred, NextBit, !IntersectingBitmap, Mask,
+:- pragma inline(intersect_branches/7).
+
+%intersect_loop(Shift, Pred, CurrentBit, !IntersectingBitmap, Mask,
 %	IndexBitmap1, Array1, 
 %	IndexBitmap2, Array2, 
 %	!RevList).
-:- pred intersect_indexed_loop(shift, pred(V, V, V), bitmap, bitmap, bitmap,
+%intersect_loop(S, P, CB, !IntB, M, B1, A1, B2, A2, !L).
+:- pred intersect_loop(shift, pred(V, V, V), bitmap, bitmap, bitmap,
 	bitmap,	bitmap, hash_array(K, V), bitmap, hash_array(K, V),
 	hash_list(K, V), hash_list(K, V)).
-:- mode intersect_indexed_loop(in, in(pred(in, in, out) is det), in, in, out, 
-	in,	in, in, in,	in, out) is det.
-:- mode intersect_indexed_loop(in, in(pred(in, in, out) is semidet), in, in, 
+:- mode intersect_loop(in, in(pred(in, in, out) is det), in, in, out, 
+	in,	in, in, in,	in, in, out) is det.
+:- mode intersect_loop(in, in(pred(in, in, out) is semidet), in, in, 
 	out, in,	in, in, in,	in,	in, out) is semidet.
 	
-intersect_indexed_loop(S, P, NB, !B, M, B1, Array1, B2, Array2, !L) :-
-	(if M > full_bitmap
-	then !:L = !.L
-	else 
-		( if NB /\ 1u = 1u 
-		then 
-			sparse_index(B1, M, I1),
-			sparse_index(B2, M, I2),
-			array.unsafe_lookup(Array1, I1, Child1),
-			array.unsafe_lookup(Array2, I2, Child2),
-			intersect_tree(next_shift(S), P, Child1, Child2, ChildInt),
-			(if ChildInt = empty_tree
-			then
-				!:L = !.L,
-				!:B = xor(!.B, M) 
-			else
-				!:L = [ ChildInt | !.L ]
-				!:B = !.B
-			)
-		else
-			!:L = !.L,
-			!:B = !.B
-		),
-		intersect_indexed_loop(S, P, unchecked_right_shift(NB, 1), !B,
-			unchecked_left_shift(M, 1), B1, Array1, B2, Array2, !L)	
+intersect_loop(S, P, CB, !B, M, B1, Array1, B2, Array2, !L) :-
+	sparse_index(B1, M, I1),
+	sparse_index(B2, M, I2),
+	array.unsafe_lookup(Array1, I1, Child1),
+	array.unsafe_lookup(Array2, I2, Child2),
+	intersect_tree(S, P, Child1, Child2, ChildInt),
+	(if ChildInt = empty_tree
+	then
+		!:L = !.L,
+		!:B = xor(!.B, M) 
+	else
+		!:L = [ ChildInt | !.L ],
+		!:B = !.B
+	),
+	NextBit = unchecked_right_shift(CB, 1),
+	Zeros = unsafe_ctz32(NextBit),
+	(if Zeros < 32
+	then
+		intersect_loop(S, P, unchecked_right_shift(NextBit, Zeros), !B,
+		unchecked_left_shift(M, 1 + Zeros), B1, Array1, B2, Array2, !L)
+	else
+		!:B = !.B,
+		!:L = !.L
 	).
+
+intersect_tree(_S, P, collision(H1, B1), collision(H2, B2), Int) :-
+	(if H1 = H2
+	then
+		map.intersect(P, B1, B2, IntB),
+		(if map.is_empty(IntB)
+		then
+			Int = empty_tree
+		else
+			Int = collision(H1, IntB)
+		)
+	else
+		Int = empty_tree
+	).
+	
+intersect_tree(S, P, C@collision(H, _), indexed_branch(B, Array), Int) 
+:-
+	mask(H, S, M),
+	(if M /\ B = 0u
+	then
+		Int = empty_tree
+	else
+		sparse_index(B, M, I),
+		array.unsafe_lookup(Array, I, Child),
+		intersect_tree(next_shift(S), P, C, Child, Int)
+	).
+
+intersect_tree(S, P, C@collision(H, _), full_branch(Array), Int) :-
+	index(H, S, I),
+	array.unsafe_lookup(Array, I, HMnext),
+	intersect_tree(next_shift(S), P, C, HMnext, Int).
+	
+intersect_tree(S, P, HM@indexed_branch(_, _), C@collision(_, _), Int) :-
+	intersect_tree(S, P, C, HM, Int).
+	
+intersect_tree(S, P, HM@full_branch(_), C@collision(_, _), Int) :-
+	intersect_tree(S, P, C, HM, Int).
+
+:- pragma inline(intersect_tree/5).	
+	
+%-----------------------------------------------------------------------------%
+
 	
 	
 %-----------------------------------------------------------------------------%
@@ -1734,25 +2013,37 @@ next_shift(S) = S + bits_per_subkey.
 
 :- pragma inline(next_shift/1).
 
+weight(B) = 
+	(if hackers_delight_weight = yes
+	then
+		weight32(B)
+	else
+		weightn(B)
+	).
+	
+:- pragma inline(weight/1).
+	
+hackers_delight_weight = yes.
 
-weight(I) = 
+
+weightn(I) = 
 	(if I =< 1u
 	then 
 		cast_to_int(I)
 	else 
-		weight(I /\ (I-1u), 1)
+		weightn(I /\ (I-1u), 1)
 	).
 	
-:- pragma inline(weight/1).
+:- pragma inline(weightn/1).
 
-:- func weight(uint, int) = int.
+:- func weightn(uint, int) = int.
 
-weight(I, N) =
+weightn(I, N) =
 	(if I =< 1u
 	then 
 		cast_to_int(I) + N
 	else
-		weight(I /\ (I-1u), N+1)
+		weightn(I /\ (I-1u), N+1)
 	).
 	
 /*
@@ -1779,6 +2070,8 @@ weight32(!.X) = !:X :-
 	!:X = !.X  + unchecked_right_shift(!.X, 16),
 	!:X =  !.X /\ 0x0000003Fu,
 	!:X = cast_to_int(!.X).
+
+:- pragma inline(weight32/1).
 	
 /*
 int ntz(unsigned x) {
@@ -1792,13 +2085,23 @@ int ntz(unsigned x) {
  return n - (x & 1);
  }
 */ 
-	
-ctz32(!.X) = !:X :-
+
+ctz32(B) = 
 	%If word size is larger than 32, ensure all but the 32 lsb are set to zero
-	%DCE should remove the if branch at compile time
-	(if bits_per_uint > 32
-	then !:X = !.X /\ full_bitmap
-	else !:X = !.X),
+	%DCE should remove the first condition at compile time
+	(if bits_per_uint > 32, B > full_bitmap
+	then
+		unexpected($module, $pred, "This function is undefined for " ++
+			"values greater than 2^32, there should not be one bits " ++
+			"before the thirty two least signifigant bits.")
+	else
+		unsafe_ctz32(B)
+	).
+
+% Behavior is UNDEFINED for values greater than 2^32 (full_bitmap)
+:- func unsafe_ctz32(bitmap) = int.
+	
+unsafe_ctz32(!.X) = !:X :-
 	(if (!.X = 0u)
 	then
 		!:X = 32
@@ -1821,6 +2124,7 @@ ctz32(!.X) = !:X :-
 		)
 	).
 
+:- pragma inline(unsafe_ctz32/1).
 
 
 %-----------------------------------------------------------------------------%
