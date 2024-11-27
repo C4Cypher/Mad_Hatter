@@ -376,6 +376,28 @@
 :- mode intersect(in(pred(in, in, out) is det), in, in, out) is det.
 :- mode intersect(in(pred(in, in, out) is semidet), in, in, out) is semidet.
 
+   % Calls intersect. Throws an exception if intersect fails.
+:- func det_intersect((func(V, V) = V)::in(func(in, in) = out is semidet),
+    hashmap(K, V)::in, hashmap(K, V)::in) = (hashmap(K, V)::out) is det.
+:- pred det_intersect((pred(V, V, V))::in(pred(in, in, out) is semidet),
+    hashmap(K, V)::in, hashmap(K, V)::in, hashmap(K, V)::out) is det.
+	
+% intersect_list(Pred, HM, [M | Ms ], Result):
+% Recursively insersect HM with M and then recursively call the result with Ms,
+% folding over the entire list. If the list is empty, return M. 
+:- pred intersect_list(pred(V, V, V), hashmap(K, V), list(hashmap(K, V)), 
+	hashmap(K, V)).
+:- mode intersect_list(in(pred(in, in, out) is det), in, in, out) is det.
+:- mode intersect_list(in(pred(in, in, out) is semidet), in, in, out) 
+	is semidet.
+
+% intersect_list(Pred, List, Result): 
+% If List is empty, return an empty map, otherwise call the above intersect 
+% list predicate with the head and the tail of the list.
+:- pred intersect_list(pred(V, V, V), list(hashmap(K, V)),	hashmap(K, V)).
+:- mode intersect_list(in(pred(in, in, out) is det), in, out) is det.
+:- mode intersect_list(in(pred(in, in, out) is semidet), in, out) is semidet.
+
 
 %-----------------------------------------------------------------------------%
 % Bit twiddling
@@ -1961,8 +1983,31 @@ intersect_tree(S, P, HM@full_branch(_), C@collision(_, _), Int) :-
 	intersect_tree(S, P, C, HM, Int).
 
 :- pragma inline(intersect_tree/5).	
+
+det_intersect(PF, HM1, HM2) = Int :-
+    P = (pred(X::in, Y::in, Z::out) is semidet :- Z = PF(X, Y) ),
+    det_intersect(P, HM1, HM2, Int).
+
+det_intersect(P, HM1, HM2, Int) :-
+    ( if intersect(P, HM1, HM2, Int0) then
+        Int = Int0
+    else
+        unexpected($pred, "hashmap.intersect failed")
+    ).
+	
+intersect_list(_P, HM, [], HM).
+
+intersect_list(P, HM, [ M | Ms ], Res) :- 
+	intersect(P, HM, M, Int),
+	intersect_list(P, Int, Ms, Res).
+	
+intersect_list(_P, [], empty_tree).
+
+intersect_list(P, [HM | HMs], Res) :- intersect_list(P, HM, HMs, Res).
 	
 %-----------------------------------------------------------------------------%
+% Union
+
 
 	
 	
