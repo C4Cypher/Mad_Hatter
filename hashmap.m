@@ -398,6 +398,24 @@
 :- mode intersect_list(in(pred(in, in, out) is det), in, out) is det.
 :- mode intersect_list(in(pred(in, in, out) is semidet), in, out) is semidet.
 
+    % Given two maps MapA and MapB, create a third map, UnionMap, that
+    % contains all the keys that occur in either MapA and MapB. For keys
+    % that occur in both MapA and MapB, compute the value in the final map
+    % by applying the supplied function to the values associated with the key
+    % in MapA and MapB.
+    %
+:- func union(func(V, V) = V, hashmap(K, V), map(K, V)) = hashmap(K, V).
+
+    % Given two maps MapA and MapB, create a third map, UnionMap, that
+    % contains all the keys that occur in either MapA and MapB. For keys
+    % that occur in both MapA and MapB, compute the value in the final map
+    % by applying the supplied predicate to the values associated with the key
+    % in MapA and MapB. Fail if and only if this predicate fails on
+    % the values associated with some common key.
+    %
+:- pred union(pred(V, V, V), hashmap(K, V), hashmap(K, V), hashmap(K, V)).
+:- mode union(in(pred(in, in, out) is det), in, in, out) is det.
+:- mode union(in(pred(in, in, out) is semidet), in, in, out) is semidet.
 
 %-----------------------------------------------------------------------------%
 % Bit twiddling
@@ -733,7 +751,7 @@ insert(!.HM, K, V) = !:HM :-
 
 %  pred insert_tree(Key, Value, Shift, Replace, !HashTree) is semidet.
 :- pred insert_tree(hash::in, K::in, V::in, shift::in, bool::in,
-	hm(K, V)::in, hm(K, V)::out) is semidet.
+	hm(K, V)::in, hm(K, V)::out) is det.
 
 insert_tree(H, K, V, _, _, empty_tree, leaf(H, K, V)).
 
@@ -804,7 +822,9 @@ insert_tree(H, K, V, S, R, !.HM@collision(CH, Bucket), !:HM) :-
 			BArray), !:HM)
 	).
 
-:- pragma inline(insert/3).	
+:- pragma inline(insert_tree/6).	
+
+
 
 det_insert(K, V, !HM) :-
 	( if insert(K, V, !.HM, NewMap) then
@@ -1015,7 +1035,7 @@ update(collision(H, Bucket), H, K, V, _) =
 % collision(Hash, Key1, Value1, Key2, Value2) = HashMap.
 % Create a 'Collision' value with two 'Leaf' values.
 % Throws an exception if K1 = K2
-:- func collision(hash, K, V, K, V) = hm(K, V).
+:- func collision(hash, K, V, K, V) = hashmap(K, V).
 
 collision(Hash, K1, V1, K2, V2) = collision(Hash, Bucket) :-
 	map.det_insert(K2, V2, map.singleton(K1, V1), Bucket).
@@ -1036,17 +1056,34 @@ indexed_or_full_branch(Bitmap, Array) =
 :- func two(shift, hash, K, V, hashmap_leaf(K, V)) = hashmap(K, V).
 
 two(S, H1, K1, V1, L2@leaf(H2, _, _)) = indexed_branch(Bitmap, Array) :-
-	mask(H1, S, Bp1),
-	mask(H2, S, Bp2),
-	( if Bp1 = Bp2
+	mask(H1, S, M1),
+	mask(H2, S, M2),
+	( if M1 = M2
 	then
 		array.init(1, two(next_shift(S), H1, K1, V1, L2), Array),
-		Bitmap = Bp1
+		Bitmap = M1
 	else
 		array.init(2, leaf(H1, K1, V1), Array0),
 		Index = (index(H1, S) < index(H2, S) -> 1 ; 0),
 		array.set(Index, coerce(L2), Array0, Array),
-		Bitmap = Bp1 \/ Bp2		
+		Bitmap = M1 \/ M2		
+	).
+
+% two(Shift, Leaf1, Leaf2) = hashmap(K, V)
+:- func two(shift, hashmap_leaf(K, V), hashmap_leaf(K, V)) = hashmap(K, V).	
+
+two(S, L1@leaf(H1, _, _), L2@leaf(H2, _, _)) = indexed_branch(Bitmap, Array) :-
+	mask(H1, S, M1),
+	mask(H2, S, M2),
+	( if M1 = M2
+	then
+		array.init(1, two(next_shift(S), L1, L2), Array),
+		Bitmap = M1
+	else
+		array.init(2, coerce(L1), Array0),
+		Index = (index(H1, S) < index(H2, S) -> 1 ; 0),
+		array.set(Index, coerce(L2), Array0, Array),
+		Bitmap = M1 \/ M2		
 	).
 	
 :- pragma inline(two/5).
@@ -1999,7 +2036,10 @@ intersect_list(_P, HM, [], HM).
 
 intersect_list(P, HM, [ M | Ms ], Res) :- 
 	intersect(P, HM, M, Int),
-	intersect_list(P, Int, Ms, Res).
+	(if Int = empty_tree
+	then Res = Int
+	else intersect_list(P, Int, Ms, Res)
+	).
 	
 intersect_list(_P, [], empty_tree).
 
@@ -2008,9 +2048,139 @@ intersect_list(P, [HM | HMs], Res) :- intersect_list(P, HM, HMs, Res).
 %-----------------------------------------------------------------------------%
 % Union
 
+union(F, HM1, HM2) = HM :-
+    P = (pred(X::in, Y::in, Z::out) is det :- Z = F(X, Y) ),
+    map.union(P, HM1, HM2, HM).
+	
+union(P, HM1, HM2, HM) :- union_tree(0, P, HM1, HM2, HM).
+
+% union_tree(Shift, Pred, Hashmap1, Hashmap2, Union).
+:- pred union_tree(shift, pred(V, V, V), hashmap(K, V), hashmap(K, V), 
+	hashmap(K, V)).
+:- mode union_tree(in, in(pred(in, in, out) is det), in, in, out) is det.
+:- mode union_tree(in, in(pred(in, in, out) is semidet), in, in, out)
+	is semidet.
+
+union_tree(_S, _P, empty_tree, empty_tree, empty_tree).
+
+union_tree(_S, _P, empty_tree, L@leaf(_, _, _), L).
+union_tree(_S, _P, L@leaf(_, _, _), empty_tree, L).
+
+union_tree(_S, _P, empty_tree, B@indexed_branch(_, _), B). 
+union_tree(_S, _P, B@indexed_branch(_, _), empty_tree, B).
+
+union_tree(_S, _P, empty_tree, B@full_branch(_), B).
+union_tree(_S, _P, B@full_branch(_), empty_tree, B).
+
+union_tree(_S, _P, empty_tree, C@collision(_, _), C).
+union_tree(_S, _P, C@collision(_, _), empty_tree, C).
+
+union_tree(S, P, HM1@leaf(H1, K1, V1), HM2@leaf(H2, K2, V2) Union) :-
+	(if H1 = H2
+	then
+		(if K1 = K2
+		then
+			P(V1, V2, V),
+			Union = leaf(H1, K1, V)
+		else
+			Union = collision(H1, K1, V1, K2, V2)
+		)
+	else
+		coerce(HM1) = L1:hashmap_leaf,
+		coerce(HM2) = L2:hashmap_leaf,
+		Union = two(S, L1, L2)
+	).
+
+
+union_tree(S, P, L@leaf(H, _K, _V), indexed_branch(B, Array), Int) 
+:-
+	mask(H, S, M),
+	sparse_index(B, M, I),
+	(if M /\ B = 0u
+	then
+		unsafe_array_insert(I, L, !Array), 
+		!:HM = indexed_or_full_branch(B \/ M, !.Array)
+	else
+		array.unsafe_lookup(!.Array, I, Branch0),
+		union_tree(next_shift(S), P, Branch0, Branch1),
+		(if private_builtin.pointer_equal(Branch1, Branch0)
+		then
+			!:HM = !.HM
+		else
+			slow_set(I, Branch1, !Array),
+			!:HM = indexed_branch(B, !.Array)
+		)
+	).
+
+union_tree(S, P, B@indexed_branch(_, _),  L@leaf(_, _, _), Int) :-
+	reverse(P, PR),
+	union_tree(S, PR, L, B).
 
 	
+union_tree(S, P, L@leaf(H, _K, _V), !.HM@full_branch(!.Array), !:HM) :-
+	index(H, S, I),
+	array.unsafe_lookup(!.Array, I, Branch0),
+	union_tree(next_shift(S), P, Branch0, Branch1),
+	(if private_builtin.pointer_equal(Branch1, Branch0)
+	then
+		!:HM = !.HM
+	else
+		slow_set(I, Branch1, !Array),
+		!:HM = full_branch(!.Array)
+	).
 	
+union_tree(S, P, B@full_branch(_),  L@leaf(_, _, _), Int) :-
+	reverse(P, PR),
+	union_tree(S, PR, L, B).
+
+union_tree(S, P, L@leaf(H1, K1, V1), !.HM@collision(H2, Bucket), !:HM) :-
+	(if H1 = H2
+	then
+		(if map.search(Bucket, K1, V2)
+		then
+			P(V1, V2, V),
+			(if private_builtin.pointer_equal(V, V2)
+			then
+				!:HM = !.HM
+			else
+				map.det_update(K1, V, Bucket, NewBucket),
+				!:HM = collision(H1, NewBucket)
+			)
+		else
+			map.det_insert(K1, V1, Bucket, NewBucket),
+			!:HM = collision(H1, NewBucket)
+		)
+	else
+		array.init(1, !.HM, BArray),
+		union_tree(next_shift(S), P, L, indexed_branch(mask(H2, S),	BArray), 
+			!:HM)
+	).
+	
+union_tree(S, P, C@collision(_, _),  L@leaf(_, _, _), Int) :-
+	reverse(P, PR),
+	union_tree(S, PR, L, C).
+	
+	
+	
+	
+	
+	
+:- pred reverse(pred(T, T, T), pred(T, T, T)).
+:- mode reverse(in(pred(in, in, out) is det), out(pred(in, in, out) is det))) 
+	is det.
+:- mode reverse(in(pred(in, in, out) is semidet), out(pred(in, in, out) 
+	is semidet))) is det.
+	
+:- promise_equivalent_clauses(reverse/2).
+	
+reverse(P::in(pred(in, in, out) is det, PR::out(pred(in, in, out) is det)) :-
+	PR = pred(A::in, B::in, C::out) is det :- P(B, A, C).
+	
+reverse(P::in(pred(in, in, out) is semidet, PR::out(pred(in, in, out) 
+	is semidet)) :-
+	PR = (pred(A::in, B::in, C::out) is semidet :- P(B, A, C)).
+	
+:- pragma inline(reverse/2).
 %-----------------------------------------------------------------------------%
 % Bit twiddling
 
