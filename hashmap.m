@@ -1809,30 +1809,50 @@ intersect(F, HM1, HM2) = Int :-
     intersect(P, HM1, HM2, Int).
 	
 intersect(P, HM1, HM2, Int) :- 
-	intersect_tree(0, P, HM1, HM2, Int).
+	reverse(P, PR),
+	intersect_tree(0, P, PR, HM1, HM2, Int).
 	
-:- pred intersect_tree(shift, pred(V, V, V), hashmap(K, V), 
-	hashmap(K, V), hashmap(K, V)).
-:- mode intersect_tree(in, in(pred(in, in, out) is det), in, in, out) 
+	
+:- pred reverse(pred(T, T, T), pred(T, T, T)).
+:- mode reverse(in(pred(in, in, out) is det), out(pred(in, in, out) is det))) 
 	is det.
-:- mode intersect_tree(in, in(pred(in, in, out) is semidet), in, in, out) 
-	is semidet.
+:- mode reverse(in(pred(in, in, out) is semidet), out(pred(in, in, out) 
+	is semidet))) is det.
 	
-intersect_tree(_S, _P, empty_tree, empty_tree, empty_tree).
+:- promise_equivalent_clauses(reverse/2).
+	
+reverse(P::in(pred(in, in, out) is det, PR::out(pred(in, in, out) is det)) :-
+	PR = pred(A::in, B::in, C::out) is det :- P(B, A, C).
+	
+reverse(P::in(pred(in, in, out) is semidet, PR::out(pred(in, in, out) 
+	is semidet)) :-
+	PR = (pred(A::in, B::in, C::out) is semidet :- P(B, A, C)).
+	
+:- pragma inline(reverse/2).
+	
+% intersect_tree(Shift, Pred, PredReversed, Hashmap1, Hashmap2, Intersection)	
+:- pred intersect_tree(shift, pred(V, V, V), pred(V, V, V), hashmap(K, V), 
+	hashmap(K, V), hashmap(K, V)).
+:- mode intersect_tree(in, in(pred(in, in, out) is det), in(pred(in, in, out) 
+	is det), in, in, out) is det.
+:- mode intersect_tree(in, in(pred(in, in, out) is semidet), 
+	in(pred(in, in, out) is semidet), in, in, out) is semidet.
+	
+intersect_tree(_S, _P, _PR, empty_tree, empty_tree, empty_tree).
 
-intersect_tree(_S, _P, empty_tree, leaf(_, _, _), empty_tree).
-intersect_tree(_S, _P, leaf(_, _, _), empty_tree, empty_tree).
+intersect_tree(_S, _P, _PR, empty_tree, leaf(_, _, _), empty_tree).
+intersect_tree(_S, _P, _PR, leaf(_, _, _), empty_tree, empty_tree).
 
-intersect_tree(_S, _P, empty_tree, indexed_branch(_, _), empty_tree). 
-intersect_tree(_S, _P, indexed_branch(_, _), empty_tree, empty_tree).
+intersect_tree(_S, _P, _PR, empty_tree, indexed_branch(_, _), empty_tree). 
+intersect_tree(_S, _P, _PR, indexed_branch(_, _), empty_tree, empty_tree).
 
-intersect_tree(_S, _P, empty_tree, full_branch(_), empty_tree).
-intersect_tree(_S, _P, full_branch(_), empty_tree, empty_tree).
+intersect_tree(_S, _P, _PR, empty_tree, full_branch(_), empty_tree).
+intersect_tree(_S, _P, _PR, full_branch(_), empty_tree, empty_tree).
 
-intersect_tree(_S, _P, empty_tree, collision(_, _), empty_tree).
-intersect_tree(_S, _P, collision(_, _), empty_tree, empty_tree).
+intersect_tree(_S, _P, _PR, empty_tree, collision(_, _), empty_tree).
+intersect_tree(_S, _P, _PR, collision(_, _), empty_tree, empty_tree).
 
-intersect_tree(_S, P, L1@leaf(H1, K1, V1), L2@leaf(H2, K2, V2), Int) :- 
+intersect_tree(_S, P, _PR, L1@leaf(H1, K1, V1), L2@leaf(H2, K2, V2), Int) :- 
 	(if H1 = H2, K1 = K2
 	then
 		P(V1, V2, V),
@@ -1849,7 +1869,7 @@ intersect_tree(_S, P, L1@leaf(H1, K1, V1), L2@leaf(H2, K2, V2), Int) :-
 		Int = empty_tree
 	).
 
-intersect_tree(S, P, L@leaf(H, _K, _V), indexed_branch(B, Array), Int) 
+intersect_tree(S, P, PR, L@leaf(H, _K, _V), indexed_branch(B, Array), Int) 
 :-
 	mask(H, S, M),
 	(if M /\ B = 0u
@@ -1858,15 +1878,15 @@ intersect_tree(S, P, L@leaf(H, _K, _V), indexed_branch(B, Array), Int)
 	else
 		sparse_index(B, M, I),
 		array.unsafe_lookup(Array, I, Child),
-		intersect_tree(next_shift(S), P, L, Child, Int)
+		intersect_tree(next_shift(S), P, PR, L, Child, Int)
 	).
 
-intersect_tree(S, P, L@leaf(H, _K, _V), full_branch(Array), Int) :-
+intersect_tree(S, P, PR, L@leaf(H, _K, _V), full_branch(Array), Int) :-
 	index(H, S, I),
 	array.unsafe_lookup(Array, I, HMnext),
-	intersect_tree(next_shift(S), P, L, HMnext, Int).
+	intersect_tree(next_shift(S), P, PR, L, HMnext, Int).
 	
-intersect_tree(_S, P, L@leaf(H1, K, V1), collision(H2, Bucket), Int) :-
+intersect_tree(_S, P, _PR, L@leaf(H1, K, V1), collision(H2, Bucket), Int) :-
 	(if H1 = H2, map.search(Bucket, K, V2)
 	then
 		P(V1, V2, V),
@@ -1880,36 +1900,37 @@ intersect_tree(_S, P, L@leaf(H1, K, V1), collision(H2, Bucket), Int) :-
 		Int = empty_tree
 	).	
 	
-intersect_tree(S, P, HM@indexed_branch(_, _), L@leaf(_, _, _), Int) :-
-	intersect_tree(S, P, L, HM, Int).
+intersect_tree(S, P, PR, HM@indexed_branch(_, _), L@leaf(_, _, _), Int) :-
+	intersect_tree(S, PR, P, L, HM, Int).
 	
-intersect_tree(S, P, HM@full_branch(_), L@leaf(_, _, _), Int) :-
-	intersect_tree(S, P, L, HM, Int).
+intersect_tree(S, P, PR, HM@full_branch(_), L@leaf(_, _, _), Int) :-
+	intersect_tree(S, PR, P, L, HM, Int).
 	
-intersect_tree(S, P, HM@collision(_, _), L@leaf(_, _, _), Int) :-
-	intersect_tree(S, P, L, HM, Int).
+intersect_tree(S, P, PR, HM@collision(_, _), L@leaf(_, _, _), Int) :-
+	intersect_tree(S, PR, P, L, HM, Int).
 
-intersect_tree(S, P, indexed_branch(B1, A1), indexed_branch(B2, A2), Int) :-
-	intersect_branches(S, P, B1, A1, B2, A2, Int).
+intersect_tree(S, P, PR, indexed_branch(B1, A1), indexed_branch(B2, A2), Int) :-
+	intersect_branches(S, P, PR, B1, A1, B2, A2, Int).
 	
-intersect_tree(S, P, indexed_branch(B1, A1), full_branch(A2), Int) :-
-	intersect_branches(S, P, B1, A1, full_bitmap, A2, Int).
+intersect_tree(S, P, PR, indexed_branch(B1, A1), full_branch(A2), Int) :-
+	intersect_branches(S, P, PR, B1, A1, full_bitmap, A2, Int).
 	
-intersect_tree(S, P, full_branch(A1), indexed_branch(B2, A2), Int) :-
-	intersect_branches(S, P, full_bitmap, A1, B2, A2, Int).
+intersect_tree(S, P, PR, full_branch(A1), indexed_branch(B2, A2), Int) :-
+	intersect_branches(S, P, PR, full_bitmap, A1, B2, A2, Int).
 	
-intersect_tree(S, P, full_branch(A1), full_branch(A2), Int) :-
-	intersect_branches(S, P, full_bitmap, A1, full_bitmap, A2, Int).
+intersect_tree(S, P, PR, full_branch(A1), full_branch(A2), Int) :-
+	intersect_branches(S, P, PR, full_bitmap, A1, full_bitmap, A2, Int).
 
-% intersect_branches(Shift, Pred, Bitmap1, Array1, Bitmap2, Array2, Intersect).
-:- pred intersect_branches(shift, pred(V, V, V), bitmap, hash_array(K, V),
-	bitmap, hash_array(K, V), hashmap(K, V)).
-:- mode intersect_branches(in, in(pred(in, in, out) is det), in, in, in, in, 
-	out) is det.
-:- mode intersect_branches(in, in(pred(in, in, out) is semidet), in, in, in, 
-	in,	out) is semidet.
+% intersect_branches(Shift, Pred, PReversed, Bitmap1, Array1, Bitmap2, Array2,
+%	Intersect).
+:- pred intersect_branches(shift, pred(V, V, V), pred(V, V, V), bitmap, 
+	hash_array(K, V),	bitmap, hash_array(K, V), hashmap(K, V)).
+:- mode intersect_branches(in, in(pred(in, in, out) is det), 
+	in(pred(in, in, out) is det), in, in, in, in, out) is det.
+:- mode intersect_branches(in, in(pred(in, in, out) is semidet),
+	in(pred(in, in, out) is semidet), in, in, in, in, out) is semidet.
 
-intersect_branches(S, P, B1, A1, B2, A2, Int) :-
+intersect_branches(S, P, PR, B1, A1, B2, A2, Int) :-
 	B = B1 /\ B2,
 	(if B = 0u
 	then
@@ -1919,7 +1940,7 @@ intersect_branches(S, P, B1, A1, B2, A2, Int) :-
 		Zeros = ctz32(B),
 		NB = unchecked_right_shift(B, Zeros),
 		M = unchecked_left_shift(1u, Zeros),
-		intersect_loop(NS, P, NB, B, IntB, M, B1, A1, B2, A2, [], L),
+		intersect_loop(NS, P, PR, NB, B, IntB, M, B1, A1, B2, A2, [], L),
 		(
 			L = [],
 			Int = empty_tree
@@ -1942,27 +1963,29 @@ intersect_branches(S, P, B1, A1, B2, A2, Int) :-
 		)
 	).
 	
-:- pragma inline(intersect_branches/7).
+:- pragma inline(intersect_branches/8).
 
-%intersect_loop(Shift, Pred, CurrentBit, !IntersectingBitmap, Mask,
+%intersect_loop(Shift, Pred, PReversed, CurrentBit, !IntersectingBitmap, Mask,
 %	IndexBitmap1, Array1, 
 %	IndexBitmap2, Array2, 
 %	!RevList).
-%intersect_loop(S, P, CB, !IntB, M, B1, A1, B2, A2, !L).
-:- pred intersect_loop(shift, pred(V, V, V), bitmap, bitmap, bitmap,
-	bitmap,	bitmap, hash_array(K, V), bitmap, hash_array(K, V),
+%intersect_loop(S, P, PR, CB, !IntB, M, B1, A1, B2, A2, !L).
+:- pred intersect_loop(shift, pred(V, V, V), pred(V, V, V), bitmap, bitmap,
+	bitmap,	bitmap,	bitmap, hash_array(K, V), bitmap, hash_array(K, V),
 	hash_list(K, V), hash_list(K, V)).
-:- mode intersect_loop(in, in(pred(in, in, out) is det), in, in, out, 
-	in,	in, in, in,	in, in, out) is det.
-:- mode intersect_loop(in, in(pred(in, in, out) is semidet), in, in, 
-	out, in,	in, in, in,	in,	in, out) is semidet.
+:- mode intersect_loop(in, in(pred(in, in, out) is det), 
+	in(pred(in, in, out) is det), in, in, out,	in,	in, in, in,	in, in, out) 
+	is det.
+:- mode intersect_loop(in, in(pred(in, in, out) is semidet), 
+	in(pred(in, in, out) is semidet), in, in, out, in,	in, in, in,	in,	in, 
+	out) is semidet.
 	
-intersect_loop(S, P, CB, !B, M, B1, Array1, B2, Array2, !L) :-
+intersect_loop(S, P, PR, CB, !B, M, B1, Array1, B2, Array2, !L) :-
 	sparse_index(B1, M, I1),
 	sparse_index(B2, M, I2),
 	array.unsafe_lookup(Array1, I1, Child1),
 	array.unsafe_lookup(Array2, I2, Child2),
-	intersect_tree(S, P, Child1, Child2, ChildInt),
+	intersect_tree(S, P, PR, Child1, Child2, ChildInt),
 	(if ChildInt = empty_tree
 	then
 		!:L = !.L,
@@ -1975,14 +1998,16 @@ intersect_loop(S, P, CB, !B, M, B1, Array1, B2, Array2, !L) :-
 	Zeros = unsafe_ctz32(NextBit),
 	(if Zeros < 32
 	then
-		intersect_loop(S, P, unchecked_right_shift(NextBit, Zeros), !B,
-		unchecked_left_shift(M, 1 + Zeros), B1, Array1, B2, Array2, !L)
+		intersect_loop(S, P, PR, unchecked_right_shift(NextBit, Zeros), !B,
+			unchecked_left_shift(M, 1 + Zeros), B1, Array1, B2, Array2, !L)
 	else
 		!:B = !.B,
 		!:L = !.L
 	).
+	
+:- pragma inline(intersect_loop/13).
 
-intersect_tree(_S, P, collision(H1, B1), collision(H2, B2), Int) :-
+intersect_tree(_S, P, PR, collision(H1, B1), collision(H2, B2), Int) :-
 	(if H1 = H2
 	then
 		map.intersect(P, B1, B2, IntB),
@@ -1996,7 +2021,7 @@ intersect_tree(_S, P, collision(H1, B1), collision(H2, B2), Int) :-
 		Int = empty_tree
 	).
 	
-intersect_tree(S, P, C@collision(H, _), indexed_branch(B, Array), Int) 
+intersect_tree(S, P, PR, C@collision(H, _), indexed_branch(B, Array), Int) 
 :-
 	mask(H, S, M),
 	(if M /\ B = 0u
@@ -2005,21 +2030,21 @@ intersect_tree(S, P, C@collision(H, _), indexed_branch(B, Array), Int)
 	else
 		sparse_index(B, M, I),
 		array.unsafe_lookup(Array, I, Child),
-		intersect_tree(next_shift(S), P, C, Child, Int)
+		intersect_tree(next_shift(S), P, PR, C, Child, Int)
 	).
 
-intersect_tree(S, P, C@collision(H, _), full_branch(Array), Int) :-
+intersect_tree(S, P, PR, C@collision(H, _), full_branch(Array), Int) :-
 	index(H, S, I),
 	array.unsafe_lookup(Array, I, HMnext),
-	intersect_tree(next_shift(S), P, C, HMnext, Int).
+	intersect_tree(next_shift(S), P, PR, C, HMnext, Int).
 	
-intersect_tree(S, P, HM@indexed_branch(_, _), C@collision(_, _), Int) :-
-	intersect_tree(S, P, C, HM, Int).
+intersect_tree(S, P, PR, HM@indexed_branch(_, _), C@collision(_, _), Int) :-
+	intersect_tree(S, PR, P, C, HM, Int).
 	
-intersect_tree(S, P, HM@full_branch(_), C@collision(_, _), Int) :-
-	intersect_tree(S, P, C, HM, Int).
+intersect_tree(S, P, PR, HM@full_branch(_), C@collision(_, _), Int) :-
+	intersect_tree(S, PR, P, C, HM, Int).
 
-:- pragma inline(intersect_tree/5).	
+:- pragma inline(intersect_tree/6).	
 
 det_intersect(PF, HM1, HM2) = Int :-
     P = (pred(X::in, Y::in, Z::out) is semidet :- Z = PF(X, Y) ),
@@ -2052,30 +2077,33 @@ union(F, HM1, HM2) = HM :-
     P = (pred(X::in, Y::in, Z::out) is det :- Z = F(X, Y) ),
     map.union(P, HM1, HM2, HM).
 	
-union(P, HM1, HM2, HM) :- union_tree(0, P, HM1, HM2, HM).
+union(P, HM1, HM2, HM) :- 
+	reverse(P, PR),
+	union_tree(0, P, PR, HM1, HM2, HM).
 
-% union_tree(Shift, Pred, Hashmap1, Hashmap2, Union).
-:- pred union_tree(shift, pred(V, V, V), hashmap(K, V), hashmap(K, V), 
-	hashmap(K, V)).
-:- mode union_tree(in, in(pred(in, in, out) is det), in, in, out) is det.
-:- mode union_tree(in, in(pred(in, in, out) is semidet), in, in, out)
-	is semidet.
+% union_tree(Shift, Pred, PredReversed, Hashmap1, Hashmap2, Union).
+:- pred union_tree(shift, pred(V, V, V), pred(V, V, V), hashmap(K, V), 
+	hashmap(K, V), hashmap(K, V)).
+:- mode union_tree(in, in(pred(in, in, out) is det), 
+	in(pred(in, in, out) is det), in, in, out) is det.
+:- mode union_tree(in, in(pred(in, in, out) is semidet), 
+	 in(pred(in, in, out) is semidet), in, in, out) is semidet.
 
-union_tree(_S, _P, empty_tree, empty_tree, empty_tree).
+union_tree(_S, _P, _PR, empty_tree, empty_tree, empty_tree).
 
-union_tree(_S, _P, empty_tree, L@leaf(_, _, _), L).
-union_tree(_S, _P, L@leaf(_, _, _), empty_tree, L).
+union_tree(_S, _P, _PR, empty_tree, L@leaf(_, _, _), L).
+union_tree(_S, _P, _PR, L@leaf(_, _, _), empty_tree, L).
 
-union_tree(_S, _P, empty_tree, B@indexed_branch(_, _), B). 
-union_tree(_S, _P, B@indexed_branch(_, _), empty_tree, B).
+union_tree(_S, _P, _PR, empty_tree, B@indexed_branch(_, _), B). 
+union_tree(_S, _P, _PR, B@indexed_branch(_, _), empty_tree, B).
 
-union_tree(_S, _P, empty_tree, B@full_branch(_), B).
-union_tree(_S, _P, B@full_branch(_), empty_tree, B).
+union_tree(_S, _P, _PR, empty_tree, B@full_branch(_), B).
+union_tree(_S, _P, _PR, B@full_branch(_), empty_tree, B).
 
-union_tree(_S, _P, empty_tree, C@collision(_, _), C).
-union_tree(_S, _P, C@collision(_, _), empty_tree, C).
+union_tree(_S, _P, _PR, empty_tree, C@collision(_, _), C).
+union_tree(_S, _P, _PR, C@collision(_, _), empty_tree, C).
 
-union_tree(S, P, HM1@leaf(H1, K1, V1), HM2@leaf(H2, K2, V2) Union) :-
+union_tree(S, P, _PR, HM1@leaf(H1, K1, V1), HM2@leaf(H2, K2, V2) Union) :-
 	(if H1 = H2
 	then
 		(if K1 = K2
@@ -2092,7 +2120,7 @@ union_tree(S, P, HM1@leaf(H1, K1, V1), HM2@leaf(H2, K2, V2) Union) :-
 	).
 
 
-union_tree(S, P, L@leaf(H, _K, _V), indexed_branch(B, Array), Int) 
+union_tree(S, P, PR, L@leaf(H, _K, _V), indexed_branch(B, Array), Int) 
 :-
 	mask(H, S, M),
 	sparse_index(B, M, I),
@@ -2102,7 +2130,7 @@ union_tree(S, P, L@leaf(H, _K, _V), indexed_branch(B, Array), Int)
 		!:HM = indexed_or_full_branch(B \/ M, !.Array)
 	else
 		array.unsafe_lookup(!.Array, I, Branch0),
-		union_tree(next_shift(S), P, Branch0, Branch1),
+		union_tree(next_shift(S), P, PR, Branch0, Branch1),
 		(if private_builtin.pointer_equal(Branch1, Branch0)
 		then
 			!:HM = !.HM
@@ -2112,15 +2140,14 @@ union_tree(S, P, L@leaf(H, _K, _V), indexed_branch(B, Array), Int)
 		)
 	).
 
-union_tree(S, P, B@indexed_branch(_, _),  L@leaf(_, _, _), Int) :-
-	reverse(P, PR),
-	union_tree(S, PR, L, B).
+union_tree(S, P, PR, B@indexed_branch(_, _),  L@leaf(_, _, _), Int) :-
+	union_tree(S, PR, P, L, B, Int).
 
 	
-union_tree(S, P, L@leaf(H, _K, _V), !.HM@full_branch(!.Array), !:HM) :-
+union_tree(S, P, PR, L@leaf(H, _K, _V), !.HM@full_branch(!.Array), !:HM) :-
 	index(H, S, I),
 	array.unsafe_lookup(!.Array, I, Branch0),
-	union_tree(next_shift(S), P, Branch0, Branch1),
+	union_tree(next_shift(S), P, PR, Branch0, Branch1),
 	(if private_builtin.pointer_equal(Branch1, Branch0)
 	then
 		!:HM = !.HM
@@ -2129,11 +2156,10 @@ union_tree(S, P, L@leaf(H, _K, _V), !.HM@full_branch(!.Array), !:HM) :-
 		!:HM = full_branch(!.Array)
 	).
 	
-union_tree(S, P, B@full_branch(_),  L@leaf(_, _, _), Int) :-
-	reverse(P, PR),
-	union_tree(S, PR, L, B).
+union_tree(S, P, PR, B@full_branch(_),  L@leaf(_, _, _), Int) :-
+	union_tree(S, PR, P, L, B).
 
-union_tree(S, P, L@leaf(H1, K1, V1), !.HM@collision(H2, Bucket), !:HM) :-
+union_tree(S, P, _PR, L@leaf(H1, K1, V1), !.HM@collision(H2, Bucket), !:HM) :-
 	(if H1 = H2
 	then
 		(if map.search(Bucket, K1, V2)
@@ -2152,35 +2178,103 @@ union_tree(S, P, L@leaf(H1, K1, V1), !.HM@collision(H2, Bucket), !:HM) :-
 		)
 	else
 		array.init(1, !.HM, BArray),
-		union_tree(next_shift(S), P, L, indexed_branch(mask(H2, S),	BArray), 
+		union_tree(next_shift(S), P, PR, L, indexed_branch(mask(H2, S),	BArray), 
 			!:HM)
 	).
 	
-union_tree(S, P, C@collision(_, _),  L@leaf(_, _, _), Int) :-
-	reverse(P, PR),
-	union_tree(S, PR, L, C).
+union_tree(S, P, PR, C@collision(_, _),  L@leaf(_, _, _), Int) :-
+	union_tree(S, PR, P, L, C, Int).
 	
 	
 	
+
+% union_branches(Shift, Pred, PReversed, Bitmap1, Array1, Bitmap2, Array2,
+%	Intersect).
+:- pred union_branches(shift, pred(V, V, V), pred(V, V, V), bitmap, 
+	hash_array(K, V),	bitmap, hash_array(K, V), hashmap(K, V)).
+:- mode union_branches(in, in(pred(in, in, out) is det), 
+	in(pred(in, in, out) is det), in, in, in, in, out) is det.
+:- mode union_branches(in, in(pred(in, in, out) is semidet),
+	in(pred(in, in, out) is semidet), in, in, in, in, out) is semidet.
+
+union_branches(S, P, PR, B1, A1, B2, A2, Int) :-
+	B = B1 /\ B2,
+	(if B = 0u
+	then
+		Int = empty_tree
+	else
+		NS = next_shift(S),
+		Zeros = ctz32(B),
+		NB = unchecked_right_shift(B, Zeros),
+		M = unchecked_left_shift(1u, Zeros),
+		union_loop(NS, P, PR, NB, B, IntB, M, B1, A1, B2, A2, [], L),
+		(
+			L = [],
+			Int = empty_tree
+		;
+			L = [ C | Cs ],
+			(if 
+				Cs = [], 
+				( C = leaf(_, _, _) ; C = collision(_, _) )
+			then
+				Int = C
+			else
+				array.from_reverse_list(L, IntArray),
+				(if IntB = full_bitmap
+				then
+					Int = full_branch(IntArray)
+				else
+					Int = indexed_branch(IntB, IntArray)
+				)
+			)
+		)
+	).
 	
-	
-	
-:- pred reverse(pred(T, T, T), pred(T, T, T)).
-:- mode reverse(in(pred(in, in, out) is det), out(pred(in, in, out) is det))) 
+:- pragma inline(union_branches/8).
+
+% union_loop(Shift, Pred, PReversed, CurrentBit, !IntersectingBitmap, Mask,
+%	IndexBitmap1, Array1, 
+%	IndexBitmap2, Array2, 
+%	!RevList).
+% union_loop(S, P, PR, CB, !IntB, M, B1, A1, B2, A2, !L).
+:- pred union_loop(shift, pred(V, V, V), pred(V, V, V), bitmap, bitmap,
+	bitmap,	bitmap,	bitmap, hash_array(K, V), bitmap, hash_array(K, V),
+	hash_list(K, V), hash_list(K, V)).
+:- mode union_loop(in, in(pred(in, in, out) is det), 
+	in(pred(in, in, out) is det), in, in, out,	in,	in, in, in,	in, in, out) 
 	is det.
-:- mode reverse(in(pred(in, in, out) is semidet), out(pred(in, in, out) 
-	is semidet))) is det.
+:- mode union_loop(in, in(pred(in, in, out) is semidet), 
+	in(pred(in, in, out) is semidet), in, in, out, in,	in, in, in,	in,	in, 
+	out) is semidet.
 	
-:- promise_equivalent_clauses(reverse/2).
+union_loop(S, P, PR, CB, !B, M, B1, Array1, B2, Array2, !L) :-
+	sparse_index(B1, M, I1),
+	sparse_index(B2, M, I2),
+	array.unsafe_lookup(Array1, I1, Child1),
+	array.unsafe_lookup(Array2, I2, Child2),
+	intersect_tree(S, P, PR, Child1, Child2, ChildInt),
+	(if ChildInt = empty_tree
+	then
+		!:L = !.L,
+		!:B = xor(!.B, M) 
+	else
+		!:L = [ ChildInt | !.L ],
+		!:B = !.B
+	),
+	NextBit = unchecked_right_shift(CB, 1),
+	Zeros = unsafe_ctz32(NextBit),
+	(if Zeros < 32
+	then
+		union_loop(S, P, PR, unchecked_right_shift(NextBit, Zeros), !B,
+			unchecked_left_shift(M, 1 + Zeros), B1, Array1, B2, Array2, !L)
+	else
+		!:B = !.B,
+		!:L = !.L
+	).
 	
-reverse(P::in(pred(in, in, out) is det, PR::out(pred(in, in, out) is det)) :-
-	PR = pred(A::in, B::in, C::out) is det :- P(B, A, C).
+:- pragma inline(union_loop/13).
 	
-reverse(P::in(pred(in, in, out) is semidet, PR::out(pred(in, in, out) 
-	is semidet)) :-
-	PR = (pred(A::in, B::in, C::out) is semidet :- P(B, A, C)).
-	
-:- pragma inline(reverse/2).
+
 %-----------------------------------------------------------------------------%
 % Bit twiddling
 
