@@ -1937,10 +1937,9 @@ intersect_branches(S, P, PR, B1, A1, B2, A2, Int) :-
 		Int = empty_tree
 	else
 		NS = next_shift(S),
-		Zeros = ctz32(B),
-		NB = unchecked_right_shift(B, Zeros),
-		M = unchecked_left_shift(1u, Zeros),
-		intersect_loop(NS, P, PR, NB, B, IntB, M, B1, A1, B2, A2, [], L),
+		%Select the first bit mask by counting the number of trailing zeros
+		FirstBit = unchecked_left_shift(1u, ctz32(B)),
+		intersect_loop(NS, P, PR, FirstBit, B1, A1, B2, A2, B, IntB, [], L),
 		(
 			L = [],
 			Int = empty_tree
@@ -1965,47 +1964,53 @@ intersect_branches(S, P, PR, B1, A1, B2, A2, Int) :-
 	
 :- pragma inline(intersect_branches/8).
 
-%intersect_loop(Shift, Pred, PReversed, CurrentBit, !IntersectingBitmap, Mask,
+%intersect_loop(Shift, Pred, PReversed, CurrentBit,
 %	IndexBitmap1, Array1, 
 %	IndexBitmap2, Array2, 
-%	!RevList).
-%intersect_loop(S, P, PR, CB, !IntB, M, B1, A1, B2, A2, !L).
-:- pred intersect_loop(shift, pred(V, V, V), pred(V, V, V), bitmap, bitmap,
-	bitmap,	bitmap,	bitmap, hash_array(K, V), bitmap, hash_array(K, V),
-	hash_list(K, V), hash_list(K, V)).
+%	!IntersectingBitmap, !RevList).
+:- pred intersect_loop(shift, pred(V, V, V), pred(V, V, V), bitmap, 
+	bitmap,	hash_array(K, V), 
+	bitmap, hash_array(K, V),
+	bitmap, bitmap, hash_list(K, V), hash_list(K, V)).
 :- mode intersect_loop(in, in(pred(in, in, out) is det), 
-	in(pred(in, in, out) is det), in, in, out,	in,	in, in, in,	in, in, out) 
+	in(pred(in, in, out) is det), in, in, in, in, in, in, out, in, out) 
 	is det.
 :- mode intersect_loop(in, in(pred(in, in, out) is semidet), 
-	in(pred(in, in, out) is semidet), in, in, out, in,	in, in, in,	in,	in, 
-	out) is semidet.
+	in(pred(in, in, out) is semidet), in, in, in, in, in, in, out, in, out)
+	is semidet.
 	
-intersect_loop(S, P, PR, CB, !B, M, B1, Array1, B2, Array2, !L) :-
-	sparse_index(B1, M, I1),
-	sparse_index(B2, M, I2),
+intersect_loop(S, P, PR, CB, B1, Array1, B2, Array2, !B, !L) :-
+	% This trace goal is a sanity check, CB /\ !.B should always be >0
+	trace [ compile_time(grade(debug) or flag("check_intersect_loop")) ] (
+		(if CB /\ !.B = 0 
+		then unexpected($pred, "invalid intersection index")
+		else true)
+	),
+	sparse_index(B1, CB, I1),
+	sparse_index(B2, CB, I2),
 	array.unsafe_lookup(Array1, I1, Child1),
 	array.unsafe_lookup(Array2, I2, Child2),
 	intersect_tree(S, P, PR, Child1, Child2, ChildInt),
 	(if ChildInt = empty_tree
 	then
 		!:L = !.L,
-		!:B = xor(!.B, M) 
+		!:B = xor(!.B, CB) % Remove the one bit in the bitmap at current bit
 	else
 		!:L = [ ChildInt | !.L ],
-		!:B = !.B
 	),
-	NextBit = unchecked_right_shift(CB, 1),
-	Zeros = unsafe_ctz32(NextBit),
-	(if Zeros < 32
+	% exclude all one bits from the bitmap up to and including the current bit
+	NextBitMask = \ (CurrentBit * 2u - 1u),
+	(if unsafe_ctz32(!.B /\ NextBitMask)@Zeros < 32
 	then
-		intersect_loop(S, P, PR, unchecked_right_shift(NextBit, Zeros), !B,
-			unchecked_left_shift(M, 1 + Zeros), B1, Array1, B2, Array2, !L)
+		%Select the next bit by masking the bitmap with NOT (CB * 2 -1) and
+		%counting the zeros to the next one bit
+		NextBit = unchecked_left_shift(1u, Zeros)
+		intersect_loop(S, P, PR, NextBit, B1, Array1, B2, Array2, !B, !L)
 	else
 		!:B = !.B,
 		!:L = !.L
 	).
-	
-:- pragma inline(intersect_loop/13).
+
 
 intersect_tree(_S, P, PR, collision(H1, B1), collision(H2, B2), Int) :-
 	(if H1 = H2
@@ -2189,90 +2194,115 @@ union_tree(S, P, PR, C@collision(_, _),  L@leaf(_, _, _), Int) :-
 	
 
 % union_branches(Shift, Pred, PReversed, Bitmap1, Array1, Bitmap2, Array2,
-%	Intersect).
+%	Union).
 :- pred union_branches(shift, pred(V, V, V), pred(V, V, V), bitmap, 
-	hash_array(K, V),	bitmap, hash_array(K, V), hashmap(K, V)).
+	hash_array(K, V), bitmap, hash_array(K, V), hashmap(K, V)).
 :- mode union_branches(in, in(pred(in, in, out) is det), 
 	in(pred(in, in, out) is det), in, in, in, in, out) is det.
 :- mode union_branches(in, in(pred(in, in, out) is semidet),
 	in(pred(in, in, out) is semidet), in, in, in, in, out) is semidet.
 
 union_branches(S, P, PR, B1, A1, B2, A2, Int) :-
-	B = B1 /\ B2,
-	(if B = 0u
-	then
+	B = B1 \/ B2,
+	NewArray = init(weight(B),)
+	NS = next_shift(S),
+	%Select the first bit mask by counting the number of trailing zeros
+	FirstBit = unchecked_left_shift(1u, ctz32(B)),
+	intersect_loop(NS, P, PR, FirstBit, B, IntB, B1, A1, B2, A2, [], L),
+	(
+		L = [],
 		Int = empty_tree
-	else
-		NS = next_shift(S),
-		Zeros = ctz32(B),
-		NB = unchecked_right_shift(B, Zeros),
-		M = unchecked_left_shift(1u, Zeros),
-		union_loop(NS, P, PR, NB, B, IntB, M, B1, A1, B2, A2, [], L),
-		(
-			L = [],
-			Int = empty_tree
-		;
-			L = [ C | Cs ],
-			(if 
-				Cs = [], 
-				( C = leaf(_, _, _) ; C = collision(_, _) )
+	;
+		L = [ C | Cs ],
+		(if 
+			Cs = [], 
+			( C = leaf(_, _, _) ; C = collision(_, _) )
+		then
+			Int = C
+		else
+			array.from_reverse_list(L, IntArray),
+			(if IntB = full_bitmap
 			then
-				Int = C
+				Int = full_branch(IntArray)
 			else
-				array.from_reverse_list(L, IntArray),
-				(if IntB = full_bitmap
-				then
-					Int = full_branch(IntArray)
-				else
-					Int = indexed_branch(IntB, IntArray)
-				)
+				Int = indexed_branch(IntB, IntArray)
 			)
 		)
 	).
-	
+
 :- pragma inline(union_branches/8).
 
-% union_loop(Shift, Pred, PReversed, CurrentBit, !IntersectingBitmap, Mask,
+% union_index(Shift, Pred, PredRev, CurrentBit, 
+%	Bitmap1, Array1, 
+%	Bitmap2, Array2,
+% 	Union) Get the union of two elements in seperate bitmapped arrays
+:- pred union_index(shift, pred(V, V, V), pred(V, V, V), bitmap,
+	bitmap,	hash_array(K, V), bitmap, hash_array(K, V), hashmap(K, V)).
+:- mode union_index(in, in(pred(in, in, out) is det), 
+	in(pred(in, in, out) is det), in, in, in, in, in, out) is det.
+:- mode union_index(in, in(pred(in, in, out) is semidet), 
+	in(pred(in, in, out) is semidet), in, in, in, in, in, out) is semidet.
+
+union_index(S, P, PR, CB, B1, A1, B2, A2, Union) :-
+	(if B2 /\ CB = 0
+	then
+		sparse_index(B1, CB, I),
+		array.unsafe_lookup(A1, I, Union)
+	else if B1 /\ CB = 0
+	then
+		sparse_index(B2, CB, I),
+		array.unsafe_lookup(A2, I, Union)
+	else
+	
+
+% union_loop(Shift, Pred, PReversed, CurrentBit, !UnionBitmap,
 %	IndexBitmap1, Array1, 
 %	IndexBitmap2, Array2, 
 %	!RevList).
-% union_loop(S, P, PR, CB, !IntB, M, B1, A1, B2, A2, !L).
+% union_loop(S, P, PR, CB, !IntB, B1, A1, B2, A2, !L).
 :- pred union_loop(shift, pred(V, V, V), pred(V, V, V), bitmap, bitmap,
-	bitmap,	bitmap,	bitmap, hash_array(K, V), bitmap, hash_array(K, V),
+	bitmap,	bitmap,	hash_array(K, V), bitmap, hash_array(K, V),
 	hash_list(K, V), hash_list(K, V)).
 :- mode union_loop(in, in(pred(in, in, out) is det), 
-	in(pred(in, in, out) is det), in, in, out,	in,	in, in, in,	in, in, out) 
+	in(pred(in, in, out) is det), in, in, out, in, in, in, in, in, out) 
 	is det.
 :- mode union_loop(in, in(pred(in, in, out) is semidet), 
-	in(pred(in, in, out) is semidet), in, in, out, in,	in, in, in,	in,	in, 
-	out) is semidet.
+	in(pred(in, in, out) is semidet), in, in, out, in,	in, in, in,	in, out)
+	is semidet.
 	
-union_loop(S, P, PR, CB, !B, M, B1, Array1, B2, Array2, !L) :-
-	sparse_index(B1, M, I1),
-	sparse_index(B2, M, I2),
+union_loop(S, P, PR, CB, !B, B1, Array1, B2, Array2, !L) :-
+	% This trace goal is a sanity check, CB /\ !.B should always be >0
+	trace [ compile_time(grade(debug) or flag("check_union_loop")) ] (
+		(if CB /\ !.B = 0 
+		then unexpected($pred, "invalid union index")
+		else true)
+	),
+	sparse_index(B1, CB, I1),
+	sparse_index(B2, CB, I2),
 	array.unsafe_lookup(Array1, I1, Child1),
 	array.unsafe_lookup(Array2, I2, Child2),
 	intersect_tree(S, P, PR, Child1, Child2, ChildInt),
 	(if ChildInt = empty_tree
 	then
 		!:L = !.L,
-		!:B = xor(!.B, M) 
+		!:B = xor(!.B, CB) % Remove the one bit in the bitmap at current bit
 	else
 		!:L = [ ChildInt | !.L ],
-		!:B = !.B
 	),
-	NextBit = unchecked_right_shift(CB, 1),
-	Zeros = unsafe_ctz32(NextBit),
-	(if Zeros < 32
+	% exclude all one bits from the bitmap up to and including the current bit
+	NextBitMask = \ (CurrentBit * 2u - 1u),
+	(if unsafe_ctz32(!.B /\ NextBitMask)@Zeros < 32
 	then
-		union_loop(S, P, PR, unchecked_right_shift(NextBit, Zeros), !B,
-			unchecked_left_shift(M, 1 + Zeros), B1, Array1, B2, Array2, !L)
+		%Select the next bit by masking the bitmap with NOT (CB * 2 -1) and
+		%counting the zeros to the next one bit
+		NextBit = unchecked_left_shift(1u, Zeros)
+		intersect_loop(S, P, PR, NextBit, !B, B1, Array1, B2, Array2, !L)
 	else
 		!:B = !.B,
 		!:L = !.L
 	).
 	
-:- pragma inline(union_loop/13).
+
 	
 
 %-----------------------------------------------------------------------------%
