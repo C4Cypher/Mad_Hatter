@@ -2125,7 +2125,7 @@ union_tree(S, P, _PR, HM1@leaf(H1, K1, V1), HM2@leaf(H2, K2, V2) Union) :-
 	).
 
 
-union_tree(S, P, PR, L@leaf(H, _K, _V), indexed_branch(B, Array), Int) 
+union_tree(S, P, PR, L@leaf(H, _K, _V), !.HM@indexed_branch(B, Array), !:HM) 
 :-
 	mask(H, S, M),
 	sparse_index(B, M, I),
@@ -2183,12 +2183,28 @@ union_tree(S, P, _PR, L@leaf(H1, K1, V1), !.HM@collision(H2, Bucket), !:HM) :-
 		)
 	else
 		array.init(1, !.HM, BArray),
-		union_tree(next_shift(S), P, PR, L, indexed_branch(mask(H2, S),	BArray), 
-			!:HM)
+		union_tree(next_shift(S), P, PR, L, indexed_branch(mask(H2, S),	
+			BArray), !:HM)
 	).
 	
 union_tree(S, P, PR, C@collision(_, _),  L@leaf(_, _, _), Int) :-
 	union_tree(S, PR, P, L, C, Int).
+	
+union_tree(S, P, PR, HM1@indexed_branch(B1, A1), HM2@indexed_branch(B2, A2),
+	Union) :- union_branches(S, P, PR, HM1, B1, A1, HM2, B2, A2, Union).
+	
+union_tree(S, P, PR, HM1@indexed_branch(B1, A1), HM2@full_branch(A2)), Union) 
+:- 
+	union_branches(S, P, PR, HM1, B1, A1, HM2, full_bitmap, A2,	Union).
+	
+union_tree(S, P, PR, HM1@full_branch(A1), HM2@indexed_branch(B2, A2),
+	Union) 
+:- 
+	union_branches(S, P, PR, HM1, full_bitmap, A1, HM2, B2, A2, Union).
+	
+union_tree(S, P, PR, HM1@full_branch(A1), HM2@full_branch(A2), Union) :- 
+	union_branches(S, P, PR, HM1, full_bitmap, A1, HM2, full_bitmap, A2,
+		Union).
 	
 	
 % union_branches(Shift, Pred, PredRev, 
@@ -2219,94 +2235,44 @@ union_branches(S, P, PR, HM1, B1, A1, HM2, B2, A2, Union) :-
 		else true)
 	),
 	NS = next_shift(S)
-	(if B = full_bitmap
-	then
-		% the arrays are indexed from the least signifigant bit to the most
-		FirstBit = unchecked_left_shift(1u, 32)
-		union_index(NS, P, PR,  )
-		array.init(32,)
-		some [!A] (
-		
-		
-		)
-	
-	
-	
-	)
-	
-	%Select the first bit mask by counting the number of trailing zeros
-	FirstBit = unchecked_left_shift(1u, ctz32(B)),
-	union_index(NS, P, PR, FirstBit, B1, A1, B2, A2, FirstElement, Match0),
-	some [!A] (
-		array.init(weight(B)@Size, FirstElement, !:A),
-		(if Size = 1
+	some [!A,] (
+		(if B = full_bitmap
 		then
-			Int = indexed_branch(B, !.A)
+			
+			% Get the union index at the zero index
+			union_index(NS, P, PR, 1u, B1, A1, B2, A2, FirstElem, Match0)
+			array.init(32@Size, FirstElem, !:A),
+			union_full_loop(NS, P, PR, 1, B1, A1, B2, !A, Match0, Match),
 		else
-		% Find the next bit by masking out all of the bits up to and including
-		% the first bit and counting the zeros to the next bit
-		NextBit = unsafe_ctz32(B /\ \ (CurrentBit * 2u - 1u))
-		union_index_loop(NS, P, PR, NextBit, B, B1, A1, B2, A2, !A, Match0, 
-			Match),
+		
+			%Select the first bit mask by counting the number of trailing zeros
+			FirstBit = unchecked_left_shift(1u, ctz32(B)),
+			union_index(NS, P, PR, FirstBit, B1, A1, B2, A2, FirstElem,
+				Match0),			
+			array.init(weight(B)@Size, FirstElem, !:A),
+			(if Size > 1
+			then
+				
+			% Find the next bit by masking out all of the bits up to and 
+			% including the first bit and counting the zeros to the next bit
+			NextBit = unsafe_ctz32(B /\ \ (CurrentBit * 2u - 1u))
+			union_index_loop(NS, P, PR, NextBit, B, B1, A1, B2, A2, !A, 
+				Match0, Match),
+			else
+				Match = Match0 %, !:A = !.A
+			)
+		),
 		(
 			Match = neither,
-			Int = indexed_or_full_branch(B, !.A),
-		)
-		
-	).
-
-:- type array_match 
-	--->	one
-	;		two
-	;		neither.
-
-% union_index(Shift, Pred, PredRev, CurrentBit, 
-%	Bitmap1, Array1, 
-%	Bitmap2, Array2,
-% 	Union, Match) Get the union of two elements in seperate bitmapped arrays
-:- pred union_index(shift, pred(V, V, V), pred(V, V, V), bitmap,
-	bitmap,	hash_array(K, V), 
-	bitmap, hash_array(K, V), 
-	hashmap(K, V),	array_match).
-:- mode union_index(in, in(pred(in, in, out) is det), 
-	in(pred(in, in, out) is det), in, 
-	in, in, 
-	in, in, 
-	out, out) is det.
-:- mode union_index(in, in(pred(in, in, out) is semidet), 
-	in(pred(in, in, out) is semidet), in, in, in, in, in, out, out) is semidet.
-
-union_index(S, P, PR, CB, B1, A1, B2, A2, Union, Match) :-
-	(if B1 /\ CB = 0
-	then
-		sparse_index(B2, CB, I),
-		Match = two,
-		array.unsafe_lookup(A2, I, Union)
-	else 
-		sparse_index(B1, CB, I),
-		array.unsafe_lookup(A1, I, Child1),
-		(if B2 /\ CB = 0
-		then
-			Union = Child1,
-			Match = one
-		else
-			sparse_index(B2, CB, I),
-			array.unsafe_lookup(A2, I, Child2),
-			union_tree(S, P, PR, Child1, Child2, Union),
-			(if private_builtin.pointer_equal(Child1, Union) 
-			then
-				Match = one
-			else if private_builtin.pointer_equal(Child2, Union)
-			then 
-				Match = two
-			else
-				Match = neither
-			)
+			Union = indexed_or_full_branch(B, !.A),
+		;
+			Match = one,
+			Union = HM1,
+		;
+			Match = two,
+			Union = HM2
 		)
 	).
-	
-:- pragma inline(union_index/10).
-
 
 
 % union_full_loop(Shift, Pred, PReversed, Index, 
@@ -2330,18 +2296,19 @@ union_index(S, P, PR, CB, B1, A1, B2, A2, Union, Match) :-
 	array_di, array_uo, in, out) is semidet.
 	
 union_full_loop(S, P, PR, I, B1, Array1, B2, Array2, !A, !M) :-
-	union_index(S, P, PR, full_bitmap, B1, Array1, B2, Array2, Child, IndexM),
+	CurrentBit = unchecked_left_shift(1u, I),
+	union_index(S, P, PR, CurrentBit, B1, Array1, B2, Array2, Child, IndexM),
 	!:M = 
 		(if !.M = neither 
 		then 
 			neither
-		else if !.M = IndexedM
+		else if !.M = IndexM
 			!.M
 		else
 			neither
 		),
 	array.set(I, Child, !A),
-	(if I > 0
+	(if I < 31
 	then
 		union_full_loop(S, P, PR, I + 1, B, B1, Array1, B2, Array2, !A, !M)
 	else
@@ -2396,9 +2363,126 @@ union_index_loop(S, P, PR, CB, B, B1, Array1, B2, Array2, !A, !M) :-
 		%!:A = !.A
 		true
 	).
+
+
+:- type array_match 
+	--->	one
+	;		two
+	;		neither.
 	
 
+% union_index(Shift, Pred, PredRev, CurrentBit, 
+%	Bitmap1, Array1, 
+%	Bitmap2, Array2,
+% 	Union, Match) Get the union of two elements in seperate bitmapped arrays
+:- pred union_index(shift, pred(V, V, V), pred(V, V, V), bitmap,
+	bitmap,	hash_array(K, V), 
+	bitmap, hash_array(K, V), 
+	hashmap(K, V),	array_match).
+:- mode union_index(in, in(pred(in, in, out) is det), 
+	in(pred(in, in, out) is det), in, 
+	in, in, 
+	in, in, 
+	out, out) is det.
+:- mode union_index(in, in(pred(in, in, out) is semidet), 
+	in(pred(in, in, out) is semidet), in, in, in, in, in, out, out) is semidet.
+
+union_index(S, P, PR, CB, B1, A1, B2, A2, Union, Match) :-
+	(if B1 /\ CB = 0
+	then
+		sparse_index(B2, CB, I),
+		Match = two,
+		array.unsafe_lookup(A2, I, Union)
+	else 
+		sparse_index(B1, CB, I),
+		array.unsafe_lookup(A1, I, Child1),
+		(if B2 /\ CB = 0
+		then
+			Union = Child1,
+			Match = one
+		else
+			sparse_index(B2, CB, I),
+			array.unsafe_lookup(A2, I, Child2),
+			union_tree(S, P, PR, Child1, Child2, Union),
+			(if private_builtin.pointer_equal(Child1, Union) 
+			then
+				Match = one
+			else if private_builtin.pointer_equal(Child2, Union)
+			then 
+				Match = two
+			else
+				Match = neither
+			)
+		)
+	).
 	
+:- pragma inline(union_index/10).
+
+
+union_tree(S, P, PR, C@collision(H, Bucket), indexed_branch(B, Array), Int) 
+:-
+	mask(H, S, M),
+	sparse_index(B, M, I),
+	(if M /\ B = 0u
+	then
+		unsafe_array_insert(I, L, !Array), 
+		!:HM = indexed_or_full_branch(B \/ M, !.Array)
+	else
+		array.unsafe_lookup(!.Array, I, Branch0),
+		union_tree(next_shift(S), P, PR, Branch0, Branch1),
+		(if private_builtin.pointer_equal(Branch1, Branch0)
+		then
+			!:HM = !.HM
+		else
+			slow_set(I, Branch1, !Array),
+			!:HM = indexed_branch(B, !.Array)
+		)
+	).
+
+union_tree(S, P, PR, B@indexed_branch(_, _),  L@leaf(_, _, _), Int) :-
+	union_tree(S, PR, P, L, B, Int).
+
+	
+union_tree(S, P, PR, L@leaf(H, _K, _V), !.HM@full_branch(!.Array), !:HM) :-
+	index(H, S, I),
+	array.unsafe_lookup(!.Array, I, Branch0),
+	union_tree(next_shift(S), P, PR, Branch0, Branch1),
+	(if private_builtin.pointer_equal(Branch1, Branch0)
+	then
+		!:HM = !.HM
+	else
+		slow_set(I, Branch1, !Array),
+		!:HM = full_branch(!.Array)
+	).
+	
+union_tree(S, P, PR, B@full_branch(_),  L@leaf(_, _, _), Int) :-
+	union_tree(S, PR, P, L, B).
+
+union_tree(S, P, _PR, L@leaf(H1, K1, V1), !.HM@collision(H2, Bucket), !:HM) :-
+	(if H1 = H2
+	then
+		(if map.search(Bucket, K1, V2)
+		then
+			P(V1, V2, V),
+			(if private_builtin.pointer_equal(V, V2)
+			then
+				!:HM = !.HM
+			else
+				map.det_update(K1, V, Bucket, NewBucket),
+				!:HM = collision(H1, NewBucket)
+			)
+		else
+			map.det_insert(K1, V1, Bucket, NewBucket),
+			!:HM = collision(H1, NewBucket)
+		)
+	else
+		array.init(1, !.HM, BArray),
+		union_tree(next_shift(S), P, PR, L, indexed_branch(mask(H2, S),	
+			BArray), !:HM)
+	).
+	
+union_tree(S, P, PR, C@collision(_, _),  L@leaf(_, _, _), Int) :-
+	union_tree(S, PR, P, L, C, Int).	
 
 %-----------------------------------------------------------------------------%
 % Bit twiddling
@@ -2408,7 +2492,7 @@ hash_size = bits_per_uint.
 bits_per_subkey = 5.
 
 max_children = unchecked_left_shift(1, bits_per_subkey).
-:- pragma inline(max_children/0).
+
 
 subkey_mask = unchecked_left_shift(1u, bits_per_subkey) - 1u.
 
@@ -2426,7 +2510,6 @@ mask(H, S, mask(H, S)).
 :- pragma inline(mask/3).
 
 
-
 sparse_index(B, M) = weight(B /\ (M - 1u) ).
 :- pragma inline(sparse_index/2).
 
@@ -2440,7 +2523,7 @@ sparse_index(B, M, sparse_index(B, M)).
 % So I'm using <</2 instead of unchecked_left_shift/2
 
 full_bitmap = \ ( \ 0u << max_children).
-:- pragma inline(full_bitmap/0).
+
 
 
 next_shift(S) = S + bits_per_subkey.
