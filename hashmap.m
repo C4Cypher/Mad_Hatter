@@ -424,73 +424,76 @@
 
 :- type shift == int.
 
-% Bit width of hash type
+	% Bit width of hash type
 :- func hash_size = int.
 
-% Number of bits that are inspected at each level of the hash tree.
+	% Number of bits that are inspected at each level of the hash tree.
 :- func bits_per_subkey = int.
 
-% The size of a 'Full' node, i.e. @2 ^ 'bitsPerSubkey'@.
+	% The size of a 'Full' node, i.e. @2 ^ 'bitsPerSubkey'@.
 :- func max_children = int.
 
-% Bit mask with the lowest 'bitsPerSubkey' bits set, i.e. @0b11111@.
+	% Bit mask with the lowest 'bitsPerSubkey' bits set, i.e. @0b11111@.
 :- func subkey_mask = bitmap.
 
-% | Given a 'Hash' and a 'Shift' that indicates the level in the tree, compute
-% the index into a 'Full' node or into the bitmap of a `BitmapIndexed` node.
-%
-% >>> index 0b0010_0010 0
-% 0b0000_0010
+	% | Given a 'Hash' and a 'Shift' that indicates the level in the tree, 
+	% compute the index into a 'Full' node or into the bitmap of a 
+	% `BitmapIndexed` node.
+	%
+	% >>> index 0b0010_0010 0
+	% 0b0000_0010
 
 :- func index(hash, shift) = int.
 
 :- pred index(hash::in, shift::in, int::out) is det.
 
-% Given a 'Hash' and a 'Shift' that indicates the level in the tree, compute
- % the bitmap that contains only the 'index' of the hash at this level.
+	% Given a 'Hash' and a 'Shift' that indicates the level in the tree, 
+	% compute the bitmap that contains only the 'index' of the hash at this 
+	% level.
 
- % The result can be used for constructing one-element 'BitmapIndexed' nodes or
- % to check whether a 'BitmapIndexed' node may possibly contain the 'Hash'.
+	% The result can be used for constructing one-element 'BitmapIndexed' 
+	% nodes or to check whether a 'BitmapIndexed' node may possibly contain 
+	% the 'Hash'.
 
- % >>> mask 0b0010_0010 0
- % 0b0100
+	% >>> mask 0b0010_0010 0
+	% 0b0100
 
 :- func mask(hash, shift) = mask.
 
 :- pred mask(hash::in, shift::in, mask::out) is det.
 
-% This array index is computed by counting the number of 1-bits below the
-% 'index' represented by the mask.
-%
-% >>> sparseIndex 0b0110_0110 0b0010_0000
-% 2
+	% This array index is computed by counting the number of 1-bits below the
+	% 'index' represented by the mask.
+	%
+	% >>> sparseIndex 0b0110_0110 0b0010_0000
+	% 2
 :- func sparse_index(bitmap, mask) = int.
 
 :- pred sparse_index(bitmap::in, mask::in, int::out) is det.
 
-% A bitmap with the 'maxChildren' least significant bits set, i.e.
-% @0xFF_FF_FF_FF@.
+	% A bitmap with the 'maxChildren' least significant bits set, i.e.
+	% @0xFF_FF_FF_FF@.
 :- func full_bitmap = bitmap.
 
-% Increment a 'Shift' for use at the next deeper level.
+	% Increment a 'Shift' for use at the next deeper level.
 :- func next_shift(shift) = shift.
 
-% Hamming weight, or 'popcount'
+	% Hamming weight, or 'popcount'
 :- func weight(bitmap) = int.
 
-% If true, use the hacker's delight implementation for weight/1
+	% If true, use the hacker's delight implementation for weight/1
 :- func hackers_delight_weight = bool.
 
-% Loop impleementation of popcount
+	% Loop impleementation of popcount
 :- func weightn(bitmap) = int.
 
-% Hacker's Delight implementation only counting the 32 least signifigant bits
+	% Hacker's Delight implementation only counting the 32 least signifigant bits
 :- func weight32(bitmap) = int.
 
-% Hacker's Deligit implementation of the count trailing zeros operation
-% Only counts the trailing zeros in the 32 least signifigant bits
-% Returns 32 on empty bitmap
-% Throws an exception if the value is greater than 2^32
+	% Hacker's Deligit implementation of the count trailing zeros operation
+	% Only counts the trailing zeros in the 32 least signifigant bits
+	% Returns 32 on empty bitmap
+	% Throws an exception if the value is greater than 2^32
 :- func ctz32(bitmap) = int.
 
 %-----------------------------------------------------------------------------%
