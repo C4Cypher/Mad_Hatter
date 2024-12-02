@@ -92,35 +92,35 @@
 
 :- pred is_empty(hashmap(_, _)::in) is semidet.
 
-% Number of elements contained (HS size function)
+	% Number of elements contained (HS size function)
 :- func count(hashmap(_, _)) = int is det.
 :- pred count(hashmap(_, _)::in, int::out) is det.
 
-% Succeeds if the given key can be found in a hashmap
-% :- pred contains(hashmap(K, _V)::in, K::in) is semidet.
+	% Succeeds if the given key can be found in a hashmap
+:- pred contains(hashmap(K, _V)::in, K::in) is semidet.
 
-% Succeeds if two hashmaps contain the same elements, regardless of internal
-% structure
+	% Succeeds if two hashmaps contain the same elements, regardless of internal
+	% structure
 :- pred equal(hashmap(K, V)::in, hashmap(K, V)::in) is semidet.
 
 %-----------------------------------------------------------------------------%
 % Search
 
-% Succeeds if the main contains the given key
+	% Succeeds if the main contains the given key
 :- pred contains(hashmap(K, _V)::in, K::in) is semidet <= hashable(K).
 
-% Fails if the key is not found
+	% Fails if the key is not found
 :- pred search(hashmap(K, V)::in, K::in, V::out) is semidet <= hashable(K).
 :- func search(hashmap(K, V), K) = V is semidet <= hashable(K).
 
-% Throws an exception if the key is not found
+	% Throws an exception if the key is not found
 :- pred lookup(hashmap(K, V)::in, K::in, V::out) is det <= hashable(K).
 :- func lookup(hashmap(K, V), K) = V is det <= hashable(K).
 
 %-----------------------------------------------------------------------------%
 % Insertion
 
-% Insert an element into a hashmap, fails if the element already exists 
+	% Insert an element into a hashmap, fails if the element already exists 
 :- pred insert(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) is semidet
 	<= hashable(K).
 :- func insert(hashmap(K, V), K, V) = hashmap(K, V) is semidet <= hashable(K).
@@ -142,7 +142,7 @@
 :- pred search_insert(K::in, V::in, maybe(V)::out,
     hashmap(K, V)::in, hashmap(K, V)::out) is det <= hashable(K).
 
-% Inserts an element into a hashmap, overwriting element if it already exists
+	% Inserts an element into a hashmap, overwriting element if it already exists
 :- pred set(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) is det
 	<= hashable(K).
 :- func set(hashmap(K, V), K, V) = hashmap(K, V) <= hashable(K).
@@ -157,7 +157,7 @@
 :- pred set_from_assoc_list(assoc_list(K, V)::in,
     hashmap(K, V)::in, hashmap(K, V)::out) is det <= hashable(K).
 
-% Overwrite an already existing element in a hashmap, fail if key not found
+	% Overwrite an already existing element in a hashmap, fail if key not found
 :- pred update(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) 
 	is semidet	<= hashable(K).
 :- func update(hashmap(K, V), K, V) = hashmap(K, V) is semidet <= hashable(K).
@@ -169,16 +169,16 @@
 %-----------------------------------------------------------------------------%
 % Removal
 
-% Remove a key-value pair from a map and return the value.
-% Fail if the key is not present.
+	% Remove a key-value pair from a map and return the value.
+	% Fail if the key is not present.
 :- pred remove(K::in, V::out, hashmap(K, V)::in, hashmap(K, V)::out) 
 	is semidet <= hashable(K).
 
 :- pred det_remove(K::in, V::out, hashmap(K, V)::in, hashmap(K, V)::out) 
 	is det <= hashable(K).
 
-% Delete a key-value pair from a map.
-% If the key is not present, leave the map unchanged.	
+	% Delete a key-value pair from a map.
+	% If the key is not present, leave the map unchanged.	
 :- pred delete(K::in, hashmap(K, V)::in, hashmap(K, V)::out) is det
 	<= hashable(K).
 :- func delete(hashmap(K, V), K) = hashmap(K, V) <= hashable(K).
@@ -190,27 +190,27 @@
 %-----------------------------------------------------------------------------%
 % Field selection for maps.
 
-% Hashmap ^ elem(Key) = search(Hashmap, Key).
+	% Hashmap ^ elem(Key) = search(Hashmap, Key).
 :- func elem(K, hashmap(K, V)) = V is semidet <= hashable(K).
 
-% Hashmap ^ det_elem(Key) = lookup(Hashmap, Key).
+	% Hashmap ^ det_elem(Key) = lookup(Hashmap, Key).
 :- func det_elem(K, hashmap(K, V)) = V <= hashable(K).
 
-% (Hashmap ^ elem(Key) := Value) = set(Hashmap, Key, Value).
+	% (Hashmap ^ elem(Key) := Value) = set(Hashmap, Key, Value).
 :- func 'elem :='(K, hashmap(K, V), V) = hashmap(K, V) <= hashable(K).
 
-% (Hashmap ^ det_elem(Key) := Value) = det_update(Hashmap, Key, Value).
+	% (Hashmap ^ det_elem(Key) := Value) = det_update(Hashmap, Key, Value).
 :- func 'det_elem :='(K, hashmap(K, V), V) = hashmap(K, V) <= hashable(K).
 
 %-----------------------------------------------------------------------------%
 % Returning keys and values.
 
-% All key value pairs stored in the hashmap, order is not garunteed
+	% All key value pairs stored in the hashmap, order is not garunteed
 :- pred member(hashmap(K, V), K, V) <= hashable(K).
 :- mode member(in, in, out) is semidet.
 :- mode member(in, out, out) is nondet.
 
-% Given a map, return a list of all the keys in the map.
+	% Given a map, return a list of all the keys in the map.
 :- func keys(hashmap(K, _V)) = list(K) <= hashable(K).
 :- pred keys(hashmap(K, _V)::in, list(K)::out) is det <= hashable(K).
 
@@ -230,14 +230,14 @@
 % Operations on values.
 
 
-% Update the value at the given key by applying the supplied
-% transformation to it. Fails if the key is not found. This is faster
-% than first searching for the value and then updating it.
+	% Update the value at the given key by applying the supplied
+	% transformation to it. Fails if the key is not found. This is faster
+	% than first searching for the value and then updating it.
 :- pred transform_value(pred(V, V)::in(pred(in, out) is det), K::in,
     hashmap(K, V)::in, hashmap(K, V)::out) is semidet <= hashable(K).
 
-% Same as transform_value/4, but throws an exception if the key is not
-% found.
+	% Same as transform_value/4, but throws an exception if the key is not
+	% found.
 :- func det_transform_value(func(V) = V, K, hashmap(K, V)) = hashmap(K, V)
 	<= hashable(K).
 :- pred det_transform_value(pred(V, V)::in(pred(in, out) is det), K::in,
@@ -246,57 +246,57 @@
 %-----------------------------------------------------------------------------%
 % Conversions
 
- % Convert an association list to a map.
+	% Convert an association list to a map.
 :- func from_assoc_list(assoc_list(K, V)) = hashmap(K, V) <= hashable(K).
 :- pred from_assoc_list(assoc_list(K, V)::in, hashmap(K, V)::out) is det 
 	<= hashable(K).
 
-% Convert a pair of lists (which must be of the same length) to a map.
+	% Convert a pair of lists (which must be of the same length) to a map.
 :- func from_corresponding_lists(list(K), list(V)) = hashmap(K, V)
 	<= hashable(K).
 :- pred from_corresponding_lists(list(K)::in, list(V)::in, hashmap(K, V)::out)
     is det <= hashable(K).
 
-% Convert a map to an association list.
+	% Convert a map to an association list.
 :- func to_assoc_list(hashmap(K, V)) = assoc_list(K, V) <= hashable(K).
 :- pred to_assoc_list(hashmap(K, V)::in, assoc_list(K, V)::out) is det
 	<= hashable(K).
 	
-% Consider the original map a set of key-value pairs. This predicate
-% returns a map that maps each value to the set of keys it is paired with
-% in the original map.
+	% Consider the original map a set of key-value pairs. This predicate
+	% returns a map that maps each value to the set of keys it is paired with
+	% in the original map.
 :- func reverse_map(hashmap(K, V)) = hashmap(V, set(K))
 	<= (hashable(K), hashable(V)).
 	
 %-----------------------------------------------------------------------------%	
 % Selecting subsets of maps and lists.
 
-% select takes a map and a set of keys, and returns a map
-% containing the keys in the set and their corresponding values.
+	% select takes a map and a set of keys, and returns a map
+	% containing the keys in the set and their corresponding values.
 :- func select(hashmap(K, V), set(K)) = hashmap(K, V) <= hashable(K).
 :- pred select(hashmap(K, V)::in, set(K)::in, hashmap(K, V)::out) is det
 	<= hashable(K).
 
-% Equivalent to select(Full, set.from_sorted_list(Keys), Selected).
-% Offers no performance benefit over select/2 and select/3
+	% Equivalent to select(Full, set.from_sorted_list(Keys), Selected).
+	% Offers no performance benefit over select/2 and select/3
 :- func select_sorted_list(hashmap(K, V), list(K)) = hashmap(K, V) 
 	<= hashable(K).
 :- pred select_sorted_list(hashmap(K, V)::in, list(K)::in, hashmap(K, V)::out) 
 	is det <= hashable(K).
 	
-% select_unselect takes a map and a set of keys, and returns two maps:
-% the first containing the keys in the set and their corresponding values,
-% the second containing the keys NOT in the set and their corresponding
-% values.
+	% select_unselect takes a map and a set of keys, and returns two maps:
+	% the first containing the keys in the set and their corresponding values,
+	% the second containing the keys NOT in the set and their corresponding
+	% values.
 :- pred select_unselect(hashmap(K, V)::in, set(K)::in,
     hashmap(K, V)::out, hashmap(K, V)::out) is det <= hashable(K).
 
-% See slect_sorted_list	
+% S	ee slect_sorted_list	
 :- pred select_unselect_sorted_list(hashmap(K, V)::in, list(K)::in,
     hashmap(K, V)::out, hashmap(K, V)::out) is det <= hashable(K).
 	
-% Given a list of keys, produce a list of their corresponding
-% values in a specified map.
+	% Given a list of keys, produce a list of their corresponding
+	% values in a specified map.
 :- func apply_to_list(list(K), hashmap(K, V)) = list(V) <= hashable(K).
 :- pred apply_to_list(list(K)::in, hashmap(K, V)::in, list(V)::out) is det
 	<= hashable(K).
@@ -304,96 +304,86 @@
 %---------------------------------------------------------------------------%
 % Operations on two or more maps.
 
-/* THIS IS POTENTIALLY WRONG, REASSESS after the set operations are done
-% In the original map implementation, the cost of these predicates was
-% proportional to the number of elements in the second map, so for efficiency,
-% you wanted to put the bigger map first and the smaller map second.
-% 
-% In THIS library, there is no practical performance benefit to the ordering
-% Of the input arguments, overlay_large_map is simply a call to overlay and has
-% been included for completeness
-*/
 
-% Merge the contents of the two maps.
-% Throws an exception if both sets of keys are not disjoint.
+	% Note: Unlike Mercury standard map library, these calls perform the same,
+	% regardless of the order of the  arguments
 
-% The cost of this predicate is proportional to the number of elements
-% in the second map, so for efficiency, you want to put the bigger map
-% first and the smaller map second.
+	% Merge the contents of the two maps.
+	% Throws an exception if both sets of keys are not disjoint.
+
 :- func merge(hashmap(K, V), hashmap(K, V)) = hashmap(K, V).
 :- pred merge(hashmap(K, V)::in, hashmap(K, V)::in, hashmap(K, V)::out) is det.
 
-% For overlay(MapA, MapB, Map), if MapA and MapB both contain the
-% same key, then Map will map that key to the value from MapB.
-% In other words, MapB takes precedence over MapA.
+	% For overlay(MapA, MapB, Map), if MapA and MapB both contain the
+	% same key, then Map will map that key to the value from MapB.
+	% In other words, MapB takes precedence over MapA.
 :- func overlay(hashmap(K, V), hashmap(K, V)) = hashmap(K, V).
 :- pred overlay(hashmap(K, V)::in, hashmap(K, V)::in, hashmap(K, V)::out)
 	is det.
 	
-% overlay_large_map(MapA, MapB, Map) performs the same task as
-% overlay(MapA, MapB, Map). However, while overlay takes time
-% proportional to the size of MapB, overlay_large_map takes time
-% proportional to the size of MapA. In other words, it preferable when
-% MapB is the larger map.
+	% overlay_large_map is identical to overlay, it has been included for
+	% compatability with the Mercury standard map, however it has also been
+	% marked as obsolete, use overlay
 :- func overlay_large_map(hashmap(K, V), hashmap(K, V)) = hashmap(K, V).
 :- pred overlay_large_map(hashmap(K, V)::in, hashmap(K, V)::in, 
 	hashmap(K, V)::out)  is det.
+:- pragma obsolete(func(overlay_large_map/2), [overlay/2]).
+:- pragma obsolete(pred(overlay_large_map/3), [overlay/3]).	
 	
-	
-% Given two maps MapA and MapB, create a third map CommonMap that
-% has only the keys that occur in both MapA and MapB. For keys
-% that occur in both MapA and MapB, look up the corresponding values.
-% If they are the same, include the key/value pair in CommonMap.
-% If they differ, do not include the key in CommonMap.
-%
-% There is no difference in performance cost based on the ordering and size
-% of the arguments
-%
-% common_subset is very similar to intersect, but can succeed
-% even with an output map that does not contain an entry for a key
-% value that occurs in both input maps.
+	% Given two maps MapA and MapB, create a third map CommonMap that
+	% has only the keys that occur in both MapA and MapB. For keys
+	% that occur in both MapA and MapB, look up the corresponding values.
+	% If they are the same, include the key/value pair in CommonMap.
+	% If they differ, do not include the key in CommonMap.
+	%
+	% There is no difference in performance cost based on the ordering and size
+	% of the arguments
+	%
+	% common_subset is very similar to intersect, but can succeed
+	% even with an output map that does not contain an entry for a key
+	% value that occurs in both input maps.
 :- func common_subset(hashmap(K, V), hashmap(K, V)) = hashmap(K, V).
 :- pred common_subset(hashmap(K, V)::in, hashmap(K, V)::in, 
 	hashmap(K, V)::out) is det.
 
 
-% Given two maps MapA and MapB, create a third map, IntersectMap,
-% that has only the keys that occur in both MapA and MapB. For keys
-% that occur in both MapA and MapB, compute the value in the final map
-% by applying the supplied function to the values associated with
-% the key in MapA and MapB.
-% on the values associated with some common key.
+	% Given two maps MapA and MapB, create a third map, IntersectMap,
+	% that has only the keys that occur in both MapA and MapB. For keys
+	% that occur in both MapA and MapB, compute the value in the final map
+	% by applying the supplied function to the values associated with
+	% the key in MapA and MapB.
+	% on the values associated with some common key.
 :- func intersect(func(V, V) = V, hashmap(K, V), hashmap(K, V)) = 
 	hashmap(K, V).
 
-% Given two maps MapA and MapB, create a third map, IntersectMap,
-% that has only the keys that occur in both MapA and MapB. For keys
-% that occur in both MapA and MapB, compute the value in the final map
-% by applying the supplied predicate to the values associated with
-% the key in MapA and MapB. Fail if and only if this predicate fails
-% on the values associated with some common key.
+	% Given two maps MapA and MapB, create a third map, IntersectMap,
+	% that has only the keys that occur in both MapA and MapB. For keys
+	% that occur in both MapA and MapB, compute the value in the final map
+	% by applying the supplied predicate to the values associated with
+	% the key in MapA and MapB. Fail if and only if this predicate fails
+	% on the values associated with some common key.
 :- pred intersect(pred(V, V, V), hashmap(K, V), hashmap(K, V), hashmap(K, V)).
 :- mode intersect(in(pred(in, in, out) is det), in, in, out) is det.
 :- mode intersect(in(pred(in, in, out) is semidet), in, in, out) is semidet.
 
-   % Calls intersect. Throws an exception if intersect fails.
+	% Calls intersect. Throws an exception if intersect fails.
 :- func det_intersect((func(V, V) = V)::in(func(in, in) = out is semidet),
     hashmap(K, V)::in, hashmap(K, V)::in) = (hashmap(K, V)::out) is det.
 :- pred det_intersect((pred(V, V, V))::in(pred(in, in, out) is semidet),
     hashmap(K, V)::in, hashmap(K, V)::in, hashmap(K, V)::out) is det.
 	
-% intersect_list(Pred, HM, [M | Ms ], Result):
-% Recursively insersect HM with M and then recursively call the result with Ms,
-% folding over the entire list. If the list is empty, return M. 
+	% intersect_list(Pred, HM, [M | Ms ], Result):
+	% Recursively insersect HM with M and then recursively call the result with
+	% Ms, folding over the entire list. If the list is empty, return M. 
 :- pred intersect_list(pred(V, V, V), hashmap(K, V), list(hashmap(K, V)), 
 	hashmap(K, V)).
 :- mode intersect_list(in(pred(in, in, out) is det), in, in, out) is det.
 :- mode intersect_list(in(pred(in, in, out) is semidet), in, in, out) 
 	is semidet.
 
-% intersect_list(Pred, List, Result): 
-% If List is empty, return an empty map, otherwise call the above intersect 
-% list predicate with the head and the tail of the list.
+	% intersect_list(Pred, List, Result): 
+	% If List is empty, return an empty map, otherwise call the above 
+	% intersect list predicate with the head and the tail of the list.
 :- pred intersect_list(pred(V, V, V), list(hashmap(K, V)),	hashmap(K, V)).
 :- mode intersect_list(in(pred(in, in, out) is det), in, out) is det.
 :- mode intersect_list(in(pred(in, in, out) is semidet), in, out) is semidet.
@@ -416,6 +406,12 @@
 :- pred union(pred(V, V, V), hashmap(K, V), hashmap(K, V), hashmap(K, V)).
 :- mode union(in(pred(in, in, out) is det), in, in, out) is det.
 :- mode union(in(pred(in, in, out) is semidet), in, in, out) is semidet.
+
+	% Calls union. Throws an exception if union fails.
+:- func det_union((func(V, V) = V)::in(func(in, in) = out is semidet),
+    map(K, V)::in, map(K, V)::in) = (map(K, V)::out) is det.
+:- pred det_union(pred(V, V, V)::in(pred(in, in, out) is semidet),
+    map(K, V)::in, map(K, V)::in, map(K, V)::out) is det.
 
 %-----------------------------------------------------------------------------%
 % Bit twiddling
@@ -761,7 +757,7 @@ insert(!.HM, K, V) = !:HM :-
 
 %  pred insert_tree(Key, Value, Shift, Replace, !HashTree) is semidet.
 :- pred insert_tree(hash::in, K::in, V::in, shift::in, bool::in,
-	hm(K, V)::in, hm(K, V)::out) is det.
+	hm(K, V)::in, hm(K, V)::out) is semidet.
 
 insert_tree(H, K, V, _, _, empty_tree, leaf(H, K, V)).
 
@@ -1568,58 +1564,27 @@ apply_to_list([K | Ks], HM, [V | Vs]) :-
 
 merge(HM1, HM2) = HM :- merge(HM1, HM2, HM).
 
-merge(HM1, HM2, HM) :- pre_hashed_foldl(pre_hashed_insert, HM2, HM1, HM).
+merge(HM1, HM2, HM) :- union(merge_pred, HM1, HM2, HM).
 
-:- pred pre_hashed_insert(hash::in, K::in, V::in, hashmap(K, V)::in, 
-	hashmap(K, V)::out) is det.
-	
-pre_hashed_insert(H, K, V, !HM) :- 
-	(if insert_tree(H, K, V, 0, no, !HM)
-	then
-		!:HM = !.HM
-	else
-		error($pred, "Attempted to merge non-disjoint hashmaps.")
-	).
-	
-/* For use when union is finished
 :- pred merge_pred(V::in, V::in, V::out) is det.
 	
 merge_pred(_V1, _V2, _V) :- 
-		require(false, "hashmap.merge/3: Attempted to merge non-disjoint " ++ "hashmaps."),
-	).
-*/
+		error("hashmap.merge/3: Attempted to merge non-disjoint " ++ 
+			"hashmaps.").
+
+:- pragma no_determinism_warning(merge_pred/3).
 	
 overlay(HM1, HM2) = HM :- overlay(HM1, HM2, HM).
 
-overlay(HM1, HM2, HM) :- pre_hashed_foldl(pre_hashed_set, HM2, HM1, HM).
+overlay(HM1, HM2, HM) :- union(second, HM1, HM2, HM).
 
-:- pred pre_hashed_set(hash::in, K::in, V::in, hashmap(K, V)::in, 
-	hashmap(K, V)::out) is det.
-	
-pre_hashed_set(H, K, V, !HM) :- 
-	(if insert_tree(H, K, V, 0, yes, !HM)
-	then
-		!:HM = !.HM
-	else
-		unexpected($module, $pred, 
-			"Failure on insert_tree/6 with Replace = yes")
-	).
-	
+:- pred second(T::in, T::in, T::out) is det.
+
+second(_, T, T).
+
 overlay_large_map(HM1, HM2) = HM :- overlay_large_map(HM1, HM2, HM).
 
-overlay_large_map(HM1, HM2, HM) :- 
-	pre_hashed_foldl(pre_hashed_overlayl, HM1, HM2, HM).
-
-:- pred pre_hashed_overlayl(hash::in, K::in, V::in, hashmap(K, V)::in, 
-	hashmap(K, V)::out) is det.
-	
-pre_hashed_overlayl(H, K, V, !HM) :- 
-	(if insert_tree(H, K, V, 0, no, !.HM, NewHM)
-	then
-		!:HM = NewHM
-	else
-		!:HM = !.HM
-	).
+overlay_large_map(HM1, HM2, HM) :- overlay(HM1, HM2, HM).
 
 %-----------------------------------------------------------------------------%
 % Common Subset	
@@ -1830,6 +1795,7 @@ intersect(P, HM1, HM2, Int) :-
 	is semidet)) is det.
 	
 :- pragma promise_equivalent_clauses(reverse/2).
+
 	
 reverse(P::in(pred(in, in, out) is det), PR::out(pred(in, in, out) is det))
 :-
@@ -2416,15 +2382,15 @@ union_index(S, P, PR, CB, B1, A1, B2, A2, Union, Match) :-
 		Match = two,
 		array.unsafe_lookup(A2, I, Union)
 	else 
-		sparse_index(B1, CB, I),
-		array.unsafe_lookup(A1, I, Child1),
+		sparse_index(B1, CB, I1),
+		array.unsafe_lookup(A1, I1, Child1),
 		(if B2 /\ CB = 0u
 		then
 			Union = Child1,
 			Match = one
 		else
-			sparse_index(B2, CB, I),
-			array.unsafe_lookup(A2, I, Child2),
+			sparse_index(B2, CB, I2),
+			array.unsafe_lookup(A2, I2, Child2),
 			union_tree(S, P, PR, Child1, Child2, Union),
 			(if private_builtin.pointer_equal(Child1, Union) 
 			then
