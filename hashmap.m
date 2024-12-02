@@ -371,7 +371,7 @@
 	
 	% intersect_list(Pred, HM, [M | Ms ], Result):
 	% Recursively insersect HM with M and then recursively call the result with
-	% Ms, folding over the entire list. If the list is empty, return M. 
+	% Ms, folding over the entire list. If the list is empty, return HM. 
 :- pred intersect_list(pred(V, V, V), hashmap(K, V), list(hashmap(K, V)), 
 	hashmap(K, V)).
 :- mode intersect_list(in(pred(in, in, out) is det), in, in, out) is det.
@@ -380,7 +380,8 @@
 
 	% intersect_list(Pred, List, Result): 
 	% If List is empty, return an empty map, otherwise call the above 
-	% intersect list predicate with the head and the tail of the list.
+	% intersect predicate with the first element and the rest of the list
+	% and then recursively intersect the result with the rest of the list.
 :- pred intersect_list(pred(V, V, V), list(hashmap(K, V)),	hashmap(K, V)).
 :- mode intersect_list(in(pred(in, in, out) is det), in, out) is det.
 :- mode intersect_list(in(pred(in, in, out) is semidet), in, out) is semidet.
@@ -409,6 +410,23 @@
     hashmap(K, V)::in, hashmap(K, V)::in) = (hashmap(K, V)::out) is det.
 :- pred det_union(pred(V, V, V)::in(pred(in, in, out) is semidet),
     hashmap(K, V)::in, hashmap(K, V)::in, hashmap(K, V)::out) is det.
+	
+	% union_list(Pred, HM, [M | Ms ], Result):
+	% Recursively union HM with M and then recursively call the result with
+	% Ms, folding over the entire list. 
+:- pred union_list(pred(V, V, V), hashmap(K, V), list(hashmap(K, V)), 
+	hashmap(K, V)).
+:- mode union_list(in(pred(in, in, out) is det), in, in, out) is det.
+:- mode union_list(in(pred(in, in, out) is semidet), in, in, out) is semidet.	
+	
+
+	% union_list(Pred, List, Result): 
+	% If List is empty, return an empty map, otherwise call the above 
+	% union predicate with the first element and the rest of the list
+	% and then recursively union the result with the rest of the list.
+:- pred union_list(pred(V, V, V), list(hashmap(K, V)),	hashmap(K, V)).
+:- mode union_list(in(pred(in, in, out) is det), in, out) is det.
+:- mode union_list(in(pred(in, in, out) is semidet), in, out) is semidet.
 
 %-----------------------------------------------------------------------------%
 % Bit twiddling
@@ -2478,12 +2496,23 @@ det_union(PF, HM1, HM2) = Union :-
     P = (pred(X::in, Y::in, Z::out) is semidet :- Z = PF(X, Y) ),
     det_union(P, HM1, HM2, Union).
 
-det_union(P, HM1, HM2, Int) :-
-    ( if intersect(P, HM1, HM2, Union0) then
+det_union(P, HM1, HM2, Union) :-
+    ( if union(P, HM1, HM2, Union0) then
         Union = Union0
     else
         unexpected($pred, "hashmap.union failed")
 	).
+
+	
+union_list(_P, HM, [], HM).
+
+union_list(P, HM, [ M | Ms ], Res) :- 
+	union(P, HM, M, Union),
+	union_list(P, Union, Ms, Res).
+	
+union_list(_P, [], empty_tree).
+
+union_list(P, [HM | HMs], Res) :- union_list(P, HM, HMs, Res).
 
 %-----------------------------------------------------------------------------%
 % Bit twiddling
