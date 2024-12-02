@@ -96,9 +96,6 @@
 :- func count(hashmap(_, _)) = int is det.
 :- pred count(hashmap(_, _)::in, int::out) is det.
 
-	% Succeeds if the given key can be found in a hashmap
-:- pred contains(hashmap(K, _V)::in, K::in) is semidet.
-
 	% Succeeds if two hashmaps contain the same elements, regardless of internal
 	% structure
 :- pred equal(hashmap(K, V)::in, hashmap(K, V)::in) is semidet.
@@ -409,9 +406,9 @@
 
 	% Calls union. Throws an exception if union fails.
 :- func det_union((func(V, V) = V)::in(func(in, in) = out is semidet),
-    map(K, V)::in, map(K, V)::in) = (map(K, V)::out) is det.
+    hashmap(K, V)::in, hashmap(K, V)::in) = (hashmap(K, V)::out) is det.
 :- pred det_union(pred(V, V, V)::in(pred(in, in, out) is semidet),
-    map(K, V)::in, map(K, V)::in, map(K, V)::out) is det.
+    hashmap(K, V)::in, hashmap(K, V)::in, hashmap(K, V)::out) is det.
 
 %-----------------------------------------------------------------------------%
 % Bit twiddling
@@ -2476,6 +2473,17 @@ union_tree(S, P, PR, C1@collision(H1, Bucket1), C2@collision(H2, Bucket2),
 			BArray), Union)
 	).
 
+
+det_union(PF, HM1, HM2) = Union :-
+    P = (pred(X::in, Y::in, Z::out) is semidet :- Z = PF(X, Y) ),
+    det_union(P, HM1, HM2, Union).
+
+det_union(P, HM1, HM2, Int) :-
+    ( if intersect(P, HM1, HM2, Union0) then
+        Union = Union0
+    else
+        unexpected($pred, "hashmap.union failed")
+	).
 
 %-----------------------------------------------------------------------------%
 % Bit twiddling
