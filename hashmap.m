@@ -428,6 +428,12 @@
 :- mode union_list(in(pred(in, in, out) is det), in, out) is det.
 :- mode union_list(in(pred(in, in, out) is semidet), in, out) is semidet.
 
+	% Take two maps and return the elements of the first map that do not have
+	% equivalent keys in the second map. Take note that the value type
+	% of the maps in question need not have the same type.
+:- pred difference(hashmap(K, V)::in, hashmap(K, _)::in, hashmap(K, V)::out)
+	is det.
+
 %-----------------------------------------------------------------------------%
 % Bit twiddling
 
@@ -2513,6 +2519,284 @@ union_list(P, HM, [ M | Ms ], Res) :-
 union_list(_P, [], empty_tree).
 
 union_list(P, [HM | HMs], Res) :- union_list(P, HM, HMs, Res).
+
+%-----------------------------------------------------------------------------%
+% Difference
+
+difference(A, B, C) :- difference_tree(0, A, B, C).
+
+:- pred difference_tree(shift::in, hashmap(K, V)::in, hashmap(K, _)::in,
+	hashmap(K, V)::out)	is det.
+	
+difference_tree(_, empty_tree, empty_tree, empty_tree).
+difference_tree(_, L@leaf(_, _, _), empty_tree, L).
+difference_tree(_, empty_tree, leaf(_, _, _), empty_tree).
+difference_tree(_, B@indexed_branch(_, _), empty_tree, B).
+difference_tree(_, empty_tree, indexed_branch(_, _), empty_tree).
+difference_tree(_, F@full_branch(_), empty_tree, F).
+difference_tree(_, empty_tree, full_branch(_), empty_tree).
+difference_tree(_, C@collision(_, _), empty_tree, C).
+difference_tree(_, empty_tree, collision(_, _), empty_tree).
+
+difference_tree(_, L@leaf(H1, K1, _), leaf(H2, K2, _), Diff) :-
+	(if H1 = H2, K1 = K2
+	then
+		Diff = empty_tree
+	else
+		Diff = L
+	).
+	
+difference_tree(S, L@leaf(H, _, _), B@indexed_branch(B, A), Diff) :-
+	mask(H, S, M),
+	(if M /\ B = 0u
+	then
+		Diff = L
+	else
+		sparse_index(B, M, I),
+		array.unsafe_lookup(A, I, Child),
+		difference_tree(next_shift(S), L, Child, Diff)
+	).
+	
+difference_tree(S, B@indexed_branch(B, A), L@leaf(H, _, _), Diff) :-
+	mask(H, S, M),
+	(if M /\ B = 0u
+	then
+		Diff = B
+	else
+		sparse_index(B, M, I),
+		array.unsafe_lookup(A, I, Child0),
+		difference_tree(next_shift(S), Child0, L, Child),
+		(if private_builtin.pointer_equal(Child0, Child)
+		then
+			Diff = B
+		else if Child = empty_tree
+			Diff = delete(B, H, K, S)
+		else
+			array.slow_set(I, Child, A, NewA),
+			Diff = indexed_branch(B, NewA)
+		)
+	).
+	
+difference_tree(S, L@leaf(H, _, _), F@full_branch(A), Diff) :-
+	index(H, S, I),
+	array.unsafe_lookup(A, I, Child),
+	difference_tree(next_shift(S), L, Child, Diff).
+	
+difference_tree(S, F@full_branch(A), L@leaf(H, _, _), Diff) :-
+	index(H, S, I),
+	array.unsafe_lookup(A, I, Child0),
+	difference_tree(next_shift(S), Child0, L, Child),
+	(if private_builtin.pointer_equal(Child0, Child)
+	then
+		Diff = F
+	else if Child = empty_tree
+		Diff = delete(F, H, K, S)
+	else
+		array.slow_set(I, Child, A, NewA),
+		Diff = full_branch(NewA)
+	).
+	
+difference_tree(_, L@leaf(H1, K, _), C@collision(H2, Bucket), Diff) :-
+	(if H1 = H2, map.contains(Bucket, K)
+	then
+		Diff = empty_tree
+	else
+		Diff = L
+	).
+	
+difference_tree(_, C@collision(CH, Bucket)), L@leaf(H, K, _), Diff) :-
+	(if CH = H, map.contains(Bucket, K)
+	then
+		map.delete(K, Bucket, NewBucket),
+		(if map.to_assoc_list(NewBucket, [(NK - NV)])
+		then
+			leaf(H, NK, NV)
+		else
+			collision(H1, NewBucket)
+		)
+	else
+		Diff = C
+	).
+	
+difference_tree(S, M@indexed_branch(B1, A1), indexed_branch(B2, A2), Diff) :-
+	difference_branches(S, M, B1, A1, B2, A2, Diff).
+	
+difference_tree(S, M@indexed_branch(B1, A1), full_branch(A2), Diff) :-
+	difference_branches(S, M, B1, A1, full_branch, A2, Diff).
+
+difference_tree(S, M@full_branch(A1), indexed_branch(B2, A2), Diff) :-
+	difference_branches(S, M, full_branch, A1, B2, A2, Diff).	
+
+difference_tree(S, M@full_branch(A1), full_branch(A2), Diff) :-
+	difference_branches(S, M, full_branch, A1, full_branch, A2, Diff).	
+
+% difference_branches(Shift, Map1, 
+%	Bitmap1, Array1
+%	Bitmap2, Array2,
+%	Difference)
+:- pred difference_branches(shift::in, hashmap(K, V)::in,
+	bitmap::in, hash_array(K, V)::in,
+	bitmap::in, hash_array(K, V)::in,
+	hashmap(K, V)::out) is det.
+	
+difference_branches(S, Map1, B1, A1, B2, A2, Diff) :-
+	(if B1 /\ B2 = 0u
+	then
+		Diff = Map1
+	else
+		difference_loop(next_shift(S), 0, max(A1), B1, A1, B2, A2, B1, NewB, 
+			[], L, yes, Match),
+		(if Match = yes
+		then 
+			Diff = Map1 
+		else
+			array.from_reverse_list(L, NewArray),
+			Diff = indexed_or_full_branch(B, NewArray)
+		)
+	).
+	
+:- pragma inline(difference_branches/7).
+
+% difference_loop(S, Index, Last
+%	Bitmap1, Array1, Bitmap2, Array2, 
+%	!NewBitmap,
+%	!ReverseList,
+%	!MatchesFirst)
+:- pred difference_loop(shift::in, int::in, int::in 
+	bitmap::in, hashmap(K, V)::in, bitmap::in, hashmap(K, _)::in,
+	bitmap::in, bitmap::out, 
+	list(hashmap(K, V))::in, list(hashmap(K, V))::out,
+	bool::in, bool:out) is det.
+
+% Loop starts:
+% difference_loop(next_shift(S), 0, max(A1), B1, A1, B2, A2, 
+%	B1, B, [], L, yes, M)
+
+difference_loop(S, I, Last, B1, A1, B2, A2, !B, !L, !M) :-
+	array.unsafe_lookup(A1, I, Child1),
+	
+	% Take the current index, count the set bits up to it on the first 
+	% bitmap, then use that count to creat a CurrentBit bitmask to 
+	% retreive the equivalent index from the other bitmap for the second
+	% array iff I actually need to ... 
+	% if B1 is a full bitmap, just use the index as the current bit position
+	(if B1 = full_bitmap
+	then
+		CurrentBitPos = I
+	else
+		Mask = unchecked_left_shift(1u, Index) - 1u,
+		CurrentBitPos = weight(B1 /\ Mask)
+	),
+	CurrentBit = unchecked_left_shift(1u, CurrentBitPos),
+	(if CurrentBit /\ B2 = 0u
+	then
+		!:L = [ Child1 | !.L ]
+	else		
+		% If the arrays share the same bitmap, then their indexes are the same
+		(if B1 = B2
+		then
+			I2 = I
+		else if B2 = full_bitmap
+		then
+			I2 = CurrentBitPos
+		else
+			sparse_index(B2, CurrentBit, I2)
+		),
+		array.unsafe_lookup(A2, I2, Child2),
+		difference_tree(S, Child1, Child2, Child),
+		(if NewChild = empty_tree
+		then
+			!:B = xor(!.B, CurrentBit),
+			!:M = no
+		else 
+			(if !.M = yes, private_builtin.pointer_equal(NewChild, Child1)
+			then 
+				!:M = yes
+			else
+				!:M = no
+			),
+			!:L = [ NewChild | !.L ]
+		)
+	),
+	(if I < Last
+	then
+		difference_loop(S, I + 1, B1, A1, B2, A2, !B, !L, !M)
+	else
+		true % return !B, !L and !M
+	).
+	
+	
+difference_tree(S, C@collision(H, _), B@indexed_branch(B, A), Diff) :-
+	mask(H, S, M),
+	(if M /\ B = 0u
+	then
+		Diff = C
+	else
+		sparse_index(B, M, I),
+		array.unsafe_lookup(A, I, Child),
+		difference_tree(next_shift(S), C, Child, Diff)
+	).
+	
+difference_tree(S, B@indexed_branch(B, A), C@collision(H, _), Diff) :-
+	mask(H, S, M),
+	(if M /\ B = 0u
+	then
+		Diff = B
+	else
+		sparse_index(B, M, I),
+		array.unsafe_lookup(A, I, Child0),
+		difference_tree(next_shift(S), Child0, C, Child),
+		(if private_builtin.pointer_equal(Child0, Child)
+		then
+			Diff = B
+		else if Child = empty_tree
+			Diff = delete(B, H, K, S)
+		else
+			array.slow_set(I, Child, A, NewA),
+			Diff = indexed_branch(B, NewA)
+		)
+	).
+	
+difference_tree(S, C@collision(H, _), F@full_branch(A), Diff) :-
+	index(H, S, I),
+	array.unsafe_lookup(A, I, Child),
+	difference_tree(next_shift(S), C, Child, Diff).
+	
+difference_tree(S, F@full_branch(A), C@collision(H, _), Diff) :-
+	index(H, S, I),
+	array.unsafe_lookup(A, I, Child0),
+	difference_tree(next_shift(S), Child0, C, Child),
+	(if private_builtin.pointer_equal(Child0, Child)
+	then
+		Diff = F
+	else if Child = empty_tree
+		Diff = delete(F, H, K, S)
+	else
+		array.slow_set(I, Child, A, NewA),
+		Diff = full_branch(NewA)
+	).
+	
+difference_tree(_, C@collision(H1, B1), collision(H2, B2), Diff) :-
+	(if H1 = H2
+	then
+		map.sorted_keys(B2, Keys),
+		map.delete_sorted_list(B1, Keys, NewBucket),
+		Diff = 
+			(if map.is_empty(NewBucket)
+			then
+				empty_tree
+			else if map.equal(B1, NewBucket)
+			then
+				C
+			else if map.to_assoc_list(NewBucket, [(NK - NV)])
+			then
+				leaf(H1, NK, NV)
+			else
+				collision(H1, NewBucket)
+			)
+	else
+		Diff = C
+	).	
 
 %-----------------------------------------------------------------------------%
 % Bit twiddling
