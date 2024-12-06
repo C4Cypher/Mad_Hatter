@@ -607,6 +607,7 @@
 :- import_module uint.
 % :- import_module bool.
 :- import_module require.
+:- import_module string.
 :- import_module pair.
 
 :- import_module util.
@@ -1121,6 +1122,8 @@ two(S, L1@leaf(H1, _, _), L2@leaf(H2, _, _)) = indexed_branch(Bitmap, Array) :-
 %-----------------------------------------------------------------------------%
 % Removal
 
+
+
 remove(K, V, !HM) :- remove(hash(K), K, 0, V, !HM).
 
 det_remove(K, V, !HM) :- 
@@ -1146,30 +1149,41 @@ remove(H, K, S, V, indexed_branch(B, Array), HM) :-
 	Length = size(Array),
 	(if Branch1 = empty_tree 
 	then
-		(if Length = 1
-		then
-			HM = empty_tree
-		else if 
-			Length = 2,
-			(
-				I = 0, 
-				array.unsafe_lookup(Array, 1, L)
-			;
-				I = 1,
-				array.unsafe_lookup(Array, 0, L)
-			), 
-			is_leaf_or_collision(L)
-		then
-			HM = L
-		else 
-			HM = indexed_branch(B /\ \ M, unsafe_array_delete(Array, I))
-		)
+		HM = remove_indexed_child(M, I, B, Array, Length)
 	else if Length = 1, is_leaf_or_collision(Branch1)
 	then
 		HM = Branch1
 	else
 		HM = indexed_branch(B, array.slow_set(Array, I, Branch1))
 	).
+	
+:- func remove_indexed_child(bitmap, int, bitmap, hash_array(K, V),
+	int) = hashmap(K, V).
+
+remove_indexed_child(Mask, Index, Bitmap, Array, Length) = HM :-
+	(if Length = 1
+	then
+		HM = empty_tree
+	else 
+		(if 
+			Length = 2,
+			(
+				Index = 0, 
+				array.unsafe_lookup(Array, 1, Leaf)
+			;
+				Index = 1,
+				array.unsafe_lookup(Array, 0, Leaf)
+			), 
+			is_leaf_or_collision(Leaf)
+		then
+			HM = Leaf
+		else 
+			unsafe_array_delete(Index, Array, NewArray),
+			HM = indexed_branch(xor(Bitmap, Mask), NewArray)
+		)
+	).
+
+:- pragma inline(remove_indexed_child/5).
 	
 remove(H, K, S, V, full_branch(Array), HM) :-
 	index(H, S, I),
@@ -1226,40 +1240,22 @@ delete(!.HM@indexed_branch(B, Array), H, K, S) = !:HM :-
 		sparse_index(B, M, I),
 		array.unsafe_lookup(Array, I, Branch0),
 		Branch1 = delete(Branch0, H, K, next_shift(S)),
-		Length = size(Array),
 		(if private_builtin.pointer_equal(Branch1, Branch0)
 		then
 			!:HM = !.HM
-		else if Branch1 = empty_tree 
-		then
-			(if Length = 1
+		else 
+			array.size(Array, Length),
+			(if Branch1 = empty_tree 
 			then
-				!:HM = empty_tree
-			else if 
-				Length = 2,
-				(
-					I = 0, 
-					array.unsafe_lookup(Array, 1, L)
-				;
-					I = 1,
-					array.unsafe_lookup(Array, 0, L)
-				), 
-				is_leaf_or_collision(L)
+				!:HM = remove_indexed_child(M, I, B, Array, Length)
+			else if Length = 1, is_leaf_or_collision(Branch1)
 			then
-				!:HM = L
-			else 
-				!:HM = indexed_branch(B /\ \ M, 
-					unsafe_array_delete(Array, I))
+				!:HM = Branch1
+			else
+				!:HM = indexed_branch(B, array.slow_set(Array, I, Branch1))
 			)
-		else if Length = 1, is_leaf_or_collision(Branch1)
-		then
-			!:HM = Branch1
-		else
-			!:HM = indexed_branch(B, array.slow_set(Array, I, Branch1))
 		)
 	).
-
-:- import_module string.
 
 delete(!.HM@full_branch(Array), H, K, S) = !:HM :-
 	index(H, S, I),
@@ -1270,7 +1266,7 @@ delete(!.HM@full_branch(Array), H, K, S) = !:HM :-
 		!:HM = !.HM
 	else if Branch1 = empty_tree
 	then
-		B = full_bitmap /\ (\ unchecked_left_shift(1u, I)),
+		B = xor(full_bitmap, unchecked_left_shift(1u, I)),
 		!:HM = indexed_branch(B, unsafe_array_delete(Array, I))
 	else
 		!:HM = full_branch(slow_set(Array, I, Branch1))
@@ -2754,14 +2750,17 @@ difference_tree(S, HM@indexed_branch(B, A), C@collision(H, _), Diff) :-
 			Diff = HM
 		else if Child = empty_tree
 		then
-			Diff = delete(HM, H, K, S)
+			array.size(A, L),
+			Diff = remove_indexed_child(M, I, B, A, L)
 		else
 			array.slow_set(I, Child, A, NewA),
 			Diff = indexed_branch(B, NewA)
 		)
 	).
+
 	
-difference_tree(S, C@collision(H, _), F@full_branch(A), Diff) :-
+	
+difference_tree(S, C@collision(H, _), full_branch(A), Diff) :-
 	index(H, S, I),
 	array.unsafe_lookup(A, I, Child),
 	difference_tree(next_shift(S), C, Child, Diff).
@@ -2775,7 +2774,9 @@ difference_tree(S, F@full_branch(A), C@collision(H, _), Diff) :-
 		Diff = F
 	else if Child = empty_tree
 	then
-		Diff = delete(F, H, K, S)
+		unsafe_array_delete(I, A, NewArray),
+		Mask = unchecked_left_shift(1u, I),
+		Diff = indexed_branch(xor(full_bitmap, Mask), NewArray)
 	else
 		array.slow_set(I, Child, A, NewA),
 		Diff = full_branch(NewA)
@@ -2785,7 +2786,7 @@ difference_tree(_, C@collision(H1, B1), collision(H2, B2), Diff) :-
 	(if H1 = H2
 	then
 		map.sorted_keys(B2, Keys),
-		map.delete_sorted_list(B1, Keys, NewBucket),
+		map.delete_sorted_list(Keys, B1, NewBucket),
 		Diff = 
 			(if map.is_empty(NewBucket)
 			then
