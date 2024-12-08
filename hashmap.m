@@ -114,6 +114,18 @@
 :- pred lookup(hashmap(K, V)::in, K::in, V::out) is det <= hashable(K).
 :- func lookup(hashmap(K, V), K) = V is det <= hashable(K).
 
+	% inverse and bounds searches have not been implemented and will throw an
+	% exception
+:- pred inverse_search(hashmap(K, V)::in, V::in, K::out) is erroneous.
+:- pred lower_bound_search(hashmap(K, V)::in, K::in, K::out, V::out)
+    is erroneous.
+:- pred lower_bound_lookup(hashmap(K, V)::in, K::in, K::out, V::out) 
+	is erroneous.
+:- pred upper_bound_search(hashmap(K, V)::in, K::in, K::out, V::out)
+    is erroneous.
+:- pred upper_bound_lookup(hashmap(K, V)::in, K::in, K::out, V::out) 
+	is erroneous.
+
 %-----------------------------------------------------------------------------%
 % Insertion
 
@@ -222,6 +234,15 @@
 
 :- pred keys_and_values(hashmap(K, V)::in, list(K)::out, list(V)::out)
 	is det <= hashable(K).
+	
+:- func max_key(hashmap(K, _)) = K is semidet.
+:- pred max_key(hashmap(K, _)::in, K::out) is semidet.
+
+:- func min_key(hashmap(K, _)) = K is semidet.
+:- pred min_key(hashmap(K, _)::in, K::out) is semidet.
+	
+:- func det_max_key(hashmap(K, _)) = K.
+:- func det_min_key(hashmap(K, _)) = K.
 
 %-----------------------------------------------------------------------------%
 % Operations on values.
@@ -433,6 +454,18 @@
 	% of the maps in question need not have the same type.
 :- pred difference(hashmap(K, V)::in, hashmap(K, _)::in, hashmap(K, V)::out)
 	is det.
+	
+% compose_maps(MapAB, MapBC, MapAC):
+% Given each A - B pair in MapAB, return the map that pairs
+% each such A with the C corresponding to its B in MapBC.
+% Throw an exception if there is no value associated with B in MapBC.	
+:- pred compose_maps(hashmap(A, B)::in, hashmap(B, C)::in, hashmap(A, C)::out) 
+	is det <= (hashable(A), hashable(B)).
+:- func compose_maps(hashmap(A, B), hashmap(B, C)) = hashmap(A, C) 
+	<= (hashable(A), hashable(B)).
+
+
+
 
 %-----------------------------------------------------------------------------%
 % Bit twiddling
@@ -767,6 +800,11 @@ lookup(HM, K) =
 		report_lookup_error("hashmap.lookup: key not found", K)
 	).
 
+inverse_search(_, _, _) :- sorry($module, $pred, "inverse_search").
+lower_bound_search(_, _, _, _) :- sorry($module, $pred, "lower_bound_search").
+lower_bound_lookup(_, _, _, _) :- sorry($module, $pred, "lower_bound_lookup").
+upper_bound_search(_, _, _, _) :- sorry($module, $pred, "upper_bound_search").
+upper_bound_lookup(_, _, _, _) :- sorry($module, $pred, "upper_bound_lookup").
 
 %-----------------------------------------------------------------------------%
 % Insertion
@@ -1388,6 +1426,39 @@ keys_and_values_acc(collision(_H, Bucket), !Ks, !Vs ) :-
 	!:Ks = !.Ks ++ BKs,
 	!:Vs = !.Vs ++ BVs.
 	
+max_key(HM) = K :- max_key(HM, K).
+max_key(HM, K) :- foldl(max_key_acc, HM, no, yes(K)).
+
+min_key(HM) = K :- min_key(HM, K).
+min_key(HM, K) :- foldl(min_key_acc, HM, no, yes(K)).
+
+det_max_key(HM) = K :-
+	(if max_key(HM, K0)
+	then
+		K = K0
+	else
+		error($pred, "An empty hashmap has no maximum key")
+	).
+	
+det_min_key(HM) = K :-
+	(if min_key(HM, K0)
+	then
+		K = K0
+	else
+		error($pred, "An empty hashmap has no minimum key")
+	).
+	
+	
+:- pred max_key_acc(K::in, _V::in, maybe(K)::in, maybe(K)::out) is det.
+max_key_acc(K, _, no, yes(K)).
+max_key_acc(K, _, yes(Max), (K @> Max -> yes(K) ; yes(Max)) ). 
+	
+	
+:- pred min_key_acc(K::in, _V::in, maybe(K)::in, maybe(K)::out) is det.
+min_key_acc(K, _, no, yes(K)).
+min_key_acc(K, _, yes(Min), (K @< Min -> yes(K) ; yes(Min)) ). 	
+
+
 %-----------------------------------------------------------------------------%
 % Operations on values.
 
@@ -2803,6 +2874,18 @@ difference_tree(_, C@collision(H1, B1), collision(H2, B2), Diff) :-
 	else
 		Diff = C
 	).	
+	
+%-----------------------------------------------------------------------------%
+% Compose Maps
+
+compose_maps(A, B, compose_maps(A, B)).
+
+compose_maps(A, B) = foldl(compose_maps_acc(B), A, empty_tree).
+
+:- func compose_maps_acc(hashmap(B, C), A, B, hashmap(A, C)) = hashmap(A, C)
+	 <= (hashable(A), hashable(B)).
+
+compose_maps_acc(B, K, V, C) = det_insert(C, K, Cval) :- lookup(B, V, Cval).
 
 %-----------------------------------------------------------------------------%
 % Bit twiddling
