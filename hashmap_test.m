@@ -30,6 +30,7 @@
 	hash(I) = cast_from_int(int.hash(I))
 ].
 
+/*
 :- pred print_key_stats(T::in, int::in, uint::in, uint::out, io::di, io::uo) 
 	is det <= hashable(T).
 
@@ -55,6 +56,7 @@ print_key_stats(T, S, !B, !IO) :-
 	Mminus1Binary:string = int_to_base_string(cast_to_int(Mask - 1u), 2),
 	BandMminus1 = !.B /\ (Mask - 1u),
 	io.write_string("\nB /\\ (M - 1) = " ++ string(BandMminus1:uint), !IO).
+*/
 
 main(!IO) :-
     io.command_line_arguments(Args, !IO),
@@ -112,6 +114,8 @@ main(!IO) :-
         trace [ runtime(env("HASH_TABLE_STATS")) ] (
             impure report_stats
         ),
+		
+		FullMap = !.HT,
 
         io.write_string("Looking up elements\n", !IO),
         inst_preserving_fold_up(do_lookup, 0, Max - 1, !HT),
@@ -133,7 +137,7 @@ main(!IO) :-
         trace [ runtime(env("HASH_TABLE_STATS")) ] (
             impure report_stats
         ),
-
+		
         NumOccupants = hashmap.count(!.HT),
         ( if NumOccupants = Max - Half then
             true
@@ -141,7 +145,10 @@ main(!IO) :-
             error("count failed Occupants: " ++ string(NumOccupants)
 				++ " Max - Half: " ++ string(Max))
         ),
-/*
+		
+		HalfMap = !.HT,
+		
+		io.write_string("Converting to assoc list\n", !IO),
         AL = hashmap.to_assoc_list(!.HT),
         ( if list.length(AL) = NumOccupants then
             true
@@ -160,7 +167,68 @@ main(!IO) :-
         trace [runtime(env("HASH_TABLE_STATS"))] (
             impure report_stats
         ),
-*/
+		
+		
+		
+		io.write_string("Differencee between full map and half map\n", !IO),
+		difference(FullMap, HalfMap, DiffMap),
+		trace [runtime(env("HASH_TABLE_STATS"))] (
+            impure report_stats
+        ),
+		
+		io.write_string("Intersection between half Map and diff map\n", !IO),
+		intersect(set_merge_pred, HalfMap, DiffMap, DiffInt),
+		trace [runtime(env("HASH_TABLE_STATS"))] (
+            impure report_stats
+        ),
+		
+		io.write_string("Equality test beetween intersect and empty map\n", !IO),
+		(if is_empty(DiffInt) then
+			true
+		else
+			error("Intersection between Half map and difference map not empty\n")
+		),
+		
+		io.write_string("Intersection between half Map and full map\n", !IO),
+		intersect(set_merge_pred, FullMap, HalfMap, Intersection),
+		trace [runtime(env("HASH_TABLE_STATS"))] (
+            impure report_stats
+        ),
+		
+		io.write_string("Equality test beetween intersect and half map\n", !IO),
+		(if equal(Intersection, HalfMap) then
+			true
+		else
+			error("Equality test of intersection and half map failed\n")
+		),
+		
+		
+		io.write_string("merge test of Half map and Difference map\n", !IO),
+		merge(HalfMap, DiffMap, MergeMap),
+		trace [runtime(env("HASH_TABLE_STATS"))] (
+            impure report_stats
+        ),
+		
+		io.write_string("Equality test beetween full map and merged map\n", !IO),
+		(if equal(FullMap, MergeMap) then
+			true
+		else
+			error("Equality test of full map and merge map failed\n")
+		),
+		
+		io.write_string("Union test of Half map and full map\n", !IO),
+		union(set_merge_pred, HalfMap, FullMap, UnionMap),
+		trace [runtime(env("HASH_TABLE_STATS"))] (
+            impure report_stats
+        ),
+		
+		io.write_string("Equality test beetween full map and union map\n", !IO),
+		(if equal(FullMap, UnionMap) then
+			true
+		else
+			error("Equality test of full map and union map failed\n")
+		),
+		
         _ = !.HT
     ).
 
@@ -236,3 +304,8 @@ do_delete(I, !HT) :-
 
 do_set_neg(I, !HT) :-
     hashmap.set(I, -I, !HT).
+	
+:- pred set_merge_pred(T::in, T::in, T::out) is det.
+set_merge_pred(T, _, T).
+
+

@@ -2304,12 +2304,6 @@ union_tree(S, P, PR, HM1@full_branch(A1), HM2@full_branch(A2), Union) :-
 	
 union_branches(S, P, PR, HM1, B1, A1, HM2, B2, A2, Union) :-
 	B = B1 \/ B2,
-	% This trace goal is a sanity check, CB /\ B should always be >0
-	trace [ compile_time(grade(debug) or flag("check_union_index")) ] (
-		(if B1 /\ B2 = 0u
-		then unexpected($pred, "invalid union index")
-		else true)
-	),
 	NS = next_shift(S),
 	some [!A, Size] (
 		(if B = full_bitmap
@@ -2332,6 +2326,7 @@ union_branches(S, P, PR, HM1, B1, A1, HM2, B2, A2, Union) :-
 			% Find the next bit by masking out all of the bits up to and 
 			% including the first bit and counting the zeros to the next bit
 			NextBitZeros = unsafe_ctz32(B /\ \ (FirstBit * 2u - 1u)),
+			%NextBitZeros = unsafe_ctz32(xor(B, FirstBit * 2u - 1u)),
 			NextBit = unchecked_left_shift(1u, NextBitZeros),
 			union_index_loop(NS, P, PR, NextBit, B, B1, A1, B2, A2, !A, 
 				Match0, Match)
@@ -2401,7 +2396,7 @@ union_full_loop(S, P, PR, I, B1, Array1, B2, Array2, !A, !M) :-
 %	IndexBitmap2, Array2, 
 %	!NewArray, !Match).
 % union_index_loop(S, P, PR, CB, B, B1, A1, B2, A2, !A, !Match).
-:- pred union_index_loop(shift, pred(V, V, V), pred(V, V, V), bitmap, bitmap,
+:- pred union_index_loop(shift, pred(V, V, V), pred(V, V, V), mask, bitmap,
 	bitmap,	hash_array(K, V), 
 	bitmap, hash_array(K, V),
 	hash_array(K, V), hash_array(K, V), array_match, array_match).
@@ -2416,8 +2411,8 @@ union_full_loop(S, P, PR, I, B1, Array1, B2, Array2, !A, !M) :-
 	in, in, 
 	array_di, array_uo, in, out) is semidet.
 	
-union_index_loop(S, P, PR, CB, B, B1, Array1, B2, Array2, !A, !M) :-
-	union_index(S, P, PR, B, B1, Array1, B2, Array2, Child, IndexedM),
+union_index_loop(S, P, PR, CB, UB, B1, Array1, B2, Array2, !A, !M) :-
+	union_index(S, P, PR, CB, B1, Array1, B2, Array2, Child, IndexedM),
 	!:M = 
 		(if !.M = neither 
 		then 
@@ -2428,16 +2423,16 @@ union_index_loop(S, P, PR, CB, B, B1, Array1, B2, Array2, !A, !M) :-
 		else
 			neither
 		),
-	sparse_index(B, CB, I),
+	sparse_index(UB, CB, I),
 	array.set(I, Child, !A),
 	% exclude all one bits from the bitmap up to and including the current bit
 	NextBitMask = \ (CB * 2u - 1u),
-	(if unsafe_ctz32(B /\ NextBitMask)@Zeros < 32
+	(if unsafe_ctz32(UB /\ NextBitMask)@Zeros < 32
 	then
 		%Select the next bit by masking the bitmap with NOT (CB * 2 -1) and
 		%counting the zeros to the next one bit
 		NextBit = unchecked_left_shift(1u, Zeros),
-		union_index_loop(S, P, PR, NextBit, B, B1, Array1, B2, Array2, !A, !M)
+		union_index_loop(S, P, PR, NextBit, UB, B1, Array1, B2, Array2, !A, !M)
 	else
 		%!:A = !.A
 		true
@@ -2454,7 +2449,7 @@ union_index_loop(S, P, PR, CB, B, B1, Array1, B2, Array2, !A, !M) :-
 %	Bitmap1, Array1, 
 %	Bitmap2, Array2,
 % 	Union, Match) Get the union of two elements in seperate bitmapped arrays
-:- pred union_index(shift, pred(V, V, V), pred(V, V, V), bitmap,
+:- pred union_index(shift, pred(V, V, V), pred(V, V, V), mask,
 	bitmap,	hash_array(K, V), 
 	bitmap, hash_array(K, V), 
 	hashmap(K, V),	array_match).
@@ -2714,7 +2709,8 @@ difference_branches(S, Map1, B1, A1, B2, A2, Diff) :-
 	then
 		Diff = Map1
 	else
-		difference_loop(next_shift(S), 0, max(A1), B1, A1, B2, A2, B1, NewB, 
+		FirstBit = unchecked_left_shift(1u, ctz32(B1)),
+		difference_loop(next_shift(S), FirstBit, B1, A1, B2, A2, B1, NewB, 
 			[], L, yes, Match),
 		(if Match = yes
 		then 
@@ -2727,56 +2723,40 @@ difference_branches(S, Map1, B1, A1, B2, A2, Diff) :-
 	
 :- pragma inline(difference_branches/7).
 
-% difference_loop(S, Index, Last
+% difference_loop(S, CurrentBit,
 %	Bitmap1, Array1, Bitmap2, Array2, 
 %	!NewBitmap,
 %	!ReverseList,
 %	!MatchesFirst)
-:- pred difference_loop(shift::in, int::in, int::in,
+:- pred difference_loop(shift::in, mask::in, 
 	bitmap::in, hash_array(K, V)::in, bitmap::in, hash_array(K, _)::in,
 	bitmap::in, bitmap::out, 
 	list(hashmap(K, V))::in, list(hashmap(K, V))::out,
 	bool::in, bool::out) is det.
 
 % Loop starts:
-% difference_loop(next_shift(S), 0, max(A1), B1, A1, B2, A2, 
+% difference_loop(next_shift(S), ctz32(B1), B1, A1, B2, A2, 
 %	B1, B, [], L, yes, M)
 
-difference_loop(S, I, Last, B1, A1, B2, A2, !B, !L, !M) :-
-	array.unsafe_lookup(A1, I, Child1),
-	
-	% Take the current index, count the set bits up to it on the first 
-	% bitmap, then use that count to creat a CurrentBit bitmask to 
-	% retreive the equivalent index from the other bitmap for the second
-	% array iff I actually need to ... 
-	% if B1 is a full bitmap, just use the index as the current bit position
-	(if B1 = full_bitmap
-	then
-		CurrentBitPos = I
-	else
-		Mask = unchecked_left_shift(1u, I) - 1u,
-		CurrentBitPos = weight(B1 /\ Mask)
-	),
-	CurrentBit = unchecked_left_shift(1u, CurrentBitPos),
-	(if CurrentBit /\ B2 = 0u
+difference_loop(S, CB, B1, A1, B2, A2, !B, !L, !M) :-
+	sparse_index(B1, CB, I1),
+	array.unsafe_lookup(A1, I1, Child1),
+	(if B2 /\ CB = 0u
 	then
 		!:L = [ Child1 | !.L ]
 	else		
 		% If the arrays share the same bitmap, then their indexes are the same
 		(if B1 = B2
 		then
-			I2 = I
-		else if B2 = full_bitmap
-		then
-			I2 = CurrentBitPos
+			I2 = I1
 		else
-			sparse_index(B2, CurrentBit, I2)
+			sparse_index(B2, CB, I2)
 		),
 		array.unsafe_lookup(A2, I2, Child2),
 		difference_tree(S, Child1, Child2, NewChild),
 		(if NewChild = empty_tree
 		then
-			!:B = xor(!.B, CurrentBit),
+			!:B = xor(!.B, CB),
 			!:M = no
 		else 
 			(if !.M = yes, private_builtin.pointer_equal(NewChild, Child1)
@@ -2788,9 +2768,14 @@ difference_loop(S, I, Last, B1, A1, B2, A2, !B, !L, !M) :-
 			!:L = [ NewChild | !.L ]
 		)
 	),
-	(if I < Last
+	% exclude all one bits from the bitmap up to and including the current bit
+	NextBitMask = \ (CB * 2u - 1u),
+	(if unsafe_ctz32(B1 /\ NextBitMask)@Zeros < 32
 	then
-		difference_loop(S, I + 1, Last, B1, A1, B2, A2, !B, !L, !M)
+		%Select the next bit by masking the bitmap with NOT (CB * 2 -1) and
+		%counting the zeros to the next one bit
+		NextBit = unchecked_left_shift(1u, Zeros),
+		difference_loop(S, NextBit, B1, A1, B2, A2, !B, !L, !M)
 	else
 		true % return !B, !L and !M
 	).
