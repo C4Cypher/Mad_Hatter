@@ -30,8 +30,9 @@ get a repl running
 							value sets
 							refactor tuples
 								internalize representation
-									implement set tuples
-										Implement HAMT <- I am here
+									implement term map <- I am here
+										implement set tuples
+										
 									cache mr->list->array->set->list conversion
 					define environments/symbol substitution
 						finish substitutions 
