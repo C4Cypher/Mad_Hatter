@@ -41,6 +41,7 @@
 :- import_module mh_tuple.
 :- import_module mh_symbol.
 :- import_module mh_value_map.
+:- import_module hashmap.
 
 %-----------------------------------------------------------------------------%
 % Term maps
@@ -94,7 +95,7 @@
 %-----------------------------------------------------------------------------%
 % Atom maps
 
-:- type symbol_map(T) == hash_table(mh_symbol, T).
+:- type symbol_map(T) == hashmap(mh_symbol, T).
 
 :- inst atom_map
 	---> 	empty_map

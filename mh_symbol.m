@@ -14,13 +14,12 @@
 
 :- interface.
 
-:- import_module list.
+:- import_module hashable.
 
 %-----------------------------------------------------------------------------%
 % Symbols
 
 :- type mh_symbol.
-:- type mh_symbols == list(mh_symbol).
 
 :- inst mh_symbol(I) ---> ~I.
 
@@ -36,6 +35,9 @@
 % Symbol hashes
 
 :- pred symbol_hash(mh_symbol::in, int::out) is det.
+:- func symbol_hash(mh_symbol) = uint.
+
+:- instance hashable(mh_symbol).
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -69,3 +71,6 @@ to_string(symbol(String)) = String.
 
 
 symbol_hash(symbol(String), cast_to_int(Hash)) :- fnv1a_hash(String, Hash).
+symbol_hash(symbol(String)) =  fnv1a_hash(String).
+
+:- instance hashable(mh_symbol) where [ func(hash/1) is symbol_hash ].
