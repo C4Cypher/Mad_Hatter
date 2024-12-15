@@ -28,18 +28,19 @@
 
 :- type mh_relation 
 	--->	invalid_relation(mh_term, string)
-	;		unifies(mh_term) % X = Y
- 	;		relation_disjunction(mh_tuple) % X = A ; B ; C ; ...
+	;		pred_normal_rel(mh_predicate)		% r(X) = Y :- p(X, Y).
+	;		disj_normal_rel(mh_tuple, arity)	% r(X) = a(X) ; b(X) ; ...
+	;		conj_normal_rel(mh_tuple, arity)	% r(X) = a(X) , b(X) , ...
 	; 		some [T] mr_relation(T) => relation(T).
 	
 :- pred apply_relation_substitution(mh_substitution::in, mh_relation::in,
 	mh_relation::out) is det.
 	
-% :- func relation_arity(mh_relation) = int.
+% :- func relation_arity(mh_relation) = arity.
  
  :- pred ground_relation(mh_relation::in) is semidet.
  
-  :- func relation_arity(mh_relation) = int.
+  :- func relation_arity(mh_relation) = arity.
  
  :- pred relation_arity(mh_relation::in, int::out) is det.
  

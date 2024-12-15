@@ -35,8 +35,12 @@
 
 :- type mh_predicate 
 	--->	invalid_predicate(mh_term, string)
- 	;		pred_success(mh_substitution)
-  	;		pred_failure(pred_fail_reason)
+ 	;		pred_success(mh_substitution)		% yes
+  	;		pred_failure(pred_fail_reason)		% no
+	;		pred_disj(mh_pred_set)				% A ; B ; C
+	;		pred_conj(mh_pred_set)				% A , B , C
+	;		pred_neg(mh_predicate)				% not A
+	;		pred_univ(mh_var_set, mh_predicate)	% forall Vars A
 	;		some [T] mr_predicate(T) => predicate(T).
 	
 	
