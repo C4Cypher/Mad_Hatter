@@ -22,19 +22,25 @@
 :- import_module mh_symbol.
 
 %-----------------------------------------------------------------------------%
+% Arity type
+
+:- type arity == int.
+
+
+%-----------------------------------------------------------------------------%
 % Arity typeclass
 
 :- typeclass arity(T) where [
-	pred arity(T::in, int::out) is det
+	pred arity(T::in, arity::out) is det
 ].
 
-:- func arity(T) = int <= arity(T).
+:- func arity(T) = arity <= arity(T).
 
 /* Template, 12 occurances of "foo"
 
- :- func foo_arity(mh_foo) = int.
+ :- func foo_arity(mh_foo) = arity.
  
- :- pred foo_arity(mh_foo::in, int::out) is det.
+ :- pred foo_arity(mh_foo::in, arity::out) is det.
  
  :- instance arity(mh_foo).
 	
