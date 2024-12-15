@@ -70,6 +70,11 @@ constrant). If a procedure cannot logically bind a variable to a ground value,
 it may instead bind it to a constraint that will be lazily applied to any
 future value (ground or otherwise) the variable is unified with.
 
+Design by Constraint
+--------------------
+
+Lorum ipsum
+
 Flexible
 -------
 
