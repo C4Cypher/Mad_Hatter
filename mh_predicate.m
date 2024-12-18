@@ -40,7 +40,7 @@
 	;		pred_disj(mh_pred_set)				% A ; B ; C
 	;		pred_conj(mh_pred_set)				% A , B , C
 	;		pred_neg(mh_predicate)				% not A
-	;		pred_univ(mh_var_set, mh_predicate)	% forall Vars A
+	;		pred_unification(mh_term, mh_term, arity)	% X = Y
 	;		some [T] mr_predicate(T) => predicate(T).
 	
 	

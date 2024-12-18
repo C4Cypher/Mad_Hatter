@@ -18,7 +18,7 @@
 % :- import_module array.
 
 :- import_module mh_term.
-:- import_module mh_tuple.
+:- import_module mh_predicate.
 :- import_module mh_substitution.
 :- import_module mh_arity.
 
@@ -28,10 +28,7 @@
 
 :- type mh_relation 
 	--->	invalid_relation(mh_term, string)
-	;		pred_normal_rel(mh_predicate)		% r(X) = Y :- p(X, Y).
-	;		disj_normal_rel(mh_tuple, arity)	% r(X) = a(X) ; b(X) ; ...
-	;		conj_normal_rel(mh_tuple, arity)	% r(X) = a(X) , b(X) , ...
-	; 		some [T] mr_relation(T) => relation(T).
+	;		relation(mh_predicate)		% r(X) = Y :- p(X, Y).
 	
 :- pred apply_relation_substitution(mh_substitution::in, mh_relation::in,
 	mh_relation::out) is det.
@@ -45,15 +42,6 @@
  :- pred relation_arity(mh_relation::in, int::out) is det.
  
  :- instance arity(mh_relation).
-
-%-----------------------------------------------------------------------------%
-% Relation typeclass
-
-:- typeclass relation(T) <= arity(T) where [
-	% Todo: method to unify relations under environment
-	
-	% pred relation_signature(T::in, E::in, relation_signature::out) is nondet,
-].
 
 
 %-----------------------------------------------------------------------------%
@@ -74,9 +62,9 @@ ground_relation(_) :- sorry($module, $pred, "ground_relation/1").
 
 :- pragma no_determinism_warning(ground_relation/1).
 
-relation_arity(_) = _ :- sorry($module, $pred, "relation_arity/1").
+relation_arity(invalid_relation(_, _) = 0.
+relation_arity(relation(P)) = predicate_arity(P) - 1.
 
-:- pragma no_determinism_warning(relation_arity/1).
 
 relation_arity(T, relation_arity(T)).
 
