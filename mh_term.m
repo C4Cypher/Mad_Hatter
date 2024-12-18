@@ -54,9 +54,6 @@
 	;		cons(functor, mh_term)
 	;		tuple_term(mh_tuple)
 	
-	% lazy constraints
-	;		lazy(mh_term) % X = ?Term => X:Term
-	
 	% Higher order terms
 	;		predicate(mh_predicate)
 	;		relation(predicate_term)
@@ -182,15 +179,13 @@
 	--->	nil
 	;		atom(ground)
 	;		var(ground)
-	;		mr_value(ground)
-	;		lazy(simple_term).
+	;		mr_value(ground).
 	
 :- type simple_term =< mh_term
 	--->	nil
 	;		atom(mh_symbol)
 	;		var(var_id)
-	;		mr_value(univ)
-	;		lazy(simple_term).
+	;		mr_value(univ).
 	
 :- mode simple_term == ground >> simple_term.
 
@@ -254,14 +249,12 @@
 	--->	relation(ground)
 	;		predicate(ground)
 	;		function(ground)
-	;		constraint(ground)
 	;		term_sub(lambda, ground).
 
 :- type lambda =< functor
 	--->	relation(mh_relation)
 	;		predicate(mh_predicate)
 	;		function(mh_function)
-	;		constraint(mh_constraint)
 
   % Substitution
 	;		term_sub(lambda, mh_substitution).
@@ -339,9 +332,6 @@ apply_term_substitution(Sub, !Term) :- 	require_complete_switch [!.Term]
 	;	!.Term = tuple_term(Tup0),
 		apply_tuple_substiution(Sub, Tup0, Tup),
 		!:Term = tuple_term(Tup)
-		
-	;	!.Term = lazy(ConTerm),
-		!:Term = lazy(term_sub(ConTerm, Sub))
 	
 	;	!.Term = relation(Rel0), 
 		apply_relation_substitution(Sub, Rel0, Rel),
@@ -354,10 +344,6 @@ apply_term_substitution(Sub, !Term) :- 	require_complete_switch [!.Term]
 	;	!.Term = function(Func0),
 		apply_function_substitution(Sub, Func0, Func),
 		!:Term = function(Func)
-		
-	;	!.Term = constraint(Const0),
-		apply_constraint_substitution(Sub, Const0, Const),
-		!:Term = constraint(Const)
 		
 	;	!.Term = term_sub(SubTerm, Sub0),
 		compose_substitutions(Sub0, Sub, Sub1),
@@ -384,11 +370,8 @@ term_arity(T) = A :- require_complete_switch [T] (
 		;	T = predicate(_) % TODO: proper HO arity
 		;	T = relation(_)
 		;	T = function(_)
-		;	T = constraint(_)
 		), A = 0
-	
-	;	T = lazy(Ct), A = term_arity(Ct)
-	
+		
 	;	T = cons(_, Arg), 
 		( if Arg = tuple_term(Tuple)
 		then A = arity(Tuple)
@@ -471,8 +454,7 @@ simple_term(T) :-
 	T = nil;
 	T = atom(_);
 	T = var(_);
-	T = mr_value(_);
-	T = lazy(L), simple_term(L).
+	T = mr_value(_).
 
 %-----------------------------------------------------------------------------%
 %	Compound terms
@@ -550,8 +532,6 @@ term_description(mr_value(M)) =
 	"mercury value term of type " ++ mr_type_name(M).
 term_description(cons(A, R)) = 
 	"constructor " ++ string(A) ++ "(" ++ mr_type_name(R) ++ ")".
-term_description(lazy(Term)) =
-	"lazy " ++ term_description(Term).
 term_description(tuple_term(_)) = 
 	"mercury tuple term".
 term_description(predicate(_)) = 
@@ -560,7 +540,5 @@ term_description(relation(_)) =
 	"mercury relation term".
 term_description(function(_)) =
 	"mercury function term of type ".
-term_description(constraint(_)) =
-	"term constraint".
 term_description(term_sub(Term, _)) =
 	"substitution of " ++ term_description(Term).
