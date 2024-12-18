@@ -100,7 +100,7 @@
 :- inst functor 
 	--->	atom(ground)
 	;		var(ground)
-	;		predicate(mh_predicate)
+	;		predicate(ground)
 	;		relation(ground)
 	;		function(ground)
 	;		term_sub(functor, ground).
@@ -129,13 +129,6 @@
 :- pred apply_functor_substitution(mh_substitution::in, 
 	functor::in, functor::out) is det.
 :- func apply_functor_substitution(mh_substitution, functor) = functor.
-
-
-:- inst predicate_functor
-	--->	atom(ground)
-	;		var(ground)
-	;		predicate(ground)
-	;
 
 
 %-----------------------------------------------------------------------------%
@@ -246,15 +239,16 @@
 % Higher Order terms
 
 :- inst lambda
-	--->	relation(ground)
-	;		predicate(ground)
+	--->	predicate(ground)
+	;		relation(ground)
 	;		function(ground)
 	;		term_sub(lambda, ground).
 
 :- type lambda =< functor
-	--->	relation(mh_relation)
-	;		predicate(mh_predicate)
+	--->	predicate(mh_predicate)
+	;		relation(mh_relation)
 	;		function(mh_function)
+	;		term_sub(lambda, mh_substitution)
 
   % Substitution
 	;		term_sub(lambda, mh_substitution).
@@ -263,8 +257,13 @@
 % Predicate terms
 
 
-:- inst predicate_term
-	--->	cons()
+:- inst predicate_term 
+	--->	predicate(ground)
+	;		term_sub(predicate_term, ground).
+	
+:- type predicate_term =< lambda
+	--->	predicate(mh_predicate)
+	;		term_sub(predicate_term, ground).
 	
 %-----------------------------------------------------------------------------%
 % Term substitutions (lazy)
