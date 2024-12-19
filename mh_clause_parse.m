@@ -6,12 +6,12 @@
 % Public License as described in the file LICENCE.
 %-----------------------------------------------------------------------------%
 % 
-% File: mh_clause.m
+% File: mh_clause_parse.m
 % Main author: C4Cypher.
 % Stability: low.
 %-----------------------------------------------------------------------------%
 
-:- module mh_clause.
+:- module mh_clause_parse.
 
 :- interface.
 
@@ -28,7 +28,7 @@
 %-----------------------------------------------------------------------------%
 % Clauses
 
-:- type mh_clause
+:- type mh_clause_parse
 
 	%% root clauses
 	
@@ -80,11 +80,11 @@
 	
 
 	
-:- type root_clause =< mh_clause
+:- type root_clause =< mh_clause_parse
 	--->	atom_clause(mh_symbol, lambda_clause, root_scope)
 	;		assertion_clause(mh_predicate, root_scope).
 	
-:- type lambda_clause =< mh_clause
+:- type lambda_clause =< mh_clause_parse
 	---> 	fact_clause(head_clause)
 	;		quantified_fact_clause(mh_var_set, mh_predicate)
 	;		rule_clause(head_clause, mh_predicate)
