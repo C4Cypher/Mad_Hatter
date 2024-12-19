@@ -43,6 +43,7 @@
 	;		pred_unification(mh_term, mh_term, arity)	% X = Y
 	;		some [T] mr_predicate(T) => predicate(T).
 	
+% TODO: Resolve arity,  clause type?
 	
 :- pred apply_predicate_substitution(mh_substitution::in, mh_predicate::in,
 	mh_predicate::out) is det.
