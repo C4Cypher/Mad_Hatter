@@ -40,7 +40,7 @@
 	;		pred_disj(mh_pred_set)				% A ; B ; C
 	;		pred_conj(mh_pred_set)				% A , B , C
 	;		pred_neg(mh_predicate)				% not A
-	;		pred_unification(mh_term, mh_term, arity)	% X = Y
+	;		pred_unification(mh_term, mh_term)	% X = Y
 	;		some [T] mr_predicate(T) => predicate(T).
 	
 % TODO: Resolve arity,  clause type?

@@ -54,13 +54,14 @@
 	;		cons(functor, mh_term)
 	;		tuple_term(mh_tuple)
 	
-	% lazy constraints
-	;		lazy(mh_term) % X = ?Term => X:Term
+	% lazy constraints --- not sure if this is a good description
+	;		lazy(predicate_term) 	% X:Term(...) => X = ?Term(...) => 
+									% X :- Term(..., X) 
 	
 	% Higher order terms
 	;		predicate(mh_predicate)
-	;		relation(predicate_term)
-	;		function(predicate_term)
+	;		relation(arity, functor)
+	;		function(arity, functor)
 	
 	% Term substitutions (lazy)
 	;		term_sub(mh_term, mh_substitution).
@@ -104,8 +105,8 @@
 	--->	atom(ground)
 	;		var(ground)
 	;		predicate(ground)
-	;		relation(ground)
-	;		function(ground)
+	;		relation(ground, ground)
+	;		function(ground, ground)
 	;		term_sub(functor, ground).
 
 :- type functor =< mh_term
@@ -117,8 +118,8 @@
 	
 	% Higher order terms
 	;		predicate(mh_predicate)
-	;		relation(predicate_term)	% r(X, Y) = Z  :- p(X, Y, Z).
-	;		function(predicate_term)	% f(X, Y) -> Z :- p(X, Y, Z).
+	;		relation(arity, functor)
+	;		function(arity, functor)	
 	
 	% Substitution
 	;		term_sub(functor, mh_substitution).
@@ -245,14 +246,14 @@
 
 :- inst lambda
 	--->	predicate(ground)
-	;		relation(ground)
-	;		function(ground)
+	;		relation(ground, ground)
+	;		function(ground, ground)
 	;		term_sub(lambda, ground).
 
 :- type lambda =< functor
 	--->	predicate(mh_predicate)
-	;		relation(mh_relation)
-	;		function(mh_function)
+	;		relation(arity, functor)
+	;		function(arity, functor)	
 
 	;		term_sub(lambda, mh_substitution)
 
@@ -269,7 +270,7 @@
 	
 :- type predicate_term =< lambda
 	--->	predicate(mh_predicate)
-	;		term_sub(predicate_term, ground).
+	;		term_sub(predicate_term, mh_substitution).
 	
 %-----------------------------------------------------------------------------%
 % Term substitutions (lazy)
@@ -363,10 +364,10 @@ apply_term_substitution(S, !.T) = !:T :- apply_term_substitution(S, !T).
 %-----------------------------------------------------------------------------%
 % Term Arity
 
-% The arity of a term is the count of free variables in the term given the
-% current scope, for terms with their own scopes (lambdas) not all of the free
-% variables will be visible to the current scope, 
-% a ground term should have arity 0
+% The arity of a term is the count of free (universally quantified) variables
+% in the term given the current scope, for terms with their own scopes 
+% (lambdas) not all of the free variables will be visible to the current 
+% scope. A ground term should have arity 0
 
 term_arity(T) = A :- require_complete_switch [T] (
 		(	T = nil
@@ -382,7 +383,7 @@ term_arity(T) = A :- require_complete_switch [T] (
 	
 	;	T = lazy(Ct), A = term_arity(Ct)
 	
-	;	T = cons(_, Arg), 
+	;	T = cons(_, Arg), % TODO: May need to redefine this see above
 		( if Arg = tuple_term(Tuple)
 		then A = arity(Tuple)
 		else A = 1
