@@ -25,6 +25,7 @@ get a repl running
 					mercury types
 				finish mh_term, my high level AST
 					refactor substitutions
+					hash out higher order types (see below)
 						implement term sets 
 							disjunctive ordering? Weights?
 							value sets
