@@ -55,13 +55,13 @@
 	;		tuple_term(mh_tuple)
 	
 	% lazy constraints --- not sure if this is a good description
-	;		lazy(predicate_term) 	% X:Term(...) => X = ?Term(...) => 
-									% X :- Term(..., X) 
+	;		lazy(predicate_term) 	% X:Term(...) => X @ ?Term(...) => 
+									% ?Term(..., X) 
 	
 	% Higher order terms
 	;		predicate(mh_predicate)
-	;		relation(arity, functor)
-	;		function(arity, functor)
+	;		relation(arity, predicate_term)
+	;		function(arity, predicate_term)
 	
 	% Term substitutions (lazy)
 	;		term_sub(mh_term, mh_substitution).
@@ -118,8 +118,8 @@
 	
 	% Higher order terms
 	;		predicate(mh_predicate)
-	;		relation(arity, functor)
-	;		function(arity, functor)	
+	;		relation(arity, predicate_term)
+	;		function(arity, predicate_term)	
 	
 	% Substitution
 	;		term_sub(functor, mh_substitution).
@@ -252,8 +252,8 @@
 
 :- type lambda =< functor
 	--->	predicate(mh_predicate)
-	;		relation(arity, functor)
-	;		function(arity, functor)	
+	;		relation(arity, predicate_term)
+	;		function(arity, predicate_term)	
 
 	;		term_sub(lambda, mh_substitution)
 
