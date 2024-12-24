@@ -37,8 +37,8 @@
 	--->	invalid_predicate(mh_term, string)
  	;		pred_success(mh_substitution)		% yes
   	;		pred_failure(pred_fail_reason)		% no
-	;		pred_disj(mh_pred_set)				% A ; B ; C
-	;		pred_conj(mh_pred_set)				% A , B , C
+	;		pred_disj(mh_disjunction)				% A ; B ; C
+	;		pred_conj(mh_conjunction)				% A , B , C
 	;		pred_neg(mh_predicate)				% not A
 	;		pred_unification(mh_term, mh_term)	% X = Y
 	;		some [T] mr_predicate(T) => predicate(T).
@@ -55,18 +55,29 @@
  :- pred predicate_arity(mh_predicate::in, int::out) is det.
  
  :- instance arity(mh_predicate).
-	
+ 
+%-----------------------------------------------------------------------------%
+% Success indicator
+
+:- inst success_indicator
+	--->	pred_success(ground)		% yes
+  	;		pred_failure(ground).		% no
+
+:- type success_indicator =< mh_predicate
+	--->	pred_success(mh_substitution)		% yes
+  	;		pred_failure(pred_fail_reason).		% no
+
 %-----------------------------------------------------------------------------%
 % Predicate failure
 
 :- type pred_fail_reason
 	--->	value_unification_failure(mh_term, mh_term) % 1 \= 2
 	;		constraint_unification_failure(mh_term, mh_term) % 5:string
-	;		flounder(mh_term) % ?- predicate(1) where predicate(A) :- predicate(A).
+	;		flounder(mh_term) 	% ?- predicate(1) where predicate(A) :- 
+								%	predicate(A).
 	;		conjunction_failure(mh_tuple, int, pred_fail_reason)
 	;		disjunction_failure(mh_tuple, list(pred_fail_reason))
-	;		mr_predicate_failure(mh_term, string)
-	;		mr_relation_failure(mh_term, string).
+	;		mr_predicate_failure(mh_term, string).
 	
 
 
