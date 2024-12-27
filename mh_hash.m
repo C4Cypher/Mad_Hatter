@@ -6,28 +6,35 @@
 % Public License as described in the file LICENCE.
 %-----------------------------------------------------------------------------%
 % 
-% File: hashable.m
+% File: mh_hash.m
 % Main author: C4Cypher.
 % Stability: low.
 %-----------------------------------------------------------------------------%
 
-:- module hashable.
+:- module mh_hash.
 
 :- interface.
 
-:- import_module univ.
+%-----------------------------------------------------------------------------%
+
 
 %-----------------------------------------------------------------------------%
-% Hashable type class
+% Hash functions for mercury types
 
-:- typeclass hashable(K) where [
-	func hash(K) = uint
-].
+/*
+:- func hash_string(string) = uint.
 
+:- func hash_char(char) = uint.
 
-% predicate alternative for compatability with hash_table.m
+:- func hash_any(T) = uint.
 
-:- pred hash(K::in, uint::out) is det <= hashable(K) .
+:- func hash_univ(univ) = uint.
+
+%-----------------------------------------------------------------------------%
+% Hash functions for primitive numeric types
+
+:- func hash_int(int) = uint.
+*/
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -36,6 +43,3 @@
 
 %-----------------------------------------------------------------------------%
 
-hash(K, hash(K)).
-
-:- pragma inline(hash/2).
