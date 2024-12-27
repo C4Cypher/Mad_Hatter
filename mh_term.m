@@ -60,8 +60,8 @@
 	
 	% Higher order terms
 	;		predicate(mh_predicate)
-	;		relation(arity, predicate_term)
-	;		function(arity, predicate_term)
+	;		relation(arity, predicate_term)	%\(X) = Y :- Pred(X, Y)
+	;		function(arity, predicate_term)	%\(X) -> Y :- Pred(X::in, Y::out)
 	
 	% Term substitutions (lazy)
 	;		term_sub(mh_term, mh_substitution).

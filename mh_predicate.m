@@ -37,8 +37,8 @@
 	--->	invalid_predicate(mh_term, string)
  	;		pred_success(mh_substitution)		% yes
   	;		pred_failure(pred_fail_reason)		% no
-	;		pred_disj(mh_disjunction)				% A ; B ; C
-	;		pred_conj(mh_conjunction)				% A , B , C
+	;		pred_disj(mh_disjunction)			% A ; B ; C
+	;		pred_conj(mh_conjunction)			% A , B , C
 	;		pred_neg(mh_predicate)				% not A
 	;		pred_unification(mh_term, mh_term)	% X = Y
 	;		some [T] mr_predicate(T) => predicate(T).
