@@ -96,14 +96,14 @@
 :- func count(hashmap(_, _)) = int is det.
 :- pred count(hashmap(_, _)::in, int::out) is det.
 
-	% Succeeds if two hashmaps contain the same elements, regardless of internal
-	% structure
+	% Succeeds if two hashmaps contain the same elements, regardless of 
+	% internal structure
 :- pred equal(hashmap(K, V)::in, hashmap(K, V)::in) is semidet.
 
 %-----------------------------------------------------------------------------%
 % Search
 
-	% Succeeds if the main contains the given key
+	% Succeeds if the map contains the given key
 :- pred contains(hashmap(K, _V)::in, K::in) is semidet <= hashable(K).
 
 	% Fails if the key is not found
