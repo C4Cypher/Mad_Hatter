@@ -51,20 +51,16 @@
 
 :- type var_id_offset.
 
-	% var_id_offset(A, B, A - B).
 :- pred var_id_offset(var_id, var_id, var_id_offset).
 :- mode var_id_offset(in, in, out) is det.
 :- mode var_id_offset(out, in, in) is det.
 :- mode var_id_offset(in, out, in) is det.
 
-	% var_id_offset(A, B) = A - B.
 :- func var_id_offset(var_id, var_id) = var_id_offset.
 :- mode var_id_offset(in, in) = out is det.
 :- mode var_id_offset(in, out) = in is det.
 :- mode var_id_offset(out, in) = in is det.
 
-
-	% apply_var_id_offset(A, var_id_offset(A, B)) = B.
 :- func apply_var_id_offset(var_id, var_id_offset) = var_id.
 :- mode apply_var_id_offset(in, in) = out is det.
 :- mode apply_var_id_offset(in, out) = in is det.
@@ -181,12 +177,6 @@
 
 %-----------------------------------------------------------------------------%
 % Indexing Arrays by var_id 
-
-	% var_id_sparse_index(ID, Offset, Set)
-	% returns the sparse index corresponding to the ID if the id is within the
-	% bounds specified by Offset, and Set, otherwise returns the index of the
-	% element after the last element specified by Set
-:- func var_id_sparse_index(var_id, var_id_offset, var_id_set) = int.
 
 :- func array_var_id_set(array(_T)) = var_id_set. 
 
@@ -538,8 +528,6 @@ accumulate_id_set_unbounded(ID, acc(!.Found, Unique0), acc(!:Found, Unique)) :-
 %-----------------------------------------------------------------------------%
 % Indexing Arrays by var_id
 
-
-
 :- pragma inline(id_index/1).
 
 :- func id_index(var_id) = int.
@@ -557,12 +545,8 @@ id_index(ID) = ID - 1.
 
 id_index(ID, Offset) = id_index(ID - Offset).
 
-var_id_sparse_index(ID, Offset, Set) = 
-	( if var_id_gt(Index@id_index(ID, Offset), Last)
-	then next_var_id(Last)
-	else Index
-	) :- Last = last_var_id(Set).
-	
+
+
 array_var_id_set(Array) = size(Array).
 
 offset_array_var_id_set(Array, Offset) = size(Array) + Offset.

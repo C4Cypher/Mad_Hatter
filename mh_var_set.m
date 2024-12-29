@@ -55,10 +55,6 @@
 :- func var_set_first(mh_var_set) = mh_var.
 :- func var_set_last(mh_var_set) = mh_var.
 
-	% The number of vars contained in a set
-:- pred var_set_count(mh_var_set::in, int::out) is det.
-:- func var_set_count(mh_var_set) = int.
-
 %-----------------------------------------------------------------------------%
 % Var Set membership
 
@@ -126,18 +122,6 @@
 	is det.
 :- func var_set_difference(mh_var_set, mh_var_set) = mh_var_set.
 
-%-----------------------------------------------------------------------------%
-% Var Set indexing
-
-	% given a var set and a var_id, give the sparse index that corresponds to
-	% the id's position in the  set, starting with zero. For example, for the
-	% set [ 6, 7,  9 ], the sparse indexes of the members would be [ 0, 1, 2]
-	% fails if the given id is not a member of the set.
-:- pred id_sparse_index(var_id::in, mh_var_set::in, int::out) is semidet.
-:- func id_sparse_index(var_id, mh_var_set) = int is semidet.
-
-:- pred sparse_index(mh_var::in, mh_var_set::in, int::out) is semidet.
-:- func sparse_index(mh_var, mh_var_set) = int is semidet.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -249,13 +233,6 @@ var_set_last_id(var_set(_,_, Next)) = var_set_last_id(Next).
 
 var_set_first(Set) = var(var_set_first_id(Set)).
 var_set_last(Set) = var(var_set_last_id(Set)).
-
-%-----------------------------------------------------------------------------%
-
-var_set_count(Set, var_set_count(Set)).
-
-var_set_count(var_set(_, Set)) = var_id_count(Set).
-var_set_count(var_set(_, Set, Rest)) = var_id_count(Set) + var_set_count(Rest).
 
 %-----------------------------------------------------------------------------%
 % Var Set membership
@@ -567,38 +544,6 @@ var_set_difference_pairs(O1, S1, O2, S2) = Diff :-
 	).
 	
 	
-%-----------------------------------------------------------------------------%
-% Var Set indexing	
+	
 	
 
-id_sparse_index(Id, Set, id_sparse_index(Id, Set)).
-
-id_sparse_index(Id, var_set(Offset, Set)) = 
-	var_id_sparse_index(Id, Offset, Set) :-
-	var_id_ge(Id, first_var_id(Offset)),
-	var_id_le(Id, last_var_id(Set)).
-	
-id_sparse_index(Id, var_set(Offset, Set, Next)) = 
-	( if var_id_le(Id, last_var_id(Set)) 
-	then var_id_sparse_index(Id, Offset, Set)
-	else id_sparse_index(var_id_sparse_index(Id, Offset, Set), Id, Next) 
-	) :-
-	var_id_ge(Id, first_var_id(Offset)).
-	
-:- func id_sparse_index(int, var_id, mh_var_set) = int is semidet.
-
-id_sparse_index(Sum, Id, var_set(Offset, Set)) = 
-	var_id_sparse_index(Id, Offset, Set) + Sum :-
-	var_id_ge(Id, first_var_id(Offset)),
-	var_id_le(Id, last_var_id(Set)).
-	
-id_sparse_index(Sum, Id, var_set(Offset, Set, Next)) = 
-	( if var_id_le(Id, last_var_id(Set)) 
-	then Sum + var_id_sparse_index(Id, Offset, Set)
-	else id_sparse_index(Sum + var_id_sparse_index(Id, Offset, Set), Id, Next) 
-	) :-
-	var_id_ge(Id, first_var_id(Offset)).
-
-sparse_index(Var, Set, sparse_index(Var, Set)).
-sparse_index(var(Id), Set) = id_index(Id, Set).
-	
