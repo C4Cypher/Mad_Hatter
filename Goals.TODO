@@ -29,10 +29,8 @@ get a repl running
 						implement term sets 
 							disjunctive ordering? Weights?
 							value sets
-								implement term map 
-										adapt hashmap for vars 
-											make mh_term hashable 
-												make univ hashable <- I am here
+								implement term map
+									implement var maps  <- I am here
 										implement set tuples
 							refactor tuples
 								internalize representation
