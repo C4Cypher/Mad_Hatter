@@ -60,6 +60,19 @@
 :- func var_set_count(mh_var_set) = int.
 
 %-----------------------------------------------------------------------------%
+% Var Set bounds
+
+:- func var_set_id_set(mh_var_set) = var_id_set.
+:- pred var_set_id_set(mh_var_set::in, var_id_set::out) is det.
+
+:- func var_set_offset(mh_var_set) = var_id_offset.
+:- pred var_set_offset(mh_var_set::in, var_id_offset::out) is det.
+
+	
+:- pred var_set_bounds(mh_var_set::in, var_id_offset::out, var_id_set::out)
+	is det.
+
+%-----------------------------------------------------------------------------%
 % Var Set membership
 
 :- pred var_set_contains_id(mh_var_set, var_id).
@@ -256,6 +269,21 @@ var_set_count(Set, var_set_count(Set)).
 
 var_set_count(var_set(_, Set)) = var_id_count(Set).
 var_set_count(var_set(_, Set, Rest)) = var_id_count(Set) + var_set_count(Rest).
+
+%-----------------------------------------------------------------------------%
+% Var Set bounds
+
+var_set_id_set(var_set(_, Set)) = Set.
+var_set_id_set(var_set(_, _, Next)) = var_set_id_set(Next).
+
+var_set_id_set(Set, var_set_id_set(Set)).
+
+var_set_offset(var_set(Offset, _)) = Offset.
+var_set_offset(var_set(Offset, _, _)) = Offset.
+
+var_set_offset(Set, var_set_offset(Set)).
+
+var_set_bounds(Set, var_set_offset(Set), var_set_id_set(Set)).
 
 %-----------------------------------------------------------------------------%
 % Var Set membership
