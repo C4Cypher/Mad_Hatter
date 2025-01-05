@@ -113,12 +113,14 @@
 :- mode var_set_prepend_id(in, out, out) is det.
 :- mode var_set_prepend_id(out, in, out) is det.
 
-
-
+% Fails if id is already a member of the set
+ 
 :- pred var_set_insert_id(var_id, mh_var_set, mh_var_set).
 :- mode var_set_insert_id(in, in, out) is semidet.
 :- mode var_set_insert_id(in, out, in) is semidet.
 :- mode var_set_insert_id(out, in, in) is semidet.
+
+% If the id is already a member of the set, the set is unchanged
 
 :- pred var_set_merge_id(var_id, mh_var_set, mh_var_set).
 :- mode var_set_merge_id(in, in, out) is det.

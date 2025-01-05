@@ -35,7 +35,7 @@
 :- pred unsafe_dynamic_cast is semidet.
 
 	% DO NOT USE THESE PREDICATES unless you have already verified that the 
-	% variables being cast are the same type. If this condititions is not
+	% variables being cast are the same type. If this conditition is not
 	% met, det_dynamic_cast will throw an exceptiosn IF unsafe_dynamic_cast
 	% is false, otherwise you will get undefined behavior
 	
