@@ -812,8 +812,6 @@ upper_bound_lookup(_, _, _, _) :- sorry($module, $pred, "upper_bound_lookup").
 insert(K, V, !HM) :- 
 	insert_tree(hash(K), K, V, 0, no, !HM).
 	
-:- pragma inline(insert/4).
-	
 insert(!.HM, K, V) = !:HM :-
 	insert(K, V, !HM).
 	
