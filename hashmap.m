@@ -1525,7 +1525,7 @@ det_transform_value(P, K, !HM) :-
     ( if transform_value(P, K, !.HM, NewHM) then
         !:HM = NewHM
     else
-        report_lookup_error("map.det_transform_value: key not found", K)
+        report_lookup_error("hashmap.det_transform_value: key not found", K)
     ).
 	
 %-----------------------------------------------------------------------------%
