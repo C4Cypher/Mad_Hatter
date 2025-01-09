@@ -162,6 +162,10 @@
 :- mode id_sparse_index(in, in) = out is semidet.
 :- mode id_sparse_index(out, in) = in is semidet.
 
+:- func id_reverse_sparse_index(int, mh_var_set) = var_id.
+:- mode id_reverse_sparse_index(in, in) = out is semidet.
+:- mode id_reverse_sparse_index(out, in) = in is semidet.
+
 :- pred sparse_index(mh_var, mh_var_set, in).
 :- mode sparse_index(in, in, out) is semidet.
 :- mode sparse_index(out, in, in) is semidet.
@@ -169,6 +173,10 @@
 :- func sparse_index(mh_var, mh_var_set) = int.
 :- mode sparse_index(in, in) = out is semidet.
 :- mode sparse_index(out, in) = in is semidet.
+
+:- func reverse_sparse_index(int, mh_var_set) = mh_var.
+:- mode reverse_sparse_index(in, in) = out is semidet.
+:- mode reverse_sparse_index(out, in) = in is semidet.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -625,7 +633,9 @@ id_sparse_index(ID, Set, id_sparse_index(ID, Set)).
 :- pragma promise_equivalent_clauses(id_sparse_index/2).
 
 id_sparse_index(ID::in, Set::in) = (sparse_index_fwd(ID, Set)::out).
-id_sparse_index(ID::out, Set::in) = (sparse_index_rev(ID, Set) ::out).
+id_sparse_index(sparse_index_rev(Index, Set)::out, Set::in) = (Index::in).
+
+id_reverse_sparse_index(id_sparse_index(ID, Set), Set) = ID.
 
 :- func sparse_index_fwd(var_id, mh_var_set) = int is semidet.
 
@@ -657,7 +667,7 @@ sparse_index_fwd(Sum, ID, var_set(Offset, Set, Next)) =
 	
 :- func sparse_index_rev(int, mh_var_set) = var_id is semidet.
 
-sparse_idex_rev(Index, var_set(Offset, Set)) = 
+sparse_index_rev(Index, var_set(Offset, Set)) = 
 	reverse_sparse_index(Index, Offset, Set).
 	
 sparse_index_rev(Index, var_set(Offset, Set, Next)) = 
@@ -668,4 +678,6 @@ sparse_index_rev(Index, var_set(Offset, Set, Next)) =
 
 sparse_index(Var, Set, sparse_index(Var, Set)).
 sparse_index(var(ID), Set) = id_sparse_index(ID, Set).
+
+reverse_sparse_index(sparse_index(Var, Set), Set) = Var.
 	
