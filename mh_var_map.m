@@ -62,7 +62,7 @@
 
 :- pred id_search(mh_var_map(T)::in, var_id::in, T::out) 
 	is semidet.
-:- func id_search(mh_var_map(T), var_id) = mh_term is semidet.
+:- func id_search(mh_var_map(T), var_id) = T is semidet.
 
 :- pred search(mh_var_map(T)::in, mh_var::in, T::out) is semidet.
 :- func search(mh_var_map, mh_var) = T is semidet.
@@ -110,7 +110,9 @@
 % For generating new var_map arrays
 :- pred init_first(mh_var_set::in, var_id::out, var_map_iterator::out) is det.
 
+% init_next(Set, ID, Last, Current)
 % Fails if there should be no next element
+% Be sure to index off of the Current iterator, not the Last!
 :- pred init_next(mh_var_set::in, var_id::out, var_map_iterator::in,
 	var_map_iterator::out) is semidet.
 	
@@ -204,8 +206,7 @@
 
 :- func difference(var_map(T), var_map(_)) = var_map(T).
 
-:- pred difference(var_map(T)::in, hashmap(K, _)::in, var_map(T)::out)
-	is det.
+:- pred difference(var_map(T)::in, var_map(_)::in, var_map(T)::out)	is det.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -494,7 +495,7 @@ union(_, empty_var_map, empty_var_map, empty_var_map).
 union(_, empty_var_map, M, M).
 union(_, M, empty_var_map, M).
 
-union(F, var_map(S1, A1), M1@var_map(S2, A2), M2@var_map(S, FinalArray)) :-
+union(F, M1@var_map(S1, _), M2@var_map(S2, _), var_map(S, FinalArray)) :-
 	var_set_union(S1, S2, S),
 	var_set_count(S, ArraySize),
 	init_first(S, FirstID, Iter),
@@ -534,4 +535,78 @@ union_loop(F, M1, M2, S, Last, !Array) :-
 		true
 	).
 	
+intersect(F, M1, M2) = M :-
+    intersect(F, M1, M2, M).
+	
+intersect(_, empty_var_map, empty_var_map, empty_var_map).
+intersect(_, empty_var_map, _, empty_var_map).
+intersect(_, _, empty_var_map, empty_var_map).
+
+intersect(F, M1@var_map(S1, _), M2@var_map(S2, _), Intersection) :-
+	var_set_intersection(S1, S2, S),
+	(if empty_var_set(S)
+	then
+		Intersection = empty_var_map
+	else
+		init_first(S, FirstID, Iter),
+		array.init(ArraySize, element_intersect(F, M1, M2, FirstID), NewArray),
+		intersect_loop(F, M1, M2, S, Iter, NewArray, FinalArray).
+	)
+	
+	
+	
+:- func element_intersect(func(T, T) = T, var_map(T), var_map(T), var_id) = T.
+:- mode element_intersect(in(func(in, in) = out is det), in, in, in) = out 
+	is det.
+:- mode element_intersect(in(func(in, in) = out is semidet), in, in) = out
+	is semidet.
+	
+element_intersect(F, M1, M2, ID) = F(id_lookup(M1, ID), id_lookup(M2, ID)).
+	
+:- pred intersect_loop(func(T, T) = T, var_map(T), var_map(T), mh_var_set, 
+	var_map_iterator, array(T), array(T)).
+:- mode intersect_loop(in(func(in, in) = out is det), in, in, in, in,
+	array_di, array_uo)	is det.
+:- mode intersect_loop(in(func(in, in) = out is semidet), in, in, in, in, 
+	array_di, array_uo) is semidet.
+	
+intersect_loop(F, M1, M2, S, Last, !Array) :-
+	(if init_next(S, ID, Last, Current)
+	then
+		array.set(iterator_index(Current), element_intersect(F, M1, M2, ID), 
+			!Array),
+		intersect_loop(F, M1, M2, S, Current, !Array)
+	else
+		true
+	).
+	
+difference(M1, M2) = M :-
+	difference(M1, M2, M).
+
+difference(empty_var_map, empty_var_map, empty_var_map).
+difference(M, empty_tree, M).
+difference(empty_tree, var_map(_, _), empty_tree).
+
+difference(M1@var_map(S1, _), var_map(S2, _), Difference) :-
+	var_set_difference(S1, S2, S),
+	(if empty_var_set(S)
+	then
+		Difference = empty_var_map
+	else
+		init_first(S, FirstID, Iter),
+		array.init(ArraySize, id_lookup(M1, FirstID), NewArray),
+		intersect_loop(F, M1, S, Iter, NewArray, FinalArray).
+	)
+	
+:- pred difference_loop(var_map(T)::in, mh_var_set::in,	var_map_iterator::in, 
+	array(T)::array_di, array(T)::array_uo) is det.
+	
+difference_loop(M, S, Last, !Array) :-
+	(if init_next(S, ID, Last, Current)
+	then
+		array.set(iterator_index(Current), id_lookup(M, ID), !Array),
+		difference_loop(M, S, Current, !Array)
+	else
+		true
+	).
 	
