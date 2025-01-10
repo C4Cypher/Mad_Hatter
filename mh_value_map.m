@@ -97,6 +97,10 @@
 
 :- pred member_univ(mh_value_map(V)::in, univ::out, V::out) is nondet.
 
+%-----------------------------------------------------------------------------%
+% Set Operations
+
+% TODO
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -112,6 +116,8 @@
 
 %-----------------------------------------------------------------------------%
 % Value maps
+
+% TODO: make univ hashable and replace this implementation with a hashmap
 
 :- type mh_value_map(T) 
 	--->	value_map(map(type_desc, type_map(T))).
