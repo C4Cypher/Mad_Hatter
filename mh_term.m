@@ -108,6 +108,7 @@
 	;		relation(ground, ground)
 	;		function(ground, ground)
 	;		term_sub(functor, ground).
+	% TODO: Add tuples as functors?
 
 :- type functor =< mh_term
 	% Atoms
