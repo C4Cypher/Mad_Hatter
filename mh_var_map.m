@@ -39,7 +39,7 @@
 :- pred singleton_id(var_id::in, T::in, mh_var_map(T)::out) is det.
 
 :- func singleton(mh_var, T) = mh_var_map(T).
-:- pred singleton(mh_var::in, T::in, mh_var_map(T)::out) is det
+:- pred singleton(mh_var::in, T::in, mh_var_map(T)::out) is det.
 
 % var_map_bounds(var_mapsitution, Min, Max)
 % Return the minimum and maximum var_id's indexed by var_map
