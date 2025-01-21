@@ -13,15 +13,18 @@
 
 :- module mh_term_set.
 
+:- import_module unit.
+
 :- import_module mh_term.
-:- import_module mh_var_id.
+:- import_module mh_term_map.
+
 
 :- interface.
 
 %-----------------------------------------------------------------------------%
 % Term sets
 
-:- type mh_term_set.
+:- type mh_term_set == mh_term_map(unit).
 
 % :- pred init(mh_term_set::out) is det.
 % :- func init = mh_term_set.
@@ -60,57 +63,3 @@
 	;		var_set(var_id_offset, var_id_set, mh_var_set)
 	;		mr_value_set(univ_set)
 	;		simple_set()
-	
-%-----------------------------------------------------------------------------%
-% Simple sets
-
-:- inst mh_simple_set
-	--->	empty_set
-	;		nil_set	% the set of nil values
-	;		atom_set(ground)
-	;		var_set(ground, ground)
-	;		var_set(ground, ground, ground)
-	;		mr_value_set(ground).
-	
-:- type mh_simple_set =< mh_term_set
-	--->	empty_set
-	;		nil_set	% the set of nil values
-	;		atom_set(symbol_set)
-	;		var_set(var_id_offset, var_id_set)
-	;		var_set(var_id_offset, var_id_set, mh_var_set)
-	;		mr_value_set(univ_set).
-	
-%-----------------------------------------------------------------------------%
-% Nil set
-
-:- inst nil_set
-	--->	empty_set
-	;		nil_set.
-	
-:- type nil_set =< simple_set
-	--->	empty_set
-	;		nil_set.
-
-%-----------------------------------------------------------------------------%
-% Atom sets
-
-:- type symbol_set == set(mh_symbol).
-
-%-----------------------------------------------------------------------------%
-% Var sets
-
-:- inst mh_var_set
-	--->	empty_set
-	;		var_set(ground, ground)
-	;		var_set(ground, ground, ground).
-	
-:- type mh_var_set =< mh_simple_set
-	--->	empty_set
-	;		var_set(var_id_offset, var_id_set)
-	;		var_set(var_id_offset, var_id_set, mh_var_set).
-
-
-%-----------------------------------------------------------------------------%
-% Value sets
-
-:- type univ_set == set(univ).
