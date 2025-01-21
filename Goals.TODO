@@ -30,8 +30,11 @@ get a repl running
 							disjunctive ordering? Weights?
 							value sets
 								implement term map
-									implement var maps  <- I am here
-										implement set tuples
+									implement tuple maps  <- I am here
+									implement set tuples
+									implement predicate maps
+									implement relation maps
+									function maps?
 							refactor tuples
 								internalize representation
 									
