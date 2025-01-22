@@ -122,7 +122,7 @@
 %-----------------------------------------------------------------------------%
 % Insertion
 
-	% Insert an element into a hashmap, fails if the element already exists 
+	% Insert an element into a var map, fails if the element already exists 
 :- pred id_insert(var_id::in, T::in, mh_var_map(T)::in, mh_var_map(T)::out) 
 	is semidet.
 
@@ -143,7 +143,7 @@
 :- pred search_insert(mh_var::in, T::in, maybe(T)::out,
     mh_var_map(T)::in, mh_var_map(T)::out) is det.
 
-	% Inserts an element into a hashmap, overwriting element if it already 
+	% Inserts an element into a var map, overwriting element if it already 
 	% exists
 :- pred id_set(var_id::in, T::in, mh_var_map(T)::in, mh_var_map(T)::out) 
 	is det.
@@ -188,7 +188,7 @@
 
 :- pred id_delete_list(list(var_id)::in, mh_var_map(T)::in, 
 	mh_var_map(T)::out)	is det.
-:- pred delete(list(mh_var)::in, mh_var_map(T)::in, mh_var_map(T)::out)
+:- pred delete_list(list(mh_var)::in, mh_var_map(T)::in, mh_var_map(T)::out)
 	is det.	
 	
 %-----------------------------------------------------------------------------%
