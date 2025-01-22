@@ -123,46 +123,49 @@
 % Insertion
 
 	% Insert an element into a hashmap, fails if the element already exists 
-:- pred id_insert(var_id::in, T::in, var_map(T)::in, var_map(T)::out) 
+:- pred id_insert(var_id::in, T::in, mh_var_map(T)::in, mh_var_map(T)::out) 
 	is semidet.
 
-:- pred insert(mh_var::in, T::in, var_map(T)::in, var_map(T)::out) is semidet.
+:- pred insert(mh_var::in, T::in, mh_var_map(T)::in, mh_var_map(T)::out) 
+	is semidet.
 
-:- pred det_insert(mh_var::in, T::in, var_map(T)::in, var_map(T)::out) is det.
+:- pred det_insert(mh_var::in, T::in, mh_var_map(T)::in, mh_var_map(T)::out) 
+	is det.
 
 
 :- pred det_insert_from_corresponding_lists(list(var_id)::in,
-    list(T)::in, var_map(T)::in, var_map(T)::out) is det.
+    list(T)::in, mh_var_map(T)::in, mh_var_map(T)::out) is det.
 	
 
 :- pred det_insert_from_assoc_list(assoc_list(mh_var, T)::in,
-    var_map(T)::in, var_map(T)::out) is det.
+    mh_var_map(T)::in, mh_var_map(T)::out) is det.
 	
 :- pred search_insert(mh_var::in, T::in, maybe(T)::out,
-    var_map(T)::in, var_map(T)::out) is det.
+    mh_var_map(T)::in, mh_var_map(T)::out) is det.
 
 	% Inserts an element into a hashmap, overwriting element if it already 
 	% exists
-:- pred id_set(var_id::in, T::in, var_map(T)::in, var_map(T)::out) is det.
+:- pred id_set(var_id::in, T::in, mh_var_map(T)::in, mh_var_map(T)::out) 
+	is det.
 	
-:- pred set(mh_var::in, T::in, var_map(T)::in, var_map(T)::out) is det.
+:- pred set(mh_var::in, T::in, mh_var_map(T)::in, mh_var_map(T)::out) is det.
 
 
 :- pred set_from_corresponding_lists(list(var_id)::in, list(T)::in,
-    var_map(T)::in, var_map(T)::out) is det.
+    mh_var_map(T)::in, mh_var_map(T)::out) is det.
 	
 
 :- pred set_from_assoc_list(assoc_list(mh_var, T)::in,
-    var_map(T)::in, var_map(T)::out) is det.
+    mh_var_map(T)::in, mh_var_map(T)::out) is det.
 
 	% Overwrite an already existing element in a hashmap, fail if key not found
-:- pred id_update(var_id::in, T::in, var_map(T)::in, var_map(T)::out) 
+:- pred id_update(var_id::in, T::in, mh_var_map(T)::in, mh_var_map(T)::out) 
 	is semidet.
 	
-:- pred update(mh_var::in, T::in, var_map(T)::in, var_map(T)::out) 
+:- pred update(mh_var::in, T::in, mh_var_map(T)::in, mh_var_map(T)::out) 
 	is semidet.
 	
-:- pred det_update(mh_var::in, T::in, var_map(T)::in, var_map(T)::out) 
+:- pred det_update(mh_var::in, T::in, mh_var_map(T)::in, mh_var_map(T)::out) 
 	is det.
 	
 %-----------------------------------------------------------------------------%
@@ -170,43 +173,43 @@
 
 	% Remove a key-value pair from a map and return the value.
 	% Fail if the key is not present.
-:- pred id_remove(var_id::in, T::out, var_map(T)::in, var_map(T)::out) 
+:- pred id_remove(var_id::in, T::out, mh_var_map(T)::in, mh_var_map(T)::out) 
 	is semidet.
-:- pred remove(mh_var::in, T::out, var_map(T)::in, var_map(T)::out) 
+:- pred remove(mh_var::in, T::out, mh_var_map(T)::in, mh_var_map(T)::out) 
 	is semidet.
 
-:- pred det_remove(mh_var::in, T::out, var_map(T)::in, var_map(T)::out) 
+:- pred det_remove(mh_var::in, T::out, mh_var_map(T)::in, mh_var_map(T)::out) 
 	is det.
 
 	% Delete a key-value pair from a map.
 	% If the key is not present, leave the map unchanged.	
-:- pred id_delete(var_id::in, var_map(T)::in, var_map(T)::out) is det.
-:- pred delete(mh_var::in, var_map(T)::in, var_map(T)::out) is det.
+:- pred id_delete(var_id::in, mh_var_map(T)::in, mh_var_map(T)::out) is det.
+:- pred delete(mh_var::in, mh_var_map(T)::in, mh_var_map(T)::out) is det.
 
-:- pred id_delete_list(list(var_id)::in, var_map(T)::in, var_map(T)::out)
-	is det.
-:- pred delete(list(mh_var)::in, var_map(T)::in, var_map(T)::out)
+:- pred id_delete_list(list(var_id)::in, mh_var_map(T)::in, 
+	mh_var_map(T)::out)	is det.
+:- pred delete(list(mh_var)::in, mh_var_map(T)::in, mh_var_map(T)::out)
 	is det.	
 	
 %-----------------------------------------------------------------------------%
 % Set operations
 
-:- func union(func(T, T) = T, var_map(T), var_map(T)) = var_map(T).
+:- func union(func(T, T) = T, mh_var_map(T), mh_var_map(T)) = mh_var_map(T).
 
-:- pred union(func(T, T) = T, var_map(T), var_map(T), var_map(T)).
+:- pred union(func(T, T) = T, mh_var_map(T), mh_var_map(T), mh_var_map(T)).
 :- mode union(in(func(in, in) = out is det), in, in, out) is det.
 :- mode union(in(func(in, in) = out is semidet), in, in, out) is semidet.
 
-:- func intersect(func(T, T) = T, var_map(T), var_map(T)) = 
+:- func intersect(func(T, T) = T, mh_var_map(T), mh_var_map(T)) = 
 	var_map(T).
 	
-:- pred intersect(func(T, T) = T, var_map(T), var_map(T), var_map(T)).
+:- pred intersect(func(T, T) = T, mh_var_map(T), mh_var_map(T), mh_var_map(T)).
 :- mode intersect(in(func(in, in) = out is det), in, in, out) is det.
 :- mode intersect(in(func(in, in) = out is semidet), in, in, out) is semidet.
 
-:- func difference(var_map(T), var_map(_)) = var_map(T).
+:- func difference(var_map(T), var_map(_)) = mh_var_map(T).
 
-:- pred difference(var_map(T)::in, var_map(_)::in, var_map(T)::out)	is det.
+:- pred difference(var_map(T)::in, var_map(_)::in, mh_var_map(T)::out)	is det.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -366,9 +369,6 @@ det_insert_from_corresponding_lists([_ | _], [], _, _) :-
 det_insert_from_corresponding_lists([K | Ks], [V | Vs], !Map) :-
     det_insert(K, V, !Map),
     det_insert_from_corresponding_lists(Ks, Vs, !Map).
-
-det_insert_from_assoc_list(M0, AL) = M :-
-    det_insert_from_assoc_list(AL, M0, M).
 
 det_insert_from_assoc_list([], !Map).
 det_insert_from_assoc_list([K - V | KVs], !Map) :-
