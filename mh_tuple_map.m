@@ -6,30 +6,27 @@
 % Public License as described in the file LICENCE.
 %-----------------------------------------------------------------------------%
 % 
-% File: mh_term_map.m
+% File: mh_tuple_map.m
 % Main author: C4Cypher.
 % Stability: low.
 %-----------------------------------------------------------------------------%
 
-:- module mh_term_map.
+:- module mh_tuple_map.
 
 :- interface.
 
-
 :- import_module mh_term.
-:- import_module mh_var_id.
+:- import_module mh_tuple.
 
 %-----------------------------------------------------------------------------%
-% Term maps
+% Tuple map
 
-:- type mh_term_map(T).
+:- type mh_tuple_map(T).
 
-:- type key_term_func(T) == (func(T) = mh_term).
+:- func init = (mh_tuple_map(T)::uo) is det.
+:- pred init(mh_tuple_map(_)::uo) is det.
 
-:- func init = (mh_term_map(T)::uo) is det.
-:- pred init(mh_term_map(_)::uo) is det.
-
-:- func singleton(K, V) = mh_term_map(V).
+:- func singleton(mh_tuple, T) = mh_tuple_map(T).
 
 :- pred is_empty(mh_term_map(_)::in) is semidet.
 
@@ -38,38 +35,17 @@
 
 :- implementation.
 
-:- import_module maybe.
 :- import_module array.
-:- import_module hash_table.
-:- import_module map.
-:- import_module type_desc.
-:- import_module univ.
+:- import_module list.
+:- use_module map.
 
-:- import_module mh_tuple.
-:- import_module mh_symbol.
-:- import_module mh_value_map.
-:- import_module mh_var_map.
-:- import_module mh_tuple_map.
-:- import_module hashmap.
+:- import_module mh_term_map.
 
 %-----------------------------------------------------------------------------%
-% Term maps
 
-:- type mh_term_map(T)
-	--->	empty_term_map
-	;		term_map(
-			nil :: maybe(T),
-			atom :: symbol_map(T),
-			var :: mh_var_map(T),
-			mr_value :: mr_value_map(T),
-			cons :: mh_term_map(mh_term_map(T)), 
-			tuple :: tuple_map(T),
-			lazy :: mh_term_map(T),
-			predicate ::
-			relation ::
-			function ::
-	).
+:- type term_list_map(T) == map.map(list(mh_term), T).
 
-:- type symbol_map(T) == hashmap(mh_symbol, T).
-:- type tuple_map(T) == map()
-
+:- type mh_tuple_map(T)
+	--->	tuple_map(term_list_map(T), ).
+	
+init = 
