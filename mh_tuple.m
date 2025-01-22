@@ -38,7 +38,7 @@
 :- instance mr_tuple(mh_tuple).
 
 %-----------------------------------------------------------------------------%
-% Tuple constructors
+% Tuple constructors and conversion
 
 % reverse modes fail on type mismatch
 
@@ -57,6 +57,14 @@
 :- func tuple_list(T) = mh_tuple <= mr_tuple(T).
 :- mode tuple_list(in) = out is det.
 :- mode tuple_list(out) = in is semidet. 
+
+
+:- func to_list(mh_tuple) = list(mh_term).
+:- func from_list(list(mh_tuple)) = mh_tuple.
+
+:- func to_array(mh_tuple) = array(mh_term).
+:- func from_array(array(mh_term)) = mh_tuple.
+
 
 %-----------------------------------------------------------------------------%
 % Tuple properties
@@ -178,7 +186,7 @@
 
 
 %-----------------------------------------------------------------------------%
-% Tuple constructors
+% Tuple constructors and conversion
 
 :- pragma promise_equivalent_clauses(tuple/1).
 
@@ -206,6 +214,26 @@ tuple(T::out) = (Tuple::in) :-
 			apply_tuple_substiution(Sub, Tup0, Tup1),
 			Tup1 = tuple(T)
 	).
+	
+to_list(mr_tuple(T)) = List :-
+	fold_mr_tuple(list.cons, T, [], List).
+
+to_list(list_tuple(List)) = List.
+
+to_list(array_tuple(Array)) = array.to_list(Array).
+
+from_list(List) = list_tuple(List).
+
+
+to_array(mr_tuple(T)) = array.generate(arity(T), mr_tuple_index(T)).
+
+to_array(list_tuple(List)) = array.from_list(List).
+
+to_array(array_tuple(Array)) = Array.
+
+
+	
+
 	
 %-----------------------------------------------------------------------------%
 % Tuple properties	
