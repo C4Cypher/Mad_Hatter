@@ -201,15 +201,15 @@
 :- mode union(in(func(in, in) = out is semidet), in, in, out) is semidet.
 
 :- func intersect(func(T, T) = T, mh_var_map(T), mh_var_map(T)) = 
-	var_map(T).
+	mh_var_map(T).
 	
 :- pred intersect(func(T, T) = T, mh_var_map(T), mh_var_map(T), mh_var_map(T)).
 :- mode intersect(in(func(in, in) = out is det), in, in, out) is det.
 :- mode intersect(in(func(in, in) = out is semidet), in, in, out) is semidet.
 
-:- func difference(var_map(T), var_map(_)) = mh_var_map(T).
+:- func difference(mh_var_map(T), mh_var_map(_)) = mh_var_map(T).
 
-:- pred difference(var_map(T)::in, var_map(_)::in, mh_var_map(T)::out)	is det.
+:- pred difference(mh_var_map(T)::in, mh_var_map(_)::in, mh_var_map(T)::out)	is det.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -480,10 +480,10 @@ id_delete_list([ID | IDs], !Map) :-
 	id_delete(ID, !Map),
 	id_delete_list(IDs, !Map).
 	
-delete([], !Map).
-delete([ID | IDs], !Map) :- 
+delete_list([], !Map).
+delete_list([ID | IDs], !Map) :- 
 	delete(ID, !Map),
-	delete(IDs, !Map).
+	delete_list(IDs, !Map).
 	
 %-----------------------------------------------------------------------------%
 % Set operations	
