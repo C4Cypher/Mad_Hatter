@@ -17,8 +17,8 @@
 
 :- use_module map.
 :- import_module array.
-:- import_module list.
 :- import_module pair.
+:- import_module list.
 :- import_module assoc_list.
 
 :- import_module mh_term.
@@ -27,99 +27,99 @@
 %-----------------------------------------------------------------------------%
 % Exact Tuple map - tuple map optimized for exact tuple lookup
 
-:- type mh_tuple_exact_map(T) == map.map(array(mh_term), pair(mh_tuple,T)).
+:- type tuple_exact_map(T) == map.map(array(mh_term), pair(mh_tuple,T)).
 
-:- func init = (mh_tuple_exact_map(T)::uo) is det.
-:- pred init(mh_tuple_exact_map(_)::uo) is det.
+:- func init = (tuple_exact_map(T)::out) is det.
+:- pred init(tuple_exact_map(_)::out) is det.
 
-:- func singleton(mh_tuple, T) = mh_tuple_exact_map(T).
+:- func singleton(mh_tuple, T) = tuple_exact_map(T).
 
-:- pred is_empty(mh_tuple_exact_map(_)::in) is semidet.
+:- pred is_empty(tuple_exact_map(_)::in) is semidet.
 
 %-----------------------------------------------------------------------------%
 % Search
 
 	% Succeeds if the map contains the given key
-:- pred contains(mh_tuple_exact_map(T)::in, mh_tuple::in) is semidet.
+:- pred contains(tuple_exact_map(T)::in, mh_tuple::in) is semidet.
 
 	% Fails if the key is not found
-:- pred search(mh_tuple_exact_map(T)::in, mh_tuple::in, 
+:- pred search(tuple_exact_map(T)::in, mh_tuple::in, 
 T::out) is semidet.
-:- func search(mh_tuple_exact_map(T), mh_tuple) = T is semidet.
+:- func search(tuple_exact_map(T), mh_tuple) = T is semidet.
 
 	% Throws an exception if the key is not found
-:- pred lookup(mh_tuple_exact_map(T)::in, mh_tuple::in, T::out) is det.
-:- func lookup(mh_tuple_exact_map(T), mh_tuple) = T is det.
+:- pred lookup(tuple_exact_map(T)::in, mh_tuple::in, T::out) is det.
+:- func lookup(tuple_exact_map(T), mh_tuple) = T is det.
 
 %-----------------------------------------------------------------------------%
 % Insertion
 
-:- pred insert(mh_tuple::in, T::in, mh_tuple_exact_map(T)::in, 
-	mh_tuple_exact_map(T)::out) is semidet.
+:- pred insert(mh_tuple::in, T::in, tuple_exact_map(T)::in, 
+	tuple_exact_map(T)::out) is semidet.
 	
-:- pred det_insert(mh_tuple::in, T::in, mh_tuple_exact_map(T)::in, 
-	mh_tuple_exact_map(T)::out) is det.
+:- pred det_insert(mh_tuple::in, T::in, tuple_exact_map(T)::in, 
+	tuple_exact_map(T)::out) is det.
 	
 :- pred det_insert_from_corresponding_lists(list(mh_tuple)::in, list(T)::in,
-	mh_tuple_exact_map(T)::in, mh_tuple_exact_map(T)::out) is det.
+	tuple_exact_map(T)::in, tuple_exact_map(T)::out) is det.
 	
 :- pred det_insert_from_assoc_list(assoc_list(mh_tuple, T)::in,
-	mh_tuple_exact_map(T)::in, mh_tuple_exact_map(T)::out) is det.
+	tuple_exact_map(T)::in, tuple_exact_map(T)::out) is det.
 
-:- set(mh_tuple::in, T::in, mh_tuple_exact_map::in, mh_tuple_exact_map::out)
+:- set(mh_tuple::in, T::in, tuple_exact_map::in, tuple_exact_map::out)
 	is det.
 	
 :- pred set_from_corresponding_lists(list(mh_tuple)::in, list(T)::in,
-	mh_tuple_exact_map(T)::in, mh_tuple_exact_map(T)::out) is det.
+	tuple_exact_map(T)::in, tuple_exact_map(T)::out) is det.
 	
 :- pred set_from_assoc_list(assoc_list(mh_tuple, T)::in,
-	mh_tuple_exact_map(T)::in, mh_tuple_exact_map(T)::out) is det.
+	tuple_exact_map(T)::in, tuple_exact_map(T)::out) is det.
 
-:- pred update(mh_tuple::in, T::in, mh_tuple_exact_map(T)::in, 
-	mh_tuple_exact_map::out) is semidet.
+:- pred update(mh_tuple::in, T::in, tuple_exact_map(T)::in, 
+	tuple_exact_map::out) is semidet.
 	
-:- pred det_update(mh_tuple::in, T::in, mh_tuple_exact_map(T)::in, 
-	mh_tuple_exact_map::out) is det.
+:- pred det_update(mh_tuple::in, T::in, tuple_exact_map(T)::in, 
+	tuple_exact_map::out) is det.
 	
 %-----------------------------------------------------------------------------%
 % Removal
 
-:- pred remove(mh_tuple::in, T::out, mh_tuple_exact_map(T)::in, 
-	mh_tuple_exact_map::out) is semidet.
+:- pred remove(mh_tuple::in, T::out, tuple_exact_map(T)::in, 
+	tuple_exact_map::out) is semidet.
 	
-:- pred det_remove(mh_tuple::in, T::out, mh_tuple_exact_map(T)::in, 
-	mh_tuple_exact_map::out) is det.
+:- pred det_remove(mh_tuple::in, T::out, tuple_exact_map(T)::in, 
+	tuple_exact_map::out) is det.
 	
-:- pred delete(mh_tuple::in,  mh_tuple_exact_map(T)::in, 
-	mh_tuple_exact_map::out) is det.
+:- pred delete(mh_tuple::in,  tuple_exact_map(T)::in, 
+	tuple_exact_map::out) is det.
 
-:- pred delete_list(list(mh_tuple)::in, mh_tuple_exact_map(T)::in, 
-	mh_tuple_exact_map::out) is det.
+:- pred delete_list(list(mh_tuple)::in, tuple_exact_map(T)::in, 
+	tuple_exact_map::out) is det.
 	
 %-----------------------------------------------------------------------------%
 % Set operations
 
 
-:- func union(func(T, T) = T, mh_tuple_exact_map(T), mh_tuple_exact_map(T)) =
-	mh_tuple_exact_map(T).
+:- func union(func(T, T) = T, tuple_exact_map(T), tuple_exact_map(T)) =
+	tuple_exact_map(T).
 
-:- pred union(func(T, T) = T, mh_tuple_exact_map(T), mh_tuple_exact_map(T), mh_tuple_exact_map(T)).
+:- pred union(func(T, T) = T, tuple_exact_map(T), tuple_exact_map(T), tuple_exact_map(T)).
 :- mode union(in(func(in, in) = out is det), in, in, out) is det.
 :- mode union(in(func(in, in) = out is semidet), in, in, out) is semidet.
 
-:- func intersect(func(T, T) = T, mh_tuple_exact_map(T), mh_tuple_exact_map(T))
+:- func intersect(func(T, T) = T, tuple_exact_map(T), tuple_exact_map(T))
 	= var_map(T).
 	
-:- pred intersect(func(T, T) = T, mh_tuple_exact_map(T), mh_tuple_exact_map(T),
-	mh_tuple_exact_map(T)).
+:- pred intersect(func(T, T) = T, tuple_exact_map(T), tuple_exact_map(T),
+	tuple_exact_map(T)).
 :- mode intersect(in(func(in, in) = out is det), in, in, out) is det.
 :- mode intersect(in(func(in, in) = out is semidet), in, in, out) is semidet.
 
-:- func difference(mh_tuple_exact_map(T), mh_tuple_exact_map(_)) =
-	mh_tuple_exact_map(T).
+:- func difference(tuple_exact_map(T), tuple_exact_map(_)) =
+	tuple_exact_map(T).
 
-:- pred difference(var_map(T)::in, mh_tuple_exact_map(_)::in, 
-	mh_tuple_exact_map(T)::out)	is det.
+:- pred difference(var_map(T)::in, tuple_exact_map(_)::in, 
+	tuple_exact_map(T)::out)	is det.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -156,7 +156,7 @@ det_lookup(Map, Tuple) =
 	then 
 		Found
 	else
-		report_lookup_error("mh_tuple_exact_map.lookup: key not found", K)
+		report_lookup_error("tuple_exact_map.lookup: key not found", K)
 	).
 
 %-----------------------------------------------------------------------------%
@@ -168,7 +168,7 @@ det_insert(Tuple, T, !Map) :-
 	(if insert(Tuple, T, !Map)
 	then !:Map = !.Map
 	else report_lookup_error(
-		"mh_tuple_exact_map.det_insert: tuple aleady present in map", 
+		"tuple_exact_map.det_insert: tuple aleady present in map", 
 		Tuple, !.Map)
 	).
 	
@@ -210,7 +210,7 @@ det_update(Var, T, !Map) :-
 	(if update(Var, T, !Map)
 	then !:Map = !.Map
 	else report_lookup_error(
-		"mh_tuple_exact_map.det_update: tuple not present in map", Var, !.Map)
+		"tuple_exact_map.det_update: tuple not present in map", Var, !.Map)
 	).
 	
 %-----------------------------------------------------------------------------%
@@ -222,7 +222,7 @@ det_remove(Tuple, T, !Map) :-
 	(if remove(Tuple, T, !Map)
 	then !:Map = !.Map
 	else report_lookup_error(
-		"mh_tuple_exact_map.det_remove: Tuple not present in map", Tuple, 
+		"tuple_exact_map.det_remove: Tuple not present in map", Tuple, 
 		!.Map)
 	).
 	
