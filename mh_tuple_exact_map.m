@@ -95,6 +95,31 @@ T::out) is semidet.
 
 :- pred delete_list(list(mh_tuple)::in, mh_tuple_exact_map(T)::in, 
 	mh_tuple_exact_map::out) is det.
+	
+%-----------------------------------------------------------------------------%
+% Set operations
+
+
+:- func union(func(T, T) = T, mh_tuple_exact_map(T), mh_tuple_exact_map(T)) =
+	mh_tuple_exact_map(T).
+
+:- pred union(func(T, T) = T, mh_tuple_exact_map(T), mh_tuple_exact_map(T), mh_tuple_exact_map(T)).
+:- mode union(in(func(in, in) = out is det), in, in, out) is det.
+:- mode union(in(func(in, in) = out is semidet), in, in, out) is semidet.
+
+:- func intersect(func(T, T) = T, mh_tuple_exact_map(T), mh_tuple_exact_map(T))
+	= var_map(T).
+	
+:- pred intersect(func(T, T) = T, mh_tuple_exact_map(T), mh_tuple_exact_map(T),
+	mh_tuple_exact_map(T)).
+:- mode intersect(in(func(in, in) = out is det), in, in, out) is det.
+:- mode intersect(in(func(in, in) = out is semidet), in, in, out) is semidet.
+
+:- func difference(mh_tuple_exact_map(T), mh_tuple_exact_map(_)) =
+	mh_tuple_exact_map(T).
+
+:- pred difference(var_map(T)::in, mh_tuple_exact_map(_)::in, 
+	mh_tuple_exact_map(T)::out)	is det.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -170,7 +195,7 @@ set_from_corresponding_lists([], [_ | _], _, _) :-
     unexpected($pred, "list length mismatch").
 set_from_corresponding_lists([_ | _], [], _, _) :-
     unexpected($pred, "list length mismatch").
-set_from_corresponding_lists([K | Ks], [V | Vs], !Map) :-
+set_from_corresponding_lists([K | Ks], [V | Vs], !Map) 						:-
     set(K, V, !Map),
     set_from_corresponding_lists(Ks, Vs, !Map).
 
@@ -200,3 +225,26 @@ det_remove(Tuple, T, !Map) :-
 		"mh_tuple_exact_map.det_remove: Tuple not present in map", Tuple, 
 		!.Map)
 	).
+	
+delete(Tuple, !Map) :- map.delete(to_array(Tuple), !Map).
+
+delete_list([], !Map).
+delete_list([Tuple | Tuples], !Map) :- 
+	delete(Tuple, !Map),
+	delete_list(Tuples, !Map).
+	
+%-----------------------------------------------------------------------------%
+% Set operations
+
+union(F, M1, M2) = map.union(F, M1, M2).
+
+union(F, M1, M2, union(F, M1, M2)).
+
+intersect(F, M1, M2) = map.intersect(F, M1, M2).
+
+intersect(F, M1, M2, intersect(F, M1, M2)).
+
+difference(M1, M2) = M :-
+	difference(M1, M2, M).
+	
+difference(M1, M2, map.delete_list(M1, map.keys(M2))).
