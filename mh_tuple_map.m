@@ -31,6 +31,91 @@
 :- pred is_empty(mh_term_map(_)::in) is semidet.
 
 %-----------------------------------------------------------------------------%
+% Search
+
+	% Succeeds if the map contains the given key
+:- pred contains(mh_term_map(T)::in, mh_tuple::in) is semidet.
+
+	% Fails if the key is not found
+:- pred search(mh_term_map(T)::in, mh_tuple::in, 
+T::out) is semidet.
+:- func search(mh_term_map(T), mh_tuple) = T is semidet.
+
+	% Throws an exception if the key is not found
+:- pred lookup(mh_term_map(T)::in, mh_tuple::in, T::out) is det.
+:- func lookup(mh_term_map(T), mh_tuple) = T is det.
+
+%-----------------------------------------------------------------------------%
+% Insertion
+
+:- pred insert(mh_tuple::in, T::in, mh_term_map(T)::in, 
+	mh_term_map(T)::out) is semidet.
+	
+:- pred det_insert(mh_tuple::in, T::in, mh_term_map(T)::in, 
+	mh_term_map(T)::out) is det.
+	
+:- pred det_insert_from_corresponding_lists(list(mh_tuple)::in, list(T)::in,
+	mh_term_map(T)::in, mh_term_map(T)::out) is det.
+	
+:- pred det_insert_from_assoc_list(assoc_list(mh_tuple, T)::in,
+	mh_term_map(T)::in, mh_term_map(T)::out) is det.
+
+:- set(mh_tuple::in, T::in, mh_term_map::in, mh_term_map::out)
+	is det.
+	
+:- pred set_from_corresponding_lists(list(mh_tuple)::in, list(T)::in,
+	mh_term_map(T)::in, mh_term_map(T)::out) is det.
+	
+:- pred set_from_assoc_list(assoc_list(mh_tuple, T)::in,
+	mh_term_map(T)::in, mh_term_map(T)::out) is det.
+
+:- pred update(mh_tuple::in, T::in, mh_term_map(T)::in, 
+	mh_term_map::out) is semidet.
+	
+:- pred det_update(mh_tuple::in, T::in, mh_term_map(T)::in, 
+	mh_term_map::out) is det.
+	
+%-----------------------------------------------------------------------------%
+% Removal
+
+:- pred remove(mh_tuple::in, T::out, mh_term_map(T)::in, 
+	mh_term_map::out) is semidet.
+	
+:- pred det_remove(mh_tuple::in, T::out, mh_term_map(T)::in, 
+	mh_term_map::out) is det.
+	
+:- pred delete(mh_tuple::in,  mh_term_map(T)::in, 
+	mh_term_map::out) is det.
+
+:- pred delete_list(list(mh_tuple)::in, mh_term_map(T)::in, 
+	mh_term_map::out) is det.
+	
+%-----------------------------------------------------------------------------%
+% Set operations
+
+
+:- func union(func(T, T) = T, mh_term_map(T), mh_term_map(T)) =
+	mh_term_map(T).
+
+:- pred union(func(T, T) = T, mh_term_map(T), mh_term_map(T), mh_term_map(T)).
+:- mode union(in(func(in, in) = out is det), in, in, out) is det.
+:- mode union(in(func(in, in) = out is semidet), in, in, out) is semidet.
+
+:- func intersect(func(T, T) = T, mh_term_map(T), mh_term_map(T))
+	= var_map(T).
+	
+:- pred intersect(func(T, T) = T, mh_term_map(T), mh_term_map(T),
+	mh_term_map(T)).
+:- mode intersect(in(func(in, in) = out is det), in, in, out) is det.
+:- mode intersect(in(func(in, in) = out is semidet), in, in, out) is semidet.
+
+:- func difference(mh_term_map(T), mh_term_map(_)) =
+	mh_term_map(T).
+
+:- pred difference(var_map(T)::in, mh_term_map(_)::in, 
+	mh_term_map(T)::out)	is det.
+
+%-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
 :- implementation.
