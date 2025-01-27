@@ -144,7 +144,7 @@ T::out) is semidet.
 :- func difference(mh_term_map(T), mh_term_map(_)) =
 	mh_term_map(T).
 
-:- pred difference(var_map(T)::in, mh_term_map(_)::in, 
+:- pred difference(mh_term_map(T)::in, mh_term_map(_)::in, 
 	mh_term_map(T)::out) is det.
 	
 :- func set_difference(mh_term_map(_), mh_term_map(_)) = mh_term_set.
