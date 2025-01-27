@@ -23,15 +23,133 @@
 % Term maps
 
 :- type mh_term_map(T).
+:- type mh_term_set == mh_term_map(unit).
 
 :- type key_term_func(T) == (func(T) = mh_term).
 
 :- func init = (mh_term_map(T)::uo) is det.
 :- pred init(mh_term_map(_)::uo) is det.
 
-:- func singleton(K, V) = mh_term_map(V).
+:- func singleton(mh_term, T) = mh_term_map(T).
+:- func singleton(mh_term) = mh_term_set.
 
 :- pred is_empty(mh_term_map(_)::in) is semidet.
+
+
+
+%-----------------------------------------------------------------------------%
+% Search
+
+	% Succeeds if the map contains the given key
+:- pred contains(mh_term_map(T)::in, mh_term::in) is semidet.
+
+	% Fails if the key is not found
+:- pred search(mh_term_map(T)::in, mh_term::in, 
+T::out) is semidet.
+:- func search(mh_term_map(T), mh_term) = T is semidet.
+
+	% Throws an exception if the key is not found
+:- pred lookup(mh_term_map(T)::in, mh_term::in, T::out) is det.
+:- func lookup(mh_term_map(T), mh_term) = T is det.
+
+%-----------------------------------------------------------------------------%
+% Insertion
+
+:- pred insert(mh_term::in, T::in, mh_term_map(T)::in, 
+	mh_term_map(T)::out) is semidet.
+	
+:- pred insert(mh_term::in, mh_term_set::in, mh_term_set::out) 
+	is semidet.
+	
+:- pred det_insert(mh_term::in, T::in, mh_term_map(T)::in, 
+	mh_term_map(T)::out) is det.
+	
+:- pred det_insert(mh_term::in, mh_term_set::in, mh_term_set::out)
+	is det.
+	
+:- pred det_insert_from_corresponding_lists(list(mh_term)::in, list(T)::in,
+	mh_term_map(T)::in, mh_term_map(T)::out) is det.
+	
+:- pred det_insert_from_assoc_list(assoc_list(mh_term, T)::in,
+	mh_term_map(T)::in, mh_term_map(T)::out) is det.
+	
+:- pred det_insert_from_list(list(mh_term)::in, mh_term_set::in, 
+	mh_term_set::out) is det.
+
+:- pred set(mh_term::in, T::in, mh_term_map::in, mh_term_map::out)
+	is det.
+	
+:- pred set(mh_term::in, mh_term_set::in, mh_term_set::out) is det.
+	
+:- pred set_from_corresponding_lists(list(mh_term)::in, list(T)::in,
+	mh_term_map(T)::in, mh_term_map(T)::out) is det.
+	
+:- pred set_from_assoc_list(assoc_list(mh_term, T)::in,
+	mh_term_map(T)::in, mh_term_map(T)::out) is det.
+	
+:- pred set_from_list(list(mh_term)::in, mh_term_set::in, 
+	mh_term_set::out) is det.
+
+:- pred update(mh_term::in, T::in, mh_term_map(T)::in, 
+	mh_term_map::out) is semidet.
+	
+:- pred det_update(mh_term::in, T::in, mh_term_map(T)::in, 
+	mh_term_map::out) is det.
+	
+%-----------------------------------------------------------------------------%
+% Removal
+
+:- pred remove(mh_term::in, T::out, mh_term_map(T)::in, 
+	mh_term_map::out) is semidet.
+	
+:- pred remove(mh_term::in, mh_term_set::in, mh_term_set::out) is semidet.
+	
+:- pred det_remove(mh_term::in, T::out, mh_term_map(T)::in, 
+	mh_term_map::out) is det.
+	
+:- pred det_remove(mh_term::in,  mh_term_set::in, mh_term_set::out) is det.
+	
+:- pred delete(mh_term::in,  mh_term_map(T)::in, 
+	mh_term_map::out) is det.
+
+:- pred delete_list(list(mh_term)::in, mh_term_map(T)::in, 
+	mh_term_map::out) is det.
+	
+%-----------------------------------------------------------------------------%
+% Set operations
+
+
+:- func union(func(T, T) = T, mh_term_map(T), mh_term_map(T)) =
+	mh_term_map(T).
+
+:- pred union(func(T, T) = T, mh_term_map(T), mh_term_map(T), mh_term_map(T)).
+:- mode union(in(func(in, in) = out is det), in, in, out) is det.
+:- mode union(in(func(in, in) = out is semidet), in, in, out) is semidet.
+
+:- func union(mh_term_map(_), mh_term_map(_)) = mh_term_set.
+:- pred union(mh_term_map(_)::in, mh_term_map(_)::in, mh_term_set::out) is det.
+
+:- func intersect(func(T, T) = T, mh_term_map(T), mh_term_map(T))
+	= mh_term_map(T).
+	
+:- pred intersect(func(T, T) = T, mh_term_map(T), mh_term_map(T),
+	mh_term_map(T)).
+:- mode intersect(in(func(in, in) = out is det), in, in, out) is det.
+:- mode intersect(in(func(in, in) = out is semidet), in, in, out) is semidet.
+
+:- func intersect(mh_term_map(_), mh_term_map(_)) = mh_term_set.
+:- pred intersect(mh_term_map(_)::in, mh_term_map(_)::in, mh_term_set::out) 
+	is det.
+
+:- func difference(mh_term_map(T), mh_term_map(_)) =
+	mh_term_map(T).
+
+:- pred difference(var_map(T)::in, mh_term_map(_)::in, 
+	mh_term_map(T)::out) is det.
+	
+:- func set_difference(mh_term_map(_), mh_term_map(_)) = mh_term_set.
+:- pred set_difference(mh_term_map(_)::in, mh_term_map(_)::in, 
+	mh_term_set::out) is det.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -45,11 +163,11 @@
 :- import_module type_desc.
 :- import_module univ.
 
-:- import_module mh_tuple.
+:- import_module mh_term.
 :- import_module mh_symbol.
 :- import_module mh_value_map.
 :- import_module mh_var_map.
-:- import_module mh_tuple_map.
+:- import_module mh_term_map.
 :- import_module hashmap.
 
 %-----------------------------------------------------------------------------%
