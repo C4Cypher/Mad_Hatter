@@ -63,7 +63,8 @@
 :- mode fold_array_index(pred(in, mdi, muo) is det, in, mdi, muo) is det.
 :- mode fold_array_index(pred(in, di, uo) is det, in, di, uo) is det.
 :- mode fold_array_index(pred(in, in, out) is semidet, in, in, out) is semidet.
-:- mode fold_array_index(pred(in, mdi, muo) is semidet, in, mdi, muo) is semidet.
+:- mode fold_array_index(pred(in, mdi, muo) is semidet, in, mdi, muo) 
+	is semidet.
 :- mode fold_array_index(pred(in, di, uo) is semidet, in, di, uo) is semidet.
 
 
