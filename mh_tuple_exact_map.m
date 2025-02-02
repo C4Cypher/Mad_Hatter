@@ -65,6 +65,16 @@ T::out) is semidet.
 	
 :- pred det_insert_from_assoc_list(assoc_list(mh_tuple, T)::in,
 	tuple_exact_map(T)::in, tuple_exact_map(T)::out) is det.
+	
+:- pred unsafe_array_insert(mh_tuple::in, array(mh_term)::in, T::in, 
+	tuple_exact_map(T)::in,	tuple_exact_map(T)::out) is semidet.
+	
+:- pred det_unsafe_array_insert(mh_tuple::in, array(mh_term)::in, T::in, 
+	tuple_exact_map(T)::in,	tuple_exact_map(T)::out) is det.
+	
+:- pred det_unsafe_array_insert_from_corresponding_lists(list(mh_tuple)::in,
+	list(array(mh_term)), list(T)::in,	tuple_exact_map(T)::in, 
+	tuple_exact_map(T)::out) is det.	
 
 :- set(mh_tuple::in, T::in, tuple_exact_map::in, tuple_exact_map::out)
 	is det.
@@ -185,7 +195,30 @@ det_insert_from_corresponding_lists([K | Ks], [V | Vs], !Map) :-
 det_insert_from_assoc_list([], !Map).
 det_insert_from_assoc_list([K - V | KVs], !Map) :-
     det_insert(K, V, !Map),
-    det_insert_from_assoc_list(KVs, !Map).	
+    det_insert_from_assoc_list(KVs, !Map).
+
+unsafe_array_insert(Tuple, Array, T, !Map) :- 
+	map.insert(Array, Tuple - T, !Map)
+	
+det_unsafe_array_insert(Tuple, Array, T, !Map) :-
+	(if insert(Tuple, Array, T, !Map)
+	then !:Map = !.Map
+	else report_lookup_error(
+		"tuple_exact_map.det_unsafe_array_insert: array aleady present in map", 
+		Tuple, !.Map)
+	).	
+	
+det_unsafe_array_insert_from_corresponding_lists([], [], [], !Map).
+det_unsafe_array_insert_from_corresponding_lists([], [_ | _], [_ | _], _, _) :-
+	unexpected($pred, "list length mismatch").
+det_unsafe_array_insert_from_corresponding_lists([_ | _], [], [_ | _], _, _) :-
+    unexpected($pred, "list length mismatch").
+det_unsafe_array_insert_from_corresponding_lists([_ | _], [_ | _], [], _, _) :-
+    unexpected($pred, "list length mismatch").
+det_unsafe_array_insert_from_corresponding_lists([K | Ks], [A, As], [V | Vs],
+	!Map) :-
+    det_unsafe_array_insert(K, A, V, !Map),
+    det_unsafe_array_insert_from_corresponding_lists(Ks, As, Vs, !Map).
 	
 set(Tuple, T, !Map) :- map.set(to_array(Tuple), Tuple - T, !Map).
 
