@@ -113,10 +113,22 @@ T::out) is semidet.
 :- pred det_remove(mh_tuple::in, T::out, tuple_exact_map(T)::in, 
 	tuple_exact_map::out) is det.
 	
+:- pred unsafe_array_remove(array(mh_term)::in, mh_tuple::out, T::out,
+	tuple_exact_map(T)::in, tuple_exact_map::out) is semidet.
+	
+:- pred det_unsafe_array_remove(array(mh_term)::in, mh_tuple::out, T::out,
+	tuple_exact_map(T)::in, tuple_exact_map::out) is det.
+	
 :- pred delete(mh_tuple::in,  tuple_exact_map(T)::in, 
 	tuple_exact_map::out) is det.
 
 :- pred delete_list(list(mh_tuple)::in, tuple_exact_map(T)::in, 
+	tuple_exact_map::out) is det.
+	
+:- pred array_delete(array(mh_term)::in,  tuple_exact_map(T)::in, 
+	tuple_exact_map::out) is det.
+
+:- pred array_delete_list(list(mh_tuple)::in, tuple_exact_map(T)::in, 
 	tuple_exact_map::out) is det.
 	
 %-----------------------------------------------------------------------------%
@@ -189,7 +201,7 @@ insert(Tuple, T, !Map) :- map.insert(to_array(Tuple), Tuple - T, !Map).
 
 det_insert(Tuple, T, !Map) :-
 	(if insert(Tuple, T, !Map)
-	then true
+	then !:Map = !.Map
 	else report_lookup_error(
 		"tuple_exact_map.det_insert: tuple aleady present in map", 
 		Tuple, !.Map)
@@ -215,7 +227,7 @@ unsafe_array_insert(Tuple, Array, T, !Map) :-
 	
 det_unsafe_array_insert(Tuple, Array, T, !Map) :-
 	(if unsafe_array_insert(Tuple, Array, T, !Map)
-	then true
+	then !:Map = !.Map
 	else report_lookup_error(
 		"tuple_exact_map.det_unsafe_array_insert: array aleady present in map", 
 		Tuple, !.Map)
@@ -269,7 +281,7 @@ update(Tuple, T, !Map) :- map.update(to_array(Tuple), Tuple - T, !Map).
 
 det_update(Var, T, !Map) :-	
 	(if update(Var, T, !Map)
-	then true
+	then !:Map = !.Map
 	else report_lookup_error(
 		"tuple_exact_map.det_update: tuple not present in map", Var, !.Map)
 	).
@@ -279,7 +291,7 @@ unsafe_array_update(Tuple, Array, T, !Map) :-
 	
 det_unsafe_array_update(Tuple, Array, T, !Map) :-
 	(if unsafe_array_update(Tuple, Array, T, !Map)
-	then true
+	then !:Map = !.Map
 	else report_lookup_error(
 		"tuple_exact_map.det_unsafe_array_update: array not present in map", 
 		Tuple, !.Map)
@@ -291,12 +303,23 @@ det_unsafe_array_update(Tuple, Array, T, !Map) :-
 remove(Tuple, T, !Map) :- map.remove(from_array(Tuple), _ - T, !Map).
 	
 det_remove(Tuple, T, !Map) :-	
-	(if remove(Tuple, T, !Map)
-	then !:Map = !.Map
+	(if remove(Tuple, FoundT, !Map)
+	then !:Map = !.Map, T = FoundT
 	else report_lookup_error(
 		"tuple_exact_map.det_remove: Tuple not present in map", Tuple, 
 		!.Map)
 	).
+	
+unsafe_array_remove(Array, Tuple, T, !Map) :- 
+	map.remove(Array, Tuple - T, !Map).
+	
+det_remove(Array, Tuple, T, !Map) :-	
+	(if remove(Array, FoundTuple, FoundT, !Map)
+	then !:Map = !.Map, Tuple = FoundTuple, T = FoundT
+	else report_lookup_error(
+		"tuple_exact_map.det_remove: Tuple not present in map", Tuple, 
+		!.Map)
+	).	
 	
 delete(Tuple, !Map) :- map.delete(to_array(Tuple), !Map).
 
@@ -304,6 +327,13 @@ delete_list([], !Map).
 delete_list([Tuple | Tuples], !Map) :- 
 	delete(Tuple, !Map),
 	delete_list(Tuples, !Map).
+	
+array_delete(Array, !Map) :- map.delete(Array, !Map).
+
+array_delete_list([], !Map).
+array_delete_list([A | As], !Map) :- 
+	array_delete(A, !Map),
+	array_delete_list(As, !Map).
 	
 %-----------------------------------------------------------------------------%
 % Set operations
