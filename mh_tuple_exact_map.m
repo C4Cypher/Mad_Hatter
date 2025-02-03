@@ -76,7 +76,7 @@ T::out) is semidet.
 	list(array(mh_term)), list(T)::in,	tuple_exact_map(T)::in, 
 	tuple_exact_map(T)::out) is det.	
 
-:- set(mh_tuple::in, T::in, tuple_exact_map::in, tuple_exact_map::out)
+:- pred set(mh_tuple::in, T::in, tuple_exact_map::in, tuple_exact_map::out)
 	is det.
 	
 :- pred set_from_corresponding_lists(list(mh_tuple)::in, list(T)::in,
@@ -84,12 +84,25 @@ T::out) is semidet.
 	
 :- pred set_from_assoc_list(assoc_list(mh_tuple, T)::in,
 	tuple_exact_map(T)::in, tuple_exact_map(T)::out) is det.
+	
+- pred unsafe_array_set(mh_tuple::in, array(mh_term)::in, T::in, 
+	tuple_exact_map(T)::in,	tuple_exact_map(T)::out) is det.
+	
+:- pred unsafe_array_set_from_corresponding_lists(list(mh_tuple)::in,
+	list(array(mh_term)), list(T)::in,	tuple_exact_map(T)::in, 
+	tuple_exact_map(T)::out) is det.	
 
 :- pred update(mh_tuple::in, T::in, tuple_exact_map(T)::in, 
 	tuple_exact_map::out) is semidet.
 	
 :- pred det_update(mh_tuple::in, T::in, tuple_exact_map(T)::in, 
 	tuple_exact_map::out) is det.
+	
+:- pred unsafe_array_update(mh_tuple::in, array(mh_term)::in, T::in, 
+	tuple_exact_map(T)::in,	tuple_exact_map(T)::out) is semidet.
+	
+:- pred det_unsafe_array_update(mh_tuple::in, array(mh_term)::in, T::in, 
+	tuple_exact_map(T)::in,	tuple_exact_map(T)::out) is det.
 	
 %-----------------------------------------------------------------------------%
 % Removal
@@ -176,7 +189,7 @@ insert(Tuple, T, !Map) :- map.insert(to_array(Tuple), Tuple - T, !Map).
 
 det_insert(Tuple, T, !Map) :-
 	(if insert(Tuple, T, !Map)
-	then !:Map = !.Map
+	then true
 	else report_lookup_error(
 		"tuple_exact_map.det_insert: tuple aleady present in map", 
 		Tuple, !.Map)
@@ -198,11 +211,11 @@ det_insert_from_assoc_list([K - V | KVs], !Map) :-
     det_insert_from_assoc_list(KVs, !Map).
 
 unsafe_array_insert(Tuple, Array, T, !Map) :- 
-	map.insert(Array, Tuple - T, !Map)
+	map.insert(Array, Tuple - T, !Map).
 	
 det_unsafe_array_insert(Tuple, Array, T, !Map) :-
-	(if insert(Tuple, Array, T, !Map)
-	then !:Map = !.Map
+	(if unsafe_array_insert(Tuple, Array, T, !Map)
+	then true
 	else report_lookup_error(
 		"tuple_exact_map.det_unsafe_array_insert: array aleady present in map", 
 		Tuple, !.Map)
@@ -237,14 +250,40 @@ set_from_assoc_list([K - V | KVs], !Map) :-
     set(K, V, !Map),
     set_from_assoc_list(KVs, !Map).
 	
+unsafe_array_set(Tuple, Array, T, !Map) :- 
+	map.set(Array, Tuple - T, !Map).
+	
+unsafe_array_set_from_corresponding_lists([], [], [], !Map).
+unsafe_array_set_from_corresponding_lists([], [_ | _], [_ | _], _, _) :-
+	unexpected($pred, "list length mismatch").
+unsafe_array_set_from_corresponding_lists([_ | _], [], [_ | _], _, _) :-
+    unexpected($pred, "list length mismatch").
+unsafe_array_set_from_corresponding_lists([_ | _], [_ | _], [], _, _) :-
+    unexpected($pred, "list length mismatch").
+unsafe_array_set_from_corresponding_lists([K | Ks], [A, As], [V | Vs],
+	!Map) :-
+    unsafe_array_set(K, A, V, !Map),
+    unsafe_array_set_from_corresponding_lists(Ks, As, Vs, !Map).
+	
 update(Tuple, T, !Map) :- map.update(to_array(Tuple), Tuple - T, !Map).
 
 det_update(Var, T, !Map) :-	
 	(if update(Var, T, !Map)
-	then !:Map = !.Map
+	then true
 	else report_lookup_error(
 		"tuple_exact_map.det_update: tuple not present in map", Var, !.Map)
 	).
+	
+unsafe_array_update(Tuple, Array, T, !Map) :- 
+	map.insert(Array, Tuple - T, !Map).
+	
+det_unsafe_array_update(Tuple, Array, T, !Map) :-
+	(if unsafe_array_update(Tuple, Array, T, !Map)
+	then true
+	else report_lookup_error(
+		"tuple_exact_map.det_unsafe_array_update: array not present in map", 
+		Tuple, !.Map)
+	).	
 	
 %-----------------------------------------------------------------------------%
 % Removal
