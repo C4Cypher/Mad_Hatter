@@ -157,13 +157,13 @@ T::out) is semidet.
 :- import_module list.
 :- use_module map.
 
-:- import_module mh_tuple_map.
+:- use_module mh_tuple_exact_map.
+:- use_module mh_tuple_pattern_map.
 
 %-----------------------------------------------------------------------------%
 
-:- type term_list_map(T) == map.map(list(mh_term), T).
+:- type exact_map(T) = mh_tuple_exact_map.tuple_exact_map(T).
+:- type pattern_map(T) = mh_tuple_pattern_map.tuple_pattern_map(T)
 
 :- type mh_tuple_map(T)
-	--->	tuple_map(term_list_map(T), ).
-	
-init = 
+	--->	tuple_map(exact_map(T), pattern_map(T)).
