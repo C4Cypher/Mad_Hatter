@@ -191,7 +191,7 @@ det_lookup(Map, Tuple) =
 	then 
 		Found
 	else
-		report_lookup_error("tuple_exact_map.lookup: key not found", K)
+		report_lookup_error("mh_tuple_exact_map.lookup: key not found", K)
 	).
 
 %-----------------------------------------------------------------------------%
@@ -206,7 +206,7 @@ det_insert(Tuple, T, !Map) :-
 	(if insert(Tuple, T, !Map)
 	then !:Map = !.Map
 	else report_lookup_error(
-		"tuple_exact_map.det_insert: tuple aleady present in map", 
+		"mh_tuple_exact_map.det_insert: tuple aleady present in map", 
 		Tuple, !.Map)
 	).
 	
@@ -239,7 +239,7 @@ det_unsafe_array_insert(Tuple, Array, T, !Map) :-
 	(if unsafe_array_insert(Tuple, Array, T, !Map)
 	then !:Map = !.Map
 	else report_lookup_error(
-		"tuple_exact_map.det_unsafe_array_insert: array aleady present in map", 
+		"mh_tuple_exact_map.det_unsafe_array_insert: array aleady present in map", 
 		Tuple, !.Map)
 	).
 	
@@ -310,7 +310,7 @@ det_update(Var, T, !Map) :-
 	(if update(Var, T, !Map)
 	then !:Map = !.Map
 	else report_lookup_error(
-		"tuple_exact_map.det_update: tuple not present in map", Var, !.Map)
+		"mh_tuple_exact_map.det_update: tuple not present in map", Var, !.Map)
 	).
 	
 :- pragma inline(det_update/4).
@@ -325,7 +325,7 @@ det_unsafe_array_update(Tuple, Array, T, !Map) :-
 	(if unsafe_array_update(Tuple, Array, T, !Map)
 	then !:Map = !.Map
 	else report_lookup_error(
-		"tuple_exact_map.det_unsafe_array_update: array not present in map", 
+		"mh_tuple_exact_map.det_unsafe_array_update: array not present in map", 
 		Tuple, !.Map)
 	).
 	
@@ -343,7 +343,7 @@ det_remove(Tuple, T, !Map) :-
 	(if remove(Tuple, FoundT, !Map)
 	then !:Map = !.Map, T = FoundT
 	else report_lookup_error(
-		"tuple_exact_map.det_remove: tuple not present in map", Tuple, 
+		"mh_tuple_exact_map.det_remove: tuple not present in map", Tuple, 
 		!.Map)
 	).
 	
@@ -358,7 +358,7 @@ det_unsafe_array_remove(Array, Tuple, T, !Map) :-
 	(if remove(Array, FoundTuple, FoundT, !Map)
 	then !:Map = !.Map, Tuple = FoundTuple, T = FoundT
 	else report_lookup_error(
-		"tuple_exact_map.det_unsafe_array_remove: array not present in map", 
+		"mh_tuple_exact_map.det_unsafe_array_remove: array not present in map", 
 		Tuple, !.Map)
 	).
 	
