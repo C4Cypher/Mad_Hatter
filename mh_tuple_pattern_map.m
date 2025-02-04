@@ -39,6 +39,8 @@
 :- pred init(tuple_pattern_map(_)::out) is det.
 
 :- func singleton(mh_tuple, T) = tuple_pattern_map(T).
+:- func unsafe_array_singleton(mh_tuple, array(mh_term), T) = 
+	tuple_pattern_map(T).
 
 :- pred is_empty(tuple_pattern_map(_)::in) is semidet.
 
@@ -51,17 +53,28 @@
 
 %-----------------------------------------------------------------------------%
 % Insertion
-	
-% throws exception if item is already present
-	
+
 :- pred insert(mh_tuple::in, T::in, tuple_pattern_map(T)::in, 
+	tuple_pattern_map(T)::out) is semidet.
+	
+:- pred det_insert(mh_tuple::in, T::in, tuple_pattern_map(T)::in, 
 	tuple_pattern_map(T)::out) is det.
 
-:- pred insert_from_corresponding_lists(list(mh_tuple)::in, list(T)::in,
+:- pred det_insert_from_corresponding_lists(list(mh_tuple)::in, list(T)::in,
 	tuple_pattern_map(T)::in, tuple_pattern_map(T)::out) is det.
 	
-:- pred insert_from_assoc_list(assoc_list(mh_tuple, T)::in,
+:- pred det_insert_from_assoc_list(assoc_list(mh_tuple, T)::in,
 	tuple_pattern_map(T)::in, tuple_pattern_map(T)::out) is det.
+	
+:- pred unsafe_array_insert(mh_tuple::in, array(mh_term)::in, T::in, 
+	tuple_pattern_map(T)::in, tuple_pattern_map(T)::out) is semidet.
+	
+:- pred det_unsafe_array_insert(mh_tuple::in, array(mh_term)::in, T::in, 
+	tuple_pattern_map(T)::in, tuple_pattern_map(T)::out) is semidet.
+	
+:- pred det_unsafe_array_insert_from_corresponding_lists(list(mh_tuple)::in, 
+	list(array(mh_term))::in, list(array(mh_term)), list(T)::in, 
+	tuple_exact_map(T)::in, tuple_exact_map(T)::out) is det.	
 
 :- set(mh_tuple::in, T::in, tuple_pattern_map::in, tuple_pattern_map::out)
 	is det.
@@ -71,6 +84,13 @@
 	
 :- pred set_from_assoc_list(assoc_list(mh_tuple, T)::in,
 	tuple_pattern_map(T)::in, tuple_pattern_map(T)::out) is det.
+	
+:- pred unsafe_array_set(mh_tuple::in, array(mh_term)::in, T::in, 
+	tuple_pattern_map(T)::in, tuple_pattern_map(T)::out) is det.
+	
+:- pred unsafe_array_set_from_corresponding_lists(list(mh_tuple)::in, 
+	list(array(mh_term))::in, list(array(mh_term)), list(T)::in, 
+	tuple_exact_map(T)::in, tuple_exact_map(T)::out) is det.	
 	
 %-----------------------------------------------------------------------------%
 % Removal
@@ -183,7 +203,9 @@
 init = map.init.
 init(init).
 
-singleton(Tuple, T) = det_insert(Tuple, T, init).
+singleton(Tuple, T) = Map :- det_insert(Tuple, T, init, Map).
+unsafe_array_singleton(Tuple, Array, T) = Map :-
+	det_unsafe_array_insert(Tuple, Array, T, init, Map).
 
 is_empty(init).
 
@@ -195,28 +217,53 @@ is_empty(init).
 %-----------------------------------------------------------------------------%
 % Insertion
 	
-
-
-
-
 insert(Tuple, T, !Map) :- 
-	tuple_size(Tuple, Size),
-	some [!Array] (
-		get_pattern_array(!.Map, Size, !.Array),
-		(if insert())
-		
-:- func insert_map(mh_tuple, T, element_map(T), int) = element_map(T).
+	unsafe_array_insert(Tuple, to_array(Tuple), T, !Map).
+	
+:- pragma inline(insert/4).
 
-insert_map(Tuple, Value, !.Map, Index) = !:Map :-
-	tuple_index(Tuple, Index, Key),
-	(if insert(Key, Tuple - Value, !Map)
-	then
-		true
-	else
-		report_lookup_error(
-		"mh_tuple_pattern_map.insert: tuple aleady present in map", 
+det_insert(Tuple, T, !Map) :-
+	(if insert(Tuple, T, !Map)
+	then !:Map = !.Map
+	else report_lookup_error(
+		"mh_tuple_pattern_map.det_insert: tuple aleady present in map", 
 		Tuple, !.Map)
 	).
+	
+:- pragma inline(det_insert/4).
+		
+det_insert_from_corresponding_lists([], [], !Map).
+det_insert_from_corresponding_lists([], [_ | _], _, _) :-
+    unexpected($pred, "list length mismatch").
+det_insert_from_corresponding_lists([_ | _], [], _, _) :-
+    unexpected($pred, "list length mismatch").
+det_insert_from_corresponding_lists([K | Ks], [V | Vs], !Map) :-
+    det_insert(K, V, !Map),
+    det_insert_from_corresponding_lists(Ks, Vs, !Map).
+	
+:- pragma inline(det_insert_from_corresponding_lists/4).
+
+det_insert_from_assoc_list([], !Map).
+det_insert_from_assoc_list([K - V | KVs], !Map) :-
+    det_insert(K, V, !Map),
+    det_insert_from_assoc_list(KVs, !Map).
+	
+:- pragma inline(det_insert_from_assoc_list/3).
+
+unsafe_array_insert(Tuple, Array, T, !Map) :-
+	
+
+	
+det_unsafe_array_insert(Tuple, Array, T, !Map) :-
+	(if unsafe_array_insert(Tuple, Array, T, !Map)
+	then !:Map = !.Map
+	else report_lookup_error(
+"mh_tuple_pattern_map.det_unsafe_array_insert: array aleady present in map", 
+		Tuple, !.Map)
+	).
+	
+:- pragma inline(det_unsafe_array_insert/5).	
+
 		
 
 %-----------------------------------------------------------------------------%
