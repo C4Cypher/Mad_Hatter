@@ -197,7 +197,10 @@ det_lookup(Map, Tuple) =
 %-----------------------------------------------------------------------------%
 % Insertion
 
-insert(Tuple, T, !Map) :- map.insert(to_array(Tuple), Tuple - T, !Map).
+insert(Tuple, T, !Map) :- 
+	unsafe_array_insert(Tuple, to_array(Tuple), T, !Map).
+
+:- pragma inline(insert/4).
 
 det_insert(Tuple, T, !Map) :-
 	(if insert(Tuple, T, !Map)
@@ -207,6 +210,7 @@ det_insert(Tuple, T, !Map) :-
 		Tuple, !.Map)
 	).
 	
+:- pragma inline(det_insert/4).
 
 det_insert_from_corresponding_lists([], [], !Map).
 det_insert_from_corresponding_lists([], [_ | _], _, _) :-
@@ -216,14 +220,20 @@ det_insert_from_corresponding_lists([_ | _], [], _, _) :-
 det_insert_from_corresponding_lists([K | Ks], [V | Vs], !Map) :-
     det_insert(K, V, !Map),
     det_insert_from_corresponding_lists(Ks, Vs, !Map).
+	
+:- pragma inline(det_insert_from_corresponding_lists/4).
 
 det_insert_from_assoc_list([], !Map).
 det_insert_from_assoc_list([K - V | KVs], !Map) :-
     det_insert(K, V, !Map),
     det_insert_from_assoc_list(KVs, !Map).
+	
+:- pragma inline(det_insert_from_assoc_list/3).
 
 unsafe_array_insert(Tuple, Array, T, !Map) :- 
 	map.insert(Array, Tuple - T, !Map).
+	
+:- pragma inline(unsafe_array_insert/5).
 	
 det_unsafe_array_insert(Tuple, Array, T, !Map) :-
 	(if unsafe_array_insert(Tuple, Array, T, !Map)
@@ -231,7 +241,9 @@ det_unsafe_array_insert(Tuple, Array, T, !Map) :-
 	else report_lookup_error(
 		"tuple_exact_map.det_unsafe_array_insert: array aleady present in map", 
 		Tuple, !.Map)
-	).	
+	).
+	
+:- pragma inline(det_unsafe_array_insert/5).	
 	
 det_unsafe_array_insert_from_corresponding_lists([], [], [], !Map).
 det_unsafe_array_insert_from_corresponding_lists([], [_ | _], [_ | _], _, _) :-
@@ -245,7 +257,11 @@ det_unsafe_array_insert_from_corresponding_lists([K | Ks], [A, As], [V | Vs],
     det_unsafe_array_insert(K, A, V, !Map),
     det_unsafe_array_insert_from_corresponding_lists(Ks, As, Vs, !Map).
 	
+:- pragma inline(det_unsafe_array_insert_from_corresponding_lists/5).
+	
 set(Tuple, T, !Map) :- map.set(to_array(Tuple), Tuple - T, !Map).
+	
+:- pragma inline(set/4).
 
 
 set_from_corresponding_lists([], [], !Map).
@@ -256,14 +272,20 @@ set_from_corresponding_lists([_ | _], [], _, _) :-
 set_from_corresponding_lists([K | Ks], [V | Vs], !Map) 						:-
     set(K, V, !Map),
     set_from_corresponding_lists(Ks, Vs, !Map).
+	
+:- pragma inline(set_from_corresponding_lists/4).
 
 set_from_assoc_list([], !Map).
 set_from_assoc_list([K - V | KVs], !Map) :-
     set(K, V, !Map),
     set_from_assoc_list(KVs, !Map).
 	
+:- pragma inline(set_from_assoc_list/3).
+	
 unsafe_array_set(Tuple, Array, T, !Map) :- 
 	map.set(Array, Tuple - T, !Map).
+	
+:- pragma inline(unsafe_array_set/5).
 	
 unsafe_array_set_from_corresponding_lists([], [], [], !Map).
 unsafe_array_set_from_corresponding_lists([], [_ | _], [_ | _], _, _) :-
@@ -277,7 +299,12 @@ unsafe_array_set_from_corresponding_lists([K | Ks], [A, As], [V | Vs],
     unsafe_array_set(K, A, V, !Map),
     unsafe_array_set_from_corresponding_lists(Ks, As, Vs, !Map).
 	
-update(Tuple, T, !Map) :- map.update(to_array(Tuple), Tuple - T, !Map).
+:- pragma inline(unsafe_array_set_from_corresponding_lists/5).
+	
+update(Tuple, T, !Map) :- 
+	unsafe_array_update(Tuple, to_array(Tuple), Tuple - T, !Map).
+	
+:- pragma inline(update/4).
 
 det_update(Var, T, !Map) :-	
 	(if update(Var, T, !Map)
@@ -286,8 +313,13 @@ det_update(Var, T, !Map) :-
 		"tuple_exact_map.det_update: tuple not present in map", Var, !.Map)
 	).
 	
+:- pragma inline(det_update/4).
+	
 unsafe_array_update(Tuple, Array, T, !Map) :- 
 	map.insert(Array, Tuple - T, !Map).
+	
+:- pragma inline(unsafe_array_update/5).
+
 	
 det_unsafe_array_update(Tuple, Array, T, !Map) :-
 	(if unsafe_array_update(Tuple, Array, T, !Map)
@@ -295,58 +327,89 @@ det_unsafe_array_update(Tuple, Array, T, !Map) :-
 	else report_lookup_error(
 		"tuple_exact_map.det_unsafe_array_update: array not present in map", 
 		Tuple, !.Map)
-	).	
+	).
+	
+:- pragma inline(det_unsafe_array_update/5).
 	
 %-----------------------------------------------------------------------------%
 % Removal
 
-remove(Tuple, T, !Map) :- map.remove(from_array(Tuple), _ - T, !Map).
+remove(Tuple, T, !Map) :- 
+	unsafe_array_remove(Tuple, from_array(Tuple), T, !Map).
+	
+:- pragma inline(remove/4).
 	
 det_remove(Tuple, T, !Map) :-	
 	(if remove(Tuple, FoundT, !Map)
 	then !:Map = !.Map, T = FoundT
 	else report_lookup_error(
-		"tuple_exact_map.det_remove: Tuple not present in map", Tuple, 
+		"tuple_exact_map.det_remove: tuple not present in map", Tuple, 
 		!.Map)
 	).
+	
+:- pragma inline(det_remove/4).
 	
 unsafe_array_remove(Array, Tuple, T, !Map) :- 
 	map.remove(Array, Tuple - T, !Map).
 	
-det_remove(Array, Tuple, T, !Map) :-	
+:- pragma inline(unsafe_array_remove/5).
+	
+det_unsafe_array_remove(Array, Tuple, T, !Map) :-	
 	(if remove(Array, FoundTuple, FoundT, !Map)
 	then !:Map = !.Map, Tuple = FoundTuple, T = FoundT
 	else report_lookup_error(
-		"tuple_exact_map.det_remove: Tuple not present in map", Tuple, 
-		!.Map)
-	).	
+		"tuple_exact_map.det_unsafe_array_remove: array not present in map", 
+		Tuple, !.Map)
+	).
 	
-delete(Tuple, !Map) :- map.delete(to_array(Tuple), !Map).
+:- pragma inline(det_unsafe_array_remove/5).
+	
+delete(Tuple, !Map) :- array_delete(to_array(Tuple), !Map).
+	
+:- pragma inline(delete/3).
 
 delete_list([], !Map).
 delete_list([Tuple | Tuples], !Map) :- 
 	delete(Tuple, !Map),
 	delete_list(Tuples, !Map).
 	
+:- pragma inline(delete_list/3).
+	
 array_delete(Array, !Map) :- map.delete(Array, !Map).
+	
+:- pragma inline(array_delete/3).
 
 array_delete_list([], !Map).
 array_delete_list([A | As], !Map) :- 
 	array_delete(A, !Map),
 	array_delete_list(As, !Map).
 	
+:- pragma inline(array_delete_list/3).
+	
 %-----------------------------------------------------------------------------%
 % Set operations
 
 union(F, M1, M2) = map.union(F, M1, M2).
+	
+:- pragma inline(union/3).
 
 union(F, M1, M2, union(F, M1, M2)).
 
+:- pragma inline(union/4).
+
 intersect(F, M1, M2) = map.intersect(F, M1, M2).
+	
+:- pragma inline(intersect/3).
 
 intersect(F, M1, M2, intersect(F, M1, M2)).
+	
+:- pragma inline(intersect/4).
 
 difference(M1, M2) = M :-
 	difference(M1, M2, M).
 	
+:- pragma inline(difference/2).
+	
 difference(M1, M2, map.delete_list(M1, map.keys(M2))).
+	
+:- pragma inline(difference/3).
