@@ -128,7 +128,7 @@ T::out) is semidet.
 :- pred array_delete(array(mh_term)::in,  tuple_exact_map(T)::in, 
 	tuple_exact_map::out) is det.
 
-:- pred array_delete_list(list(mh_tuple)::in, tuple_exact_map(T)::in, 
+:- pred array_delete_list(list(array(mh_term))::in, tuple_exact_map(T)::in, 
 	tuple_exact_map::out) is det.
 	
 %-----------------------------------------------------------------------------%
