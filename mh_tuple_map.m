@@ -125,7 +125,8 @@ T::out) is semidet.
 :- mode union(in(func(in, in) = out is semidet), in, in, out) is semidet.
 
 :- func union(mh_tuple_map(_), mh_tuple_map(_)) = mh_tuple_set.
-:- pred union(mh_tuple_map(_)::in, mh_tuple_map(_)::in, mh_tuple_set::out) is det.
+:- pred union(mh_tuple_map(_)::in, mh_tuple_map(_)::in, mh_tuple_set::out)
+	is det.
 
 :- func intersect(func(T, T) = T, mh_tuple_map(T), mh_tuple_map(T))
 	= mh_tuple_map(T).
@@ -136,7 +137,8 @@ T::out) is semidet.
 :- mode intersect(in(func(in, in) = out is semidet), in, in, out) is semidet.
 
 :- func intersect(mh_tuple_map(_), mh_tuple_map(_)) = mh_tuple_set.
-:- pred intersect(mh_tuple_map(_)::in, mh_tuple_map(_)::in, mh_tuple_set::out) 
+:- pred intersect(mh_tuple_map(_)::in, mh_tuple_map(_)::in, mh_tuple_set::out)
+	is det.
 
 :- func difference(mh_tuple_map(T), mh_tuple_map(_)) =
 	mh_tuple_map(T).
