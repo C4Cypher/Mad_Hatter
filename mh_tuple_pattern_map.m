@@ -92,11 +92,17 @@
 % Removal
 
 	
-:- pred delete(mh_tuple::in,  tuple_pattern_map(T)::in, 
-	tuple_pattern_map::out) is det.
+:- pred delete(mh_tuple::in,  tuple_exact_map(T)::in, 
+	tuple_exact_map::out) is det.
 
-:- pred delete_list(list(mh_tuple)::in, tuple_pattern_map(T)::in, 
-	tuple_pattern_map::out) is det.
+:- pred delete_list(list(mh_tuple)::in, tuple_exact_map(T)::in, 
+	tuple_exact_map::out) is det.
+	
+:- pred array_delete(array(mh_term)::in,  tuple_exact_map(T)::in, 
+	tuple_exact_map::out) is det.
+
+:- pred array_delete_list(list(array(mh_term))::in, tuple_exact_map(T)::in, 
+	tuple_exact_map::out) is det.
 	
 %-----------------------------------------------------------------------------%
 % Set operations
@@ -138,14 +144,13 @@
 	
 :- pred set_pattern_array(int::in, pattern_array::in, 
 	tuple_pattern_map(T)::in, tuple_pattern_map(T)::out) is det.
-	
-% Check to see if the array stored for the given arity is empty, if so, remove
-% said array from the map.
-:- pred check_for_empty_array(int::in, tuple_pattern_map(T)::in, 
-	tuple_pattern_map::out) is det.
+
 
 %-----------------------------------------------------------------------------%
 % Pattern Array Operations	
+
+% Succeeds if pattern array contains only empty maps.
+:- pred pattern_array_is_empty(pattern_array(_)::in) is semidet.
 
 % Apply a function to every element in pattern array, returning a new array
 :- pred pattern_array_map(func(element_map(T), int) = element_map(T), 
@@ -180,7 +185,7 @@
 :- pred get_exact_map(element_map(T)::in, mh_term::in, exact_map(T)::out)
 	is det.
 	
-:- pred set_exact_map(mh_tuple::in, exact_map(T)::in, 
+:- pred set_exact_map(mh_term::in, exact_map(T)::in, 
 	element_map(T)::in, element_map(T)::out) is det.
 
 %-----------------------------------------------------------------------------%
@@ -242,9 +247,7 @@ unsafe_array_insert(Tuple, TupleArray, T, !Map) :-
 	pattern_array_map(pattern_array_insert(TupleArray, Tuple, T), 
 		OldPatternArray, NewPatternArray),
 	set_pattern_array(Arity, NewPatternArray, !Map).
-	
-:- pragma inline(unsafe_array_insert/5).
-	
+
 :- func pattern_array_insert(array(mh_term), mh_tuple, T, element_map(T), int) 
 	= element_map(T).
 
@@ -261,9 +264,127 @@ pattern_array_insert(TupleArray, Tuple, T, !.Map, Index) = !:Map :-
 		Tuple, !.Map)
 	).
 	
+:- pragma inline(unsafe_array_insert/5).
 
+	
+unsafe_array_insert_from_corresponding_lists([], [], [], !Map).
+unsafe_array_insert_from_corresponding_lists([], [_ | _], [_ | _], _, _) :-
+	unexpected($pred, "list length mismatch").
+unsafe_array_insert_from_corresponding_lists([_ | _], [], [_ | _], _, _) :-
+    unexpected($pred, "list length mismatch").
+unsafe_array_insert_from_corresponding_lists([_ | _], [_ | _], [], _, _) :-
+    unexpected($pred, "list length mismatch").
+unsafe_array_insert_from_corresponding_lists([K | Ks], [A, As], [V | Vs],
+	!Map) :-
+    unsafe_array_insert(K, A, V, !Map),
+    unsafe_array_insert_from_corresponding_lists(Ks, As, Vs, !Map).
+	
+:- pragma inline(det_unsafe_array_insert_from_corresponding_lists/5).
 
-		
+set(Tuple, T, !Map) :- 
+	unsafe_array_set(Tuple, to_array(Tuple), T, !Map).
+	
+:- pragma inline(set/4).
+
+set_from_corresponding_lists([], [], !Map).
+set_from_corresponding_lists([], [_ | _], _, _) :-
+    unexpected($pred, "list length mismatch").
+set_from_corresponding_lists([_ | _], [], _, _) :-
+    unexpected($pred, "list length mismatch").
+set_from_corresponding_lists([K | Ks], [V | Vs], !Map) 						:-
+    set(K, V, !Map),
+    set_from_corresponding_lists(Ks, Vs, !Map).
+	
+:- pragma inline(set_from_corresponding_lists/4).
+
+set_from_assoc_list([], !Map).
+set_from_assoc_list([K - V | KVs], !Map) :-
+    set(K, V, !Map),
+    set_from_assoc_list(KVs, !Map).
+	
+:- pragma inline(set_from_assoc_list/3).
+
+unsafe_array_set(Tuple, TupleArray, T, !Map) :-
+	array.size(TupleArray, Arity),
+	get_pattern_array(!.Map, Arity, OldPatternArray),
+	pattern_array_map(pattern_array_set(TupleArray, Tuple, T), 
+		OldPatternArray, NewPatternArray),
+	set_pattern_array(Arity, NewPatternArray, !Map).
+
+:- func pattern_array_set(array(mh_term), mh_tuple, T, element_map(T), int) 
+	= element_map(T).
+
+pattern_array_set(TupleArray, Tuple, T, !.Map, Index) = !:Map :-
+	array.unsafe_lookup(TupleArray, Index, Term)
+	get_exact_map(!.Map, Term, OldExactMap),
+	mh_tuple_exact_map.unsafe_array_set(Tuple, TupleArray, T, OldExactMap,
+		NewExactMap),
+	set_exact_map(Tuple, NewExactMap, !Map).
+	
+:- pragma inline(unsafe_array_set/5).
+
+unsafe_array_set_from_corresponding_lists([], [], [], !Map).
+unsafe_array_set_from_corresponding_lists([], [_ | _], [_ | _], _, _) :-
+	unexpected($pred, "list length mismatch").
+unsafe_array_set_from_corresponding_lists([_ | _], [], [_ | _], _, _) :-
+    unexpected($pred, "list length mismatch").
+unsafe_array_set_from_corresponding_lists([_ | _], [_ | _], [], _, _) :-
+    unexpected($pred, "list length mismatch").
+unsafe_array_set_from_corresponding_lists([K | Ks], [A, As], [V | Vs],
+	!Map) :-
+    unsafe_array_set(K, A, V, !Map),
+    unsafe_array_set_from_corresponding_lists(Ks, As, Vs, !Map).
+	
+:- pragma inline(unsafe_array_set_from_corresponding_lists/5).
+
+%-----------------------------------------------------------------------------%
+% Removal
+
+delete(Tuple, !Map) :- array_delete(to_array(Tuple), !Map).
+	
+:- pragma inline(delete/3).
+
+delete_list([], !Map).
+delete_list([Tuple | Tuples], !Map) :- 
+	delete(Tuple, !Map),
+	delete_list(Tuples, !Map).
+	
+:- pragma inline(delete_list/3).
+	
+array_delete(TupleArray, !Map) :- 
+	array.size(TupleArray, Arity),
+	get_pattern_array(!.Map, Arity, OldPatternArray),
+	pattern_array_map(pattern_array_delete(TupleArray), 
+		OldPatternArray, NewPatternArray),
+	(if pattern_array_is_empty(NewPatternArray)
+	then
+		map.delete(Arity, !Map)
+	else
+		set_pattern_array(Arity, NewPatternArray, !Map)
+	).
+
+:- func pattern_array_set(array(mh_term), mh_tuple, T, element_map(T), int) 
+	= element_map(T).
+
+pattern_array_delete(TupleArray, !.Map, Index) = !:Map :-
+	array.unsafe_lookup(TupleArray, Index, Term)
+	get_exact_map(!.Map, Term, OldExactMap),
+	mh_tuple_exact_map.array_delete(TupleArray, T, OldExactMap,	NewExactMap),
+	(if mh_tuple_exact_map.is_empty(NewExactMap)
+	then
+		map.delete(Term, !Map)
+	else
+		set_exact_map(Term, NewExactMap, !Map)
+	).
+	
+:- pragma inline(array_delete/3).
+
+array_delete_list([], !Map).
+array_delete_list([A | As], !Map) :- 
+	array_delete(A, !Map),
+	array_delete_list(As, !Map).
+	
+:- pragma inline(array_delete_list/3).	
 
 %-----------------------------------------------------------------------------%
 % Pattern Map Operations
@@ -284,16 +405,11 @@ get_pattern_array(Map, Arity, get_pattern_array(Map, Arity)).
 
 set_pattern_array(Arity, Array, !Map) :- map.set(Arity, Array, !Map).
 
-check_for_empty_array(Arity, !Map) :-
-	(if map.search(!.Map, Arity, Array), array.all_true(map.is_empty, Array)
-	then
-		map.delete(Arity, !Map)
-	else
-		true	
-	).
 
 %-----------------------------------------------------------------------------%
-% Pattern Array Operations		
+% Pattern Array Operations	
+
+pattern_array_is_empty(Array) :- array.all_true(map.is_empty, Array).
 	
 pattern_array_map(F, Array, 
 	generate(
@@ -349,13 +465,13 @@ do_pattern_array_fold(F, Array, !A, I, Max) :-
 % Element Map Operations
 
 get_exact_map(Element, Term) =
-	(if search(Element, Term, Found)
+	(if mh_term_map.search(Element, Term, Found)
 	then
 		Found
 	else
-		init
+		mh_term_map.init
 	).
 	
 get_exact_map(Element, Term, get_exact_map(Element, Term)).
 
-set_exact_map(Term, Exact, !Element) :- 
+set_exact_map(Term, Exact, !Element) :- mh_term_map.set(Term, Exact, !Element).
