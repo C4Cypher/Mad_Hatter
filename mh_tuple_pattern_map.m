@@ -104,32 +104,6 @@
 :- pred array_delete_list(list(array(mh_term))::in, tuple_exact_map(T)::in, 
 	tuple_exact_map::out) is det.
 	
-%-----------------------------------------------------------------------------%
-% Set operations
-
-
-:- func union(func(T, T) = T, tuple_pattern_map(T), tuple_pattern_map(T)) =
-	tuple_pattern_map(T).
-
-:- pred union(func(T, T) = T, tuple_pattern_map(T), tuple_pattern_map(T),
-	tuple_pattern_map(T)).
-:- mode union(in(func(in, in) = out is det), in, in, out) is det.
-:- mode union(in(func(in, in) = out is semidet), in, in, out) is semidet.
-
-:- func intersect(func(T, T) = T, tuple_pattern_map(T), tuple_pattern_map(T))
-	= var_map(T).
-	
-:- pred intersect(func(T, T) = T, tuple_pattern_map(T), tuple_pattern_map(T),
-	tuple_pattern_map(T)).
-:- mode intersect(in(func(in, in) = out is det), in, in, out) is det.
-:- mode intersect(in(func(in, in) = out is semidet), in, in, out) is semidet.
-
-:- func difference(tuple_pattern_map(T), tuple_pattern_map(_)) =
-	tuple_pattern_map(T).
-
-:- pred difference(var_map(T)::in, tuple_pattern_map(_)::in, 
-	tuple_pattern_map(T)::out)	is det.
-	
 
 %-----------------------------------------------------------------------------%
 % Pattern Map Operations
@@ -404,6 +378,8 @@ get_pattern_array(Map, Arity, get_pattern_array(Map, Arity)).
 :- pragma inline(get_pattern_array/3).
 
 set_pattern_array(Arity, Array, !Map) :- map.set(Arity, Array, !Map).
+
+:- pragma inline(set_pattern_array/4).
 
 
 %-----------------------------------------------------------------------------%
