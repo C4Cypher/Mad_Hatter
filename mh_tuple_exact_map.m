@@ -412,16 +412,16 @@ array_delete_list([A | As], !Map) :-
 % are inefficient
 	
 
-union(F, M1, M2) = foldl(union_insert(F), M2, M1).
+union(F, M1, M2) = map.foldl(union_insert(F), M2, M1).
 
-:- func union_insert(func(T, T) = T, array(mh_term), T,	tuple_exact_map(T)) =
-	tuple_exact_map(T).
+:- func union_insert(func(T, T) = T, array(mh_term), pair(mh_tuple - T),
+	tuple_exact_map(T)) = tuple_exact_map(T).
 	
-union_insert(F, Key, V2, !.M1) = !:M1 :-
-	map.search_insert(Key, V2, MaybeV1, !M1),
-	(if MaybeV1 = yes(V1),
+union_insert(F, Key, K2 - V2, !.M1) = !:M1 :-
+	map.search_insert(Key, K2 - V2, MaybeV1, !M1),
+	(if MaybeV1 = yes(K1 - V1),
 	then
-		map.set(Key, F(V1, V2), !M1)
+		map.set(Key, K1 - F(V1, V2), !M1)
 	else
 		true
 	).
@@ -433,17 +433,20 @@ union(F, M1, M2, union(F, M1, M2)).
 :- pragma inline(union/4).
 
 set_union(M1, M2) = 
-	map.foldl(union_insert2, M2, map.foldl(union_insert1, M1, map.init)).
+	map.foldl(set_union_insert2, M2, 
+		map.foldl(set_union_insert1, M1, map.init)
+	).
 
-:- func union_insert1(array(mh_term), _, tuple_exact_set) = tuple_exact_set.
+:- func set_union_insert1(array(mh_term), pair(mh_tuple - _), tuple_exact_set) 
+	= tuple_exact_set.
 	
-union_insert1(Key, _, !.M3) = !:M3 :-
-	map.set(Key, unit, !M3),	
+set_union_insert1(Key, Tuple - _, !.M3) = !:M3 :-
+	det_unsafe_array_insert(Tuple, Key, unit, !M3).
 	
-:- func union_insert2(array(mh_term), _, tuple_exact_set) = tuple_exact_set.
+:- func set_union_insert2(array(mh_term), pair(mh_tuple - _), tuple_exact_set) = tuple_exact_set.
 	
-union_insert2(Key, _, !.M3) = !:M3 :-
-	map.search_insert(Key, unit, _, !M3).
+set_union_insert2(Key, Tuple - _, !.M3) = !:M3 :-
+	map.search_insert(Key, Tuple - unit, _, !M3).
 
 :- pragma inline(set_union/2).
 
@@ -451,7 +454,19 @@ set_union(M1, M2, set_union(M3)).
 
 :- pragma inline(set_union/3).
 
-intersect(F, M1, M2) = map.intersect(F, M1, M2).
+intersect(F, M1, M2) = map.foldl(intersect_fold(F, M2), M1, map.init).
+
+:- func insersect_fold(func(T, T) = T, tuple_exact_map(T), array(mh_term), 
+	pair(mh_tuple - T), tuple_exact_map(T)) = tuple_exact_map(T).
+
+intersect_fold(F, M2, Key, Tuple - V1, !.M3) = !:M3 :-
+	(if map.search(Key, M2, _ - V2)
+	then
+		det_unsafe_array_insert(Tuple, Key, unit, !M3)
+	else
+		true
+	).
+
 	
 :- pragma inline(intersect/3).
 
@@ -459,11 +474,47 @@ intersect(F, M1, M2, intersect(F, M1, M2)).
 	
 :- pragma inline(intersect/4).
 
-difference(M1, M2) = M :-
-	difference(M1, M2, M).
+set_intersect(M1, M2) = map.foldl(set_intersect_fold(M2), M1, map.init).
+
+:- func set_intersect_fold(tuple_exact_map(_), array(mh_term),
+	pair(mh_tuple, _), tuple_exact_set) = tuple_exact_set.
+	
+set_intersect_fold(M2, Key, Tuple - _, !.M3) = !:M3 :-
+	(if map.contains(M2, Key)
+	then
+		det_unsafe_array_insert(Tuple, Key, unit, !M3)
+	else
+		true
+	).
+
+difference(M1, M2) = map.foldl(difference_fold, M2, M1).
+	
+:- func difference_fold(array(mh_term), _,	tuple_exact_map(T)) = 
+	tuple_exact_map(T).
+	
+difference_fold(Key, _, !.Map) = !:Map :-
+	map.delete(Key, !Map).
 	
 :- pragma inline(difference/2).
 	
-difference(M1, M2, map.delete_list(M1, map.keys(M2))).
-	
+difference(M1, M2, difference(M1, M2)).
+
 :- pragma inline(difference/3).
+
+set_difference(M1, M2) = map.foldl(set_difference_fold(M2), M1, map.init).
+
+:- func set_difference_fold(tuple_exact_map(_), array(mh_term), 
+	pair(mh_tuple, _), tuple_exact_set) = tuple_exact_set.
+	
+set_difference_fold(M2, Key, Tuple - _, !.M3) = !:M3 :-
+	(if map.contains(M2, Key)
+		true
+	else
+		det_unsafe_array_insert(Tuple, Key, unit, !M3)
+	).
+	
+:- pragma inline(set_difference/2).
+	
+set_difference(M1, M2, set_difference(M1, M2)).
+
+:- pragma inline(set_difference/3).
