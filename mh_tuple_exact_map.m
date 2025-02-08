@@ -20,14 +20,18 @@
 :- import_module pair.
 :- import_module list.
 :- import_module assoc_list.
+:- import_module unit.
 
 :- import_module mh_term.
 :- import_module mh_tuple.
+
+% TODO: get general hashing finished and replace map.map with hashmap.hashmap
 
 %-----------------------------------------------------------------------------%
 % Exact Tuple map - tuple map optimized for exact tuple lookup
 
 :- type tuple_exact_map(T) == map.map(array(mh_term), pair(mh_tuple,T)).
+:- type tuple_exact_set == tuple_exact_map(unit).
 
 :- func init = (tuple_exact_map(T)::out) is det.
 :- pred init(tuple_exact_map(_)::out) is det.
@@ -142,6 +146,10 @@ T::out) is semidet.
 :- mode union(in(func(in, in) = out is det), in, in, out) is det.
 :- mode union(in(func(in, in) = out is semidet), in, in, out) is semidet.
 
+:- func set_union(tuple_exact_map(_), tuple_exact_map(_)) = tuple_exact_set.
+:- pred set_union(tuple_exact_map(_)::in, tuple_exact_map(_)::in, 
+	tuple_exact_set::out)	is det.
+
 :- func intersect(func(T, T) = T, tuple_exact_map(T), tuple_exact_map(T))
 	= var_map(T).
 	
@@ -150,11 +158,21 @@ T::out) is semidet.
 :- mode intersect(in(func(in, in) = out is det), in, in, out) is det.
 :- mode intersect(in(func(in, in) = out is semidet), in, in, out) is semidet.
 
+:- func set_intersect(tuple_exact_map(_), tuple_exact_map(_)) = 
+	tuple_exact_set.
+:- pred set_intersect(tuple_exact_map(_)::in, tuple_exact_map(_)::in, 
+	tuple_exact_set::out) is det.
+
 :- func difference(tuple_exact_map(T), tuple_exact_map(_)) =
 	tuple_exact_map(T).
 
 :- pred difference(var_map(T)::in, tuple_exact_map(_)::in, 
-	tuple_exact_map(T)::out)	is det.
+	tuple_exact_map(T)::out) is det.
+	
+:- func set_difference(tuple_exact_map(_), tuple_exact_map(_)) = 
+	tuple_exact_set.
+:- pred set_difference(tuple_exact_map(_)::in, tuple_exact_map(_)::in, 
+	tuple_exact_set::out) is det.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -162,6 +180,7 @@ T::out) is semidet.
 :- implementation.
 
 :- import_module require.
+:- import_module maybe.
 
 :- import_module mh_term_map.
 :- import_module util.
@@ -389,13 +408,48 @@ array_delete_list([A | As], !Map) :-
 %-----------------------------------------------------------------------------%
 % Set operations
 
-union(F, M1, M2) = map.union(F, M1, M2).
+%TODO: re-implement all set ops with folds, the default set operations for map
+% are inefficient
 	
+
+union(F, M1, M2) = foldl(union_insert(F), M2, M1).
+
+:- func union_insert(func(T, T) = T, array(mh_term), T,	tuple_exact_map(T)) =
+	tuple_exact_map(T).
+	
+union_insert(F, Key, V2, !.M1) = !:M1 :-
+	map.search_insert(Key, V2, MaybeV1, !M1),
+	(if MaybeV1 = yes(V1),
+	then
+		map.set(Key, F(V1, V2), !M1)
+	else
+		true
+	).
+
 :- pragma inline(union/3).
 
 union(F, M1, M2, union(F, M1, M2)).
 
 :- pragma inline(union/4).
+
+set_union(M1, M2) = 
+	map.foldl(union_insert2, M2, map.foldl(union_insert1, M1, map.init)).
+
+:- func union_insert1(array(mh_term), _, tuple_exact_set) = tuple_exact_set.
+	
+union_insert1(Key, _, !.M3) = !:M3 :-
+	map.set(Key, unit, !M3),	
+	
+:- func union_insert2(array(mh_term), _, tuple_exact_set) = tuple_exact_set.
+	
+union_insert2(Key, _, !.M3) = !:M3 :-
+	map.search_insert(Key, unit, _, !M3).
+
+:- pragma inline(set_union/2).
+
+set_union(M1, M2, set_union(M3)).
+
+:- pragma inline(set_union/3).
 
 intersect(F, M1, M2) = map.intersect(F, M1, M2).
 	

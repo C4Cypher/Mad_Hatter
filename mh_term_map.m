@@ -126,8 +126,8 @@ T::out) is semidet.
 :- mode union(in(func(in, in) = out is det), in, in, out) is det.
 :- mode union(in(func(in, in) = out is semidet), in, in, out) is semidet.
 
-:- func union(mh_term_map(_), mh_term_map(_)) = mh_term_set.
-:- pred union(mh_term_map(_)::in, mh_term_map(_)::in, mh_term_set::out) is det.
+:- func set_union(mh_term_map(_), mh_term_map(_)) = mh_term_set.
+:- pred set_union(mh_term_map(_)::in, mh_term_map(_)::in, mh_term_set::out) is det.
 
 :- func intersect(func(T, T) = T, mh_term_map(T), mh_term_map(T))
 	= mh_term_map(T).
@@ -137,8 +137,8 @@ T::out) is semidet.
 :- mode intersect(in(func(in, in) = out is det), in, in, out) is det.
 :- mode intersect(in(func(in, in) = out is semidet), in, in, out) is semidet.
 
-:- func intersect(mh_term_map(_), mh_term_map(_)) = mh_term_set.
-:- pred intersect(mh_term_map(_)::in, mh_term_map(_)::in, mh_term_set::out) 
+:- func set_intersect(mh_term_map(_), mh_term_map(_)) = mh_term_set.
+:- pred set_intersect(mh_term_map(_)::in, mh_term_map(_)::in, mh_term_set::out) 
 	is det.
 
 :- func difference(mh_term_map(T), mh_term_map(_)) =
