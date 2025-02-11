@@ -45,11 +45,10 @@
 :- pred is_empty(tuple_pattern_map(_)::in) is semidet.
 
 %-----------------------------------------------------------------------------%
-% Search
+% Conversion
 
-:- pred select()
+:- func from_exact_map(exact_map(T)) = tuple_pattern_map(T).
 
-:- pred match()
 
 %-----------------------------------------------------------------------------%
 % Insertion
@@ -116,12 +115,28 @@
 :- pred get_pattern_array(tuple_pattern_map(T)::in, int::in, 
 	pattern_array(T)::out) is det.
 	
+:- func find_pattern_array(tuple_pattern_map(T), int) = pattern_array(T))
+	is semidet.
+	
+:- pred find_pattern_array(tuple_pattern_map(T)::in, int::in, 
+	pattern_array(T)::out) is semidet.
+	
 :- pred set_pattern_array(int::in, pattern_array::in, 
 	tuple_pattern_map(T)::in, tuple_pattern_map(T)::out) is det.
 
 
 %-----------------------------------------------------------------------------%
 % Pattern Array Operations	
+
+
+
+% retreives the element map for the given (1 based) index in the array, throws 
+% an exception if index is out of bounds of array
+
+:- func get_element_map(pattern_array(T), int) = element_map(T).
+:- pred get_element_map(pattern_array(T)::in, int::in, element_map(T)::in) is 
+	det.
+	
 
 % Succeeds if pattern array contains only empty maps.
 :- pred pattern_array_is_empty(pattern_array(_)::in) is semidet.
@@ -159,6 +174,12 @@
 :- pred get_exact_map(element_map(T)::in, mh_term::in, exact_map(T)::out)
 	is det.
 	
+
+:- func find_exact_map(element_map(T), mh_term) = exact_map(T) is semidet.
+
+:- pred find_exact_map(element_map(T)::in, mh_term::in, exact_map(T)::out)
+	is semidet.
+	
 :- pred set_exact_map(mh_term::in, exact_map(T)::in, 
 	element_map(T)::in, element_map(T)::out) is det.
 
@@ -173,8 +194,6 @@
 %-----------------------------------------------------------------------------%
 % Pattern Tuple map
 
-
-
 init = map.init.
 init(init).
 
@@ -184,10 +203,8 @@ unsafe_array_singleton(Tuple, Array, T) = Map :-
 
 is_empty(init).
 
-	
-	
 %-----------------------------------------------------------------------------%
-% Search
+% Conversion
 
 %-----------------------------------------------------------------------------%
 % Insertion
@@ -364,11 +381,11 @@ array_delete_list([A | As], !Map) :-
 % Pattern Map Operations
 
 get_pattern_array(Map, Arity) =
-	(if map.search(!.Map, Size, Existing)
+	(if map.search(!.Map, Arity, Existing)
 	then
 		Existing
 	else
-		array.init(Size, init)	
+		array.init(Arity, init)	
 	).
 	
 :- pragma inline(get_pattern_array/2).
@@ -377,6 +394,14 @@ get_pattern_array(Map, Arity, get_pattern_array(Map, Arity)).
 
 :- pragma inline(get_pattern_array/3).
 
+find_pattern_array(Map, Arity) = map.search(!.Map, Arity).
+
+:- pragma inline(find_pattern_array/2).
+
+find_pattern_array(Map, Arity, find_pattern_array(Map, Arity)).
+
+:- pragma inline(find_pattern_array/3).
+
 set_pattern_array(Arity, Array, !Map) :- map.set(Arity, Array, !Map).
 
 :- pragma inline(set_pattern_array/4).
@@ -384,6 +409,10 @@ set_pattern_array(Arity, Array, !Map) :- map.set(Arity, Array, !Map).
 
 %-----------------------------------------------------------------------------%
 % Pattern Array Operations	
+
+get_element_map(Array, Index) = array.lookup(Array, Index - 1).
+
+get_element_map(Array, Index, get_element_map(Aray, Index)).
 
 pattern_array_is_empty(Array) :- array.all_true(map.is_empty, Array).
 	
@@ -449,5 +478,9 @@ get_exact_map(Element, Term) =
 	).
 	
 get_exact_map(Element, Term, get_exact_map(Element, Term)).
+
+find_exact_map(Element, Term) = mh_term_map.search(Element, Term).
+
+find_exact_map(Element, Term, find_exact_map(Element, Term)).
 
 set_exact_map(Term, Exact, !Element) :- mh_term_map.set(Term, Exact, !Element).

@@ -25,8 +25,6 @@
 :- import_module mh_term.
 :- import_module mh_tuple.
 
-% TODO: get general hashing finished and replace map.map with hashmap.hashmap
-
 %-----------------------------------------------------------------------------%
 % Exact Tuple map - tuple map optimized for exact tuple lookup
 
@@ -47,8 +45,7 @@
 :- pred contains(tuple_exact_map(T)::in, mh_tuple::in) is semidet.
 
 	% Fails if the key is not found
-:- pred search(tuple_exact_map(T)::in, mh_tuple::in, 
-T::out) is semidet.
+:- pred search(tuple_exact_map(T)::in, mh_tuple::in, T::out) is semidet.
 :- func search(tuple_exact_map(T), mh_tuple) = T is semidet.
 
 	% Throws an exception if the key is not found
@@ -433,20 +430,32 @@ union(F, M1, M2, union(F, M1, M2)).
 :- pragma inline(union/4).
 
 set_union(M1, M2) = 
-	map.foldl(set_union_insert2, M2, 
-		map.foldl(set_union_insert1, M1, map.init)
+	(if dynamic_cast(M1, Munit)
+	then
+		unit_union(Munit, M2)
+	else
+		map.foldl(set_union_insert2, M2, 
+			map.foldl(set_union_insert1, M1, map.init)
+		)
 	).
 
-:- func set_union_insert1(array(mh_term), pair(mh_tuple - _), tuple_exact_set) 
+:- func set_union_insert1(array(mh_term), pair(mh_tuple, _), tuple_exact_set) 
 	= tuple_exact_set.
 	
 set_union_insert1(Key, Tuple - _, !.M3) = !:M3 :-
 	det_unsafe_array_insert(Tuple, Key, unit, !M3).
 	
-:- func set_union_insert2(array(mh_term), pair(mh_tuple - _), tuple_exact_set) = tuple_exact_set.
+:- func set_union_insert2(array(mh_term), pair(mh_tuple, _), tuple_exact_set) = tuple_exact_set.
 	
 set_union_insert2(Key, Tuple - _, !.M3) = !:M3 :-
 	map.search_insert(Key, Tuple - unit, _, !M3).
+
+:- func unit_union(tuple_exact_map(unit), tuple_exact_map(_)) = 
+	tuple_exact_set.
+	
+unit_union(M1, M2) = map.foldl(set_union_insert2, M2, M1).
+
+:- pragma inline(unit_union/3).
 
 :- pragma inline(set_union/2).
 

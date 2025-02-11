@@ -155,6 +155,7 @@ T::out) is semidet.
 
 :- implementation.
 
+:- import_module lazy.
 :- import_module array.
 :- import_module list.
 :- use_module map.
@@ -164,8 +165,9 @@ T::out) is semidet.
 
 %-----------------------------------------------------------------------------%
 
-:- type exact_map(T) = mh_tuple_exact_map.tuple_exact_map(T).
-:- type pattern_map(T) = mh_tuple_pattern_map.tuple_pattern_map(T)
+:- type exact_map(T) == mh_tuple_exact_map.tuple_exact_map(T).
+:- type pattern_map(T) == mh_tuple_pattern_map.tuple_pattern_map(T).
+:- type lazy_pattern_map(T) == lazy(pattern_map(T)). 
 
 :- type mh_tuple_map(T)
-	--->	tuple_map(exact_map(T), pattern_map(T)).
+	--->	tuple_map(exact_map(T), lazy_pattern_map(T)).
