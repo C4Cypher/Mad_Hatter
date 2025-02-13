@@ -444,16 +444,24 @@ set_pattern_array(Arity, Array, !Map) :- map.set(Arity, Array, !Map).
 
 get_element_map(Array, Index) = array.lookup(Array, Index - 1).
 
+:- pragma inline(get_element_map/2).
+
 get_element_map(Array, Index, get_element_map(Aray, Index)).
 
+:- pragma inline(get_element_map/3).
+
 pattern_array_is_empty(Array) :- array.all_true(map.is_empty, Array).
-	
+
+:- pragma inline(pattern_array_is_empty/1).
+
 pattern_array_map(F, Array, 
 	generate(
 		size(Array), 
 		do_pattern_array_map(F, Array)
 	)
 ). 
+
+:- pragma inline(pattern_array_map/3).
 	
 :- func do_pattern_array_map(
 	func(element_map(T), int) = element_map(T),
@@ -469,6 +477,7 @@ do_pattern_array_map(F, Array, Index) = F(ElementMap, Index) :-
 	
 pattern_array_fold(F, Array, !A) :- 
 	do_pattern_array_fold(F, Array, A, min(Array), max(Array)).	
+	
 	
 :- pred do_pattern_array_fold(func(element_map(T), int, A) = A, 
 	pattern_array(T), A, A, int, int).
@@ -497,6 +506,8 @@ do_pattern_array_fold(F, Array, !A, I, Max) :-
 		!:A = F(ElementMap, I, !.A),
 		do_pattern_array_fold(F, Array, !A, I + 1, Max)
 	).
+	
+:- pragma inline(pattern_array_fold/4).
 
 %-----------------------------------------------------------------------------%
 % Element Map Operations
@@ -509,15 +520,27 @@ get_exact_map(Element, Term) =
 		mh_term_map.init
 	).
 	
+:- pragma inline(get_exact_map/2).
+	
 get_exact_map(Element, Term, get_exact_map(Element, Term)).
+
+:- pragma inline(get_exact_map/3).
 
 find_exact_map(Element, Term) = mh_term_map.search(Element, Term).
 
+:- pragma inline(find_exact_map/2).
+
 find_exact_map(Element, Term, find_exact_map(Element, Term)).
 
+:- pragma inline(find_exact_map/3).
+
 set_exact_map(Term, Exact, !Element) :- mh_term_map.set(Term, Exact, !Element).
+
+:- pragma inline(set_exact_map/4).
 
 det_element_map_insert(Term, Tuple, Key, T, !Map) :-
 	get_exact_map(!.Map, Term, ExMap0),
 	mh_tuple_exact_map.det_unsafe_array_insert(Tuple, Key, T, ExMap0, ExMap1),
 	set_exact_map(Term, ExMap1, !Map).
+	
+:- pragma inline(det_element_map_insert/6).
