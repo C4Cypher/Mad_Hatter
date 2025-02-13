@@ -44,9 +44,6 @@
 
 :- pred is_empty(tuple_pattern_map(_)::in) is semidet.
 
-%-----------------------------------------------------------------------------%
-% Conversion
-
 :- func from_exact_map(exact_map(T)) = tuple_pattern_map(T).
 
 
@@ -65,11 +62,17 @@
 	tuple_pattern_map(T)::in, tuple_pattern_map(T)::out) is det.
 	
 :- pred unsafe_array_insert(mh_tuple::in, array(mh_term)::in, T::in, 
-	tuple_pattern_map(T)::in, tuple_pattern_map(T)::out) is semidet.
+	tuple_pattern_map(T)::in, tuple_pattern_map(T)::out) is det.
 
 :- pred unsafe_array_insert_from_corresponding_lists(list(mh_tuple)::in, 
 	list(array(mh_term))::in, list(array(mh_term)), list(T)::in, 
-	tuple_exact_map(T)::in, tuple_exact_map(T)::out) is det.	
+	tuple_exact_map(T)::in, tuple_exact_map(T)::out) is det.
+
+:- pred unsafe_array_pair_insert(array(mh_term)::in, pair(mh_tuple, T)::in, 
+	tuple_pattern_map(T)::in, tuple_pattern_map(T)::out) is det.	
+	
+:- func unsafe_array_pair_insert(array(mh_term), pair(mh_tuple, T), 
+	tuple_pattern_map(T)) = tuple_pattern_map(T).
 
 :- pred set(mh_tuple::in, T::in, tuple_pattern_map::in, tuple_pattern_map::out)
 	is det.
@@ -129,7 +132,6 @@
 % Pattern Array Operations	
 
 
-
 % retreives the element map for the given (1 based) index in the array, throws 
 % an exception if index is out of bounds of array
 
@@ -137,7 +139,6 @@
 :- pred get_element_map(pattern_array(T)::in, int::in, element_map(T)::in) is 
 	det.
 	
-
 % Succeeds if pattern array contains only empty maps.
 :- pred pattern_array_is_empty(pattern_array(_)::in) is semidet.
 
@@ -182,6 +183,9 @@
 	
 :- pred set_exact_map(mh_term::in, exact_map(T)::in, 
 	element_map(T)::in, element_map(T)::out) is det.
+	
+:- pred det_element_map_insert(mh_term::in, mh_tuple::in, array(mh_term)::in, 
+	T::in, element_map(T)::in, element_map(T)::out) is det.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -203,8 +207,7 @@ unsafe_array_singleton(Tuple, Array, T) = Map :-
 
 is_empty(init).
 
-%-----------------------------------------------------------------------------%
-% Conversion
+from_exact_map(Exact) = map.foldl(unsafe_array_pair_insert, Exact, map.init).
 
 %-----------------------------------------------------------------------------%
 % Insertion
@@ -235,14 +238,14 @@ insert_from_assoc_list([K - V | KVs], !Map) :-
 unsafe_array_insert(Tuple, TupleArray, T, !Map) :-
 	array.size(TupleArray, Arity),
 	get_pattern_array(!.Map, Arity, OldPatternArray),
-	pattern_array_map(pattern_array_insert(TupleArray, Tuple, T), 
+	pattern_array_map(pattern_array_map_insert(TupleArray, Tuple, T), 
 		OldPatternArray, NewPatternArray),
 	set_pattern_array(Arity, NewPatternArray, !Map).
 
-:- func pattern_array_insert(array(mh_term), mh_tuple, T, element_map(T), int) 
+:- func pattern_array_map_insert(array(mh_term), mh_tuple, T, element_map(T), int) 
 	= element_map(T).
 
-pattern_array_insert(TupleArray, Tuple, T, !.Map, Index) = !:Map :-
+pattern_array_map_insert(TupleArray, Tuple, T, !.Map, Index) = !:Map :-
 	array.unsafe_lookup(TupleArray, Index, Term)
 	get_exact_map(!.Map, Term, OldExactMap),
 	(if mh_tuple_exact_map.unsafe_array_insert(Tuple, TupleArray, T, 
@@ -271,6 +274,35 @@ unsafe_array_insert_from_corresponding_lists([K | Ks], [A, As], [V | Vs],
     unsafe_array_insert_from_corresponding_lists(Ks, As, Vs, !Map).
 	
 :- pragma inline(det_unsafe_array_insert_from_corresponding_lists/5).
+
+unsafe_array_pair_insert(TupleArray, Pair, !Map) :-
+	array.size(TupleArray, Arity),
+	get_pattern_array(!.Map, Arity, OldPatternArray),
+	pattern_array_map(pattern_array_pair_insert(TupleArray, Pair), 
+		OldPatternArray, NewPatternArray),
+	set_pattern_array(Arity, NewPatternArray, !Map).
+	
+:- func pattern_array_pair_insert(array(mh_term), pair(mh_tuple, T), 
+	element_map(T), int) = element_map(T).
+
+pattern_array_pair_insert(TupleArray, Pair, !.Map, Index) = !:Map :-
+	array.unsafe_lookup(TupleArray, Index, Term)
+	get_exact_map(!.Map, Term, OldExactMap),
+	(if map.insert(TupleArray, Pair, OldExactMap, NewExactMap)
+	then 
+		set_exact_map(Term, NewExactMap, !Map)
+	else 
+		report_lookup_error(
+"mh_tuple_pattern_map.unsafe_array_pair_insert: array aleady present in map", 
+		Tuple, !.Map)
+	).
+	
+:- pragma inline(unsafe_array_pair_insert/4).
+
+unsafe_array_pair_insert(TupleArray, Pair, !.Map) = !:Map :-
+	unsafe_array_pair_insert(TupleArray, Pair, !Map).
+	
+:- pragma inline(unsafe_array_pair_insert/3).
 
 set(Tuple, T, !Map) :- 
 	unsafe_array_set(Tuple, to_array(Tuple), T, !Map).
@@ -484,3 +516,8 @@ find_exact_map(Element, Term) = mh_term_map.search(Element, Term).
 find_exact_map(Element, Term, find_exact_map(Element, Term)).
 
 set_exact_map(Term, Exact, !Element) :- mh_term_map.set(Term, Exact, !Element).
+
+det_element_map_insert(Term, Tuple, Key, T, !Map) :-
+	get_exact_map(!.Map, Term, ExMap0),
+	mh_tuple_exact_map.det_unsafe_array_insert(Tuple, Key, T, ExMap0, ExMap1),
+	set_exact_map(Term, ExMap1, !Map).
