@@ -160,25 +160,12 @@
 % Higher Order
 
 :- func fold(func(mh_tuple, T, A) = A, mh_tuple_map(T), A) = A.
-:- mode fold(in(func(in, in, in) = out is det), in, in) = out is det.
-:- mode fold(in(func(in, in, in) = out is semidet), in, in) = out is semidet.
-:- mode fold(in(func(in, in, di) = uo is det), in, di) = uo is det.
-:- mode fold(in(func(in, in, mdi) = muo is det), in, mdi) = muo is det.
-:- mode fold(in(func(in, in, mdi) = muo is semidet), in, mdi) = muo is semidet.
-:- mode fold(in(func(in, in, array_di) = array_uo is det), in, array_di) = 
-	array_uo is det.
 
 :- pred fold(func(mh_tuple, T, A) = A, mh_tuple_map(T), A, A).
 :- mode fold(in(func(in, in, in) = out is det), in, in, out) is det.
-:- mode fold(in(func(in, in, in) = out is semidet), in, in) = out) is semidet.
-:- mode fold(in(func(in, in, di) = uo is det), in, di, uo) is det.
-:- mode fold(in(func(in, in, mdi) = muo is det), in, mdi, muo) is det.
-:- mode fold(in(func(in, in, mdi) = muo is semidet), in, mdi, muo) is semidet.
-:- mode fold(in(func(in, in, array_di) = array_uo is det), in, array_di, 
-	array_uo) is det.
 
 :- func map(func(mh_tuple, T) = U, mh_tuple_map(T)) = mh_tuple_map(U).
-:- mode map(in(func(in, in) = out is det), in) = out is det.
+
 
 :- pred map(func(mh_tuple, T) = U, mh_tuple_map(T), mh_tuple_map(U)).
 :- mode map(in(func(in, in) = out is det), in, out) is det.
