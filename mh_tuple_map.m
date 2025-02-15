@@ -16,6 +16,7 @@
 :- interface.
 
 :- import_module unit.
+:- import_module array.
 
 :- import_module mh_term.
 :- import_module mh_tuple.
@@ -34,6 +35,9 @@
 
 :- func singleton(mh_tuple, T) = mh_tuple_map(T).
 :- func singleton(mh_tuple) = mh_tuple_set.
+
+:- func lazy_singleton(mh_tuple, T) = mh_tuple_map(T).
+:- func lazy_singleton(mh_tuple) = mh_tuple_set.
 
 :- pred is_empty(mh_tuple_map(_)::in) is semidet.
 
@@ -151,6 +155,33 @@
 :- func set_difference(mh_tuple_map(_), mh_tuple_map(_)) = mh_tuple_set.
 :- pred set_difference(mh_tuple_map(_)::in, mh_tuple_map(_)::in, 
 	mh_tuple_set::out) is det.
+	
+%-----------------------------------------------------------------------------%
+% Higher Order
+
+:- func fold(func(mh_tuple, T, A) = A, mh_tuple_map(T), A) = A.
+:- mode fold(in(func(in, in, in) = out is det), in, in) = out is det.
+:- mode fold(in(func(in, in, in) = out is semidet), in, in) = out is semidet.
+:- mode fold(in(func(in, in, di) = uo is det), in, di) = uo is det.
+:- mode fold(in(func(in, in, mdi) = muo is det), in, mdi) = muo is det.
+:- mode fold(in(func(in, in, mdi) = muo is semidet), in, mdi) = muo is semidet.
+:- mode fold(in(func(in, in, array_di) = array_uo is det), in, array_di) = 
+	array_uo is det.
+
+:- pred fold(func(mh_tuple, T, A) = A, mh_tuple_map(T), A, A).
+:- mode fold(in(func(in, in, in) = out is det), in, in, out) is det.
+:- mode fold(in(func(in, in, in) = out is semidet), in, in) = out) is semidet.
+:- mode fold(in(func(in, in, di) = uo is det), in, di, uo) is det.
+:- mode fold(in(func(in, in, mdi) = muo is det), in, mdi, muo) is det.
+:- mode fold(in(func(in, in, mdi) = muo is semidet), in, mdi, muo) is semidet.
+:- mode fold(in(func(in, in, array_di) = array_uo is det), in, array_di, 
+	array_uo) is det.
+
+:- func map(func(mh_tuple, T) = U, mh_tuple_map(T)) = mh_tuple_map(U).
+:- mode map(in(func(in, in) = out is det), in) = out is det.
+
+:- pred map(func(mh_tuple, T) = U, mh_tuple_map(T), mh_tuple_map(U)).
+:- mode map(in(func(in, in) = out is det), in, out) is det.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -183,9 +214,13 @@ lazy_init = tuple_map(mh_tuple_exact_map.init@Map, delay(from_exact_map(Map))).
 singleton(Tuple, T) = tuple_map(mh_tuple_exact_map.singleton(Tuple, T),
 	val(mh_tuple_pattern_map.singleton(Tuple, T))).
 	
+singleton(Tuple) = singleton(Tuple, unit).
+	
 lazy_singleton(Tuple, T) = 
 	tuple_map(mh_tuple_exact_map.singleton(Tuple, T)@Map, 
 		delay(from_exact_map(Map))).
+		
+lazy_singleton(Tuple) = lazy_singleton(Tuple, unit).
 	
 is_empty(tuple_map(Map, _)) :- tuple_exact_map.is_empty(Map).
 
