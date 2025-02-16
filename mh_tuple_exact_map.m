@@ -28,7 +28,7 @@
 %-----------------------------------------------------------------------------%
 % Exact Tuple map - tuple map optimized for exact tuple lookup
 
-:- type tuple_exact_map(T) == map.map(array(mh_term), pair(mh_tuple,T)).
+:- type tuple_exact_map(T) == map.map(array(mh_term), pair(mh_tuple, T)).
 :- type tuple_exact_set == tuple_exact_map(unit).
 
 :- func init = (tuple_exact_map(T)::out) is det.
@@ -141,7 +141,6 @@
 
 :- pred union(func(T, T) = T, tuple_exact_map(T), tuple_exact_map(T), tuple_exact_map(T)).
 :- mode union(in(func(in, in) = out is det), in, in, out) is det.
-:- mode union(in(func(in, in) = out is semidet), in, in, out) is semidet.
 
 :- func set_union(tuple_exact_map(_), tuple_exact_map(_)) = tuple_exact_set.
 :- pred set_union(tuple_exact_map(_)::in, tuple_exact_map(_)::in, 
@@ -153,7 +152,6 @@
 :- pred intersect(func(T, T) = T, tuple_exact_map(T), tuple_exact_map(T),
 	tuple_exact_map(T)).
 :- mode intersect(in(func(in, in) = out is det), in, in, out) is det.
-:- mode intersect(in(func(in, in) = out is semidet), in, in, out) is semidet.
 
 :- func set_intersect(tuple_exact_map(_), tuple_exact_map(_)) = 
 	tuple_exact_set.
