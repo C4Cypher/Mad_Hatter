@@ -37,6 +37,13 @@
 :- instance arity(mh_tuple).
 :- instance mr_tuple(mh_tuple).
 
+:- pred tuple_is_empty(mh_tuple::in) is semidet.
+
+:- func tuple_compare(mh_tuple::in, mh_tuple::in) = comparison_result.
+:- pred tuple_compare(comparison_result::out, mh_tuple::in, mh_tuple::in).
+
+:- pred tuple_equal(mh_tuple)
+
 %-----------------------------------------------------------------------------%
 % Tuple constructors and conversion
 
@@ -182,6 +189,15 @@
 	;		array_tuple(array(mh_term)).
 	%;		set_tuple(???)  data structure that organizes a tuple into a 
 	% 						 prefix tree structure?
+	
+tuple_is_empty(mr_tuple(T)) :- arity(T) = 0.
+tuple_is_empty(list_tuple([])).
+tuple_is_empty(array_tuple(A)) :- size(A) = 0.
+
+tuple_compare(T1, T2) = array_compare(to_array(T1), to_array(T2)).
+tuple_compare(tuple_compare(T1, T2), T1, T2).
+
+tuple_equal(T1, T2) :- tuple_compare(=, T1, T2).
 	
 
 
