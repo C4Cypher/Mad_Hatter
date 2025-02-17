@@ -41,6 +41,8 @@
 
 :- pred is_empty(mh_tuple_map(_)::in) is semidet.
 
+:- pred equal(mh_term_map(T)::in, mh_term_map(T)::in) is semidet.
+
 :- impure pred force_pattern_map(mh_tuple_map(T)::in) is det.
 
 :- pred force_pattern_map(mh_tuple_map(T), mh_tuple_map(T)).
@@ -210,6 +212,8 @@ lazy_singleton(Tuple, T) =
 lazy_singleton(Tuple) = lazy_singleton(Tuple, unit).
 	
 is_empty(tuple_map(Map, _)) :- tuple_exact_map.is_empty(Map).
+
+equal(tuple_map(M1, _), tuple_map(M2, _)) :- mh_tuple_exact_map.equal(M1, M2).
 
 force_pattern_map(tuple_map(_, Lazy)) :- _ = force(Lazy).
 
