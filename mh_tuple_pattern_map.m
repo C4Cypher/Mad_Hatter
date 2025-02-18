@@ -23,7 +23,6 @@
 :- import_module mh_term_map.
 :- import_module mh_term.
 :- import_module mh_tuple.
-:- use_module mh_tuple_exact_map.
 
 %-----------------------------------------------------------------------------%
 % Pattern Tuple map
@@ -32,14 +31,14 @@
 
 :- type pattern_array(T) == array(element_map(T)).
 :- type element_map(T) == mh_term_map(exact_map(T)).
-:- type exact_map(T) == mh_tuple_exact_map.tuple_exact_map(T).
+:- type exact_map(T) == map.map(array(mh_term), T).
 
 
 :- func init = (tuple_pattern_map(T)::out) is det.
 :- pred init(tuple_pattern_map(_)::out) is det.
 
 :- func singleton(mh_tuple, T) = tuple_pattern_map(T).
-:- func unsafe_array_singleton(mh_tuple, array(mh_term), T) = 
+:- func array_singleton(mh_tuple, array(mh_term), T) = 
 	tuple_pattern_map(T).
 
 :- pred is_empty(tuple_pattern_map(_)::in) is semidet.
@@ -61,18 +60,12 @@
 :- pred insert_from_assoc_list(assoc_list(mh_tuple, T)::in,
 	tuple_pattern_map(T)::in, tuple_pattern_map(T)::out) is det.
 	
-:- pred unsafe_array_insert(mh_tuple::in, array(mh_term)::in, T::in, 
+:- pred array_insert(array(mh_term)::in, T::in, 
 	tuple_pattern_map(T)::in, tuple_pattern_map(T)::out) is det.
 
-:- pred unsafe_array_insert_from_corresponding_lists(list(mh_tuple)::in, 
+:- pred array_insert_from_corresponding_lists(list(mh_tuple)::in, 
 	list(array(mh_term))::in, list(array(mh_term)), list(T)::in, 
 	tuple_exact_map(T)::in, tuple_exact_map(T)::out) is det.
-
-:- pred unsafe_array_pair_insert(array(mh_term)::in, pair(mh_tuple, T)::in, 
-	tuple_pattern_map(T)::in, tuple_pattern_map(T)::out) is det.	
-	
-:- func unsafe_array_pair_insert(array(mh_term), pair(mh_tuple, T), 
-	tuple_pattern_map(T)) = tuple_pattern_map(T).
 
 :- pred set(mh_tuple::in, T::in, tuple_pattern_map::in, tuple_pattern_map::out)
 	is det.
@@ -83,10 +76,10 @@
 :- pred set_from_assoc_list(assoc_list(mh_tuple, T)::in,
 	tuple_pattern_map(T)::in, tuple_pattern_map(T)::out) is det.
 	
-:- pred unsafe_array_set(mh_tuple::in, array(mh_term)::in, T::in, 
+:- pred array_set(array(mh_term)::in, T::in, 
 	tuple_pattern_map(T)::in, tuple_pattern_map(T)::out) is det.
 	
-:- pred unsafe_array_set_from_corresponding_lists(list(mh_tuple)::in, 
+:- pred array_set_from_corresponding_lists(list(mh_tuple)::in, 
 	list(array(mh_term))::in, list(array(mh_term)), list(T)::in, 
 	tuple_exact_map(T)::in, tuple_exact_map(T)::out) is det.	
 	
@@ -184,7 +177,7 @@
 :- pred set_exact_map(mh_term::in, exact_map(T)::in, 
 	element_map(T)::in, element_map(T)::out) is det.
 	
-:- pred det_element_map_insert(mh_term::in, mh_tuple::in, array(mh_term)::in, 
+:- pred det_element_map_insert(mh_term::in, array(mh_term)::in, 
 	T::in, element_map(T)::in, element_map(T)::out) is det.
 
 %-----------------------------------------------------------------------------%
@@ -202,18 +195,18 @@ init = map.init.
 init(init).
 
 singleton(Tuple, T) = Map :- det_insert(Tuple, T, init, Map).
-unsafe_array_singleton(Tuple, Array, T) = Map :-
-	det_unsafe_array_insert(Tuple, Array, T, init, Map).
+array_singleton(Tuple, Array, T) = Map :-
+	det_array_insert(Tuple, Array, T, init, Map).
 
 is_empty(init).
 
-from_exact_map(Exact) = map.foldl(unsafe_array_pair_insert, Exact, map.init).
+from_exact_map(Exact) = map.foldl(array_pair_insert, Exact, map.init).
 
 %-----------------------------------------------------------------------------%
 % Insertion
 	
 insert(Tuple, T, !Map) :- 
-	unsafe_array_insert(Tuple, to_array(Tuple), T, !Map).
+	array_insert(Tuple, to_array(Tuple), T, !Map).
 	
 :- pragma inline(insert/4).
 		
@@ -235,77 +228,48 @@ insert_from_assoc_list([K - V | KVs], !Map) :-
 	
 :- pragma inline(insert_from_assoc_list/3).
 
-unsafe_array_insert(Tuple, TupleArray, T, !Map) :-
+array_insert(TupleArray, T, !Map) :-
 	array.size(TupleArray, Arity),
 	get_pattern_array(!.Map, Arity, OldPatternArray),
-	pattern_array_map(pattern_array_map_insert(TupleArray, Tuple, T), 
+	pattern_array_map(pattern_array_map_insert(TupleArray, T), 
 		OldPatternArray, NewPatternArray),
 	set_pattern_array(Arity, NewPatternArray, !Map).
 
 :- func pattern_array_map_insert(array(mh_term), mh_tuple, T, element_map(T), int) 
 	= element_map(T).
 
-pattern_array_map_insert(TupleArray, Tuple, T, !.Map, Index) = !:Map :-
+pattern_array_map_insert(TupleArray, T, !.Map, Index) = !:Map :-
 	array.unsafe_lookup(TupleArray, Index, Term)
 	get_exact_map(!.Map, Term, OldExactMap),
-	(if mh_tuple_exact_map.unsafe_array_insert(Tuple, TupleArray, T, 
-		OldExactMap, NewExactMap)
-	then 
-		set_exact_map(Tuple, NewExactMap, !Map)
-	else 
-		report_lookup_error(
-"mh_tuple_pattern_map.unsafe_array_insert: array aleady present in map", 
-		Tuple, !.Map)
-	).
-	
-:- pragma inline(unsafe_array_insert/5).
-
-	
-unsafe_array_insert_from_corresponding_lists([], [], [], !Map).
-unsafe_array_insert_from_corresponding_lists([], [_ | _], [_ | _], _, _) :-
-	unexpected($pred, "list length mismatch").
-unsafe_array_insert_from_corresponding_lists([_ | _], [], [_ | _], _, _) :-
-    unexpected($pred, "list length mismatch").
-unsafe_array_insert_from_corresponding_lists([_ | _], [_ | _], [], _, _) :-
-    unexpected($pred, "list length mismatch").
-unsafe_array_insert_from_corresponding_lists([K | Ks], [A, As], [V | Vs],
-	!Map) :-
-    unsafe_array_insert(K, A, V, !Map),
-    unsafe_array_insert_from_corresponding_lists(Ks, As, Vs, !Map).
-	
-:- pragma inline(det_unsafe_array_insert_from_corresponding_lists/5).
-
-unsafe_array_pair_insert(TupleArray, Pair, !Map) :-
-	array.size(TupleArray, Arity),
-	get_pattern_array(!.Map, Arity, OldPatternArray),
-	pattern_array_map(pattern_array_pair_insert(TupleArray, Pair), 
-		OldPatternArray, NewPatternArray),
-	set_pattern_array(Arity, NewPatternArray, !Map).
-	
-:- func pattern_array_pair_insert(array(mh_term), pair(mh_tuple, T), 
-	element_map(T), int) = element_map(T).
-
-pattern_array_pair_insert(TupleArray, Pair, !.Map, Index) = !:Map :-
-	array.unsafe_lookup(TupleArray, Index, Term)
-	get_exact_map(!.Map, Term, OldExactMap),
-	(if map.insert(TupleArray, Pair, OldExactMap, NewExactMap)
+	(if map.insert(TupleArray, T, OldExactMap, NewExactMap)
 	then 
 		set_exact_map(Term, NewExactMap, !Map)
 	else 
 		report_lookup_error(
-"mh_tuple_pattern_map.unsafe_array_pair_insert: array aleady present in map", 
-		Tuple, !.Map)
+"mh_tuple_pattern_map.array_insert: array aleady present in map", 
+		TupleArray, !.Map)
 	).
 	
-:- pragma inline(unsafe_array_pair_insert/4).
+:- pragma inline(array_insert/5).
 
-unsafe_array_pair_insert(TupleArray, Pair, !.Map) = !:Map :-
-	unsafe_array_pair_insert(TupleArray, Pair, !Map).
 	
-:- pragma inline(unsafe_array_pair_insert/3).
+array_insert_from_corresponding_lists([], [], [], !Map).
+array_insert_from_corresponding_lists([], [_ | _], [_ | _], _, _) :-
+	unexpected($pred, "list length mismatch").
+array_insert_from_corresponding_lists([_ | _], [], [_ | _], _, _) :-
+    unexpected($pred, "list length mismatch").
+array_insert_from_corresponding_lists([_ | _], [_ | _], [], _, _) :-
+    unexpected($pred, "list length mismatch").
+array_insert_from_corresponding_lists([K | Ks], [A, As], [V | Vs],
+	!Map) :-
+    array_insert(K, A, V, !Map),
+    array_insert_from_corresponding_lists(Ks, As, Vs, !Map).
+	
+:- pragma inline(det_array_insert_from_corresponding_lists/5).
+	
 
 set(Tuple, T, !Map) :- 
-	unsafe_array_set(Tuple, to_array(Tuple), T, !Map).
+	array_set(to_array(Tuple), T, !Map).
 	
 :- pragma inline(set/4).
 
@@ -327,38 +291,38 @@ set_from_assoc_list([K - V | KVs], !Map) :-
 	
 :- pragma inline(set_from_assoc_list/3).
 
-unsafe_array_set(Tuple, TupleArray, T, !Map) :-
+array_set(TupleArray, T, !Map) :-
 	array.size(TupleArray, Arity),
 	get_pattern_array(!.Map, Arity, OldPatternArray),
 	pattern_array_map(pattern_array_set(TupleArray, Tuple, T), 
 		OldPatternArray, NewPatternArray),
 	set_pattern_array(Arity, NewPatternArray, !Map).
 
-:- func pattern_array_set(array(mh_term), mh_tuple, T, element_map(T), int) 
+:- func pattern_array_set(array(mh_term), T, element_map(T), int) 
 	= element_map(T).
 
-pattern_array_set(TupleArray, Tuple, T, !.Map, Index) = !:Map :-
+pattern_array_set(TupleArray, T, !.Map, Index) = !:Map :-
 	array.unsafe_lookup(TupleArray, Index, Term)
 	get_exact_map(!.Map, Term, OldExactMap),
-	mh_tuple_exact_map.unsafe_array_set(Tuple, TupleArray, T, OldExactMap,
+	mh_tuple_exact_map.array_set(TupleArray, T, OldExactMap,
 		NewExactMap),
-	set_exact_map(Tuple, NewExactMap, !Map).
+	set_exact_map(TupleArray, NewExactMap, !Map).
 	
-:- pragma inline(unsafe_array_set/5).
+:- pragma inline(array_set/5).
 
-unsafe_array_set_from_corresponding_lists([], [], [], !Map).
-unsafe_array_set_from_corresponding_lists([], [_ | _], [_ | _], _, _) :-
+array_set_from_corresponding_lists([], [], [], !Map).
+array_set_from_corresponding_lists([], [_ | _], [_ | _], _, _) :-
 	unexpected($pred, "list length mismatch").
-unsafe_array_set_from_corresponding_lists([_ | _], [], [_ | _], _, _) :-
+array_set_from_corresponding_lists([_ | _], [], [_ | _], _, _) :-
     unexpected($pred, "list length mismatch").
-unsafe_array_set_from_corresponding_lists([_ | _], [_ | _], [], _, _) :-
+array_set_from_corresponding_lists([_ | _], [_ | _], [], _, _) :-
     unexpected($pred, "list length mismatch").
-unsafe_array_set_from_corresponding_lists([K | Ks], [A, As], [V | Vs],
+array_set_from_corresponding_lists([K | Ks], [A, As], [V | Vs],
 	!Map) :-
-    unsafe_array_set(K, A, V, !Map),
-    unsafe_array_set_from_corresponding_lists(Ks, As, Vs, !Map).
+    array_set(K, A, V, !Map),
+    array_set_from_corresponding_lists(Ks, As, Vs, !Map).
 	
-:- pragma inline(unsafe_array_set_from_corresponding_lists/5).
+:- pragma inline(array_set_from_corresponding_lists/5).
 
 %-----------------------------------------------------------------------------%
 % Removal
@@ -413,7 +377,7 @@ array_delete_list([A | As], !Map) :-
 % Pattern Map Operations
 
 get_pattern_array(Map, Arity) =
-	(if map.search(!.Map, Arity, Existing)
+	(if map.search(Map, Arity, Existing)
 	then
 		Existing
 	else
@@ -538,9 +502,9 @@ set_exact_map(Term, Exact, !Element) :- mh_term_map.set(Term, Exact, !Element).
 
 :- pragma inline(set_exact_map/4).
 
-det_element_map_insert(Term, Tuple, Key, T, !Map) :-
+det_element_map_insert(Term, TupleArray, T, !Map) :-
 	get_exact_map(!.Map, Term, ExMap0),
-	mh_tuple_exact_map.det_unsafe_array_insert(Tuple, Key, T, ExMap0, ExMap1),
+	map.det_insert(TupleArray, T, ExMap0, ExMap1),
 	set_exact_map(Term, ExMap1, !Map).
 	
 :- pragma inline(det_element_map_insert/6).
