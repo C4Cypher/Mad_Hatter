@@ -35,6 +35,8 @@
 
 :- pred is_empty(mh_term_map(_)::in) is semidet.
 
+:- pred equal(mh_term_map(T)::in, mh_term_map(T)::in) is semidet.
+
 
 
 %-----------------------------------------------------------------------------%
@@ -126,8 +128,8 @@ T::out) is semidet.
 :- mode union(in(func(in, in) = out is det), in, in, out) is det.
 :- mode union(in(func(in, in) = out is semidet), in, in, out) is semidet.
 
-:- func set_union(mh_term_map(_), mh_term_map(_)) = mh_term_set.
-:- pred set_union(mh_term_map(_)::in, mh_term_map(_)::in, mh_term_set::out) is det.
+:- func set_union(mh_term_set, mh_term_set) = mh_term_set.
+:- pred set_union(mh_term_set::in, mh_term_set::in, mh_term_set::out) is det.
 
 :- func intersect(func(T, T) = T, mh_term_map(T), mh_term_map(T))
 	= mh_term_map(T).
@@ -137,8 +139,8 @@ T::out) is semidet.
 :- mode intersect(in(func(in, in) = out is det), in, in, out) is det.
 :- mode intersect(in(func(in, in) = out is semidet), in, in, out) is semidet.
 
-:- func set_intersect(mh_term_map(_), mh_term_map(_)) = mh_term_set.
-:- pred set_intersect(mh_term_map(_)::in, mh_term_map(_)::in, mh_term_set::out) 
+:- func set_intersect(mh_term_set, mh_term_set) = mh_term_set.
+:- pred set_intersect(mh_term_set::in, mh_term_set::in, mh_term_set::out) 
 	is det.
 
 :- func difference(mh_term_map(T), mh_term_map(_)) =
@@ -146,10 +148,7 @@ T::out) is semidet.
 
 :- pred difference(mh_term_map(T)::in, mh_term_map(_)::in, 
 	mh_term_map(T)::out) is det.
-	
-:- func set_difference(mh_term_map(_), mh_term_map(_)) = mh_term_set.
-:- pred set_difference(mh_term_map(_)::in, mh_term_map(_)::in, 
-	mh_term_set::out) is det.
+
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -167,8 +166,8 @@ T::out) is semidet.
 :- import_module mh_symbol.
 :- import_module mh_value_map.
 :- import_module mh_var_map.
-:- import_module mh_term_map.
 :- import_module hashmap.
+:- import_module mh_tuple_map.
 
 %-----------------------------------------------------------------------------%
 % Term maps
@@ -176,18 +175,17 @@ T::out) is semidet.
 :- type mh_term_map(T)
 	--->	empty_term_map
 	;		term_map(
-			nil :: maybe(T),
-			atom :: symbol_map(T),
-			var :: mh_var_map(T),
-			mr_value :: mr_value_map(T),
-			cons :: mh_term_map(mh_term_map(T)), 
-			tuple :: tuple_map(T),
-			lazy :: mh_term_map(T),
-			predicate ::
-			relation ::
-			function ::
-	).
+				nil :: maybe(T),
+				atom :: symbol_map(T),
+				var :: mh_var_map(T),
+				mr_value :: mr_value_map(T),
+				cons :: mh_term_map(mh_term_map(T)), 
+				tuple :: mh_tuple_map(T),
+				lazy :: mh_term_map(T),
+				predicate ::
+				relation ::
+				function ::
+			).
 
 :- type symbol_map(T) == hashmap(mh_symbol, T).
-:- type tuple_map(T) == map()
 

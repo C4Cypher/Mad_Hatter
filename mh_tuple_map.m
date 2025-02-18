@@ -28,10 +28,10 @@
 :- type mh_tuple_set == mh_tuple_map(unit).
 
 :- func init = (mh_tuple_map(T)::uo) is det.
-:- pred init(mh_tuple_map(_)::uo) is det.
+:- pred init(mh_tuple_set::uo) is det.
 
 :- func lazy_init = (mh_tuple_map(T)::uo) is det.
-:- pred lazy_init(mh_tuple_map(_)::uo) is det.
+:- pred lazy_init(mh_tuple_set::uo) is det.
 
 :- func singleton(mh_tuple, T) = mh_tuple_map(T).
 :- func singleton(mh_tuple) = mh_tuple_set.
@@ -39,7 +39,7 @@
 :- func lazy_singleton(mh_tuple, T) = mh_tuple_map(T).
 :- func lazy_singleton(mh_tuple) = mh_tuple_set.
 
-:- pred is_empty(mh_tuple_map(_)::in) is semidet.
+:- pred is_empty(mh_tuple_set::in) is semidet.
 
 :- pred equal(mh_term_map(T)::in, mh_term_map(T)::in) is semidet.
 
@@ -134,8 +134,8 @@
 	mh_tuple_map(T)).
 :- mode union(in(func(in, in) = out is det), in, in, out) is det.
 
-:- func set_union(mh_tuple_map(_), mh_tuple_map(_)) = mh_tuple_set.
-:- pred set_union(mh_tuple_map(_)::in, mh_tuple_map(_)::in, mh_tuple_set::out)
+:- func set_union(mh_tuple_set, mh_tuple_set) = mh_tuple_set.
+:- pred set_union(mh_tuple_set::in, mh_tuple_set::in, mh_tuple_set::out)
 	is det.
 
 :- func intersect(func(T, T) = T, mh_tuple_map(T), mh_tuple_map(T))
@@ -145,8 +145,8 @@
 	mh_tuple_map(T)).
 :- mode intersect(in(func(in, in) = out is det), in, in, out) is det.
 
-:- func set_intersect(mh_tuple_map(_), mh_tuple_map(_)) = mh_tuple_set.
-:- pred set_intersect(mh_tuple_map(_)::in, mh_tuple_map(_)::in, 
+:- func set_intersect(mh_tuple_set, mh_tuple_set) = mh_tuple_set.
+:- pred set_intersect(mh_tuple_set::in, mh_tuple_set::in, 
 	mh_tuple_set::out) is det.
 
 :- func difference(mh_tuple_map(T), mh_tuple_map(_)) =
@@ -154,10 +154,6 @@
 
 :- pred difference(mh_tuple_map(T)::in, mh_tuple_map(_)::in, 
 	mh_tuple_map(T)::out) is det.
-	
-:- func set_difference(mh_tuple_map(_), mh_tuple_map(_)) = mh_tuple_set.
-:- pred set_difference(mh_tuple_map(_)::in, mh_tuple_map(_)::in, 
-	mh_tuple_set::out) is det.
 	
 %-----------------------------------------------------------------------------%
 % Higher Order
@@ -182,38 +178,37 @@
 :- import_module list.
 :- use_module map.
 
-:- use_module mh_tuple_exact_map.
 :- use_module mh_tuple_pattern_map.
 
 %-----------------------------------------------------------------------------%
 
-:- type exact_map(T) == mh_tuple_exact_map.tuple_exact_map(T).
+:- type exact_map(T) == map.map(array(mh_term), T).
 :- type pattern_map(T) == mh_tuple_pattern_map.tuple_pattern_map(T).
 :- type lazy_pattern_map(T) == lazy(pattern_map(T)). 
 
 :- type mh_tuple_map(T)
 	--->	tuple_map(exact_map(T), lazy_pattern_map(T)).
 	
-init = tuple_map(mh_tuple_exact_map.init, val(mh_tuple_pattern_map.init)).
+init = tuple_map(map.init, val(mh_tuple_pattern_map.init)).
 
 init(init).
 
-lazy_init = tuple_map(mh_tuple_exact_map.init@Map, delay(from_exact_map(Map))).
+lazy_init = tuple_map(map.init@Map, delay(from_exact_map(Map))).
 
-singleton(Tuple, T) = tuple_map(mh_tuple_exact_map.singleton(Tuple, T),
+singleton(Tuple, T) = tuple_map(map.singleton(to_array(Tuple), T),
 	val(mh_tuple_pattern_map.singleton(Tuple, T))).
 	
 singleton(Tuple) = singleton(Tuple, unit).
 	
 lazy_singleton(Tuple, T) = 
-	tuple_map(mh_tuple_exact_map.singleton(Tuple, T)@Map, 
+	tuple_map(map.singleton(to_array(Tuple), T)@Map, 
 		delay(from_exact_map(Map))).
 		
 lazy_singleton(Tuple) = lazy_singleton(Tuple, unit).
 	
-is_empty(tuple_map(Map, _)) :- tuple_exact_map.is_empty(Map).
+is_empty(tuple_map(Map, _)) :- map.is_empty(Map).
 
-equal(tuple_map(M1, _), tuple_map(M2, _)) :- mh_tuple_exact_map.equal(M1, M2).
+equal(tuple_map(M1, _), tuple_map(M2, _)) :- map.equal(M1, M2).
 
 force_pattern_map(tuple_map(_, Lazy)) :- _ = force(Lazy).
 
@@ -233,15 +228,15 @@ delay_pattern(Exact) = delay(mh_tuple_pattern_map.from_exact_map(!.E)).
 %-----------------------------------------------------------------------------%
 % Search
 
-contains(tuple_map(Map, _), Tuple) :- tuple_exact_map.contains(Map, Tuple).
+contains(tuple_map(Map, _), Tuple) :- map.contains(Map, to_array(Tuple)).
 
 search(Map, Tuple, search(Map, Tuple)).
 
-search(tuple_map(Map, _), Tuple) = tuple_exact_map.search(Map, Tuple).
+search(tuple_map(Map, _), Tuple) = map.search(Map, to_array(Tuple)).
 
 lookup(Map, Tuple, lookup(Map, Tuple)).
 
-lookup(tuple_map(Map, _), Tuple) = tuple_exact_map.lookup(Map, Tuple).
+lookup(tuple_map(Map, _), Tuple) = map.lookup(Map, to_array(Tuple)).
 
 
 %-----------------------------------------------------------------------------%
@@ -249,11 +244,11 @@ lookup(tuple_map(Map, _), Tuple) = tuple_exact_map.lookup(Map, Tuple).
 
 insert(Tuple, T, tuple_exact_map(!.E, !.L), tuple_exact_map(!:E, !:L)) :-
 	Array = to_array(Tuple),
-	mh_tuple_exact_map.unsafe_array_insert(Tuple, T, Array,	!E),
+	map.unsafe_array_insert(Array, T, !E),
 	promise_pure 
 		(if impure read_if_val(!.L, P0)
 		then
-			mh_tuple_pattern_map.unsafe_array_insert(Tuple, Array, T, P0, P),
+			mh_tuple_pattern_map.array_insert(Array, T, P0, P),
 			!:L = val(P)
 		else
 			!:L = delay_pattern(!.E)
@@ -300,11 +295,11 @@ det_insert_from_assoc_list([K - V | KVs], !Map) :-
 
 set(Tuple, T, tuple_exact_map(!.E, !.L), tuple_exact_map(!:E, !:L)) :-
 	Array = to_array(Tuple),
-	mh_tuple_exact_map.unsafe_array_set(Tuple, T, Array, !E),
+	map.set(Array, T, !E),
 	promise_pure 
 		(if impure read_if_val(!.L, P0)
 		then
-			mh_tuple_pattern_map.unsafe_array_set(Tuple, Array, T, P0, P),
+			mh_tuple_pattern_map.array_set(Tuple, Array, T, P0, P),
 			!:L = val(P)
 		else
 			!:L = delay_pattern(!.E)
@@ -334,11 +329,11 @@ set_from_list([Tuple | List]) :-
 	
 update(Tuple, T, tuple_exact_map(!.E, !.L), tuple_exact_map(!:E, !:L)) :-
 	Array = to_array(Tuple),
-	mh_tuple_exact_map.unsafe_array_update(Tuple, T, Array,	!E),
+	map.update(Array, T, !E),
 	promise_pure 
 		(if impure read_if_val(!.L, P0)
 		then
-			mh_tuple_pattern_map.unsafe_array_set(Tuple, Array, T, P0, P),
+			mh_tuple_pattern_map.array_set(Tuple, Array, T, P0, P),
 			!:L = val(P)
 		else
 			!:L = delay_pattern(!.E)
@@ -357,7 +352,7 @@ det_update(Var, T, !Map) :-
 
 remove(Tuple, T, tuple_exact_map(!.E, !.L), tuple_exact_map(!:E, !:L)) :-
 	Array = to_array(Tuple),
-	mh_tuple_exact_map.unsafe_array_remove(Tuple, Array, T, !E)
+	map.remove(Array, T, !E)
 	promise_pure 
 		(if impure read_if_val(!.L, P0)
 		then
@@ -378,7 +373,7 @@ det_remove(Tuple, T, !Map) :-
 	
 delete(Tuple, !Map) :- array_delete(to_array(Tuple), !Map).
 	Array = to_array(Tuple),
-	mh_tuple_exact_map.array_delete(Array, !E)
+	map.delete(Array, !E)
 	promise_pure 
 		(if impure read_if_val(!.L, P0)
 		then
@@ -397,53 +392,56 @@ delete_list([Tuple | Tuples], !Map) :-
 % Set operations
 
 union(F, tuple_map(E1, _), tuple_map(E2, _)) = 
-	tuple_map(E3@mh_tuple_exact_map.union(F, E1, E2), delay_pattern(E3)).
+	tuple_map(E3@map.union(E1, E2), delay_pattern(E3)).
+	
+
 	
 union(F, M1, M2, union(F, M1, M2)).
 
 set_union(tuple_map(E1, _), tuple_map(E2, _)) = 
-	tuple_map(E3@mh_tuple_exact_map.set_union(E1, E2), delay_pattern(E3)).
+	tuple_map(E3@map.overlay(E1, E2), delay_pattern(E3)).
+
 	
 set_union(M1, M2, set_union(M1, M2)).
 
 intersect(F, tuple_map(E1, _), tuple_map(E2, _)) = 
-	tuple_map(E3@mh_tuple_exact_map.intersect(F, E1, E2), delay_pattern(E3)).
+	tuple_map(E3@map.intersect(F, E1, E2), delay_pattern(E3)).
 	
 intersect(F, M1, M2, intersect(F, M1, M2)).
 
 set_intersect(tuple_map(E1, _), tuple_map(E2, _)) = 
-	tuple_map(E3@mh_tuple_exact_map.set_intersect(E1, E2), delay_pattern(E3)).
+	tuple_map(E3@map.common_subset(E1, E2), delay_pattern(E3)).
 	
 set_intersect(M1, M2, set_intersect(M1, M2)).
 	
-difference(F, tuple_map(E1, _), tuple_map(E2, _)) = 
-	tuple_map(E3@mh_tuple_exact_map.difference(F, E1, E2), delay_pattern(E3)).
+difference(tuple_map(E1, _), tuple_map(E2, _)) = 
+	tuple_map(E3@map.foldl(difference_fold, M2, M1), delay_pattern(E3)).
 	
-difference(F, M1, M2, difference(F, M1, M2)).
-
-set_difference(tuple_map(E1, _), tuple_map(E2, _)) = 
-	tuple_map(E3@mh_tuple_exact_map.set_difference(E1, E2), delay_pattern(E3)).
+:- func difference_fold(array(mh_term), _,	tuple_exact_map(T)) = 
+	tuple_exact_map(T).
 	
-set_difference(M1, M2, set_difference(M1, M2)).
+difference_fold(Key, _, !.Map) = !:Map :-
+	map.delete(Key, !Map).
+	
+difference(M1, M2, difference(M1, M2)).
 
 %-----------------------------------------------------------------------------%
 % Higher Order
 
 fold(F, tuple_map(E, _), A) = map.foldl(fold_exact(F), E, A).
 
-:- func fold_exact(func(mh_tuple, T, A) = A, _, pair(mh_tuple, T), A) = A.
+:- func fold_exact(func(mh_tuple, T, A) = A, array(mh_term), T, A) = A.
 
-fold_exact(F, _, K - V, A) = F(K, V, A).
+fold_exact(F, K, V, A) = F(from_array(K), V).
 
 fold(F, M A, fold(F, M, A)).
 
 map(F, tuple_map(E0, _)) = 
-	tuple_map(E@map.map_values_only(map_exact(F), E0)), delay_pattern(E)).
+	tuple_map(E@map.map_values(map_exact(F), E0)), delay_pattern(E)).
 
-:- func map_exact(func(mh_tuple, T) = U, pair(mh_tuple, T)) = 
-	pair(mh_tuple, U).
+:- func map_exact(func(mh_tuple, T) = U, array(mh_term), T) = U.
 	
-map_exact(F, K - V) = K - F(K, V).
+map_exact(F, K, V) = K - F(from_array(K), V).
 
 map(F, M, map(F, M)).
 

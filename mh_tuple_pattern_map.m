@@ -200,7 +200,7 @@ array_singleton(Tuple, Array, T) = Map :-
 
 is_empty(init).
 
-from_exact_map(Exact) = map.foldl(array_pair_insert, Exact, map.init).
+from_exact_map(Exact) = map.foldl(array_insert, Exact, map.init).
 
 %-----------------------------------------------------------------------------%
 % Insertion
