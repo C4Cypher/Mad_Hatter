@@ -24,34 +24,36 @@ get a repl running
 					fact assertions
 					mercury types
 				finish mh_term, my high level AST
+					refactor tuples <-- I am here
+						internalize representation
+						sets as tuples?	
+						cache conversions?
+							cache mr->list->array->set->list conversion
+					implement unification
+						redesign tuples lazily
+						refactor substitutions
 					refactor substitutions
 					hash out higher order types (see below)
 						implement term sets 
 							disjunctive ordering? Weights?
 							value sets
-								implement term map
-									implement tuple maps  <- I am here
-									implement set tuples
-									implement predicate maps
-									implement relation maps
-									function maps?
-							refactor tuples
-								internalize representation
-									
+							implement term map
+								implement predicate maps
+									finish predicate definition
+								implement relation maps
+								function maps?
 										
-									cache mr->list->array->set->list conversion
+									
 					define environments/symbol substitution
 						finish substitutions 
 							term constraints 	
 					hash out higher order types 
-						relations
+						predicates
 							propositional language
 								disjunctions as sets
 								conjunctions as lists? sets?
 								evaluation order?
-								implement unification
-									redesign tuples lazily
-									refactor substitutions
+						relations
 						define clauses
 							scope
 							term constraints			
