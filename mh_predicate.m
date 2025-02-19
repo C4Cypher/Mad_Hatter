@@ -21,6 +21,7 @@
 :- import_module mh_substitution.
 :- import_module mh_arity.
 :- import_module mh_tuple.
+:- import_module mh_tuple_map.
 
 % In prolog and many other logic programming languages, a predicate is
 % represented by a clause, either a fact clause 'predicate(X,Y).' or a rule clause
@@ -34,8 +35,7 @@
 % Predicates
 
 :- type mh_predicate 
-	--->	invalid_predicate(mh_term, string)
- 	;		pred_success(mh_substitution)		% yes
+	--->	pred_success(mh_substitution)		% yes
   	;		pred_failure(pred_fail_reason)		% no
 	;		pred_disj(mh_disjunction)			% A ; B ; C
 	;		pred_conj(mh_conjunction)			% A , B , C
