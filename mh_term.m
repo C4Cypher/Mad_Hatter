@@ -23,6 +23,7 @@
 :- import_module mh_tuple.
 :- import_module mh_constraint.
 :- import_module mh_relation.
+:- import_module mh_scope.
 :- import_module mh_predicate.
 :- import_module mh_function.
 :- import_module mh_substitution.
@@ -60,8 +61,8 @@
 	
 	% Higher order terms
 	;		predicate(mh_predicate)
-	;		relation(arity, predicate_term)	%\(X) = Y :- Pred(X, Y)
-	;		function(arity, predicate_term)	%\(X) -> Y :- Pred(X::in, Y::out)
+	;		relation(arity, predicate_term, mh_scope) %\(X) = Y :- Pred(X, Y)
+	;		function(mh_function)	%\(X) -> Y :- Pred(X::in, Y::out)
 	
 	% Term substitutions (lazy)
 	;		term_sub(mh_term, mh_substitution).
@@ -105,8 +106,8 @@
 	--->	atom(ground)
 	;		var(ground)
 	;		predicate(ground)
-	;		relation(ground, ground)
-	;		function(ground, ground)
+	;		relation(ground, ground, ground)
+	;		function(ground)
 	;		term_sub(functor, ground).
 	% TODO: Add tuples as functors?
 
@@ -119,8 +120,8 @@
 	
 	% Higher order terms
 	;		predicate(mh_predicate)
-	;		relation(arity, predicate_term)
-	;		function(arity, predicate_term)	
+	;		relation(arity, predicate_term, mh_scope)
+	;		function(mh_function)
 	
 	% Substitution
 	;		term_sub(functor, mh_substitution).
@@ -247,14 +248,14 @@
 
 :- inst lambda
 	--->	predicate(ground)
-	;		relation(ground, ground)
-	;		function(ground, ground)
+	;		relation(ground, ground, ground)
+	;		function(ground)
 	;		term_sub(lambda, ground).
 
 :- type lambda =< functor
 	--->	predicate(mh_predicate)
-	;		relation(arity, predicate_term)
-	;		function(arity, predicate_term)	
+	;		relation(arity, predicate_term, mh_scope)
+	;		function(mh_function)
 
 	;		term_sub(lambda, mh_substitution)
 
@@ -272,6 +273,17 @@
 :- type predicate_term =< lambda
 	--->	predicate(mh_predicate)
 	;		term_sub(predicate_term, mh_substitution).
+	
+%-----------------------------------------------------------------------------%
+% Relation terms
+
+:- inst relation_term 
+	--->	relation(ground, ground, ground)
+	;		term_sub(relation_term, ground).
+	
+:- type relation_term =< lambda
+	--->	relation(arity, predicate_term, mh_scope)
+	;		term_sub(relation_term, mh_substitution).
 	
 %-----------------------------------------------------------------------------%
 % Term substitutions (lazy)

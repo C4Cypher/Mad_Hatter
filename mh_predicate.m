@@ -24,8 +24,8 @@
 :- import_module mh_tuple_map.
 
 % In prolog and many other logic programming languages, a predicate is
-% represented by a clause, either a fact clause 'predicate(X,Y).' or a rule clause
-% 'predicate(X) :- bar(X)'.
+% represented by a clause, either a fact clause 'predicate(X,Y).' or a rule 
+% clause 'predicate(X) :- bar(X)'.
 %
 % Not so in Mad Hatter, instead a 'predicate' represents a relational term
 % after the arguments have been applied.  The application of arguments is the
@@ -37,11 +37,10 @@
 :- type mh_predicate 
 	--->	pred_success(mh_substitution)		% yes
   	;		pred_failure(pred_fail_reason)		% no
-	;		pred_disj(mh_disjunction)			% A ; B ; C
-	;		pred_conj(mh_conjunction)			% A , B , C
+	;		pred_disj(mh_predicate_set)			% A ; B ; C
+	;		pred_conj(mh_predicate_set)			% A , B , C
 	;		pred_neg(mh_predicate)				% not A
-	;		pred_unification(mh_term, mh_term)	% X = Y
-	;		some [T] mr_predicate(T) => predicate(T).
+	;		pred_unification(mh_term_set).	% X = Y = Z
 	
 % TODO: Resolve arity,  clause type?
 	
@@ -63,7 +62,7 @@
 	--->	pred_success(ground)		% yes
   	;		pred_failure(ground).		% no
 
-:- type success_indicator =< mh_predicate
+:- type success_indicator
 	--->	pred_success(mh_substitution)		% yes
   	;		pred_failure(pred_fail_reason).		% no
 
