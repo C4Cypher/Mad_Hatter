@@ -28,29 +28,18 @@
 % Scope
 
 :- type mh_scope 
-	--->	root_scope(var_id_set, scope_context, var_names)
-	
-	% All child scopes contain a refrence to their parent scope
-	;		rule_scope(mh_var_set, mh_var_set, scope_context, mh_scope). 
+	--->	root_scope(context :: scope_context, names :: var_names),
+	;		child_scope(parent :: mh_scope, vars :: mh_var_set). 
 
 
-/*	
-:- func scope_args(mh_scope) = mh_var_set.
-:- func scope_local(mh_scope) = mh_var_set.
+:- func scope_vars(mh_scope) = mh_var_set.
 :- func scope_context(mh_scope) = scope_context.
 :- func scope_var_names(mh_scope) = var_names.
 :- func parent_scope(mh_scope) = mh_scope is semidet.
-*/
 
-%-----------------------------------------------------------------------------%
-% Global scope
+% Fails if contains vars that are not members of parent scopes
+:- pred valid_scope(mh_scope::in) is semidet. 
 
-% Variable names are root to named clauses
-
-:- inst root_scope ---> root_scope(ground, ground, ground).
-
-:- type root_scope =< mh_scope
-	--->	root_scope(var_id_set, scope_context, var_names).
 
 %-----------------------------------------------------------------------------%
 % Variable names
@@ -68,4 +57,5 @@
 :- implementation.
 
 %-----------------------------------------------------------------------------%
+% Scope
 
