@@ -18,6 +18,7 @@
 % :- import_module array.
 
 :- import_module mh_term.
+:- import_module mh_scope.
 :- import_module mh_predicate.
 :- import_module mh_substitution.
 :- import_module mh_arity.
@@ -27,21 +28,20 @@
 
 
 :- type mh_relation 
-	--->	invalid_relation(mh_term, string)
-	;		relation(arity, mh_term).		% r(X) = Y :- p(X, Y).
+	--->	relation(mh_scope, predicate_term, arity)	% r(X) = Y :- f(X, Y).
+	;		mercury_call(mr_call).
 	
 :- pred apply_relation_substitution(mh_substitution::in, mh_relation::in,
 	mh_relation::out) is det.
 	
-% :- func relation_arity(mh_relation) = arity.
  
- :- pred ground_relation(mh_relation::in) is semidet.
+:- pred ground_relation(mh_relation::in) is semidet.
  
-  :- func relation_arity(mh_relation) = arity.
+:- func relation_arity(mh_relation) = arity.
  
- :- pred relation_arity(mh_relation::in, int::out) is det.
+:- pred relation_arity(mh_relation::in, int::out) is det.
  
- :- instance arity(mh_relation).
+:- instance arity(mh_relation).
 
 
 %-----------------------------------------------------------------------------%
