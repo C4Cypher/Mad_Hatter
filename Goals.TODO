@@ -44,7 +44,7 @@ get a repl running
 								implement ordered sets <-- I am here
 									order by comparison func
 									order by weight
-						relations
+						relations <- on hold, finish predicates
 							represent equivalences and clauses
 							work out internal representation
 							define clauses in terms of relations
