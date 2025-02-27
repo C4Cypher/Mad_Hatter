@@ -39,7 +39,7 @@
 :- func lazy_singleton(mh_tuple, T) = mh_tuple_map(T).
 :- func lazy_singleton(mh_tuple) = mh_tuple_set.
 
-:- pred is_empty(mh_tuple_set::in) is semidet.
+:- pred is_empty(mh_tuple_map(_)::in) is semidet.
 
 :- pred equal(mh_term_map(T)::in, mh_term_map(T)::in) is semidet.
 
