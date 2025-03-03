@@ -88,6 +88,15 @@
 	
 :- pred unsafe_array_copy_range(array(T)::in, int::in, int::in, int::in,
 	array(T)::array_di, array(T)::array_uo) is det.
+	
+% remove_dups(Source, Result).
+% Take a sorted array and remove duplicates, the array MUST be sorted by the
+% standard ordering
+:- pred remove_dups(array(T)::array_di, array(T)::array_uo) is det.
+:- func remove_dups(array(T)::array_di) = (array(T)::array_uo) is det.
+
+:- pred sort_and_remove_dups(array(T)::array_di, array(T)::array_uo) is det.
+:- func sort_and_remove_dups(array(T)::array_di) = (array(T)::array_uo) is det.
 
 %-----------------------------------------------------------------------------%
 % Map Manipulation
@@ -330,6 +339,38 @@ unsafe_array_copy_range(Src, SrcF, SrcL, TgtF, !Array) :-
 	else
 		!:Array = !.Array
 	).
+	
+remove_dups(!A) :- 
+	(if size(!.A, 0)
+	then true
+	else
+		unsafe_lookup(!A, 0, First),
+		remove_dups(1, First, 1, NewSize, !A),
+		shrink(NewSize, !A)
+	).
+
+:- pred remove_dups(int::in, T::in, int::in, int::out, array(T)::array_di, 
+	array(T)::array_uo) is det.
+	
+remove_dups(Index, Current, !Unique, !A) :-
+	(if Index > max(!.A)
+	then true
+	else
+		unsafe_lookup(!.A, Index, Next),
+		(if Current = Next
+		then remove_dups(Index + 1, Current, !Unique, !A)
+		else
+			unsafe_set(!.Unique, Next, !A),
+			!:Unique = !.Unique + 1,
+			remove_dups(Index + 1, Next, !Unique, !A)
+		)
+	).
+
+remove_dups(!.A) = !:A :- remove_dups(!A).
+
+sort_and_remove_dups(!A) :- sort(!A), remove_dups(!A).
+
+sort_and_remove_dups(!.A) = !:A = sort_and_remove_dups(!A).
 
 %-----------------------------------------------------------------------------%
 % Map Manipulation
