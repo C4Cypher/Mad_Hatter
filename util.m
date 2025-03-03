@@ -95,8 +95,9 @@
 :- pred remove_dups(array(T)::array_di, array(T)::array_uo) is det.
 :- func remove_dups(array(T)::array_di) = (array(T)::array_uo) is det.
 
-:- pred sort_and_remove_dups(array(T)::array_di, array(T)::array_uo) is det.
-:- func sort_and_remove_dups(array(T)::array_di) = (array(T)::array_uo) is det.
+% Make a copy of the input array, sort and remove duplicates
+:- pred sort_and_remove_dups(array(T)::in, array(T)::array_uo) is det.
+:- func sort_and_remove_dups(array(T)::in) = (array(T)::array_uo) is det.
 
 %-----------------------------------------------------------------------------%
 % Map Manipulation
@@ -368,7 +369,7 @@ remove_dups(Index, Current, !Unique, !A) :-
 
 remove_dups(!.A) = !:A :- remove_dups(!A).
 
-sort_and_remove_dups(!A) :- sort(!A), remove_dups(!A).
+sort_and_remove_dups(!A) :- copy(!A), sort(!A), remove_dups(!A).
 
 sort_and_remove_dups(!.A) = !:A = sort_and_remove_dups(!A).
 
