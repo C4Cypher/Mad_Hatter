@@ -51,7 +51,7 @@
 	;		mr_value(univ)
 	
 	% compound terms
-	;		cons(functor, mh_term)
+	;		cons(car::mh_term, cdr::mh_term)
 	;		tuple_term(mh_tuple)
 	
 	% lazy constraints --- not sure if this is a good description
@@ -199,7 +199,7 @@
 	;		term_sub(compound_term, ground).
 
 :- type compound_term =< mh_term
-	--->	cons(functor, mh_term)
+	--->	cons(car::mh_term, cdr::mh_term)
 	;		tuple_term(mh_tuple)
 	;		term_sub(compound_term, mh_substitution).
 	
@@ -216,7 +216,7 @@
 :- inst mh_constructor ---> cons(ground, ground).
 	
 :- type mh_constructor =< compound_term
-	--->	cons(functor, mh_term).
+	--->	cons(car::mh_term, cdr::mh_term).
 	
 :- mode mh_constructor == ground >> mh_constructor.
 

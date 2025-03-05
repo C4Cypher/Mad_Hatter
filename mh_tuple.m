@@ -183,6 +183,9 @@
 %-----------------------------------------------------------------------------%
 % Tuple type
 
+% TODO: rename list_tuple to mr_list_tuple, then make nested compound terms
+% terminated by 'nil' unify with the mh_term constructor 'tuple_term/1'
+
 :- type mh_tuple
 	--->	some [T] mr_tuple(T) => mr_tuple(T)
 	;		list_tuple(list(mh_term))
