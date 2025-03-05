@@ -28,6 +28,10 @@
 %-----------------------------------------------------------------------------%
 % Basic operations
 
+% Sanity check, ensure the sorted array is actually congruent with the ordered
+% Array
+:- pred is_valid(ordered_set(T)::in) is semidet.
+
 :- func empty_set = ordered_set(T).
 
 :- pred empty_set(ordered_set(T)::out) is det.
@@ -40,10 +44,29 @@
 
 :- pred is_singleton(ordered_set(T)::in) is semidet.
 
+% True if the order of the elements are sorted, even with duplicates.
+:- pred is_sorted(ordered_set(T)::in) is semidet.
+
+% Sort a given set without removing elements.
+:- func sort(ordered_set(T)) = ordered_set(T).
+
+% If the order is sorted and has no duplicates
+:- pred is_sorted_set(sorted_set(T)::in) is semidet. 
+
+% True if the internal ordered and sorted arrays refer to the same array, 
+% Offers a cheaper incomplete alternative test to is_sorted_set/1
+
+:- pred is_merged_set(sorted_set(T)::in) is semidet.
+
+% Return the number of elements in the ordered portion of the set
 :- func size(ordered_set(_)) = int.
 :- pred size(ordered_set(_)::in, int::out) is det.
 
-:- pred contains(ordered_set(T)::in, T::in).
+
+
+% Return the number of unique elements in the set
+:- func unique_elements(ordered_set(_)) = int.
+:- pred unique_elements(ordered_set(_)::in, int::out) is det.
 
 % Compares the ordered values in the set, including duplicates, succeeds if
 % the set contains the same values in the same order. 
@@ -79,10 +102,69 @@
 :- func to_sorted_list(ordered_set(T)) = list(T).
 :- func to_sorted_array(ordered_set(T)) = array(T).
 
+	
+%-----------------------------------------------------------------------------%
+% Lookup
+
+% Unlike arrays, these operations are 1 indexed, the 'set_' variants of each
+% call are equivalent, but operate on the sorted set version, not the ordered
+
+% Return the maximum and minimum valid indexes for the order, return -1 for 
+% both values if empty set
+:- pred bounds(ordered_set(_)::in, int::out, int::out) is det.
+:- pred set_bounds(ordered_set(_)::in, int::out, int::out) is det.
+
+% As above, but fail on emtpy set
+:- pred semidet_bounds(ordered_set(_)::in, int::out, int::out) is semidet.
+:- pred semidet_set_bounds(ordered_set(_)::in, int::out, int::out) is semidet.
+
+% Return the first index (should always be 1) unless the set is empty then -1
+:- func min(ordered_set(_)) = int is det.
+:- pred min(ordered_set(_)::in, int::out) is det.
+
+:- func semidet_min(ordered_set(_)) = int is semidet.
+:- pred semidet_min(ordered_set(_)::in, int::out) is semidet.
+
+% Return the last index
+:- func max(ordered_set(_)) = int is det.
+:- pred max(ordered_set(_)::in, int::out) is det.
+
+:- func semidet_max(ordered_set(_)) = int is semidet.
+:- pred semidet_max(ordered_set(_)::in, int::out) is semidet.
+
+:- pred contains(ordered_set(T)::in, T::in) is semidet.
+
+% Index of the elements by order
+:- pred index(ordered_set(T), int, T).
+:- mode index(in, out, in) is semidet.
+:- mode index(in, in, out) is semidet.
+:- mode index(in, out, out) is nondet.
+
+% Index of the elements by sorted set
+:- pred set_index(ordered_set(T), int, T).
+:- mode set_index(in, out, in) is semidet.
+:- mode set_index(in, in, out) is semidet.
+:- mode set_index(in, out, out) is nondet.
+
+% Lookup the ordered value at the given index (starting at 1)
+:- func lookup(ordered_set(T), int) = T is semidet.
+:- pred lookup(ordered_set(T)::in, int::in, ::out) is semidet.
+
+:- func set_lookup(ordered_set(T), int) = T is semidet.
+:- pred set_lookup(ordered_set(T)::in, int::in, T::out) is semidet.
+
+% Search for the given value and return it's index in the order.
+:- func search(ordered_set(T), T) = int.
+:- pred search(ordered_set(T)::in, T::in, int::out) is semidet.
+
+:- func set_search(ordered_set(T), T) = int.
+:- pred set_search(ordered_set(T)::in, T::in, int::out) is semidet.
+
+
 %-----------------------------------------------------------------------------%
 % Ordering
 
-% Creates a new linear ordered set by sorting the members using the provided
+% Creates a new  ordered set by sorting the members using the provided
 % comparison function
 :- pred order_by(comparison_func(T)::in(comparison_func), ordered_set(T)::in, 
 	ordered_set(T)::out) is det.
@@ -104,15 +186,24 @@
 % Preserve the order of the first set, appending items in the second set to the
 % first in-order
 :- pred union(ordered_set(T)::in, ordered_set(T)::in, ordered_set::out) is det.
-
 :- func union(ordered_set(T), ordered_set(T)) = ordered_set(T).
+
+% The union of two sets sorted and without duplicates, order is not preserved
+:- pred set_union(ordered_set(T)::in, ordered_set(T)::in, ordered_set::out)
+	is det.
+:- func set_union(ordered_set(T), ordered_set(T)) = ordered_set(T).
 
 % Preserve the order of the first set, removing elements not found in the
 % second set.
 :- pred intersect(ordered_set(T)::in, ordered_set(T)::in, ordered_set::out) 
 	is det.
-
 :- func intersect(ordered_set(T), ordered_set(T)) = ordered_set(T).
+
+% The intersection of two sets sorted and without duplicates, order is not 
+% preserved
+:- pred set_intersect(ordered_set(T)::in, ordered_set(T)::in, ordered_set::out) 
+	is det.
+:- func set_intersect(ordered_set(T), ordered_set(T)) = ordered_set(T).
 
 % Preserve the order of the first set, removing elements found in the second
 % set
@@ -120,19 +211,115 @@
 	is det.
 :- func difference(ordered_set(T), ordered_set(T)) = ordered_set(T).
 
+% The difference of two sets sorted and without duplicates, 
+% order is not preserved
+:- pred set_difference(ordered_set(T)::in, ordered_set(T)::in, 
+	ordered_set::out) is det.
+:- func set_difference(ordered_set(T), ordered_set(T)) = ordered_set(T).
+
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
 :- implementation.
 
-:- import_module lazy.
+:- import_module int.
 
 :- import_module util.
 
-%-----------------------------------------------------------------------------%
 
-:- type sorted_array(T) == lazy(array(T)).
+%-----------------------------------------------------------------------------%
+% Ordered set
 
 :- type ordered_set(T)
-	--->	ordered_set(order::array(T), sorted::sorted_array(T)).
+	--->	ordered_set(order::array(T), sorted::array(T)).
+
+% Deterministic constructor
+:- func os(array(T), array(T)) = ordered_set(T).
+:- mode os(in, in) = out is det.
+:- mode os(out, out) = in is det.
+
+:- pragma promise_equivalent_clauses(os/2).
+
+os(O::in, S::in) = (ordered_set(O, S)::out).
+
+% Deconstructions on types with user defined equality are cc_multi
+os(O::out, S::out) = (OS::in) :- 
+	promise_equivalent_solutions [O, S] ordered_set(O, S) = OS. 
+	
+:- pragma inline(os/2).
+	
+/* TODO: Make the sorted array lazy when benchmarking to see if there is any
+ appriciable benefit to performance. 
+
+Efficient set operations (union, intersect, difference) or 
+comparison (ord ops >,=,<) would force evaluation of the lazy set. The only 
+advantage to delaying the sorting of the array would be if the ordered array 
+were indexed (or converted to a non-set type) without performing any set or 
+comparison operations. 
+*/
+
+%-----------------------------------------------------------------------------%
+% Basic operations
+
+% Variable naming conventions
+% A == Array
+% O == Ordered Array
+% S == Sorted Set Array
+% OS == Ordered Set (not deconstructed)
+% CMP == Comparison Result
+
+is_valid(os(A, sort_and_remove_dups(A))).
+
+empty_set(os(A, A)) :- make_empty_array(A).
+
+empty_set(empty_set).
+
+is_empty(os(A, _)) :- size(A, 0).
+
+singleton(T) = os(A, A) :- init(1, T, A).
+
+singleton(T, singleton(T)).
+
+is_singleton(os(A, _)) :- size(A, 1).
+
+is_sorted(os(A, _)) :- 
+	(if size(A, 0) 
+	then true
+	else
+		unsafe_lookup(A, 0, First),
+		is_sorted(A, First, 1)
+	).
+
+:- pred is_sorted(array(T)::in, T::in, int::in) is semidet.
+
+is_sorted(A, Last, Index) :-
+	(if Index > max(A)
+	then true
+	else
+		unsafe_lookup(A, Index, Next),
+		Last @=< Next,
+		is_sorted(A, Next, Index + 1)
+	).
+	
+sort(os(O, S)) = os(sort(copy(O)), S).
+
+is_sorted_set(os(A, A)).
+
+is_merged_set(os(O, S)) :- private_builtin.pointer_equal(O, S).
+
+size(os(A, _)) = size(A).
+size(OS, size(OS)).
+	
+unique_elements(os(_, A)) = size(A).
+unique_elements(OS, unique_elements(OS)).
+
+equal(os(A, _), os(A, _)).
+
+equivalent(os(_, A), os(_, A)).
+
+compare_ordered_sets(array_compare(A1, A2), os(_, A1), 	os(_, A2)).
+
+
+%-----------------------------------------------------------------------------%
+% Conversion
 
