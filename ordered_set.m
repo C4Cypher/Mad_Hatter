@@ -169,6 +169,9 @@
 :- pred order_by(comparison_func(T)::in(comparison_func), ordered_set(T)::in, 
 	ordered_set(T)::out) is det.
 	
+:- func order_by(comparison_func(T)::in(comparison_func), ordered_set(T)::in)
+	= (ordered_set(T)::out) is det.
+	
 :- type indexed_comparison_func(T) == 
 	(func(int, int, T, T) = comparison_result).
 
@@ -178,10 +181,23 @@
 % to the provided comparison function.
 :- pred order_by_index(
 	indexed_comparison_func(T)::in(indexed_comparison_func)),
-	ordered_set(T)::in, ordered_set(T)::out) is det. 
+	ordered_set(T)::in, ordered_set(T)::out) is det.
+
+:- func order_by_index(
+	indexed_comparison_func(T)::in(indexed_comparison_func)),
+	ordered_set(T)::in) = (ordered_set(T)::out) is det.	
 
 %-----------------------------------------------------------------------------%
 % Set operations
+
+% The non-prefixed set operations will attempt to preserve the order of the
+% first set provided, the 'set_' prefixed operations will operate only on the
+% sorted sets without duplicates.  The 'set_' variants should be assumed to be
+% more efficient than the default calls. The 'ordered_' prefixed operations
+% will use the provided comparison function to construct the output, hopefully
+% with greater efficiency than calling a 'set_' operation and then calling
+% order_by/2-3. Likewise 'index_ordered_' calls are equivalent to calling the
+% non-prefixed set operations and then calling order_by_index/2-3.
 
 % Preserve the order of the first set, appending items in the second set to the
 % first in-order
@@ -193,6 +209,22 @@
 	is det.
 :- func set_union(ordered_set(T), ordered_set(T)) = ordered_set(T).
 
+% Perform a set_union on the input sets, ordering the results using the
+% provided comparison function
+:- pred ordered_union(comparison_func(T)::in(comparison_func), 
+	ordered_set(T)::in, ordered_set(T)::in, ordered_set::out) is det.
+:- func ordered_union(comparison_func(T)::in(comparison_func), 
+	ordered_set(T)::in, ordered_set(T)::in) = (ordered_set::out) is det.
+
+% Perform a union on the input sets, ordering the results using the
+% provided comparison function
+:- pred index_ordered_union(
+	indexed_comparison_func(T)::in(indexed_comparison_func), 
+	ordered_set(T)::in, ordered_set(T)::in, ordered_set::out) is det.
+:- func index_ordered_union(
+	indexed_comparison_func(T)::in(indexed_comparison_func), 
+	ordered_set(T)::in, ordered_set(T)::in) = (ordered_set::out) is det.
+	
 % Preserve the order of the first set, removing elements not found in the
 % second set.
 :- pred intersect(ordered_set(T)::in, ordered_set(T)::in, ordered_set::out) 
@@ -205,6 +237,22 @@
 	is det.
 :- func set_intersect(ordered_set(T), ordered_set(T)) = ordered_set(T).
 
+% Perform a set_intersect on the input sets, ordering the results using the
+% provided comparison function
+:- pred ordered_intersect(comparison_func(T)::in(comparison_func), 
+	ordered_set(T)::in, ordered_set(T)::in, ordered_set::out) is det.
+:- func ordered_intersect(comparison_func(T)::in(comparison_func), 
+	ordered_set(T)::in, ordered_set(T)::in) = (ordered_set::out) is det.
+
+% Perform a intersect on the input sets, ordering the results using the
+% provided comparison function
+:- pred index_ordered_intersect(
+	indexed_comparison_func(T)::in(indexed_comparison_func), 
+	ordered_set(T)::in, ordered_set(T)::in, ordered_set::out) is det.
+:- func index_ordered_intersect(
+	indexed_comparison_func(T)::in(indexed_comparison_func), 
+	ordered_set(T)::in, ordered_set(T)::in) = (ordered_set::out) is det.
+
 % Preserve the order of the first set, removing elements found in the second
 % set
 :- pred difference(ordered_set(T)::in, ordered_set(T)::in, ordered_set::out) 
@@ -216,6 +264,22 @@
 :- pred set_difference(ordered_set(T)::in, ordered_set(T)::in, 
 	ordered_set::out) is det.
 :- func set_difference(ordered_set(T), ordered_set(T)) = ordered_set(T).
+
+% Perform a set_difference on the input sets, ordering the results using the
+% provided comparison function
+:- pred ordered_difference(comparison_func(T)::in(comparison_func), 
+	ordered_set(T)::in, ordered_set(T)::in, ordered_set::out) is det.
+:- func ordered_difference(comparison_func(T)::in(comparison_func), 
+	ordered_set(T)::in, ordered_set(T)::in) = (ordered_set::out) is det.
+
+% Perform a intersect on the input sets, ordering the results using the
+% provided comparison function
+:- pred index_ordered_difference(
+	indexed_comparison_func(T)::in(indexed_comparison_func), 
+	ordered_set(T)::in, ordered_set(T)::in, ordered_set::out) is det.
+:- func index_ordered_difference(
+	indexed_comparison_func(T)::in(indexed_comparison_func), 
+	ordered_set(T)::in, ordered_set(T)::in) = (ordered_set::out) is det.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
