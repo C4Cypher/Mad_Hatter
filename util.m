@@ -99,6 +99,19 @@
 :- pred sort_and_remove_dups(array(T)::in, array(T)::array_uo) is det.
 :- func sort_and_remove_dups(array(T)::in) = (array(T)::array_uo) is det.
 
+% Perform a linear search of an array, returning the index if found.
+
+:- pred array_search(array(T)::in, T::in, int::out) is semidet.
+:- func array_search(array(T), T) = int is semidet.
+
+% Perform a sort of the input array in a manner identical to the library 
+% standard sort/1 call, but provide a higher order comparison function
+
+:- func sort(comparison_func(T)::in(comparison_func) array(T)::array_di) = 
+	(array(T)::uo) is det.
+
+
+
 %-----------------------------------------------------------------------------%
 % Map Manipulation
 
@@ -372,6 +385,247 @@ remove_dups(!.A) = !:A :- remove_dups(!A).
 sort_and_remove_dups(!A) :- copy(!A), sort(!A), remove_dups(!A).
 
 sort_and_remove_dups(!.A) = !:A = sort_and_remove_dups(!A).
+
+array_search(A, T, I) :- array_search(A, T, 0, I).
+
+array_search(A, T) = I :- array_search(A, T, I).
+
+:- pred array_search(array(T)::in, T::in, int::in, int::out) is semidet.
+
+array_search(A, T, Current, I) :-
+	I < max(A),
+	(if unsafe_lookup(A, Current, T)
+	then
+		I = Current
+	else
+		array_search(A, T, Current + 1, I)
+	).
+	
+sort(CMP, A) = samsort_subarray(CMP, A, array.min(A), array.max(A)).
+	
+%-----------------------------------------------------------------------------%
+% SAM (Smooth) sort
+
+% The following is copied in it's entirety and then adapted to use a higher
+% order comparison function from the array.m standard library, credit due
+% to fjh and bromage, the original authors of that library.
+
+    % SAMsort (smooth applicative merge) invented by R.A. O'Keefe.
+    %
+    % SAMsort is a mergesort variant that works by identifying contiguous
+    % monotonic sequences and merging them, thereby taking advantage of
+    % any existing order in the input sequence.
+    %
+:- func samsort_subarray(comparison_func(T)::in(comparison_func), 
+	array(T)::array_di, int::in, int::in) = (array(T)::array_uo) is det.
+
+:- pragma type_spec(func(samsort_subarray/4), T = int).
+:- pragma type_spec(func(samsort_subarray/4), T = string).
+
+samsort_subarray(CMP, A0, Lo, Hi) = A :-
+    samsort_up(CMP, 0, array.copy(A0), A, A0, _, Lo, Hi, Lo).
+
+    % samsort_up(N, A0, A, B0, B, Lo, Hi, I):
+    %
+    % Precondition:
+    %   We are N levels from the bottom (leaf nodes) of the tree.
+    %   A0 is sorted from Lo .. I - 1.
+    %   A0 and B0 are identical from I .. Hi.
+    % Postcondition:
+    %   A is sorted from Lo .. Hi.
+    %
+:- pred samsort_up(comparison_func(T)::in(comparison_func), int::in, 
+	array(T)::array_di, array(T)::array_uo, array(T)::array_di, 
+	array(T)::array_uo, int::in, int::in, int::in) is det.
+
+:- pragma type_spec(pred(samsort_up/9), T = int).
+:- pragma type_spec(pred(samsort_up/9), T = string).
+
+samsort_up(CMP, N, A0, A, B0, B, Lo, Hi, I) :-
+    trace [compile_time(flag("array_sort"))] (
+        verify_sorted(CMP, A0, Lo, I - 1),
+        verify_identical(CMP, A0, B0, I, Hi)
+    ),
+    ( if I > Hi then
+        A = A0,
+        B = B0
+        % A is sorted from Lo .. Hi.
+    else if N > 0 then
+        % B0 and A0 are identical from I .. Hi.
+        samsort_down(CMP, N - 1, B0, B1, A0, A1, I, Hi, J),
+        % A1 is sorted from I .. J - 1.
+        % B1 and A1 are identical from J .. Hi.
+
+        merge_subarrays(CMP, A1, Lo, I - 1, I, J - 1, Lo, B1, B2),
+        A2 = A1,
+
+        % B2 is sorted from Lo .. J - 1.
+        % B2 and A2 are identical from J .. Hi.
+        samsort_up(CMP, N + 1, B2, B3, A2, A3, Lo, Hi, J),
+        % B3 is sorted from Lo .. Hi.
+
+        A = B3,
+        B = A3
+        % A is sorted from Lo .. Hi.
+    else
+        % N = 0, I = Lo
+        copy_run_ascending(CMP, A0, B0, B1, Lo, Hi, J),
+
+        % B1 is sorted from Lo .. J - 1.
+        % B1 and A0 are identical from J .. Hi.
+        samsort_up(CMP, N + 1, B1, B2, A0, A2, Lo, Hi, J),
+        % B2 is sorted from Lo .. Hi.
+
+        A = B2,
+        B = A2
+        % A is sorted from Lo .. Hi.
+    ),
+    trace [compile_time(flag("array_sort"))] (
+        verify_sorted(CMP, A, Lo, Hi)
+    ).
+
+    % samsort_down(N, A0, A, B0, B, Lo, Hi, I):
+    %
+    % Precondition:
+    %   We are N levels from the bottom (leaf nodes) of the tree.
+    %   A0 and B0 are identical from Lo .. Hi.
+    % Postcondition:
+    %   B is sorted from Lo .. I - 1.
+    %   A and B are identical from I .. Hi.
+    %
+:- pred samsort_down(comparison_func(T)::in(comparison_func), int::in, 
+	array(T)::array_di, array(T)::array_uo, array(T)::array_di, 
+	array(T)::array_uo, int::in, int::in, int::out) is det.
+
+:- pragma type_spec(pred(samsort_down/9), T = int).
+:- pragma type_spec(pred(samsort_down/9), T = string).
+
+samsort_down(CMP, N, A0, A, B0, B, Lo, Hi, I) :-
+    trace [compile_time(flag("array_sort"))] (
+        verify_identical(CMP, A0, B0, Lo, Hi)
+    ),
+    ( if Lo > Hi then
+        A = A0,
+        B = B0,
+        I = Lo
+        % B is sorted from Lo .. I - 1.
+    else if N > 0 then
+        samsort_down(CMP, N - 1, B0, B1, A0, A1, Lo, Hi, J),
+        samsort_down(CMP, N - 1, B1, B2, A1, A2, J,  Hi, I),
+        % A2 is sorted from Lo .. J - 1.
+        % A2 is sorted from J  .. I - 1.
+        A = A2,
+        merge_subarrays(CMP, A2, Lo, J - 1, J, I - 1, Lo, B2, B)
+        % B is sorted from Lo .. I - 1.
+    else
+        A = A0,
+        copy_run_ascending(CMP, A0, B0, B, Lo, Hi, I)
+        % B is sorted from Lo .. I - 1.
+    ),
+    trace [compile_time(flag("array_sort"))] (
+        verify_sorted(CMP, B, Lo, I - 1),
+        verify_identical(CMP, A, B, I, Hi)
+    ).
+
+    % merges the two sorted consecutive subarrays Lo1 .. Hi1 and Lo2 .. Hi2
+    % from A into the subarray starting at I in B.
+    %
+:- pred merge_subarrays(comparison_func(T)::in(comparison_func),
+	array(T)::array_ui,
+    int::in, int::in, int::in, int::in, int::in,
+    array(T)::array_di, array(T)::array_uo) is det.
+
+:- pragma type_spec(pred(merge_subarrays/9), T = int).
+:- pragma type_spec(pred(merge_subarrays/9), T = string).
+
+merge_subarrays(CMP, A, Lo1, Hi1, Lo2, Hi2, I, !B) :-
+    ( if Lo1 > Hi1 then
+        copy_subarray(A, Lo2, Hi2, I, !B)
+    else if Lo2 > Hi2 then
+        copy_subarray(A, Lo1, Hi1, I, !B)
+    else
+        array.lookup(A, Lo1, X1),
+        array.lookup(A, Lo2, X2),
+        R = CMP(X1, X2),
+        (
+            R = (<),
+            array.set(I, X1, !B),
+            merge_subarrays(CMP, A, Lo1 + 1, Hi1, Lo2, Hi2, I + 1, !B)
+        ;
+            R = (=),
+            array.set(I, X1, !B),
+            merge_subarrays(CMP, A, Lo1 + 1, Hi1, Lo2, Hi2, I + 1, !B)
+        ;
+            R = (>),
+            array.set(I, X2, !B),
+            merge_subarrays(CMP, A, Lo1, Hi1, Lo2 + 1, Hi2, I + 1, !B)
+        )
+    ).
+
+%---------------------%
+
+:- pred verify_sorted(comparison_func(T)::in(comparison_func), 
+	array(T)::array_ui, int::in, int::in) is det.
+
+verify_sorted(CMP, A, Lo, Hi) :-
+    ( if Lo >= Hi then
+        true
+    else if (<) = CMP(A ^ elem(Lo + 1), A ^ elem(Lo)) then
+        unexpected($pred, "array range not sorted")
+    else
+        verify_sorted(A, Lo + 1, Hi)
+    ).
+
+:- pred verify_identical(comparison_func(T)::in(comparison_func), 
+	array(T)::array_ui, array(T)::array_ui,
+    int::in, int::in) is det.
+
+verify_identical(CMP, A, B, Lo, Hi) :-
+    ( if Lo > Hi then
+        true
+    else if CMP(A ^ elem(Lo), B ^ elem(Lo)) = (=) then
+        verify_identical(CMP, A, B, Lo + 1, Hi)
+    else
+        unexpected($pred, "array ranges not identical")
+    ).
+
+%---------------------%
+
+:- pred copy_run_ascending(comparison_func(T)::in(comparison_func), 
+	array(T)::array_ui, array(T)::array_di, array(T)::array_uo, 
+	int::in, int::in, int::out) is det.
+
+:- pragma type_spec(pred(copy_run_ascending/6), T = int).
+:- pragma type_spec(pred(copy_run_ascending/6), T = string).
+
+copy_run_ascending(CMP, A, !B, Lo, Hi, I) :-
+    ( if
+        Lo < Hi,
+        (>) = CMP(A ^ elem(Lo), A ^ elem(Lo + 1))
+    then
+        I = search_until(CMP, (<), A, Lo, Hi),
+        copy_subarray_reverse(A, Lo, I - 1, I - 1, !B)
+    else
+        I = search_until(CMP, (>), A, Lo, Hi),
+        copy_subarray(A, Lo, I - 1, Lo, !B)
+    ).
+
+:- func search_until(comparison_func(T)::in(comparison_func), 
+	comparison_result::in, array(T)::array_ui,
+    int::in, int::in) = (int::out) is det.
+
+:- pragma type_spec(func(search_until/4), T = int).
+:- pragma type_spec(func(search_until/4), T = string).
+
+search_until(R, A, Lo, Hi) =
+    ( if
+        Lo < Hi,
+        not R = CMP(A ^ elem(Lo), A ^ elem(Lo + 1))
+    then
+        search_until(CMP, R, A, Lo + 1, Hi)
+    else
+        Lo + 1
+    ).
 
 %-----------------------------------------------------------------------------%
 % Map Manipulation
