@@ -125,12 +125,24 @@
 :- func semidet_min(ordered_set(_)) = int is semidet.
 :- pred semidet_min(ordered_set(_)::in, int::out) is semidet.
 
+:- func set_min(ordered_set(_)) = int is det.
+:- pred set_min(ordered_set(_)::in, int::out) is det.
+
+:- func semidet_set_min(ordered_set(_)) = int is semidet.
+:- pred semidet_set_min(ordered_set(_)::in, int::out) is semidet.
+
 % Return the last index
 :- func max(ordered_set(_)) = int is det.
 :- pred max(ordered_set(_)::in, int::out) is det.
 
 :- func semidet_max(ordered_set(_)) = int is semidet.
 :- pred semidet_max(ordered_set(_)::in, int::out) is semidet.
+
+:- func set_max(ordered_set(_)) = int is det.
+:- pred set_max(ordered_set(_)::in, int::out) is det.
+
+:- func semidet_set_max(ordered_set(_)) = int is semidet.
+:- pred semidet_set_max(ordered_set(_)::in, int::out) is semidet.
 
 :- pred contains(ordered_set(T)::in, T::in) is semidet.
 
@@ -146,14 +158,16 @@
 :- mode set_index(in, in, out) is semidet.
 :- mode set_index(in, out, out) is nondet.
 
-% Lookup the ordered value at the given index (starting at 1)
-:- func lookup(ordered_set(T), int) = T is semidet.
-:- pred lookup(ordered_set(T)::in, int::in, ::out) is semidet.
+% Lookup the ordered value at the given index (starting at 1), throws an
+% exception if index is out of bound
+:- func lookup(ordered_set(T), int) = T is det.
+:- pred lookup(ordered_set(T)::in, int::in, T::out) is det.
 
-:- func set_lookup(ordered_set(T), int) = T is semidet.
-:- pred set_lookup(ordered_set(T)::in, int::in, T::out) is semidet.
+:- func set_lookup(ordered_set(T), int) = T is det.
+:- pred set_lookup(ordered_set(T)::in, int::in, T::out) is det.
 
-% Search for the given value and return it's index in the order.
+% Search for the given value and return it's index in the order. Search is 
+% linear for search, binary for set_search
 :- func search(ordered_set(T), T) = int.
 :- pred search(ordered_set(T)::in, T::in, int::out) is semidet.
 
@@ -386,4 +400,120 @@ compare_ordered_sets(array_compare(A1, A2), os(_, A1), 	os(_, A2)).
 
 %-----------------------------------------------------------------------------%
 % Conversion
+
+from_list(L) = from_array(array.from_array(L)).
+
+to_list(OS) = array.to_list(order(OS)). % CC multi?
+
+from_array(A) = os(A, sort_and_remove_dups(A)).
+
+to_array(OS) = order(OS).
+
+to_sorted_list(OS) = array.to_list(sorted(OS)).
+
+to_sorted_array(OS) = sorted(OS).
+
+%-----------------------------------------------------------------------------%
+% Lookup
+
+bounds(os(A, _), Min, Max) :-
+	(if size(A) = 0
+	then
+		Min@Max = -1
+	else
+		Min = array.min(A) + 1,
+		Max = array.max(A) + 1
+	).
+	
+set_bounds(os(_, A), Min, Max) :-
+	(if size(A) = 0
+	then
+		Min@Max = -1
+	else
+		Min = array.min(A) + 1,
+		Max = array.max(A) + 1
+	).
+	
+semidet_bounds(os(A, _), Min, Max) :-
+	size(A) > 0,
+	Min = array.min(A) + 1,
+	Max = array.max(A) + 1.
+	
+semidet_set_bounds(os(_, A), Min, Max) :-
+	size(A) > 0,
+	Min = array.min(A) + 1,
+	Max = array.max(A) + 1.
+	
+min(os(A, _)) = 
+	(if size(A) = 0
+	then
+		-1
+	else
+		array.min(A) + 1
+	).
+	
+min(OS, min(OS)).
+
+semidet_min(os(A, _)) = array.min(A) :- size(A) > 0.
+
+semidet_min(OS, semidet_min(OS)).
+
+set_min(os(_, A)) = 
+	(if size(A) = 0
+	then
+		-1
+	else
+		array.min(A) + 1
+	).
+	
+set_min(OS, min(OS)).
+
+semidet_set_min(os(_, A)) = array.min(A) :- size(A) > 0.
+
+semidet_set_min(OS, semidet_min(OS)).
+	
+max(os(A, _)) = 
+	(if size(A) = 0
+	then
+		-1
+	else
+		array.max(A) + 1
+	).
+	
+max(OS, max(OS)).
+
+semidet_max(os(A, _)) = array.max(A) :- size(A) > 0.
+
+semidet_max(OS, semidet_max(OS)).
+
+set_max(os(_, A)) = 
+	(if size(A) = 0
+	then
+		-1
+	else
+		array.max(A) + 1
+	).
+	
+set_min(OS, max(OS)).
+
+semidet_set_max(os(_, A)) = array.max(A) :- size(A) > 0.
+
+semidet_set_max(OS, semidet_max(OS)).
+
+% index and set_index implementations here
+
+lookup(os(A, _), Index) = array.lookup(A, Index).
+lookup(OS, Index, lookup(OS, Index)).
+set_lookup(os(_, A), Index) = array.lookup(A, Index).
+set_lookup(OS, Index, set_lookup(OS, Index)).
+
+search(OS, T) = array_search(order(OS), T).
+search(OS, T, search(OS, T)).
+
+set_search(OS, T) = I :- binary_search(sorted(OS), T, I). % array_ui??
+set_search(OS, T, set_search(OS, T)).
+
+%-----------------------------------------------------------------------------%
+% Ordering
+
 
