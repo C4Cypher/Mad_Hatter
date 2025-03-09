@@ -107,7 +107,7 @@
 % Perform a sort of the input array in a manner identical to the library 
 % standard sort/1 call, but provide a higher order comparison function
 
-:- func sort(comparison_func(T)::in(comparison_func) array(T)::array_di) = 
+:- func sort(comparison_func(T)::in(comparison_func), array(T)::array_di) = 
 	(array(T)::uo) is det.
 
 
