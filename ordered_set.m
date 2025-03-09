@@ -146,17 +146,6 @@
 
 :- pred contains(ordered_set(T)::in, T::in) is semidet.
 
-% Index of the elements by order
-:- pred index(ordered_set(T), int, T).
-:- mode index(in, out, in) is semidet.
-:- mode index(in, in, out) is semidet.
-:- mode index(in, out, out) is nondet.
-
-% Index of the elements by sorted set
-:- pred set_index(ordered_set(T), int, T).
-:- mode set_index(in, out, in) is semidet.
-:- mode set_index(in, in, out) is semidet.
-:- mode set_index(in, out, out) is nondet.
 
 % Lookup the ordered value at the given index (starting at 1), throws an
 % exception if index is out of bound
@@ -166,40 +155,86 @@
 :- func set_lookup(ordered_set(T), int) = T is det.
 :- pred set_lookup(ordered_set(T)::in, int::in, T::out) is det.
 
-% Search for the given value and return it's index in the order. Search is 
-% linear for search, binary for set_search
+% Search for the given value and return it's index in the sorted set.
 :- func search(ordered_set(T), T) = int.
 :- pred search(ordered_set(T)::in, T::in, int::out) is semidet.
 
-:- func set_search(ordered_set(T), T) = int.
-:- pred set_search(ordered_set(T)::in, T::in, int::out) is semidet.
 
 
 %-----------------------------------------------------------------------------%
 % Ordering
 
-% Creates a new  ordered set by sorting the members using the provided
-% comparison function
+% Creates a new  ordered set by sorting the members of the sorted set using the
+% provided comparison function. The original ordering is discarded, and
+% duplicates according to the standard ordering are removed.  
+% Stable/predictable ordering where the comparison func returns equality is not
+% garunteed.
 :- pred order_by(comparison_func(T)::in(comparison_func), ordered_set(T)::in, 
 	ordered_set(T)::out) is det.
 	
 :- func order_by(comparison_func(T)::in(comparison_func), ordered_set(T)::in)
 	= (ordered_set(T)::out) is det.
+
+% Using a different sorting algorithim, create a new orddered set using the
+% provided comparison function that preserves the original order when the
+% comparison function returns equality. Does not remove duplicates.
+:- pred stable_order_by(comparison_func(T)::in(comparison_func),
+	ordered_set(T)::in,	ordered_set(T)::out) is det.
 	
-:- type indexed_comparison_func(T) == 
-	(func(int, int, T, T) = comparison_result).
+:- func stable_order_by(comparison_func(T)::in(comparison_func), 
+	ordered_set(T)::in)	= (ordered_set(T)::out) is det.
 
-:- inst indexed_comparison_func == (func(in, in, in, in) = out is det).
+% An ordering is the arrangement of an ordered set by the index of it's sorted
+% set.  Indexes of the array are zero based, however, the elements of the array
+% refer to the one based indexes of the sorted set, as they refer to logical
+% order, not literal.
 
-% As above, but provides the corresponding indexes in the original ordering
-% to the provided comparison function.
-:- pred order_by_index(
-	indexed_comparison_func(T)::in(indexed_comparison_func)),
-	ordered_set(T)::in, ordered_set(T)::out) is det.
+% For example:  Given the ordered set of floats [1.5, 0.0, 0.0, 1.0], the
+% sorted set would be [0.0, 1.0, 1.5] and the ordering would be [3, 1, 1, 2].
 
-:- func order_by_index(
-	indexed_comparison_func(T)::in(indexed_comparison_func)),
-	ordered_set(T)::in) = (ordered_set(T)::out) is det.	
+:- type ordering == array(int).
+
+:- func ordering_to_list(ordering) = list(int).
+:- func ordering_from_list(list(int)) = ordering.
+
+% in order for an ordering to be valid for a given set, it must contain at
+% least one index for every unique member of it's sorted set, and no indexes
+% that are out of the bounds of the sorted set.
+
+:- pred valid_ordering_for(ordering::in, ordered_set(T)::in) is semidet.
+
+% Return the current ordering of the given set, returns an empty array if
+% The input set is empty.
+
+:- func current_ordering(ordered_set(T)) = ordering.
+:- pred current_ordering(ordered_set(T)::in, ordering::out) is det.
+
+% Attempt to create a new ordered set from the sorted set of the provided set
+% The original ordering of the input set will be ignored, fails if the ordering
+% is not valid for the given set. 
+% (Should be) More efficient than calling valid_ordering_for/2 first.
+
+:- func apply_ordering(ordered_set(T), ordering) = ordered_set(T) is semidet.
+:- pred apply_ordering(ordering::in, ordered_set(T)::in,  ordered_set(T)::out)
+	is semidet.
+	
+% As above, but throws an exception if the ordering is not valid.
+
+:- func det_apply_ordering(ordered_set(T), ordering) = ordered_set(T).
+:- pred det_apply_ordering(ordering::in, ordered_set(T)::in,  ordered_set(T)::out)
+	is  det.
+	
+% Reorder an ordering given a comparison function with the provided ordered set
+% preserving the original order where the comparison func returns equal. May
+% Be useful when simply using order_by gives unstable results. Ignores the
+% ordering of of the input ordered set. May thow an exception if input ordering
+% is not valid. If the input ordering is valid, the output is garunteed to be
+% valid.
+
+:- func reorder(comparison_func(T)::in(comparison_func), ordered_set(T)::in,
+	ordering::in) = (ordering::out) is det.
+:- pred reorder(comparison_func(T)::in(comparison_func), ordered_set(T)::in,
+	ordering::in, ordering::out) is det.
 
 %-----------------------------------------------------------------------------%
 % Set operations
@@ -230,14 +265,6 @@
 :- func ordered_union(comparison_func(T)::in(comparison_func), 
 	ordered_set(T)::in, ordered_set(T)::in) = (ordered_set::out) is det.
 
-% Perform a union on the input sets, ordering the results using the
-% provided comparison function
-:- pred index_ordered_union(
-	indexed_comparison_func(T)::in(indexed_comparison_func), 
-	ordered_set(T)::in, ordered_set(T)::in, ordered_set::out) is det.
-:- func index_ordered_union(
-	indexed_comparison_func(T)::in(indexed_comparison_func), 
-	ordered_set(T)::in, ordered_set(T)::in) = (ordered_set::out) is det.
 	
 % Preserve the order of the first set, removing elements not found in the
 % second set.
@@ -258,14 +285,6 @@
 :- func ordered_intersect(comparison_func(T)::in(comparison_func), 
 	ordered_set(T)::in, ordered_set(T)::in) = (ordered_set::out) is det.
 
-% Perform a intersect on the input sets, ordering the results using the
-% provided comparison function
-:- pred index_ordered_intersect(
-	indexed_comparison_func(T)::in(indexed_comparison_func), 
-	ordered_set(T)::in, ordered_set(T)::in, ordered_set::out) is det.
-:- func index_ordered_intersect(
-	indexed_comparison_func(T)::in(indexed_comparison_func), 
-	ordered_set(T)::in, ordered_set(T)::in) = (ordered_set::out) is det.
 
 % Preserve the order of the first set, removing elements found in the second
 % set
@@ -286,15 +305,6 @@
 :- func ordered_difference(comparison_func(T)::in(comparison_func), 
 	ordered_set(T)::in, ordered_set(T)::in) = (ordered_set::out) is det.
 
-% Perform a intersect on the input sets, ordering the results using the
-% provided comparison function
-:- pred index_ordered_difference(
-	indexed_comparison_func(T)::in(indexed_comparison_func), 
-	ordered_set(T)::in, ordered_set(T)::in, ordered_set::out) is det.
-:- func index_ordered_difference(
-	indexed_comparison_func(T)::in(indexed_comparison_func), 
-	ordered_set(T)::in, ordered_set(T)::in) = (ordered_set::out) is det.
-
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
@@ -303,6 +313,17 @@
 :- import_module int.
 
 :- import_module util.
+
+
+% Variable naming
+% A == Array
+% O == Ordered Array
+% S == Sorted Set Array
+% OS == Ordered Set (not deconstructed)
+% CMP == Comparison Function
+% R == Comparison Result
+% T == Element/Value/Type
+% I == Index
 
 
 %-----------------------------------------------------------------------------%
@@ -339,12 +360,6 @@ comparison operations.
 %-----------------------------------------------------------------------------%
 % Basic operations
 
-% Variable naming conventions
-% A == Array
-% O == Ordered Array
-% S == Sorted Set Array
-% OS == Ordered Set (not deconstructed)
-% CMP == Comparison Result
 
 is_valid(os(A, sort_and_remove_dups(A))).
 
