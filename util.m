@@ -118,11 +118,11 @@
 % Perform a sort of the input array in a manner identical to the library 
 % standard sort/1 call, but provide a higher order comparison function
 
-:- func sort(comparison_func(T)::in(comparison_func), array(T)::array_di) = 
+:- func samsort(comparison_func(T)::in(comparison_func), array(T)::array_di) = 
 	(array(T)::uo) is det.
 	
-	
-:- func merge_sort(comparison_func(T)::in(comparison_func), 
+% A traditional top down merge sort, should be stable to the original order	
+:- func mergesort(comparison_func(T)::in(comparison_func), 
 	array(T)::array_di) = (array(T)::uo) is det.
 
 
@@ -458,7 +458,10 @@ array_search(A, T, Current, I) :-
 		array_search(A, T, Current + 1, I)
 	).
 	
-sort(CMP, A) = samsort_subarray(CMP, A, array.min(A), array.max(A)).
+samsort(CMP, A) = samsort_subarray(CMP, A, array.min(A), array.max(A)).
+
+mergesort(CMP, !.A) = !:A :- mergesort_subarray(CMP, !A, copy(!.A), _,
+	array.min(!.A), array.max(!.A)).
 	
 %-----------------------------------------------------------------------------%
 % SAM (Smooth) sort
@@ -584,6 +587,24 @@ samsort_down(CMP, N, A0, A, B0, B, Lo, Hi, I) :-
 		verify_identical(CMP, A, B, I, Hi)
 	).
 
+%-----------------------------------------------------------------------------%
+% Merge sort
+
+% mergesort_subarray(CMP, !A, !B, First, Last) 
+:- func mergesort_subarray(comparison_func(T)::in(comparison_func), 
+	array(T)::array_di, array(T)::array_uo, 
+	array(T)::array_di, array(T)::array_uo, 
+	int::in, int::in) is det.
+
+:- pragma type_spec(func(mergesort_subarray/4), T = int).
+:- pragma type_spec(func(mergesort_subarray/4), T = string).
+
+mergesort_subarray(CMP, !A, !B, Lo, Hi) :-
+
+
+%-----------------------------------------------------------------------------%
+% Sorting utilities (mostly copied or adapted from the above samsort)
+
 	% merges the two sorted consecutive subarrays Lo1 .. Hi1 and Lo2 .. Hi2
 	% from A into the subarray starting at I in B.
 	%
@@ -605,11 +626,7 @@ merge_subarrays(CMP, A, Lo1, Hi1, Lo2, Hi2, I, !B) :-
 		array.lookup(A, Lo2, X2),
 		R = CMP(X1, X2),
 		(
-			R = (<),
-			array.set(I, X1, !B),
-			merge_subarrays(CMP, A, Lo1 + 1, Hi1, Lo2, Hi2, I + 1, !B)
-		;
-			R = (=),
+			(R = (<) ; R = (=) )
 			array.set(I, X1, !B),
 			merge_subarrays(CMP, A, Lo1 + 1, Hi1, Lo2, Hi2, I + 1, !B)
 		;
@@ -627,7 +644,7 @@ merge_subarrays(CMP, A, Lo1, Hi1, Lo2, Hi2, I, !B) :-
 verify_sorted(CMP, A, Lo, Hi) :-
 	( if Lo >= Hi then
 		true
-	else if (<) = CMP(A ^ elem(Lo + 1), A ^ elem(Lo)) then
+	else if   CMP(A ^ elem(Lo + 1), A ^ elem(Lo)) = (<) then
 		unexpected($pred, "array range not sorted")
 	else
 		verify_sorted(A, Lo + 1, Hi)
