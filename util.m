@@ -85,12 +85,20 @@
 % Throws an exception if any of the indexes are out of bounds.
 :- pred array_copy_range(array(T)::in, int::in, int::in, int::in,
 	array(T)::array_di, array(T)::array_uo) is det.
-	
+
+% Unsafe version skips the bounds checks, may result in underfined behavior
 :- pred unsafe_array_copy_range(array(T)::in, int::in, int::in, int::in,
 	array(T)::array_di, array(T)::array_uo) is det.
 	
-% array_copy_range_rev(Source, SrcFirst, SrcL, TgtLast, !Array)
+% array_copy_range_rev(Source, SrcFirst, SrcL, TgtFirst, !Array)
 % As above, but copy the elements in reverse ordeer.
+:- pred array_copy_range_rev(array(T)::in, int::in, int::in, int::in,
+	array(T)::array_di, array(T)::array_uo) is det.
+
+% Unsafe version skips the bounds checks, may result in underfined behavior
+:- pred unsafe_array_copy_range_rev(array(T)::in, int::in, int::in, int::in,
+	array(T)::array_di, array(T)::array_uo) is det.
+
 	
 % remove_dups(Source, Result).
 % Take a sorted array and remove duplicates, the array MUST be sorted by the
@@ -318,7 +326,6 @@ array_snoc(T, Src, array_snoc(Src, T)).
 
 array_snoc(Src, T) = unsafe_array_insert(Src, max(Src) + 1, T).
 
-
 array_copy_range(Src, SrcF, SrcL, TgtF, !Array) :-
 	(if SrcF > SrcL
 	then
@@ -357,6 +364,49 @@ unsafe_array_copy_range(Src, SrcF, SrcL, TgtF, !Array) :-
 	(if SrcF < SrcL
 	then 
 		unsafe_array_copy_range(Src, SrcF + 1, SrcL, TgtF + 1, !Array)
+	else
+		true
+	).
+	
+
+array_copy_range_rev(Src, SrcF, SrcL, TgtF, !Array) :-
+	(if SrcF > SrcL
+	then
+		format_error($pred, 
+			"erroneous source range, first index %d must be smaller " ++
+			"than last index %d", [i(SrcF), i(SrcL)])
+	else if not in_bounds(Src, SrcF) then
+		bounds(Src, Min, Max),
+		format_bounds_error($pred, 
+			"range start %d out of bounds of source array %d - %d",
+			[i(SrcF), i(Min), i(Max)])
+	else if not in_bounds(Src, SrcL) then
+		bounds(Src, Min, Max),
+		format_bounds_error($pred, 
+			"range end %d out of bounds of source array %d - %d",
+			[i(SrcL), i(Min), i(Max)])
+	else if not in_bounds(!.Array, TgtF) then
+		bounds(!.Array, Min, Max),
+		format_bounds_error($pred, 
+			"target index %d start out of bounds of target array %d - %d",
+			[i(TgtF), i(Min), i(Max)])
+	else if 
+		TgtL = TgtF + SrcL - SrcF,
+		not in_bounds(!.Array, TgtL) 
+	then
+		bounds(!.Array, Min, Max),
+		format_bounds_error($pred, 
+			"target index %d end out of bounds of target array %d - %d",
+			[i(TgtL), i(Min), i(Max)])
+	else
+		unsafe_array_copy_range_rev(Src, SrcF, SrcL, TgtF, !Array)
+	).
+
+unsafe_array_copy_range_rev(Src, SrcF, SrcL, TgtF, !Array) :-
+	unsafe_set(TgtF, Src ^ elem(SrcL), !Array),
+	(if SrcF < SrcL
+	then 
+		unsafe_array_copy_range(Src, SrcF, SrcL - 1, TgtF + 1, !Array)
 	else
 		true
 	).
@@ -547,9 +597,9 @@ samsort_down(CMP, N, A0, A, B0, B, Lo, Hi, I) :-
 
 merge_subarrays(CMP, A, Lo1, Hi1, Lo2, Hi2, I, !B) :-
 	( if Lo1 > Hi1 then
-		copy_subarray(A, Lo2, Hi2, I, !B)
+		unsafe_array_copy_range(A, Lo2, Hi2, I, !B)
 	else if Lo2 > Hi2 then
-		copy_subarray(A, Lo1, Hi1, I, !B)
+		unsafe_array_copy_range(A, Lo1, Hi1, I, !B)
 	else
 		array.lookup(A, Lo1, X1),
 		array.lookup(A, Lo2, X2),
@@ -611,10 +661,10 @@ copy_run_ascending(CMP, A, !B, Lo, Hi, I) :-
 		(>) = CMP(A ^ elem(Lo), A ^ elem(Lo + 1))
 	then
 		I = search_until(CMP, (<), A, Lo, Hi),
-		copy_subarray_reverse(A, Lo, I - 1, I - 1, !B)
+		unsafe_array_copy_range_rev(A, Lo, I - 1, I - 1, !B)
 	else
 		I = search_until(CMP, (>), A, Lo, Hi),
-		copy_subarray(A, Lo, I - 1, Lo, !B)
+		unsafe_array_copy_range(A, Lo, I - 1, Lo, !B)
 	).
 
 :- func search_until(comparison_func(T)::in(comparison_func), 
