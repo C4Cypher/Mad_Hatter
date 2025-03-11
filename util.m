@@ -600,6 +600,15 @@ samsort_down(CMP, N, A0, A, B0, B, Lo, Hi, I) :-
 :- pragma type_spec(func(mergesort_subarray/4), T = string).
 
 mergesort_subarray(CMP, !A, !B, Lo, Hi) :-
+	(if Hi - Lo = 0 then
+		true
+	else
+		Mid = Lo + (Hi - Lo) / 2  %????
+		MidSucc = Mid + 1
+		mergesort_subarray(CMP, !B, !A, Lo, Mid), % Make this conjunction &?
+		mergesort_subarray(CMP, !B, !A, MidSucc, Hi),
+		merge_subarrays(CMP, !.B, Lo, Mid, MidSucc, Hi, !A)
+	).
 
 
 %-----------------------------------------------------------------------------%
