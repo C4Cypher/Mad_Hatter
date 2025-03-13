@@ -181,7 +181,7 @@
 :- pred reorder_by(comparison_func(T)::in(comparison_func),
 	ordered_set(T)::in,	ordered_set(T)::out) is det.
 	
-:- func stable_order_by(comparison_func(T)::in(comparison_func), 
+:- func reorder_by(comparison_func(T)::in(comparison_func), 
 	ordered_set(T)::in)	= (ordered_set(T)::out) is det.
 
 % An ordering is the arrangement of an ordered set by the index of it's sorted
@@ -311,6 +311,7 @@
 :- implementation.
 
 :- import_module int.
+:- import_module bool.
 
 :- import_module util.
 
@@ -324,6 +325,7 @@
 % R == Comparison Result
 % T == Element/Value/Type
 % I == Index
+% Or == Ordering
 
 
 %-----------------------------------------------------------------------------%
@@ -530,5 +532,62 @@ set_search(OS, T, set_search(OS, T)).
 
 %-----------------------------------------------------------------------------%
 % Ordering
+
+order_by(CMP, OS, order_by(CMP, OS)).
+
+order_by(CMP, os(_, S)) = os(O@samsort(CMP, copy(S)), sort_and_remove_dups(O)).
+
+
+reorder_by(CMP, OS, reorder_by(CMP, OS)).
+
+reorder_by(CMP, os(O0, _)) = 
+	os(O@mergesort(CMP, copy(O0)), sort_and_remove_dups(O)). 
+	
+ordering_to_list(Or) = array.to_list(Or).
+ordering_from_list(L) = array.from_list(Or).
+
+valid_ordering_for(Or, os(_, S)) :-
+	array.size(S, SetSize),
+	array.init(SetSize, no, !.UniqueFound),
+	valid_ordering_check(0, max(O), Or, 0, UniqueCount, UniqueFound, _),
+	UniqueCount = SetSize. % Ordering is only valid if all are found
+		
+%valid_ordering_check(Index, Last, Or, !UniqueCount, !UniqueFound)
+% Count every element in the Ordered array that has not yet been found to be
+% in bounds of the Sorted array
+:- pred valid_ordering_check(int::in, int::in, array(T)::in, int::in, 
+	int::out, array(bool)::array_di, array(bool)::array_uo) is semidet.
+	
+valid_ordering_check(Index, Last, Or, !UniqueCount, !UniqueFound) :-
+	(if Index > Last then 
+		true
+	else
+		array.lookup(Or, Index, Is),
+		%fails if out of bounds of the Sorted array
+		array.semidet_lookup(!.UniqueFound, Is, Counted), 
+		(if Counted = no then
+			array.set(Is, yes, !UniqueFound)
+			!:UniqueCount = !.UniqueCount + 1
+		else
+			true
+		),
+		valid_ordering_check(Index + 1, Last, Or, !UniqueCount, !UniqueFound)
+	).
+	
+current_ordering(os(O, S)) = array.generate(size(O), generate_ordering(O, S)).
+
+:- func generate_ordering(array(T), array(T), int) = int.
+
+generate_ordering(O, S, Io) = Is :-
+	array.lookup(Io, O, T),
+	(if binary_search(S, T, Found) then
+		Is = Found
+	else
+		report_lookup_error(
+"ordered_set.current_ordering: Value in ordered set not found in sorted set", 
+		T, S)
+	).
+
+current_ordering(OS, current_ordering(OS)).
 
 
