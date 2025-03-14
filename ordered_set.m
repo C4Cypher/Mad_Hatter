@@ -234,12 +234,6 @@
 	is det.
 :- func union(ordered_set(T), ordered_set(T)) = ordered_set(T).
 
-% Perform a union on the input sets, ordering the results using the
-% provided comparison function
-:- pred ordered_union(comparison_func(T)::in(comparison_func), 
-	ordered_set(T)::in, ordered_set(T)::in, ordered_set::out) is det.
-:- func ordered_union(comparison_func(T)::in(comparison_func), 
-	ordered_set(T)::in, ordered_set(T)::in) = (ordered_set::out) is det.
 
 % The intersection of two sets sorted and without duplicates, order is not 
 % preserved
@@ -247,25 +241,12 @@
 	is det.
 :- func intersect(ordered_set(T), ordered_set(T)) = ordered_set(T).
 
-% Perform a intersection on the input sets, ordering the results using the
-% provided comparison function
-:- pred ordered_intersect(comparison_func(T)::in(comparison_func), 
-	ordered_set(T)::in, ordered_set(T)::in, ordered_set::out) is det.
-:- func ordered_intersect(comparison_func(T)::in(comparison_func), 
-	ordered_set(T)::in, ordered_set(T)::in) = (ordered_set::out) is det.
-
 % The difference of two sets sorted and without duplicates, 
 % order is not preserved
 :- pred difference(ordered_set(T)::in, ordered_set(T)::in, 
 	ordered_set::out) is det.
 :- func difference(ordered_set(T), ordered_set(T)) = ordered_set(T).
 
-% Perform a difference on the input sets, ordering the results using the
-% provided comparison function
-:- pred ordered_difference(comparison_func(T)::in(comparison_func), 
-	ordered_set(T)::in, ordered_set(T)::in, ordered_set::out) is det.
-:- func ordered_difference(comparison_func(T)::in(comparison_func), 
-	ordered_set(T)::in, ordered_set(T)::in) = (ordered_set::out) is det.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -624,6 +605,15 @@ union(OS1, OS2, union(OS1, OS2)).
 union(os(_, S1), os(_, S2)) = os(S3, S3) :-
 	array.append(S1, array(difference_list(A1, A2)), Appended),
 	S3 = array.sort(Appended).
+
+intersect(OS1, OS2, intersect(OS1, OS2)).
+	
+intersect(os(_, S1), os(_, S2)) = array(intersect_list(S1, S2)).
+
+
+difference(OS1, OS2, difference(OS1, OS2)).
+	
+difference(os(_, S1), os(_, S2)) = array(difference_list(S1, S2)).
 
 % Compose a list of elements not present in the first array. 
 % Arrays must be sorted.
