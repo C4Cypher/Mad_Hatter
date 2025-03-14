@@ -223,82 +223,44 @@
 :- func det_apply_ordering(ordered_set(T), ordering) = ordered_set(T).
 :- pred det_apply_ordering(ordering::in, ordered_set(T)::in,  ordered_set(T)::out)
 	is  det.
-	
-% Reorder an ordering given a comparison function with the provided ordered set
-% preserving the original order where the comparison func returns equal. May
-% Be useful when simply using order_by gives unstable results. Ignores the
-% ordering of of the input ordered set. May thow an exception if input ordering
-% is not valid. If the input ordering is valid, the output is garunteed to be
-% valid.
 
-:- func reorder(comparison_func(T)::in(comparison_func), ordered_set(T)::in,
-	ordering::in) = (ordering::out) is det.
-:- pred reorder(comparison_func(T)::in(comparison_func), ordered_set(T)::in,
-	ordering::in, ordering::out) is det.
 
 %-----------------------------------------------------------------------------%
 % Set operations
 
-% The non-prefixed set operations will attempt to preserve the order of the
-% first set provided, the 'set_' prefixed operations will operate only on the
-% sorted sets without duplicates.  The 'set_' variants should be assumed to be
-% more efficient than the default calls. The 'ordered_' prefixed operations
-% will use the provided comparison function to construct the output, hopefully
-% with greater efficiency than calling a 'set_' operation and then calling
-% order_by/2-3. Likewise 'index_ordered_' calls are equivalent to calling the
-% non-prefixed set operations and then calling order_by_index/2-3.
-
-% Preserve the order of the first set, appending items in the second set to the
-% first in-order
-:- pred union(ordered_set(T)::in, ordered_set(T)::in, ordered_set::out) is det.
-:- func union(ordered_set(T), ordered_set(T)) = ordered_set(T).
 
 % The union of two sets sorted and without duplicates, order is not preserved
-:- pred set_union(ordered_set(T)::in, ordered_set(T)::in, ordered_set::out)
+:- pred union(ordered_set(T)::in, ordered_set(T)::in, ordered_set::out)
 	is det.
-:- func set_union(ordered_set(T), ordered_set(T)) = ordered_set(T).
+:- func union(ordered_set(T), ordered_set(T)) = ordered_set(T).
 
-% Perform a set_union on the input sets, ordering the results using the
+% Perform a union on the input sets, ordering the results using the
 % provided comparison function
 :- pred ordered_union(comparison_func(T)::in(comparison_func), 
 	ordered_set(T)::in, ordered_set(T)::in, ordered_set::out) is det.
 :- func ordered_union(comparison_func(T)::in(comparison_func), 
 	ordered_set(T)::in, ordered_set(T)::in) = (ordered_set::out) is det.
 
-	
-% Preserve the order of the first set, removing elements not found in the
-% second set.
+% The intersection of two sets sorted and without duplicates, order is not 
+% preserved
 :- pred intersect(ordered_set(T)::in, ordered_set(T)::in, ordered_set::out) 
 	is det.
 :- func intersect(ordered_set(T), ordered_set(T)) = ordered_set(T).
 
-% The intersection of two sets sorted and without duplicates, order is not 
-% preserved
-:- pred set_intersect(ordered_set(T)::in, ordered_set(T)::in, ordered_set::out) 
-	is det.
-:- func set_intersect(ordered_set(T), ordered_set(T)) = ordered_set(T).
-
-% Perform a set_intersect on the input sets, ordering the results using the
+% Perform a intersection on the input sets, ordering the results using the
 % provided comparison function
 :- pred ordered_intersect(comparison_func(T)::in(comparison_func), 
 	ordered_set(T)::in, ordered_set(T)::in, ordered_set::out) is det.
 :- func ordered_intersect(comparison_func(T)::in(comparison_func), 
 	ordered_set(T)::in, ordered_set(T)::in) = (ordered_set::out) is det.
 
-
-% Preserve the order of the first set, removing elements found in the second
-% set
-:- pred difference(ordered_set(T)::in, ordered_set(T)::in, ordered_set::out) 
-	is det.
-:- func difference(ordered_set(T), ordered_set(T)) = ordered_set(T).
-
 % The difference of two sets sorted and without duplicates, 
 % order is not preserved
-:- pred set_difference(ordered_set(T)::in, ordered_set(T)::in, 
+:- pred difference(ordered_set(T)::in, ordered_set(T)::in, 
 	ordered_set::out) is det.
-:- func set_difference(ordered_set(T), ordered_set(T)) = ordered_set(T).
+:- func difference(ordered_set(T), ordered_set(T)) = ordered_set(T).
 
-% Perform a set_difference on the input sets, ordering the results using the
+% Perform a difference on the input sets, ordering the results using the
 % provided comparison function
 :- pred ordered_difference(comparison_func(T)::in(comparison_func), 
 	ordered_set(T)::in, ordered_set(T)::in, ordered_set::out) is det.
@@ -312,6 +274,7 @@
 
 :- import_module int.
 :- import_module bool.
+:- import_module require.
 
 :- import_module util.
 
@@ -338,6 +301,8 @@
 :- func os(array(T), array(T)) = ordered_set(T).
 :- mode os(in, in) = out is det.
 :- mode os(out, out) = in is det.
+:- mode os(unused, out) = in is det.
+:- mode os(out, unused) = in is det.
 
 :- pragma promise_equivalent_clauses(os/2).
 
@@ -346,6 +311,12 @@ os(O::in, S::in) = (ordered_set(O, S)::out).
 % Deconstructions on types with user defined equality are cc_multi
 os(O::out, S::out) = (OS::in) :- 
 	promise_equivalent_solutions [O, S] ordered_set(O, S) = OS. 
+	
+os(_::unused, S::out) = (OS::in) :- 
+	promise_equivalent_solutions [S] ordered_set(_, S) = OS. 
+	
+os(O::out, _::unused) = (OS::in) :- 
+	promise_equivalent_solutions [O] ordered_set(O, _) = OS. 
 	
 :- pragma inline(os/2).
 	
@@ -581,13 +552,114 @@ current_ordering(os(O, S)) = array.generate(size(O), generate_ordering(O, S)).
 generate_ordering(O, S, Io) = Is :-
 	array.lookup(Io, O, T),
 	(if binary_search(S, T, Found) then
-		Is = Found
+		Is = Found + 1
 	else
-		report_lookup_error(
+		unexpected($module, $pred,
 "ordered_set.current_ordering: Value in ordered set not found in sorted set", 
 		T, S)
 	).
 
 current_ordering(OS, current_ordering(OS)).
 
+apply_ordering(os(_, S), Or) = OS :-
+	size(S, SortedSize),
+	size(Or, OrderedSize),
+	(if SortedSize = 0	then
+		 OrderedSize = 0,
+		OS = empty_set
+	else 
+		% Find first element
+		semidet_lookup(Or, 0, For),
+		semidet_lookup(S, Fs@For - 1, First),
+		array.init(SortedSize, no, UniqueFound0),
+		array.set(Fs, yes, UniqueFound0, UniqueFound), 
+		(if OrderSize = 1 then
+			SortedSize = 1,
+			singleton(First, OS)
+		else
+			array.init(OrderedSize, First, NewOrder),
+			generate_order_from_ordering(Or, S, 1, max(Or), 1, SortedSize,
+				UniqueFound, _, NewOrder, O),
+			OS = os(O, S)
+		
+		)
+	).
+	
+	
+:- pred generate_order_from_ordering(array(int)::in, array(T)::in, int::in, 
+	int::in, int::in, int::out,  array(bool)::array_di, array(bool)::array_uo,
+	array(T)::array_di, array(T)::array_uo) is semidet.
 
+generate_order_from_ordering(Or, S, I, Last, !UniqueCount, !UniqueFound !O) :-
+	(if I > Last then
+		true
+	else
+		array.lookup(Or, I, Ior),
+		array.semidet_lookup(S, Is@(Ior - 1), T),
+		array.set(I, T, !O),
+		array.semidet_lookup(!.UniqueFound, Is, Counted), 
+		(if Counted = no then
+			array.set(Is, yes, !UniqueFound)
+			!:UniqueCount = !.UniqueCount + 1
+		else
+			true
+		),
+		generate_order_from_ordering(Or, S, I + 1, Last, !UniqueCount, 
+			!UniqueFound, !O)
+	).
+	
+det_apply_ordering(OS0, Or) =  
+	(if apply_ordering(OS0, Or) = OS
+	then
+		OS
+	else
+		unexpected($module, $pred, "Invalid ordering.")
+	).
+	
+%-----------------------------------------------------------------------------%
+% Set operations
+
+union(OS1, OS2, union(OS1, OS2)).
+
+union(os(_, S1), os(_, S2)) = os(S3, S3) :-
+	array.append(S1, array(difference_list(A1, A2)), Appended),
+	S3 = array.sort(Appended).
+
+% Compose a list of elements not present in the first array. 
+% Arrays must be sorted.
+:- func difference_list(array(T), array(T)) = list(T).
+
+difference_list(A1, A2) = difference_list(0, max(A2), A1, A2).
+
+:- func difference_list(int, int, array(T), array(T)) = list(T).
+
+difference_list(I, Last, A1, A2) = 
+	(if I > Last then
+		[]
+	else
+		(if lookup(A2, I, T), not binary_search(A1, T, _) then
+			[ T | difference_list(I + 1, Last, A1, A2)]
+		else
+			difference_list(I + 1, Last, A1, A2)
+		)
+	).
+	
+:- pragma inline(difference_list/4).
+
+% Compose a list of elements found in both sorted arrays.
+:- func intersect_list(array(T), array(T)) = list(T).
+
+intersect_list(A1, A2) = difference_list(0, max(A2), A1, A2).
+
+:- func intersect_list(int, int, array(T), array(T)) = list(T).
+
+intersect_list(I, Last, A1, A2) = 
+	(if I > Last then
+		[]
+	else
+		(if lookup(A2, I, T), binary_search(A1, T, _) then
+			[ T | intersect_list(I + 1, Last, A1, A2)]
+		else
+			intersect_list(I + 1, Last, A1, A2)
+		)
+	).
