@@ -23,6 +23,7 @@
 :- import_module mh_var_set.
 :- import_module mh_var_id.
 :- import_module mh_substitution.
+:- import_module mh_ordered_set.
 
 
 %-----------------------------------------------------------------------------%
@@ -71,6 +72,9 @@
 
 :- func to_array(mh_tuple) = array(mh_term).
 :- func from_array(array(mh_term)) = mh_tuple.
+
+:- func to_set(mh_tuple) = ordered_set(mh_term).
+:- func from_set(ordered_set(T)) = mh_tuple.
 
 
 %-----------------------------------------------------------------------------%
@@ -172,12 +176,11 @@
 
 :- implementation.
 
-
-:- import_module mh_index.
 :- import_module require.
 :- import_module int.
 :- import_module bool.
 
+:- import_module mh_index.
 
 
 %-----------------------------------------------------------------------------%
@@ -249,6 +252,14 @@ to_array(mr_tuple(T)) = array.generate(arity(T), mr_tuple_index(T)).
 to_array(list_tuple(List)) = array.from_list(List).
 
 to_array(array_tuple(Array)) = Array.
+
+from_array(Array) = array_tuple(Array).
+
+to_set(Tuple) = ordered_set.from_array(mh_tuple.to_array(Tuple)).
+
+from_set(Set) = array_tuple(ordered_set.to_array(Set)).
+
+
 
 
 	
