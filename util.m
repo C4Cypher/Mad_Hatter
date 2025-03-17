@@ -119,11 +119,11 @@
 % standard sort/1 call, but provide a higher order comparison function
 
 :- func samsort(comparison_func(T)::in(comparison_func), array(T)::array_di) = 
-	(array(T)::uo) is det.
+	(array(T)::array_uo) is det.
 	
 % A traditional top down merge sort, should be stable to the original order	
 :- func mergesort(comparison_func(T)::in(comparison_func), 
-	array(T)::array_di) = (array(T)::uo) is det.
+	array(T)::array_di) = (array(T)::array_uo) is det.
 
 
 
@@ -415,7 +415,7 @@ remove_dups(!A) :-
 	(if size(!.A, 0)
 	then true
 	else
-		unsafe_lookup(!A, 0, First),
+		unsafe_lookup(!.A, 0, First),
 		remove_dups(1, First, 1, NewSize, !A),
 		shrink(NewSize, !A)
 	).
@@ -439,9 +439,10 @@ remove_dups(Index, Current, !Unique, !A) :-
 
 remove_dups(!.A) = !:A :- remove_dups(!A).
 
-sort_and_remove_dups(!A) :- copy(!A), sort(!A), remove_dups(!A).
+sort_and_remove_dups(!A) :- array.copy(!A), !:A = array.sort(!.A), 
+	remove_dups(!A).
 
-sort_and_remove_dups(!.A) = !:A = sort_and_remove_dups(!A).
+sort_and_remove_dups(!.A) = !:A :- sort_and_remove_dups(!A).
 
 array_search(A, T, I) :- array_search(A, T, 0, I).
 
@@ -591,23 +592,23 @@ samsort_down(CMP, N, A0, A, B0, B, Lo, Hi, I) :-
 % Merge sort
 
 % mergesort_subarray(CMP, !A, !B, First, Last) 
-:- func mergesort_subarray(comparison_func(T)::in(comparison_func), 
+:- pred mergesort_subarray(comparison_func(T)::in(comparison_func), 
 	array(T)::array_di, array(T)::array_uo, 
 	array(T)::array_di, array(T)::array_uo, 
 	int::in, int::in) is det.
 
-:- pragma type_spec(func(mergesort_subarray/4), T = int).
-:- pragma type_spec(func(mergesort_subarray/4), T = string).
+:- pragma type_spec(pred(mergesort_subarray/7), T = int).
+:- pragma type_spec(pred(mergesort_subarray/7), T = string).
 
 mergesort_subarray(CMP, !A, !B, Lo, Hi) :-
 	(if Hi - Lo = 0 then
 		true
 	else
-		Mid = Lo + (Hi - Lo) / 2  %????
-		MidSucc = Mid + 1
+		Mid = Lo + (Hi - Lo) / 2,
+		MidSucc = Mid + 1,
 		mergesort_subarray(CMP, !B, !A, Lo, Mid), % Make this conjunction &?
 		mergesort_subarray(CMP, !B, !A, MidSucc, Hi),
-		merge_subarrays(CMP, !.B, Lo, Mid, MidSucc, Hi, !A)
+		merge_subarrays(CMP, !.B, Lo, Mid, MidSucc, Hi, 0, !A)
 	).
 
 
@@ -635,7 +636,7 @@ merge_subarrays(CMP, A, Lo1, Hi1, Lo2, Hi2, I, !B) :-
 		array.lookup(A, Lo2, X2),
 		R = CMP(X1, X2),
 		(
-			(R = (<) ; R = (=) )
+			(R = (<) ; R = (=) ),
 			array.set(I, X1, !B),
 			merge_subarrays(CMP, A, Lo1 + 1, Hi1, Lo2, Hi2, I + 1, !B)
 		;
@@ -656,7 +657,7 @@ verify_sorted(CMP, A, Lo, Hi) :-
 	else if   CMP(A ^ elem(Lo + 1), A ^ elem(Lo)) = (<) then
 		unexpected($pred, "array range not sorted")
 	else
-		verify_sorted(A, Lo + 1, Hi)
+		verify_sorted(CMP, A, Lo + 1, Hi)
 	).
 
 :- pred verify_identical(comparison_func(T)::in(comparison_func), 
@@ -678,8 +679,8 @@ verify_identical(CMP, A, B, Lo, Hi) :-
 	array(T)::array_ui, array(T)::array_di, array(T)::array_uo, 
 	int::in, int::in, int::out) is det.
 
-:- pragma type_spec(pred(copy_run_ascending/6), T = int).
-:- pragma type_spec(pred(copy_run_ascending/6), T = string).
+:- pragma type_spec(pred(copy_run_ascending/7), T = int).
+:- pragma type_spec(pred(copy_run_ascending/7), T = string).
 
 copy_run_ascending(CMP, A, !B, Lo, Hi, I) :-
 	( if
@@ -697,10 +698,10 @@ copy_run_ascending(CMP, A, !B, Lo, Hi, I) :-
 	comparison_result::in, array(T)::array_ui,
 	int::in, int::in) = (int::out) is det.
 
-:- pragma type_spec(func(search_until/4), T = int).
-:- pragma type_spec(func(search_until/4), T = string).
+:- pragma type_spec(func(search_until/5), T = int).
+:- pragma type_spec(func(search_until/5), T = string).
 
-search_until(R, A, Lo, Hi) =
+search_until(CMP, R, A, Lo, Hi) =
 	( if
 		Lo < Hi,
 		not R = CMP(A ^ elem(Lo), A ^ elem(Lo + 1))

@@ -17,13 +17,11 @@
 
 :- import_module list.
 :- import_module array.
-:- import_module assoc_list.
-:- import_module map.
 
 %-----------------------------------------------------------------------------%
 % Ordered set
 
-:- type ordered_set(T) where comparison is compare_ordered_sets.
+:- type ordered_set(T). % where comparison is compare_ordered_sets.
 
 %-----------------------------------------------------------------------------%
 % Basic operations
@@ -51,17 +49,16 @@
 :- func sort(ordered_set(T)) = ordered_set(T).
 
 % If the order is sorted and has no duplicates
-:- pred is_sorted_set(sorted_set(T)::in) is semidet. 
+:- pred is_sorted_set(ordered_set(T)::in) is semidet. 
 
 % True if the internal ordered and sorted arrays refer to the same array, 
 % Offers a cheaper incomplete alternative test to is_sorted_set/1
 
-:- pred is_merged_set(sorted_set(T)::in) is semidet.
+:- pred is_merged_set(ordered_set(T)::in) is semidet.
 
 % Return the number of elements in the ordered portion of the set
 :- func size(ordered_set(_)) = int.
 :- pred size(ordered_set(_)::in, int::out) is det.
-
 
 
 % Return the number of unique elements in the set
@@ -82,7 +79,7 @@
 % structures for this type as *sets* ... if you need to map the values in
 % the set by ordering, convert the set to an ordered list or array first.
 :- pred compare_ordered_sets(comparison_result::uo, ordered_set(T)::in, 
-	ordered_set::in) is det.
+	ordered_set(T)::in) is det.
 
 
 %-----------------------------------------------------------------------------%
@@ -117,6 +114,10 @@
 % As above, but fail on emtpy set
 :- pred semidet_bounds(ordered_set(_)::in, int::out, int::out) is semidet.
 :- pred semidet_set_bounds(ordered_set(_)::in, int::out, int::out) is semidet.
+
+% Succeed if the given index is in bounds for the given ordered_set
+:- pred in_bounds(ordered_set(_)::in, int::in) is semidet.
+:- pred in_set_bounds(ordered_set(_)::in, int::in) is semidet.
 
 % Return the first index (should always be 1) unless the set is empty then -1
 :- func min(ordered_set(_)) = int is det.
@@ -155,9 +156,13 @@
 :- func set_lookup(ordered_set(T), int) = T is det.
 :- pred set_lookup(ordered_set(T)::in, int::in, T::out) is det.
 
-% Search for the given value and return it's index in the sorted set.
-:- func search(ordered_set(T), T) = int.
+% Search for the value and return it's index in the ordered array (linear)
+:- func search(ordered_set(T), T) = int is semidet.
 :- pred search(ordered_set(T)::in, T::in, int::out) is semidet.
+
+% Search for the value and return it's index in the sorted set. (log N)
+:- func set_search(ordered_set(T), T) = int is semidet.
+:- pred set_search(ordered_set(T)::in, T::in, int::out) is semidet.
 
 
 
@@ -215,14 +220,14 @@
 % (Should be) More efficient than calling valid_ordering_for/2 first.
 
 :- func apply_ordering(ordered_set(T), ordering) = ordered_set(T) is semidet.
-:- pred apply_ordering(ordering::in, ordered_set(T)::in,  ordered_set(T)::out)
+:- pred apply_ordering(ordering::in, ordered_set(T)::in, ordered_set(T)::out)
 	is semidet.
 	
 % As above, but throws an exception if the ordering is not valid.
 
 :- func det_apply_ordering(ordered_set(T), ordering) = ordered_set(T).
 :- pred det_apply_ordering(ordering::in, ordered_set(T)::in,  ordered_set(T)::out)
-	is  det.
+	is  det. 
 
 
 %-----------------------------------------------------------------------------%
@@ -230,21 +235,21 @@
 
 
 % The union of two sets sorted and without duplicates, order is not preserved
-:- pred union(ordered_set(T)::in, ordered_set(T)::in, ordered_set::out)
+:- pred union(ordered_set(T)::in, ordered_set(T)::in, ordered_set(T)::out)
 	is det.
 :- func union(ordered_set(T), ordered_set(T)) = ordered_set(T).
 
 
 % The intersection of two sets sorted and without duplicates, order is not 
 % preserved
-:- pred intersect(ordered_set(T)::in, ordered_set(T)::in, ordered_set::out) 
+:- pred intersect(ordered_set(T)::in, ordered_set(T)::in, ordered_set(T)::out) 
 	is det.
 :- func intersect(ordered_set(T), ordered_set(T)) = ordered_set(T).
 
 % The difference of two sets sorted and without duplicates, 
 % order is not preserved
 :- pred difference(ordered_set(T)::in, ordered_set(T)::in, 
-	ordered_set::out) is det.
+	ordered_set(T)::out) is det.
 :- func difference(ordered_set(T), ordered_set(T)) = ordered_set(T).
 
 
@@ -275,15 +280,14 @@
 %-----------------------------------------------------------------------------%
 % Ordered set
 
-:- type ordered_set(T)
-	--->	ordered_set(order::array(T), sorted::array(T)).
+:- type ordered_set(T) 
+	--->	ordered_set(order::array(T), sorted::array(T))
+		where comparison is compare_ordered_sets.
 
 % Deterministic constructor
 :- func os(array(T), array(T)) = ordered_set(T).
 :- mode os(in, in) = out is det.
 :- mode os(out, out) = in is det.
-:- mode os(unused, out) = in is det.
-:- mode os(out, unused) = in is det.
 
 :- pragma promise_equivalent_clauses(os/2).
 
@@ -292,13 +296,7 @@ os(O::in, S::in) = (ordered_set(O, S)::out).
 % Deconstructions on types with user defined equality are cc_multi
 os(O::out, S::out) = (OS::in) :- 
 	promise_equivalent_solutions [O, S] ordered_set(O, S) = OS. 
-	
-os(_::unused, S::out) = (OS::in) :- 
-	promise_equivalent_solutions [S] ordered_set(_, S) = OS. 
-	
-os(O::out, _::unused) = (OS::in) :- 
-	promise_equivalent_solutions [O] ordered_set(O, _) = OS. 
-	
+
 :- pragma inline(os/2).
 	
 /* TODO: Make the sorted array lazy when benchmarking to see if there is any
@@ -317,9 +315,10 @@ comparison operations.
 
 is_valid(os(A, sort_and_remove_dups(A))).
 
+empty_set = OS :- empty_set(OS).
+
 empty_set(os(A, A)) :- make_empty_array(A).
 
-empty_set(empty_set).
 
 is_empty(os(A, _)) :- size(A, 0).
 
@@ -370,17 +369,17 @@ compare_ordered_sets(array_compare(A1, A2), os(_, A1), 	os(_, A2)).
 %-----------------------------------------------------------------------------%
 % Conversion
 
-from_list(L) = from_array(array.from_array(L)).
+from_list(L) = from_array(array.from_list(L)).
 
-to_list(OS) = array.to_list(order(OS)). % CC multi?
+to_list(os(O, _)) = array.to_list(O). % CC multi?
 
 from_array(A) = os(A, sort_and_remove_dups(A)).
 
-to_array(OS) = order(OS).
+to_array(os(O, _)) = O.
 
-to_sorted_list(OS) = array.to_list(sorted(OS)).
+to_sorted_list(os(_, S)) = array.to_list(S).
 
-to_sorted_array(OS) = sorted(OS).
+to_sorted_array(os(_, S)) = S.
 
 %-----------------------------------------------------------------------------%
 % Lookup
@@ -412,6 +411,10 @@ semidet_set_bounds(os(_, A), Min, Max) :-
 	size(A) > 0,
 	Min = array.min(A) + 1,
 	Max = array.max(A) + 1.
+
+in_bounds(os(O, _), I) :- array.in_bounds(O, I - 1).
+in_set_bounds(os(_, S), I) :- array.in_bounds(S, I - 1).
+
 	
 min(os(A, _)) = 
 	(if size(A) = 0
@@ -463,23 +466,25 @@ set_max(os(_, A)) =
 		array.max(A) + 1
 	).
 	
-set_min(OS, max(OS)).
+set_max(OS, max(OS)).
 
 semidet_set_max(os(_, A)) = array.max(A) :- size(A) > 0.
 
 semidet_set_max(OS, semidet_max(OS)).
 
+contains(OS, T) :- search(OS, T, _).
+
 % index and set_index implementations here
 
-lookup(os(A, _), Index) = array.lookup(A, Index).
+lookup(os(A, _), Index) = array.lookup(A, Index - 1).
 lookup(OS, Index, lookup(OS, Index)).
-set_lookup(os(_, A), Index) = array.lookup(A, Index).
+set_lookup(os(_, A), Index) = array.lookup(A, Index - 1).
 set_lookup(OS, Index, set_lookup(OS, Index)).
 
-search(OS, T) = array_search(order(OS), T).
+search(os(O, _), T) = array_search(O, T) + 1.
 search(OS, T, search(OS, T)).
 
-set_search(OS, T) = I :- binary_search(sorted(OS), T, I). % array_ui??
+set_search(os(_, S), T) = I + 1 :- binary_search(S, T, I). 
 set_search(OS, T, set_search(OS, T)).
 
 %-----------------------------------------------------------------------------%
@@ -496,18 +501,18 @@ reorder_by(CMP, os(O0, _)) =
 	os(O@mergesort(CMP, copy(O0)), sort_and_remove_dups(O)). 
 	
 ordering_to_list(Or) = array.to_list(Or).
-ordering_from_list(L) = array.from_list(Or).
+ordering_from_list(L) = array.array(L).
 
 valid_ordering_for(Or, os(_, S)) :-
 	array.size(S, SetSize),
-	array.init(SetSize, no, !.UniqueFound),
-	valid_ordering_check(0, max(O), Or, 0, UniqueCount, UniqueFound, _),
+	array.init(SetSize, no, UniqueFound),
+	valid_ordering_check(0, array.max(Or), Or, 0, UniqueCount, UniqueFound, _),
 	UniqueCount = SetSize. % Ordering is only valid if all are found
 		
 %valid_ordering_check(Index, Last, Or, !UniqueCount, !UniqueFound)
 % Count every element in the Ordered array that has not yet been found to be
 % in bounds of the Sorted array
-:- pred valid_ordering_check(int::in, int::in, array(T)::in, int::in, 
+:- pred valid_ordering_check(int::in, int::in, array(int)::in, int::in, 
 	int::out, array(bool)::array_di, array(bool)::array_uo) is semidet.
 	
 valid_ordering_check(Index, Last, Or, !UniqueCount, !UniqueFound) :-
@@ -518,7 +523,7 @@ valid_ordering_check(Index, Last, Or, !UniqueCount, !UniqueFound) :-
 		%fails if out of bounds of the Sorted array
 		array.semidet_lookup(!.UniqueFound, Is, Counted), 
 		(if Counted = no then
-			array.set(Is, yes, !UniqueFound)
+			array.set(Is, yes, !UniqueFound),
 			!:UniqueCount = !.UniqueCount + 1
 		else
 			true
@@ -531,13 +536,12 @@ current_ordering(os(O, S)) = array.generate(size(O), generate_ordering(O, S)).
 :- func generate_ordering(array(T), array(T), int) = int.
 
 generate_ordering(O, S, Io) = Is :-
-	array.lookup(Io, O, T),
+	array.lookup(O, Io, T),
 	(if binary_search(S, T, Found) then
 		Is = Found + 1
 	else
 		unexpected($module, $pred,
-"ordered_set.current_ordering: Value in ordered set not found in sorted set", 
-		T, S)
+"ordered_set.current_ordering: Value in ordered set not found in sorted set")
 	).
 
 current_ordering(OS, current_ordering(OS)).
@@ -554,7 +558,7 @@ apply_ordering(os(_, S), Or) = OS :-
 		semidet_lookup(S, Fs@For - 1, First),
 		array.init(SortedSize, no, UniqueFound0),
 		array.set(Fs, yes, UniqueFound0, UniqueFound), 
-		(if OrderSize = 1 then
+		(if OrderedSize = 1 then
 			SortedSize = 1,
 			singleton(First, OS)
 		else
@@ -566,12 +570,14 @@ apply_ordering(os(_, S), Or) = OS :-
 		)
 	).
 	
+apply_ordering(Or, OS, apply_ordering(OS, Or)).
+	
 	
 :- pred generate_order_from_ordering(array(int)::in, array(T)::in, int::in, 
 	int::in, int::in, int::out,  array(bool)::array_di, array(bool)::array_uo,
 	array(T)::array_di, array(T)::array_uo) is semidet.
 
-generate_order_from_ordering(Or, S, I, Last, !UniqueCount, !UniqueFound !O) :-
+generate_order_from_ordering(Or, S, I, Last, !UniqueCount, !UniqueFound, !O) :-
 	(if I > Last then
 		true
 	else
@@ -580,7 +586,7 @@ generate_order_from_ordering(Or, S, I, Last, !UniqueCount, !UniqueFound !O) :-
 		array.set(I, T, !O),
 		array.semidet_lookup(!.UniqueFound, Is, Counted), 
 		(if Counted = no then
-			array.set(Is, yes, !UniqueFound)
+			array.set(Is, yes, !UniqueFound),
 			!:UniqueCount = !.UniqueCount + 1
 		else
 			true
@@ -597,23 +603,27 @@ det_apply_ordering(OS0, Or) =
 		unexpected($module, $pred, "Invalid ordering.")
 	).
 	
+det_apply_ordering(Or, OS, det_apply_ordering(OS, Or)).
+	
 %-----------------------------------------------------------------------------%
 % Set operations
 
 union(OS1, OS2, union(OS1, OS2)).
 
 union(os(_, S1), os(_, S2)) = os(S3, S3) :-
-	array.append(S1, array(difference_list(A1, A2)), Appended),
-	S3 = array.sort(Appended).
+	Unsorted = array.append(S1, array(difference_list(S1, S2))),
+	S3 = array.sort(Unsorted).
 
 intersect(OS1, OS2, intersect(OS1, OS2)).
 	
-intersect(os(_, S1), os(_, S2)) = array(intersect_list(S1, S2)).
+intersect(os(_, S1), os(_, S2)) = os(S3, S3) :- 
+	S3 = array(intersect_list(S1, S2)).
 
 
 difference(OS1, OS2, difference(OS1, OS2)).
 	
-difference(os(_, S1), os(_, S2)) = array(difference_list(S1, S2)).
+difference(os(_, S1), os(_, S2)) = os(S3, S3) :- 
+	S3 = array(difference_list(S1, S2)).
 
 % Compose a list of elements not present in the first array. 
 % Arrays must be sorted.
