@@ -26,6 +26,12 @@
 %-----------------------------------------------------------------------------%
 % Relation type
 
+% Thinking about this. I can describe relations in many  different ways.
+% However I need to distill the type structure down into a way that is
+% unifiable and able to encapsulate clauses before and after mode analysis
+% PLUS handling foreign function calls. I need to define modes. Preconditions
+% and postconditions.
+
 
 :- type mh_relation 
 			% r(X) = Y :- p(X, Y).
