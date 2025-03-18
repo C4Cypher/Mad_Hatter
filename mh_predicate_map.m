@@ -25,7 +25,7 @@
 :- type mh_predicate_map(T).
 :- type mh_predicate_set == mh_predicate_map(unit).
 
-:- func init = (mh_predicate_map(T)::uo) is det.
+ 
 :- pred init(mh_predicate_map(_)::uo) is det.
 
 :- func singleton(mh_term, T) = mh_predicate_map(T).

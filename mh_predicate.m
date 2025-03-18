@@ -19,6 +19,7 @@
 
 :- import_module mh_term.
 :- import_module mh_substitution.
+:- import_module ordered_set.
 :- import_module mh_arity.
 :- import_module mh_tuple.
 :- import_module mh_tuple_map.
@@ -34,13 +35,16 @@
 %-----------------------------------------------------------------------------%
 % Predicates
 
+%TODO: Work out how to include memo table updates with pred_successses
+% hell, do it with failures.  Prerequesite for this is evaluation.
+
 :- type mh_predicate 
-	--->	pred_success(mh_substitution)		% yes
-  	;		pred_failure(pred_fail_reason)		% no
-	;		pred_disj(mh_predicate_set)			% A ; B ; C
-	;		pred_conj(mh_predicate_set)			% A , B , C
-	;		pred_neg(mh_predicate)				% not A
-	;		pred_unification(mh_term_set).	% X = Y = Z
+	--->	pred_success(mh_substitution)			% yes 
+  	;		pred_failure(pred_fail_reason)			% no
+	;		pred_disj(ordered_set(mh_predicate))	% A ; B ; C
+	;		pred_conj(ordered_set(mh_predicate))	% A , B , C
+	;		pred_neg(mh_predicate)					% not A
+	;		pred_unification(ordered_set(mh_term)).	% X = Y = Z
 	
 % TODO: Resolve arity,  clause type?
 	
