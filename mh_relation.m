@@ -28,7 +28,9 @@
 
 
 :- type mh_relation 
-	--->	relation(mh_scope, predicate_term, arity)	% r(X) = Y :- f(X, Y).
+			% r(X) = Y :- p(X, Y).
+	--->	predicate_relation(mh_scope, predicate_term, arity)	
+	;		
 	;		mercury_call(mr_call).
 	
 :- pred apply_relation_substitution(mh_substitution::in, mh_relation::in,
