@@ -15,33 +15,33 @@
 
 :- interface.
 
-:- import_module list.
+:- import_module array.
 
-:- import_module mh_signature.
+:- import_module mh_term.
+:- import_module mh_predicate.
 
 %-----------------------------------------------------------------------------%
 % Term modes
 
-:- type mh_mode
-	--->	in	
-	;		out
-	;		inout(tuple_signature)
-	;		unused.
 
-	% TODO: something akin to unique modes?
+:- type mh_mode(T)
+	--->	T >> T
+	;		compound_mode(array(mh_mode(T))).
 	
-	% DEPRECIATED NOTE
-	% implemented differently, the inst system seemed to be a dead end for
-	% mercury, mercury inst's are a powerful, expressive and underutilized
-	% tool ... and I'm sure that the back end performs some impressive 
-	% optimizations with it, for now I'm just going to stick with ground
-	% and free ... implicitly, skipping the inst step altogether when
-	% performing mode optimization, for now
+	
+
+:- type mh_mode == mh_mode(predicate_term).
+	
+:- func in(T) = mh_mode(T).
+:- func out(T) = mh_mode(T).
+
+	
+
 	
 %-----------------------------------------------------------------------------%
 % Tuple modes
 
-:- type tuple_mode --->	tuple_mode(list(mh_mode)). 
+:- type tuple_mode(T) --->	tuple_mode(list(mh_mode(T))). 
 
 
 

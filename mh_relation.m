@@ -22,22 +22,46 @@
 :- import_module mh_predicate.
 :- import_module mh_substitution.
 :- import_module mh_arity.
+:- import_module ordered_set.
 
 %-----------------------------------------------------------------------------%
 % Relation type
 
+% A relation represents the functor of a compound term in any unifcation
+% that requires more work than simple assignment of that compound term to
+% a free variable.
+% 
+%
+% X = R(Arg)
+%
+% At it's core, they represent the 'head clause' of any horn clause, even for
+% predicates. In essene, a predicate in the traditional Prolog sense is a 
+% Relation that unifies with a success indicator or truth value, or to be more
+% specific, a function that returns a success indicator. The substitution 
+% contained in the success represents the variable bindings that resolve
+% to make the predicate 'true'
+
+% Relations can be  'moded', modes being pairings of pre-conditions and post
+% conditions that enforce the relation's soundness and purity.
+ 
 % Thinking about this. I can describe relations in many  different ways.
 % However I need to distill the type structure down into a way that is
 % unifiable and able to encapsulate clauses before and after mode analysis
 % PLUS handling foreign function calls. I need to define modes. Preconditions
 % and postconditions.
 
+% Put it another way, a relation is a disjunction of clauses
+
 
 :- type mh_relation 
 			% r(X) = Y :- p(X, Y).
-	--->	predicate_relation(mh_scope, predicate_term, arity)	
-	;		
-	;		mercury_call(mr_call).
+	--->	relation_clause(mh_predicate, arity)
+			% f(X) -> Y :- p(X, Y). <-> r(X::in) = (Y::out) :- p(X, Y).
+	;		func_relation(mh_predicate, arity)
+			% r(X) = a(X) ; b(X). <-> r(X) = Y :- a(X) = Y ; b(X) = Y.
+	;		disj_relation(ordered_set(mh_relation))
+			% r(X) = a(X) , b(X). <-> r(X) = Y :- a(X) = Y , b(X) = Y.
+	;		conj_relation(ordered_set(mh_relation)).
 	
 :- pred apply_relation_substitution(mh_substitution::in, mh_relation::in,
 	mh_relation::out) is det.
@@ -45,9 +69,9 @@
  
 :- pred ground_relation(mh_relation::in) is semidet.
  
-:- func relation_arity(mh_relation) = arity.
+:- func relation_arity(mh_relation, int) = mh_relation.
  
-:- pred relation_arity(mh_relation::in, int::out) is det.
+:- pred relation_arity(mh_relation::in, int::in, mh_relation::out) is det.
  
 :- instance arity(mh_relation).
 
