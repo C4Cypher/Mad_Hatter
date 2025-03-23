@@ -3,9 +3,17 @@ Design Goals:
 * Unordered clauses
 * Allow binding of free variables
 * Refinement+Dependent type system
-* 'true' first-class constraints and procedures 
+* 'true' first-class constraints and procedures
+* Decompile into Mad Hatter readable and editable Mad Hatter sourcee 
 * Multiple compilation models   
-
+	- Multiple Language models
+	- Compile foreign source/headers into importable Mad Hatter Libraries
+	- Compile to bytecode, either for efficient interpretation or JIT
+	- Compile to foreign source code
+	- Compile foreign source code into Mad Hatter as high level IR
+	- Decompile bytecode into Mad Hatter for verification
+* Optional: Make Mad Hatter a superset of Mercury, allowing for direct parsing
+* Implement Mad Hatter in C, allowing for independence from Mercury runtime
 
 
 
@@ -41,12 +49,15 @@ get a repl running
 							represent clause bodies, truth values
 							propositional language
 							conj and disj rep by ordered sets
-								implement ordered sets <-- I am here
-									order by comparison func
-									order by weight
-						relations <- on hold, finish predicates
+								implement ordered sets - done
+						relations 
 							represent equivalences and clauses
-							work out internal representation
+							work out internal representation <- I am here
+								clauses
+									modes
+										pre-conditions
+										post-conditions/promises?
+								single mode of a relation = clause + mode?
 							define clauses in terms of relations
 							scope
 							term constraints			
