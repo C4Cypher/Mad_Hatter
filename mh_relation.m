@@ -17,11 +17,8 @@
 
 % :- import_module array.
 
-:- import_module mh_term.
-:- import_module mh_scope.
-:- import_module mh_predicate.
-:- import_module mh_substitution.
-:- import_module mh_arity.
+:- import_module mh_clause.
+
 :- import_module ordered_set.
 
 %-----------------------------------------------------------------------------%
@@ -55,10 +52,8 @@
 
 :- type mh_relation 
 			% r(X) = Y :- p(X, Y).
-	--->	relation_clause(mh_predicate, arity)
-			% f(X) -> Y :- p(X, Y). <-> r(X::in) = (Y::out) :- p(X, Y).
-	;		func_relation(mh_predicate, arity)
-			% r(X) = a(X) ; b(X). <-> r(X) = Y :- a(X) = Y ; b(X) = Y.
+	--->	relation_clause(mh_clause)
+			% r(X) = a(X) ; b(X) <-> r(X) = Y :- a(X) = Y ; b(X) = Y.
 	;		disj_relation(ordered_set(mh_relation))
 			% r(X) = a(X) , b(X). <-> r(X) = Y :- a(X) = Y , b(X) = Y.
 	;		conj_relation(ordered_set(mh_relation)).
@@ -73,7 +68,7 @@
  
 :- pred relation_arity(mh_relation::in, int::in, mh_relation::out) is det.
  
-:- instance arity(mh_relation).
+
 
 
 %-----------------------------------------------------------------------------%
