@@ -18,48 +18,19 @@
 :- import_module array.
 
 :- import_module mh_term.
-:- import_module mh_predicate.
 
 %-----------------------------------------------------------------------------%
 % Term modes
 
 
-:- type mh_mode(T)
-	--->	T >> T
-	;		compound_mode(array(mh_mode(T))).
-	
-	
-
-:- type mh_mode == mh_mode(predicate_term).
-	
-:- func in(T) = mh_mode(T).
-:- func out(T) = mh_mode(T).
-
-	
-
-	
-%-----------------------------------------------------------------------------%
-% Tuple modes
-
-:- type tuple_mode(T) --->	tuple_mode(list(mh_mode(T))). 
+:- type mh_mode
+	--->	mh_constraint >> mh_constraint
+	;		in(mh_constraint)
+	;		out(mh_constraint)
+	;		compound_mode(array(mh_mode)).
 
 
-
-%-----------------------------------------------------------------------------%
-% Relation mode a
-	
-:- type relation_mode
-	--->	relation_mode(list(mh_mode), mh_mode).% TODO: Determinism?
-
-	
-%-----------------------------------------------------------------------------%
-% Predicate mode and signature
-
-:- type predicate_mode 
-	--->	predicate_mode(list(mh_mode)). % TODO: Determinism?
-
-
-	
+% Unify modes
 	
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
