@@ -115,7 +115,8 @@
 	% Variables
 	;		var(var_id)
 	
-	% Higher order terms
+	
+% Higher order terms
 	;		predicate(mh_predicate)
 	;		relation(mh_relation)
 	
@@ -238,6 +239,19 @@
 :- mode tuple_term == ground >> tuple_term.
 
 :- pred tuple_term(mh_term::tuple_term) is semidet.
+
+
+%-----------------------------------------------------------------------------%
+% Constraints (lazy terms)
+
+:- inst mh_constraint ---> lazy(ground).
+
+:- type mh_constraint =< mh_term
+	--->	lazy(predicate_term).
+	
+:- mode is_constraint == mh_term >> mh_constraint.
+
+:- pred is_constraint(mh_term::is_constraint) is semidet.
 
 %-----------------------------------------------------------------------------%
 % Higher Order terms
@@ -520,6 +534,11 @@ tuple_term(tuple_term(_)).
 :- instance arity(tuple_term) where [ arity(tuple_term(R), arity(R)) ].
 
 % :- instance tuple(mercury_tuple) where [ ].
+
+%-----------------------------------------------------------------------------%
+% Constraints (lazy terms)
+
+is_constraint(lazy(_)).
 
 %-----------------------------------------------------------------------------%
 % Higher Order terms
