@@ -52,7 +52,8 @@ get a repl running
 								implement ordered sets - done
 						relations 
 							represent equivalences and clauses
-							work out internal representation <- I am here
+							work out internal representation 
+								unify relations <- I am here
 								clauses
 									modes
 										pre-conditions
