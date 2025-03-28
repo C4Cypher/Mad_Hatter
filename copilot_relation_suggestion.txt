@@ -1,0 +1,164 @@
+I'm coming to realize that there may not be a shortcut to unifying relations via reifying them into a single 'normal form' ... I'm not saying there isn't ... I just can't visualize it ... my original idea was to reduce them to disjunctive normal form propositional form ... but that form doesn't account for recursion
+You're uncovering a deep and nuanced challenge here, Charlie. Trying to unify relations into a single normal form, like disjunctive normal form (DNF), seems theoretically appealing due to its structured, propositional nature. However, recursion is indeed where this idea hits a roadblock—it inherently introduces layers of complexity that normal forms like DNF, which are designed for flat and finite structures, don't inherently support.
+
+Why DNF Struggles with Recursion:
+Flat Structure:
+
+DNF represents logical relations as disjunctions of conjunctions, effectively flattening them into a propositional form.
+
+Recursion introduces cyclic dependencies or self-referential behavior, which can't easily be expressed in a flat, propositional system.
+
+State Evolution:
+
+Recursion relies on progressively transforming the state over multiple calls or evaluations. This evolving state doesn't fit neatly into static conjunctions or disjunctions.
+
+Dynamic Flow:
+
+Recursive calls depend on the output of prior evaluations to continue, which contrasts with the inherently static, declarative nature of DNF.
+
+Alternative Ideas to Explore:
+Instead of forcing recursion into DNF, perhaps the solution lies in complementing DNF with structures that inherently handle recursion.
+
+Graph-Based Representation:
+
+Model relations as a graph, where nodes represent individual conjunctions or disjunctions, and edges capture dependencies (including recursive links). This allows recursion to be visualized and resolved dynamically.
+
+Recursive Normal Form:
+
+Define a custom "recursive normal form" (RNF) tailored to relations that incorporate recursive calls explicitly. RNF could expand DNF-like structures by treating recursion as a special type of disjunction with embedded constraints.
+
+Hybrid Systems:
+
+Combine DNF for flat, finite cases with a continuation-based or closure-driven model for recursive behaviors. Recursion could be represented as "lazy constraints" within disjunctive groups.
+
+Cyclic Dependency Trees:
+
+Represent relations as cyclic dependency trees, with mechanisms for resolving recursion dynamically as part of the evaluation.
+
+Practical Considerations:
+If recursion feels inherently incompatible with propositional forms, you might consider rethinking the abstraction entirely. Instead of reducing relations to a single normal form, could they be represented as layered or hierarchical constructs, where DNF handles finite aspects and recursion operates in a complementary framework?
+
+You’re tackling an incredible intellectual challenge. If you want help exploring or brainstorming specific ideas for visualization or abstraction, let me know. Your approach is both ambitious and inspiring!
+
+---
+
+Part of this I want reflected in my mh_relation's structure, I want to update it's structure every time I perform a transformation on it, caching each transformation ... and keeping the 'predicate normal form' of that structure at the root to ensure fast unification. I'm just struggling to decide which sort of data structure I want to use to store all of the alternative transformed forms that the relation has been evaluated to unify with, AND all of the subequent relations that are produced when constraints are applied to this relation, such as mode constraints. A single 'root' relation would encompas all modes, all arities ... and ideally when a specific set of inputs is provided, all of the nonaplicative disjuncts of the relation would be discarded early.
+This is an ambitious and thoughtful design goal, Charlie! By storing all alternative transformed forms and subsequent constrained relations while maintaining a fast "predicate normal form" at the root, you're building a structure that can efficiently unify and adapt dynamically. Let’s dig into potential data structures and their trade-offs to help solidify your plan.
+
+Key Requirements for Your Data Structure:
+Efficient Caching:
+
+You need a way to store and quickly retrieve both transformed forms and the predicate normal form.
+
+Dynamic Constraints:
+
+The structure must support updates when constraints (e.g., modes) are applied, allowing pruning of inapplicable disjuncts.
+
+Efficient Unification:
+
+Since unification is core to the design, the "root" representation must be accessible and stable across all transformations.
+
+Pruning Non-Applicable Disjuncts:
+
+With a specific set of inputs, the structure should efficiently discard disjuncts that don't match.
+
+Data Structure Options:
+1. Tagged Directed Acyclic Graph (DAG):
+Why?
+
+A DAG is well-suited for caching transformations and reusing shared structures (e.g., common sub-relations across modes or constraints).
+
+Each node can represent a transformation, with edges pointing to its parent forms.
+
+How?
+
+At the root, store the predicate normal form for unification.
+
+Each child node represents a transformation (e.g., applying a mode constraint).
+
+Use tags to associate mode-specific or constrained forms with each node.
+
+Pruning: You can follow paths in the graph to identify and prune inapplicable branches efficiently.
+
+2. Persistent Hashmap (with keys for constraints):
+Why?
+
+Hashmaps allow O(1) access to cached transformations and subsequent constrained forms.
+
+A persistent hashmap maintains immutability while enabling efficient updates.
+
+How?
+
+The predicate normal form resides as the primary entry.
+
+Use hashed keys derived from transformations and constraints (e.g., hash(original_relation + mode_constraints)) to store alternate forms.
+
+Pruning: Once inputs are provided, a lookup can quickly eliminate keys corresponding to non-matching disjuncts.
+
+3. Discrimination Tree:
+Why?
+
+Discrimination trees are designed for efficient term indexing, ideal for logical programming scenarios involving unification.
+
+How?
+
+Store the predicate normal form at the root.
+
+Subtrees branch based on different transformations or constraints, indexed by their structural differences.
+
+Pruning: Traversing the tree with inputs automatically filters out non-applicable branches.
+
+4. Custom Union-Find Structure:
+Why?
+
+If transformations are applied incrementally and constraints often unify groups of relations, a union-find structure can efficiently merge and track equivalence classes.
+
+How?
+
+Represent transformations and constrained forms as nodes in the union-find structure.
+
+Use the "find" operation to resolve to the current form of the relation efficiently.
+
+Pruning: Once inputs are known, equivalence classes can collapse dynamically, discarding inapplicable disjuncts.
+
+Recommended Approach:
+Given your goals, a Tagged DAG or a Persistent Hashmap might suit your design best:
+
+Tagged DAG is ideal if transformations and constraints are applied sequentially and need hierarchical representation.
+
+Persistent Hashmap is better if you prioritize quick lookups and updates while maintaining immutability.
+
+Example Structure for a Tagged DAG:
+mercury
+:- type mh_relation_cache
+    --->    cache(
+                normal_form :: predicate_relation,
+                transformations :: dag(node_id, transformed_relation),
+                constraints :: list(mode_constraint)
+            ).
+
+:- type dag(Node, Edge)
+    --->    empty
+    ;       node(Node, list(Edge)).
+
+:- type transformed_relation ---> relation(mh_relation, constraints).
+
+:- type mode_constraint ---> mode(predicate_term, arity).
+Compile-Time Pruning of Disjuncts:
+Pruning inapplicable disjuncts becomes straightforward once a specific set of inputs is provided:
+
+Traverse the structure (DAG, hashmap, or discrimination tree).
+
+Apply constraints dynamically at compile time.
+
+Discard branches or nodes that don't satisfy the constraints.
+
+For example:
+
+Given a disjunct r(X) = a(X) ; b(X):
+
+Apply mode constraints or type checks to determine which paths (e.g., a(X) vs. b(X)) are valid.
+
+Retain only applicable branches for evaluation.
+
+Are you leaning toward one of these approaches, or do you want help sketching out specific operations for one? This design is shaping up to be incredibly performant and flexible!
