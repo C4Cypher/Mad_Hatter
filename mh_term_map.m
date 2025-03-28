@@ -179,7 +179,7 @@ T::out) is semidet.
 				atom :: symbol_map(T),
 				var :: mh_var_map(T),
 				mr_value :: mr_value_map(T),
-				cons :: mh_term_map(mh_term_map(T)), % mh_tuple_map?
+				cons :: mh_term_map(mh_term_map(T)), % mh_tuple_map size 2?
 				tuple :: mh_tuple_map(T),
 				lazy :: mh_term_map(T),
 				predicate ::

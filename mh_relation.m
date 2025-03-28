@@ -18,7 +18,8 @@
 % :- import_module array.
 
 :- import_module mh_clause.
-
+:- import_module mh_term.
+:- import_module mh_scope.
 :- import_module ordered_set.
 
 %-----------------------------------------------------------------------------%
@@ -53,9 +54,11 @@
 :- type mh_relation 
 			% r(X) = Y :- p(X, Y).
 	--->	relation_clause(mh_clause)
-			% r(X) = a(X) ; b(X) <-> r(X) = Y :- a(X) = Y ; b(X) = Y.
+			% r(A, B) = C :- p({A, B, C}).
+	;		predicate_relation(predicate_term, mh_scope).
+			% r(X) = a(X) ; b(X). <-> r(X) = Y :- a(X) = Y ; b(X) = Y.
 	;		disj_relation(ordered_set(mh_relation))
-			% r(X) = a(X) , b(X). <-> r(X) = Y :- a(X) = Y , b(X) = Y.
+			% r(X) = a(X) , b(X). <-> r(X) = Y :- a(X) = Y , b(X) = Y. a = b.
 	;		conj_relation(ordered_set(mh_relation)).
 	
 :- pred apply_relation_substitution(mh_substitution::in, mh_relation::in,
