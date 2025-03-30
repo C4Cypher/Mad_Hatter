@@ -53,7 +53,7 @@ get a repl running
 						relations 
 							represent equivalences and clauses
 							work out internal representation 
-								unify relations <- I am here
+								unify relations
 								clauses
 									modes
 										pre-conditions
@@ -66,15 +66,34 @@ get a repl running
 								implement inst trees?
 							representation for foreign calls
 								integrate into mode system
-				implement unification <- on hold until mh_term is complete
-						redesign tuples lazily
-						refactor substitutions
+				evaluation
+					environment <- I am here
+						a table of evaluations, serves as a truth table and
+						memo table
+					ground check
+					groundedness
+						evaluate a numeric 'groundedness' based on free
+						variables and groundedness of sub components
+					an evaluation may not produce a value that is less ground
+						than the input
+					unification  
+							redesign tuples lazily
+							refactor substitutions
+make a logo for Mad Hatter
 optimize terms
 	re-order mh_term constructors for optimal ordering
+	re-write mh_term into a C foreign type that can be efficiently serialized
+		and represented in a bytecode form without impacting it's function
 optimize symbols
 	hash table for symbol pointers? HAMT? GC safe?
 	ensurre symbols are thread safe 
+module library system
+	namespace resolution
+organize a folder space for multiple front ends in different languages?
+modular framework for back_ends
 compile to native at runtime
+bootstrap Mad Hatter (implement Mad Hatter in Mad Hatter)
+ensure that Mad Hatter can be a fully backwards compatable Mercury compiler
 	
 	
 
@@ -116,5 +135,5 @@ Relations can resolve to predicates or functions (or constraints)
 Relations propogate constraints if they can't resolve to a higher order call?
 Rleations represent a disjunction of higher order calls based on input.
 Constraints == types? No, types are a *kind* of constraint.
-Constraints ARE higher order constructts?
+Constraints ARE higher order constructs.
 

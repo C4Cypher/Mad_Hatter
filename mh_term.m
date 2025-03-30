@@ -62,7 +62,7 @@
 	;		predicate(mh_predicate)
 	;		relation(mh_relation) 
 	
-	% Term substitutions (lazy)
+	% Term substitutions (closures and var renamings into higher scopes)
 	;		term_sub(mh_term, mh_substitution).
 	
 :- func functor(mh_term) = functor is semidet.
