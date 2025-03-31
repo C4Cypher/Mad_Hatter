@@ -96,7 +96,7 @@ T::out) is semidet.
 	mh_term_map::out) is semidet.
 	
 :- pred det_update(mh_term::in, T::in, mh_term_map(T)::in, 
-	mh_term_map::out) is det.
+	mh_term_map(T)::out) is det.
 	
 %-----------------------------------------------------------------------------%
 % Removal
