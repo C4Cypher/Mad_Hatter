@@ -32,28 +32,21 @@
 :- pred is_empty(mh_environment::in) is det.
 
 %-----------------------------------------------------------------------------%
-% Environment modification
+% Logic Program
 
-:- pred assert
+% Needs event logging output, need to define events
+:- pred assert(mh_term::in, mh_environment::in, mh_environment::out) is det.
+
+:- 
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
 :- implementation.
 
-
+:- import_module mh_environment.map.
 
 %-----------------------------------------------------------------------------%
 
 :- type mh_environment
 	--->	map_env(mh_term_map(mh_term)).
-	
-new_env(Map) = map_env(Map).
-	
-	
-%-----------------------------------------------------------------------------%
-% Environment lookup
-
-search(Env, Term, search(Env, Term)).
-
-search(map_env(Map), Term) = mh_tuple_map.search(Map, Term). 
