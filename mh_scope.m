@@ -1,7 +1,7 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2024 Charlie H. McGee IV.
+% Copyright (C) 2025 Charlie H. McGee IV.
 % This file may only be copied under the terms of the GNU Library General
 % Public License as described in the file LICENCE.
 %-----------------------------------------------------------------------------%
@@ -19,7 +19,7 @@
 
 
 % :- import_module mh_term.
-:- import_module mh_mercury_term.
+:- import_module mh_context.
 :- import_module mh_var_id.
 :- import_module mh_var_set.
 % :- import_module mh_arity.
@@ -28,12 +28,21 @@
 % Scope
 
 :- type mh_scope 
-	--->	root_scope(context :: scope_context, names :: var_names),
-	;		child_scope(parent :: mh_scope, vars :: mh_var_set). 
+	--->	root_scope(root_context :: mh_context, names :: var_names),
+	;		child_scope(
+		parent :: mh_scope, 
+		child_context::mh_context,
+		vars :: mh_var_set
+		). 
 
 
 :- func scope_vars(mh_scope) = mh_var_set.
-:- func scope_context(mh_scope) = scope_context.
+
+:- func scope_context(mh_scope) = mh_context.
+
+% Different from scope_context in the event of a nested lambda clause.
+:- func clause_context(mh_scope) = mh_context. 
+
 :- func scope_var_names(mh_scope) = var_names.
 :- func parent_scope(mh_scope) = mh_scope is semidet.
 
