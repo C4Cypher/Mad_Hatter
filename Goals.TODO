@@ -85,7 +85,7 @@ get a repl running
 							evaluate a numeric 'groundedness' based on free
 							variables and groundedness of sub components
 					an evaluation may not produce a value that is less ground
-						than the input, out = In >> Out, In =< Outx
+						than the input, out = In >> Out, In =< Out
 make a logo for Mad Hatter
 optimize terms
 	re-order mh_term constructors for optimal ordering
@@ -93,7 +93,7 @@ optimize terms
 		and represented in a bytecode form without impacting it's function
 optimize symbols
 	hash table for symbol pointers? HAMT? GC safe?
-	ensurre symbols are thread safe 
+	ensure symbols are thread safe 
 module library system
 	namespace resolution
 organize a folder space for multiple front ends in different languages?
@@ -108,7 +108,8 @@ ensure that Mad Hatter can be a fully backwards compatable Mercury compiler
 			
 Higher order constructs:
 	* A relation is unification with a disjunction of higher order terms
-	% A predicate represents a truth value
+	* A predicate represents a truth value
+		- As such, it can be represented as a function that returns a truth val
 	% A function represents a one way transformation from one term to another
 	% A constraint represents a non-ground value a term can unify with
 	
@@ -120,13 +121,30 @@ I just realized I can implement constraint solving (and thus types) by making
 Id' have to re-think the rules to unification in relation to constraints.
 * A free variable unified with a constraint binds the variable to the constraint the same as if bound to a ground value.
 * A constraint unifies with another constraint to produce a new constraint, and may result in constraint propogation, resulting in more unifications
-* A constraint unifying with a ground value either fails if the constraint is not met, or results in a binding to said ground value if it succeeds
+	- If two constraints unify (do not contradict), then the resulting bound
+	- value is a conjunction of the constraints.
+* A constraint unifying with a ground value either fails if the constraint is
+	not met, or results in a binding to a CONJUNCTION of the ground value and
+	the constraint. No need to re test a ground value on a constraint if we
+	know that it has already been tested, thus memoization of constraint
+	evaluations can be inherent in the structure.
 
 And I suspect I can use relations as the mechanism for defining constraints
 
+/* OLD
 I've been struggling to define relations in anything but a general sense, 
 I know they're something of a superclass to both predicates and functions,
 Depending on the mode, i.e. information flow of the arguments and return value
+*/
+
+A relation represents a unification rule beyond a simple equality test.
+This definition alows relations to encompass just about all higher order lambda
+concepts.  Unifying them is going to be a bitch, as the problem is undecidable
+however I know I can implement a decidable sub set of Huet's algo ... or at 
+the very least ... have the compiler tell the programmer that if it is working
+too hard to unify two terms.  It is on the programmer to place constraints
+on undecidable problems to make them decidable ... and on the compiler to
+inform the programmer when those constraints are needed.
 
 A function is a relation with all input arguments and unifies with an output 
 
