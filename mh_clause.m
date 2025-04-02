@@ -25,11 +25,11 @@
 %-----------------------------------------------------------------------------%
 % Clauses
 
-% A clause represents a single disjunct of a relation, typically parsed
-% as a single peicee of source code.  A relation *may* be represented by
-% a single disjunctive clause, however, in order to represent relations in
-% the way I desire (especially concerning unification and lazy evaluation of
-% relations), I need to break up the relation concept into component clauses.
+% A clause represents a single disjunct of a relation as parsed directly from
+% source.  As such, it carries a refrence back to the location it was parsed 
+% from. Thus, it not only serves as the origin point for relations, but
+% is also part of the chain that ties events back to the original point
+% in the source code that generated them.
 
 
 
