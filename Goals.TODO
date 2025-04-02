@@ -67,19 +67,25 @@ get a repl running
 							representation for foreign calls
 								integrate into mode system
 				evaluation
-					environment <- I am here
+					environment
 						a table of evaluations, serves as a truth table and
 							memo table for evaluation state
-						
-					ground check
-					groundedness
-						evaluate a numeric 'groundedness' based on free
-						variables and groundedness of sub components
-					an evaluation may not produce a value that is less ground
-						than the input
-					unification  
-							redesign tuples lazily
+						event
+							rework context <- I am here
+							warning
+							error
+							custom
+						unification  
+							redesign tuples
+								partial evaluation of tuples (CPS?)
+								array tuple sub ranges
 							refactor substitutions
+						ground check
+						groundedness
+							evaluate a numeric 'groundedness' based on free
+							variables and groundedness of sub components
+					an evaluation may not produce a value that is less ground
+						than the input, out = In >> Out, In =< Outx
 make a logo for Mad Hatter
 optimize terms
 	re-order mh_term constructors for optimal ordering
