@@ -18,7 +18,7 @@
 :- import_module mh_term.
 :- import_module mh_term_map.
 
-:- include_module mh_environmeent.map.
+:- include_module mh_environment.map.
 
 %-----------------------------------------------------------------------------%
 % Environment
@@ -31,13 +31,14 @@
 
 :- pred is_empty(mh_environment::in) is det.
 
-%-----------------------------------------------------------------------------%
-% Logic Program
+:- pred ask(mh_environment::in, mh_term::in, mh_term::out) is det.
+
+:- func ask(mh_envirronment, mh_term) = mh_term.
 
 % Needs event logging output, need to define events
-:- pred assert(mh_term::in, mh_environment::in, mh_environment::out) is det.
+:- pred assert(mh_environment::in, mh_term::in, mh_environment::out) is det.
 
-:- 
+:- func assert(mh_environment, mh_term) = mh_environment.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -49,4 +50,9 @@
 %-----------------------------------------------------------------------------%
 
 :- type mh_environment
-	--->	map_env(mh_term_map(mh_term)).
+	--->	map_env(mh_term_map(mh_term)) % Unification map
+	;		term_env(mh_term) % The context and scope of a given term.
+	;		module_env(
+		interface::mh_environment, %Replace with declarations
+		implementation::mh_environment
+		).
