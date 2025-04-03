@@ -161,4 +161,7 @@ Relations propogate constraints if they can't resolve to a higher order call?
 Rleations represent a disjunction of higher order calls based on input.
 Constraints == types? No, types are a *kind* of constraint.
 Constraints ARE higher order constructs.
+Constraints are a delayed evaluation of a unification with a variable in a 
+higher order formula, basically X = ?foo states that X is bound to any value 
+where foo(X) is true or X = foo is true.
 
