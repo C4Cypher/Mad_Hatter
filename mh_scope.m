@@ -34,7 +34,8 @@
 		child_context::mh_context,
 		vars :: mh_var_set
 		). 
-
+% TODO: Add constructors for extended scopes with inlined calls
+% rename root_scope to clause_scope?
 
 :- func scope_vars(mh_scope) = mh_var_set.
 

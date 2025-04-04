@@ -25,7 +25,7 @@
 :- type mh_context
 	--->	dummy_context % unifies with context("", 0)
 	;		interactive_context(int) % For REPL commands
-	;		clause_context(filename::string, linenumber::int).
+	;		file_context(filename::string, linenumber::int).
 	%TODO: contexts for relations loaded from foreign library modules
 
 % Convert context from mercury term into a clause context or dummy context
@@ -43,5 +43,5 @@ from_mr_context(context(File, Line)) =
 	then 
 		dummy_context
 	else
-		clause_context(File, Line)
+		file_context(File, Line)
 	).
