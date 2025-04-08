@@ -18,6 +18,7 @@
 :- import_module mh_term.
 :- import_module mh_scope.
 
+
 %-----------------------------------------------------------------------------%
 % Events
 :- type message == string.
@@ -25,15 +26,12 @@
 :- type mh_event
 	--->	error(mh_scope, mh_term, message)
 	;		warning(mh_scope, mh_term, message)
-	;		event(mh_term, mh_scope, mh_term).
+	;		event(mh_scope, mh_term).	
 	
 	
 % returns atom(~ "error") for errors, atom(~ "warning") for warnings, or the
 % given term for custom events.
 :- func event_type(mh_event) = mh_term.
-
-% Return the term that is the focus of the given message. (use nil if none)
-:- func event_term(mh_event) = mh_term.
 
 :- func event_scope(mh_event) = mh_scope.
 
