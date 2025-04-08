@@ -89,6 +89,7 @@ get a repl running
 							variables and groundedness of sub components
 					an evaluation may not produce a value that is less ground
 						than the input, out = In >> Out, In =< Out
+normalize value terms
 make a logo for Mad Hatter
 optimize terms
 	re-order mh_term constructors for optimal ordering
