@@ -23,6 +23,7 @@
 % Term maps
 
 :- type mh_term_map(T).
+:- type mh_term_map == mh_term_map(mh_term).
 :- type mh_term_set == mh_term_map(unit).
 
 :- type key_term_func(T) == (func(T) = mh_term).
