@@ -21,39 +21,39 @@
 
 :- import_module mh_term.
 :- import_module mh_var_id.
+:- import_module mh_var_map.
 
 %-----------------------------------------------------------------------------%
 % Substitutions
 
 :- type mh_substitution
-	--->	sub_empty
-	;		sub_single(var_id, mh_term)
-	;		sub_array(array(mh_term))
-	;		sub_array(array(mh_term), var_id_offset)
-	;		ren_empty
-	;		ren_single(var_id, var_id)
-	;		ren_array(array(var_id))
-	;		ren_array(array(var_id), var_id_offset)
-	;		ren_offset(var_id_offset, var_id_set).
+	--->	sub_unbound
+	;		sub_map(mh_var_map(mh_term))
+	;		ren_map(mh_var_map(var_id)).
 	
 
 	
 :- pred init_sub(mh_substitution::out) is det.
+%- mode init_sub(mh_substitution::in) is semidet.
 :- func init_sub = mh_substitution.
 
-:- pred init_array_sub(array(mh_term)::in, var_id_offset::in, 
-	mh_substitution::out) is det.
-	
-:- func init_array_sub(array(mh_term), var_id_offset) = mh_substitution.
+:- pred unbound_sub(mh_substitution::out) is det.
+%- mode unbound_sub(mh_substitution::in) is semidet.
+:- func unbound_sub = mh_substitution.
 
 	
 :- pred empty_substitution(mh_substitution::in) is semidet.
 
-:- pred single_substitution(mh_substitution::in) is semidet.
+%-----------------------------------------------------------------------------%
+% Conversion
 
-:- pred array_substitution(mh_substitution::in) is semidet.
+:- pred from_array(array(mh_term)::in, var_id_offset::in, 
+	mh_substitution::out) is det.
+	
+:- func from_array(array(mh_term), var_id_offset) = mh_substitution.
 
-:- pred offset_substituion(mh_substitution::in) is semidet.
+
+
 
 % substitution_bounds(Subsitution, Min, Max)
 % Return the minimum and maximum var_id's indexed by Substitution, fail if the
@@ -178,7 +178,14 @@
 init_sub(init_sub).
 init_sub = sub_empty.
 
-init_array_sub(Array, Offset, Sub) :-
+unbound_sub(unbound_sub).
+unbound_sub = sub_unbound.
+
+
+empty_substitution(sub_map(init)).
+empty_substitution(ren_map(init)).
+
+from_array(Array, Offset, Sub) :-
 	(if Offset = null_var_id_offset
 	then
 		Sub = sub_array(Array)
@@ -186,26 +193,7 @@ init_array_sub(Array, Offset, Sub) :-
 		Sub = sub_array(Array, Offset)
 	).
 
-init_array_sub(Array, Offset) = Sub :- init_array_sub(Array, Offset, Sub).	
-
-empty_substitution(sub_empty).
-empty_substitution(sub_array(make_empty_array)).
-empty_substitution(sub_array(make_empty_array, _)).
-empty_substitution(ren_empty).
-empty_substitution(ren_array(make_empty_array)).
-empty_substitution(ren_array(make_empty_array, _)).
-empty_substitution(ren_offset(null_var_id_offset, _)).
-
-single_substitution(sub_single(_, _)).
-single_substitution(ren_single(_, _)).
-
-array_substitution(sub_array(_)).
-array_substitution(sub_array(_, _)).
-array_substitution(ren_array(_)).
-array_substitution(ren_array(_, _)).
-
-offset_substituion(ren_offset(_, _)).
-
+from_array(Array, Offset) = Sub :- from_array(Array, Offset, Sub).	
 
 
 substitution_bounds(sub_single(ID, _), Offset, Set) :-  
