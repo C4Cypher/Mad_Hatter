@@ -229,8 +229,6 @@
 :- mode var_id_member(in, in, in, out) is semidet.
 :- mode var_id_member(in, in, out, out) is nondet.
 
-
-
 :- pred var_id_set(var_id::in, T::in, array(T)::array_di, array(T)::array_uo) 
 	is det.
 	
@@ -636,4 +634,6 @@ var_id_set_init_array(Set, T) = A :- var_id_set_init_array(Set, T, A).
 
 var_id_set_init_array(Offset, Set, T) = 
 	var_id_set_init_array(Set - Offset, T).
+	
+
 	
