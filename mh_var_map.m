@@ -135,6 +135,9 @@
 	% Insert an element into a var map, fails if the element already exists 
 :- pred id_insert(var_id::in, T::in, mh_var_map(T)::in, mh_var_map(T)::out) 
 	is semidet.
+	
+:- pred det_id_insert(var_id::in, T::in, mh_var_map(T)::in, mh_var_map(T)::out) 
+	is det.
 
 :- pred insert(mh_var::in, T::in, mh_var_map(T)::in, mh_var_map(T)::out) 
 	is semidet.
@@ -249,7 +252,9 @@
 :- mode map_id(in(pred(in, in, out) is semidet), in, out) is semidet.
 
 
-
+:- pred map(pred(mh_var, T, U), mh_var_map(T), mh_var_map(U)).
+:- mode map(in(pred(in, in, out) is det), in, out) is det.
+:- mode map(in(pred(in, in, out) is semidet), in, out) is semidet.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -415,6 +420,13 @@ id_insert(ID, T, var_map(!.Set, !.Array), var_map(!:Set, !:Array)) :-
 	var_set_insert_id(ID, !Set),
 	id_sparse_index(ID, !.Set, Index),
 	array_insert(Index, T, !Array).
+	
+det_id_insert(ID, T, !Map) :-
+	(if id_insert(ID, T, !Map)
+	then true
+	else report_lookup_error(
+		"mh_var_map.det_id_insert: Var ID aleady present in map", Var, !.Map)
+	).
 	
 insert(var(ID), T, !Map) :- id_insert(ID, T, !Map).
 
@@ -714,3 +726,29 @@ fold_id(P, Map, !A, Iterator0) :-
 curry_fold(P, var(ID), T, !A) :- P(ID, T, !A).
 
 fold(P, Map, !A) :- fold_id(curry_fold(P), Map, !A).
+
+map_id(P, MapT, MapU) :-
+	if first(Map, ID, T, Iterator) then
+		P(ID, T, U),
+		map_id(P, MapT, singleton_id(ID, U), MapU)
+	else true.
+
+:- pred map_id(pred(var_id, T, U), mh_var_map(T), mh_var_map(U), mh_var_map(U),
+	var_map_iterator).
+:- mode map_id(in(pred(in, in, out) is det), in, in, out, in) is det.
+:- mode map_id(in(pred(in, in, out) is semidet), in, in, out, in) is semidet.
+
+map_id(P, MapT, !MapU, Iterator0) :-
+	if next(Map, ID, T, Iterator0, Iterator) then
+		P(ID, T, U),
+		det_id_insert(ID, U, !MapU),
+		map_id(P, MapT, !MapU)
+	else true.
+	
+:- pred curry_map(pred(var_id, T, U), mh_var, T, U).
+:- mode curry_map(in(pred(in, in, out) is det), in, in, out) is det.
+:- mode curry_map(in(pred(in, in, out) is semidet), in, in, out) is semidet.
+
+curry_map(P, var(ID), T, U) :- P(ID, T, U).
+
+map(P, !Map) :- map_id(curry_map(P), !Map).
