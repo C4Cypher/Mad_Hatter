@@ -27,41 +27,37 @@
 % Substitutions
 
 :- type mh_substitution
-	--->	sub_unbound
-	;		sub_map(mh_var_map(mh_term))
+	--->	sub_map(mh_var_map(mh_term))
 	;		ren_map(mh_var_map(var_id)).
 	
 
 	
 :- pred init_sub(mh_substitution::out) is det.
-%- mode init_sub(mh_substitution::in) is semidet.
 :- func init_sub = mh_substitution.
-
-:- pred unbound_sub(mh_substitution::out) is det.
-%- mode unbound_sub(mh_substitution::in) is semidet.
-:- func unbound_sub = mh_substitution.
-
 	
 :- pred empty_substitution(mh_substitution::in) is semidet.
 
 %-----------------------------------------------------------------------------%
 % Conversion
 
-:- pred from_array(array(mh_term)::in, var_id_offset::in, 
+:- pred sub_from_array(array(mh_term)::in, mh_substitution::out) is det.
+	
+:- func sub_from_array(array(mh_term)) = mh_substitution.
+
+:- pred sub_from_offset_array(array(mh_term)::in, var_id_offset::in, 
 	mh_substitution::out) is det.
 	
-:- func from_array(array(mh_term), var_id_offset) = mh_substitution.
+:- func sub_from_offset_array(array(mh_term), var_id_offset) = mh_substitution.
 
 
+%-----------------------------------------------------------------------------%
+% Bounds
 
-
-% substitution_bounds(Subsitution, Min, Max)
-% Return the minimum and maximum var_id's indexed by Substitution, fail if the
-% Substituion is empty
 :- pred substitution_bounds(mh_substitution::in, var_id_offset::out, 
 	var_id_set::out) is semidet.
 	
-:- pred substitution_bounds_det(mh_substitution::in, var_id_offset::out,
+	
+:- pred substitution_bounds_det(mh_substitution::in, var_id_offset::out, 
 	var_id_set::out) is det.
 
 	
@@ -75,11 +71,6 @@
 
 :- pred sub_contains_id(mh_substitution::in, var_id::in) is semidet.
 
-% Get the offset of a substitution, if it has one
-
-:- pred substitution_offset(mh_substitution::in, var_id_offset::out) is semidet.
-
-:- func substitution_offset(mh_substitution) = var_id_offset is semidet.
 
 % Find a given variable ID in the substitution, fail if the id is not found
 % If the substitution is a renaming, return the indexed var_id as a variable
@@ -119,18 +110,10 @@
 % Renaming
 
 :- inst mh_renaming
-	--->	ren_empty
-	;		ren_single(ground, ground)
-	;		ren_array(ground)
-	;		ren_array(ground, ground)
-	;		ren_offset(ground, ground).
+	--->	ren_map(ground).
 	
 :- type mh_renaming =< mh_substitution
-	---> 	ren_empty
-	;		ren_single(var_id, var_id)
-	;		ren_array(array(var_id))
-	;		ren_array(array(var_id), var_id_offset)
-	;		ren_offset(var_id_offset, var_id_set).
+	---> 	ren_map(mh_var_map(var_id)).
 	
 :- mode is_renaming == ground >> mh_renaming.
 
@@ -140,6 +123,34 @@
 :- func init_ren = mh_renaming.
 
 :- pred empty_renaming(mh_renaming::in) is semidet.
+
+%-----------------------------------------------------------------------------%
+% Conversion
+
+:- pred ren_from_array(array(var_id)::in, mh_renaming::out) is det.
+	
+:- func ren_from_array(array(var_id)) = mh_renaming.
+
+:- pred ren_from_offset_array(array(var_id)::in, var_id_offset::in, 
+	mh_renaming::out) is det.
+	
+:- func ren_from_offset_array(array(var_id), var_id_offset) = mh_renaming.
+
+:- pred sub_to_renaming(mh_substitution::in, mh_renaming::out) is semidet.
+
+:- func sub_to_renaming(mh_substitution) = mh_renaming is semidet.
+
+
+%-----------------------------------------------------------------------------%
+% Bounds
+
+:- pred renaming_bounds(mh_renaming::in, var_id_offset::out, 
+	var_id_set::out) is semidet.
+	
+	
+:- pred renaming_bounds_det(mh_renaming::in, var_id_offset::out, 
+	var_id_set::out) is det.
+
 
 %-----------------------------------------------------------------------------%
 % Looking up variables in renamings
@@ -164,6 +175,19 @@
 :- func ren_var_lookup(mh_renaming, mh_var) = mh_var.
 
 %-----------------------------------------------------------------------------%
+% Renaming composition
+
+% compose_renamings(R1, R2, R3) 
+% Create a renaming that, when applied, has the same effect as applying
+% R1 and then R2
+
+:- pred compose_renamings(mh_renaming::in, 
+	mh_renaming::in, mh_renaming::out) is det.
+
+:- func compose_renamings(mh_renaming, mh_renaming) = 
+	mh_renaming.
+
+%-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
 :- implementation.
@@ -176,135 +200,58 @@
 % 	Substitutions
 
 init_sub(init_sub).
-init_sub = sub_empty.
-
-unbound_sub(unbound_sub).
-unbound_sub = sub_unbound.
-
+init_sub = sub_map(init).
 
 empty_substitution(sub_map(init)).
 empty_substitution(ren_map(init)).
 
-from_array(Array, Offset, Sub) :-
-	(if Offset = null_var_id_offset
-	then
-		Sub = sub_array(Array)
-	else
-		Sub = sub_array(Array, Offset)
-	).
+%-----------------------------------------------------------------------------%
+% Conversion
 
-from_array(Array, Offset) = Sub :- from_array(Array, Offset, Sub).	
+sub_from_array(Array, sub_from_array(Array)).
+
+sub_from_array(Array) = sub_map(mh_var_map.from_array(Array)).
+
+sub_from_offset_array(Array, Offset, sub_from_offset_array(Array, Offset)).
+
+sub_from_offset_array(Array, Offset) = 
+	sub_map(mh_var_map.from_offset_array(Array, Offset)).
 
 
-substitution_bounds(sub_single(ID, _), Offset, Set) :-  
-	ID = first_var_id(Offset),
-	ID = last_var_id(Set).
 
-substitution_bounds(sub_array(Array), 
-	null_var_id_offset, 
-	array_var_id_set(Array)
-).
-substitution_bounds(sub_array(Array, Offset), 
-	Offset,
-	offset_array_var_id_set(Array, Offset)
-).
-substitution_bounds(ren_single(ID, _), Offset, Set) :-
-	ID = first_var_id(Offset),
-	ID = last_var_id(Set).
+%-----------------------------------------------------------------------------%
+% Bounds
 
-substitution_bounds(ren_array(Array), 
-	null_var_id_offset, 
-	array_var_id_set(Array)
-).
-
-substitution_bounds(ren_array(Array, Offset), 
-	Offset,
-	offset_array_var_id_set(Array, Offset)
-).
-
-substitution_bounds(ren_offset(Offset, Set), Min, Set) :- 
-	( offset_le(Offset, null_var_id_offset) -> 
-		Min = null_var_id_offset ; 
-		Min = Offset ).
-	
-substitution_bounds_det(Sub, Offset, Set) :-
-	(if substitution_bounds(Sub, Offset0, Set0)
-	then
-		Offset = Offset0,
-		Set = Set0
-	else error($pred, 
-		"Empty substitutions do not have bounds, check for empty substitution"
-		)
+substitution_bounds(sub_array(Map),	Offset, Set) :-
+	(if empty_var_map(Map) then fail
+	else var_map_bounds(Map, Offset, Set)
 	).
 	
+substitution_bounds(ren_array(Map),	Offset, Set) :- 
+	(if empty_var_map(Map) then fail
+	else var_map_bounds(Map, Offset, Set)
+	).
+	
+substitution_bounds_det(sub_array(Map),	Offset, Set) :- 
+	var_map_bounds(Map, Offset, Set)).
+	
+substitution_bounds_det(ren_array(Map),	Offset, Set) :- 
+	var_map_bounds(Map, Offset, Set)).
+	
+
 %-----------------------------------------------------------------------------%
 % Looking up variables in substitutions
 
-sub_contains_id(sub_empty, _) :- fail.
-sub_contains_id(sub_single(ID, _), ID).
-
-sub_contains_id(sub_array(Array), ID) :- 
-	var_id_in_bounds(Array, ID),
-	not var_id_lookup(Array, ID, nil).
-
-sub_contains_id(sub_array(Array, Offset), ID1) :- 
-	var_id_offset(ID1, ID2, Offset),
-	var_id_in_bounds(Array, ID2),
-	not var_id_lookup(Array, ID2, nil).
-	
-sub_contains_id(ren_empty, _) :- fail.
-sub_contains_id(ren_single(ID, _), ID).
-
-sub_contains_id(ren_array(Array), ID1) :- 
-	var_id_semidet_lookup(Array, ID1, ID2),
-	var_id_gt(ID2, null_var_id).
-
-sub_contains_id(ren_array(Array, Offset), ID1) :- 
-	var_id_offset(ID1, ID2, Offset), 
-	var_id_semidet_lookup(Array, ID2, ID3),
-	var_id_gt(ID3, null_var_id).
-	
-sub_contains_id(ren_offset(Offset, Set), ID) :- 
-	contains_var_id(Offset, Set, ID).
+sub_contains_id(sub_unbound, _) :- fail.
+sub_contains_id(sub_array(Map), ID) :- contains_id(Map, ID).
+sub_contains_id(ren_array(Map), ID) :- contains_id(Map, ID).
 
 substitution_offset(ren_offset(Offset, _), Offset).
 substitution_offset(ren_offset(Offset, _)) = Offset.
 
-%-----------------------------------------------------------------------------%
+sub_id_search(sub_map(Map), ID) = id_search(Map, ID).
+sub_id_search(ren_map(Map), ID) = var(id_search(Map, ID)).
 
-
-sub_id_search(sub_empty, _, nil) :- fail.
-
-sub_id_search(sub_single(ID, Term), ID, Term).
-
-
-sub_id_search(sub_array(Array), ID, Term)  :- 
-	var_id_semidet_lookup(Array, ID, Term),
-	Term \= nil.
-	
-sub_id_search(sub_array(Array, Offset), ID, Term) :-
-	var_id_semidet_lookup(Array, Offset, ID, Term),
-	Term \= nil.
-	
-sub_id_search(ren_empty, _, nil) :- fail.
- 
-sub_id_search(ren_single(ID1, ID2), ID1, var(ID2)).
-	
-sub_id_search(ren_array(Array), ID1, var(ID2)) :- 
-	var_id_semidet_lookup(Array, ID1, ID2),
-	var_id_gt(ID2, null_var_id).
-	
-sub_id_search(ren_array(Array, Offset), ID1, var(ID2)) :-
-	var_id_semidet_lookup(Array, Offset, ID1, ID2),
-	var_id_gt(ID2, null_var_id).
-	
-sub_id_search(ren_offset(Offset, Set), !.ID, var(!:ID) ) :- 
-	contains_var_id(Set, !.ID),
-	var_id_offset(!ID, Offset).
-
-sub_id_search(Sub, ID) = Term :- sub_id_search(Sub, ID, Term).
-
-%-----------------------------------------------------------------------------%
 
 sub_id_lookup(Sub, ID, Term) :-
 	( if sub_id_search(Sub, ID, Found)
@@ -313,22 +260,33 @@ sub_id_lookup(Sub, ID, Term) :-
 	
 sub_id_lookup(Sub, ID) = Term :- sub_id_lookup(Sub, ID, Term).
 
-%-----------------------------------------------------------------------------%
-
 sub_var_search(Sub, var(ID), Term) :- sub_id_search(Sub, ID, Term).
-
 sub_var_search(Sub, Var) = Term :- sub_var_search(Sub, Var, Term).
 
-%-----------------------------------------------------------------------------%
-
 sub_var_lookup(Sub, var(ID), Term) :- sub_id_lookup(Sub, ID, Term).
-
 sub_var_lookup(Sub, Var) = Term :- sub_var_lookup(Sub, Var, Term).
 
 	
 %-----------------------------------------------------------------------------%
 % Substitution composition
 
+compose_substitutions(Sub1, Sub2, Sub3) :-
+promise_equivalent_solutions [Sub3] 
+	(
+		empty_substitution(Sub1), Sub3 = Sub2
+	;	
+		empty_substitution(Sub2), Sub3 = Sub1
+	;
+		Sub1 = sub_map(Map1), Sub2 = sub_map(Map2),
+		first(Map2, First, Iterator),
+		compose_sub_sub
+	
+)
+
+:- pred compose_sub_sub(mh_var_map(mh_term)::in, mh_var_map(mh_term)::in,
+	var_map_iterator::in, mh_substitution::out) is det.
+
+/* Depriciated
 compose_substitutions(Sub1, Sub2, Sub) :-
 	( if promise_equivalent_solutions [Sub3]
 		compose_sub_special(Sub1, Sub2, Sub3)
@@ -508,7 +466,8 @@ compose_substiution_step(
 			Sub1, Sub2, 
 			Offset, !Array)
 	).
-	
+
+*/ 	
 	
 %-----------------------------------------------------------------------------%
 % Renaming
@@ -527,7 +486,31 @@ empty_renaming(ren_array(make_empty_array)).
 empty_renaming(ren_array(make_empty_array, _)).
 empty_renaming(ren_offset(null_var_id_offset, _)).
 
+%-----------------------------------------------------------------------------%
+% Conversion
+	
+ren_from_array(Array, ren_from_array(Array)).
 
+ren_from_array(Array) = ren_map(mh_var_map.from_array(Array)).
+
+ren_from_offset_array(Array, Offset, ren_from_offset_array(Array, Offset)).
+
+ren_from_offset_array(Array, Offset) = 
+	ren_map(mh_var_map.from_offset_array(Array, Offset)).
+	
+%-----------------------------------------------------------------------------%
+% Bounds
+
+
+renaming_bounds(ren_array(Map),	Offset, Set) :- 
+	(if empty_var_map(Map) then fail
+	else var_map_bounds(Map, Offset, Set)
+	).
+
+	
+renaming_bounds_det(ren_array(Map),	Offset, Set) :- 
+	var_map_bounds(Map, Offset, Set)).
+	
 %-----------------------------------------------------------------------------%
 % Looking up variables in renamings
 
@@ -591,6 +574,31 @@ ren_var_lookup(Ren, var(!.ID), var(!:ID)) :- ren_id_lookup(Ren, !ID).
 
 ren_var_lookup(Ren, !.Var) = !:Var :- ren_var_lookup(Ren, !Var).
 
+%-----------------------------------------------------------------------------%
+% Renaming composition
+
+compose_renamings(Ren1, Ren2, Ren3) :-
+promise_equivalent_solutions [Ren3] 
+	(
+		empty_renaming(Ren1), Ren3 = Ren2
+	;	
+		empty_renaming(Ren2), Ren3 = Ren1
+	;
+		Ren1 = Ren_map(Map1), Ren2 = Ren_map(Map2),
+	
+)
+
+:- pred compose((func(T) = var_id), mh_var_map(T), var_id, T, var_map_iterator, 
+	mh_var_map(T), mh_var_map(T)).
+:- mode compose(in(func(in) = out is semidet), in, in, in, in, in, out) is det.
+:- mode compose(in(func(in) = out is det), in, in, in, in, in, out) is det.
+
+compose(ToVar, Map2, ID, T,  Iter, !Map) :-
+	(if )
+
+:- func identity(X) = X.
+
+identity(X) = X.
 
 %-----------------------------------------------------------------------------%
 % Utility
