@@ -46,6 +46,17 @@
 :- pred var_map_bounds(mh_var_map(T)::in, var_id_offset::out, 
 	var_id_set::out) is det.
 
+%-----------------------------------------------------------------------------%
+% Conversion
+
+:- pred from_array(array(T)::in, mh_var_map(T)::out) is det.
+	
+:- func from_array(array(T)) = mh_var_map(T).
+
+:- pred from_offset_array(array(T)::in, var_id_offset::in, 
+	mh_var_map(T)::out) is det.
+	
+:- func from_array(array(T), var_id_offset) = mh_var_map(T).
 	
 %-----------------------------------------------------------------------------%
 % Looking up variable id's in var_maps
@@ -95,9 +106,6 @@
 
 :- pred det_first(mh_var_map(T)::in, T::out, var_map_iterator::out) is det.
 	
-
-
-
 % next(Map, Elem, Last, Current)
 % Retreive the next element using the iterator, fail if no more elements
 :- pred next(mh_var_map(T)::in, T::out, var_map_iterator::in, 
@@ -118,6 +126,8 @@
 	
 % Array index from iterator
 :- func iterator_index(var_map_iterator) = int.
+
+
 
 %-----------------------------------------------------------------------------%
 % Insertion
@@ -212,6 +222,36 @@
 :- pred difference(mh_var_map(T)::in, mh_var_map(_)::in, mh_var_map(T)::out)	is det.
 
 %-----------------------------------------------------------------------------%
+% Higher order
+
+:- pred fold_id(pred(var_id, T, A, A), mh_var_map(T), A, A).
+:- mode fold_id(in(pred(in, in, in, out) is det), in, in, out) is det.
+:- mode fold_id(in(pred(in, in, mdi, muo) is det), in, mdi, muo) is det.
+:- mode fold_id(in(pred(in, in, di, uo) is det), in, di, uo) is det.
+:- mode fold_id(in(pred(in, in, array_di, array_uo) is det), in, 
+	array_di, array_uo) is det.
+:- mode fold_id(in(pred(in, in, in, out) is semidet), in, in, out) is semidet.
+:- mode fold_id(in(pred(in, in, mdi, muo) is semidet), in, mdi, muo) 
+	is semidet.
+
+:- pred fold(pred(mh_var, T, A, A), mh_var_map(T), A, A).
+:- mode fold(in(pred(in, in, in, out) is det), in, in, out) is det.
+:- mode fold(in(pred(in, in, mdi, muo) is det), in, mdi, muo) is det.
+:- mode fold(in(pred(in, in, di, uo) is det), in, di, uo) is det.
+:- mode fold(in(pred(in, in, array_di, array_uo) is det), in, 
+	array_di, array_uo) is det.
+:- mode fold(in(pred(in, in, in, out) is semidet), in, in, out) is semidet.
+:- mode fold(in(pred(in, in, mdi, muo) is semidet), in, mdi, muo) 
+	is semidet.
+	
+:- pred map_id(pred(var_id, T, U), mh_var_map(T), mh_var_map(U)).
+:- mode map_id(in(pred(in, in, out) is det), in, out) is det.
+:- mode map_id(in(pred(in, in, out) is semidet), in, out) is semidet.
+
+
+
+
+%-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
 :- implementation.
@@ -249,6 +289,30 @@ var_map_bounds(var_map_empty, Offset, ID_Set) :-
 var_map_bounds(var_map(Set, _), Offset, ID_Set) :- 
 	var_set_bounds(Set, Offset, ID_Set).
 
+%-----------------------------------------------------------------------------%
+% Conversion
+
+from_array(Array, Map) :- from_offset_array(Array, null_var_id_offset, Map).
+
+from_array(Array) = Map :- from_array(Array, Map).
+
+from_offset_array(Array, Offset, Map) :- 
+	from_offset_array(Array, Offset, first_var_id, empty_var_map, Map).
+
+from_offset_array(Array, Offset) = Map :- from_array(Array, Offset, Map).
+
+:- pred from_offset_array(array(T)::in, var_id_offset::in, var_id::in, 
+	mh_var_map(T)::in, mh_var_map(T)::out) is det.
+	
+from_offset_array(Array, Offset, Current, !Map) :-
+	(if var_id_in_bounds(Array, Current) then
+		var_id_lookup(Array, Current, T),
+		var_id_offset(OffsetID, Current, Offset),
+		id_insert(OffsetID, T, !Map),
+		from_offset_array(Array, Offset, next_var_id(Current), !Map)
+	else
+		true
+	).
 
 %-----------------------------------------------------------------------------%
 % Looking up variables in var_maps
@@ -609,4 +673,44 @@ difference_loop(M, S, Last, !Array) :-
 	else
 		true
 	).
+
+%-----------------------------------------------------------------------------%
+% Higher order
+
+fold_id(P, Map, !A) :-
+	if first(Map, ID, T, Iterator) then
+		P(ID, T, !A),
+		fold_id(P, Map, !A, Iterator)
+	else true.
 	
+	
+:- pred fold_id(pred(var_id, T, A, A), mh_var_map(T), A, A, var_map_iterator).
+:- mode fold_id(in(pred(in, in, in, out) is det), in, in, out, in) is det.
+:- mode fold_id(in(pred(in, in, mdi, muo) is det), in, mdi, muo, in) is det.
+:- mode fold_id(in(pred(in, in, di, uo) is det), in, di, uo, in) is det.
+:- mode fold_id(in(pred(in, in, array_di, array_uo) is det), in, 
+	array_di, array_uo, in) is det.
+:- mode fold_id(in(pred(in, in, in, out) is semidet), in, in, out, in) is semidet.
+:- mode fold_id(in(pred(in, in, mdi, muo) is semidet), in, mdi, muo, in) 
+	is semidet.
+	
+fold_id(P, Map, !A, Iterator0) :-
+	if next(Map, ID, T, Iterator0, Iterator) then
+		P(ID, T, !A),
+		fold_id(P, Map, !A, Iterator)
+	else true.
+	
+:- pred curry_fold(pred(var_id, T, A, A), mh_var, T, A, A).
+:- mode curry_fold(in(pred(in, in, in, out) is det), in, in, in, out) is det.
+:- mode curry_fold(in(pred(in, in, mdi, muo) is det), in, in, mdi, muo) is det.
+:- mode curry_fold(in(pred(in, in, di, uo) is det), in, in, di, uo) is det.
+:- mode curry_fold(in(pred(in, in, array_di, array_uo) is det), in, in, 
+	array_di, array_uo) is det.
+:- mode curry_fold(in(pred(in, in, in, out) is semidet), in, in, in, out)
+	is semidet.
+:- mode curry_fold(in(pred(in, in, mdi, muo) is semidet), in, in, mdi, muo) 
+	is semidet.
+	
+curry_fold(P, var(ID), T, !A) :- P(ID, T, !A).
+
+fold(P, Map, !A) :- fold_id(curry_fold(P), Map, !A).
