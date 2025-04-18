@@ -70,19 +70,23 @@ get a repl running
 					environment
 						basic interface for map structure
 							bind, bound 
-						a table of evaluations, serves as a truth table and
+							a table of evaluations, serves as a truth table and
 							memo table for evaluation state
-						event
-							rework context
-							warning
-							error
-							custom
 						unification  <- I am here
+							term unification
+								literal unificaiton without environment
 							redesign tuples
 								partial evaluation of tuples (CPS?)
 								array tuple sub ranges
 								native lists ( cons('[|]', ?list) )
-							refactor substitutions
+						evaluation
+							environment 
+							scope
+						event
+							rework context - done
+							warning
+							error
+							custom
 						ground check
 						groundedness
 							evaluate a numeric 'groundedness' based on free
