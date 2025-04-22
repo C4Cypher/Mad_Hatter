@@ -76,13 +76,18 @@
 %-----------------------------------------------------------------------------%
 % Hash Array Mapped Table
 
+:- type hash == uint.
+
 :- type hashmap(K, V).
 
 %-----------------------------------------------------------------------------%
 % Construction
 
-:- func init = hashmap(K, _V) <= hashable(K).
-:- pred init(hashmap(K, _)::out) is det <= hashable(K).
+:- func init = hashmap(K, _V).
+:- pred init(hashmap(K, _)::out.
+
+:- func singleton(hash, K, V) = hashmap(K, V).
+:- pred singleton(hash::in, K::in, V::in, hashmap(K, V)::out) is det.
 
 :- func singleton(K, V) = hashmap(K, V) <= hashable(K).
 :- pred singleton(K::in, V::in, hashmap(K, V)::out) is det <= hashable(K).
@@ -104,13 +109,22 @@
 % Search
 
 	% Succeeds if the map contains the given key
+:- pred contains(hashmap(K, _V)::in, hash::in, K::in) is semidet.
+	
 :- pred contains(hashmap(K, _V)::in, K::in) is semidet <= hashable(K).
 
 	% Fails if the key is not found
+	
+:- pred search(hashmap(K, V)::in, hash::in, K::in, V::out) is semidet.
+:- func search(hashmap(K, V), hash, K) = V is semidet.	
+	
 :- pred search(hashmap(K, V)::in, K::in, V::out) is semidet <= hashable(K).
 :- func search(hashmap(K, V), K) = V is semidet <= hashable(K).
 
 	% Throws an exception if the key is not found
+:- pred lookup(hashmap(K, V)::in, hash::in, K::in, V::out) is det.
+:- func lookup(hashmap(K, V), hash, K) = V is det.
+
 :- pred lookup(hashmap(K, V)::in, K::in, V::out) is det <= hashable(K).
 :- func lookup(hashmap(K, V), K) = V is det <= hashable(K).
 
@@ -130,14 +144,27 @@
 % Insertion
 
 	% Insert an element into a hashmap, fails if the element already exists 
+:- pred insert(hash::in, K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out)
+	is semidet.
+:- func insert(hashmap(K, V), hash, K, V) = hashmap(K, V) is semidet.
+
 :- pred insert(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) is semidet
 	<= hashable(K).
 :- func insert(hashmap(K, V), K, V) = hashmap(K, V) is semidet <= hashable(K).
+
+:- pred det_insert(hash::in, K::in, V::in, hashmap(K, V)::in, 
+	hashmap(K, V)::out) is det.
+:- func det_insert(hashmap(K, V), hash, K, V) = hashmap(K, V) is det.
 
 :- pred det_insert(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) is det
 	<= hashable(K).
 :- func det_insert(hashmap(K, V), K, V) = hashmap(K, V) is det <= hashable(K).
 
+:- func det_insert_from_corresponding_lists(hashmap(K, V), list(hash), list(K), 
+	list(V))  = hashmap(K, V).
+:- pred det_insert_from_corresponding_lists(list(hash)::in, list(K)::in, 
+    list(V)::in, hashmap(K, V)::in, hashmap(K, V)::out) is det.
+	
 :- func det_insert_from_corresponding_lists(hashmap(K, V), list(K), list(V))
     = hashmap(K, V) <= hashable(K).
 :- pred det_insert_from_corresponding_lists(list(K)::in,
@@ -147,11 +174,18 @@
 	hashmap(K, V) <= hashable(K).
 :- pred det_insert_from_assoc_list(assoc_list(K, V)::in,
     hashmap(K, V)::in, hashmap(K, V)::out) is det <= hashable(K).
+
+:- pred search_insert(hash::in, K::in, V::in, maybe(V)::out,
+    hashmap(K, V)::in, hashmap(K, V)::out) is det.
 	
 :- pred search_insert(K::in, V::in, maybe(V)::out,
     hashmap(K, V)::in, hashmap(K, V)::out) is det <= hashable(K).
 
-	% Inserts an element into a hashmap, overwriting element if it already exists
+	% Inserts an element into a hashmap, overwrite element if it already exists
+:- pred set(hash::in, K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out)
+	is det.
+:- func set(hashmap(K, V), hash, K, V) = hashmap(K, V).
+
 :- pred set(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) is det
 	<= hashable(K).
 :- func set(hashmap(K, V), K, V) = hashmap(K, V) <= hashable(K).
@@ -470,8 +504,6 @@
 %-----------------------------------------------------------------------------%
 % Bit twiddling
 
-:- type hash == uint.
-
 :- type bitmap == uint.
 
 :- type mask == uint.
@@ -714,7 +746,11 @@ det_coerce_leaf(L) = coerce(L) :-
 init = empty_tree.
 init(init).
 
-singleton(K, V) = leaf(hash(K), K, V).
+
+singleton(H, K, V) = leaf(H, K, V).
+singleton(H, K, V, singleton(H, K, V)).
+
+singleton(K, V) = singleton(hash(K), K, V).
 singleton(K, V, singleton(K, V)).
 
 %-----------------------------------------------------------------------------%
@@ -757,11 +793,15 @@ array_equal(A1, A2) :-
 %-----------------------------------------------------------------------------%
 % Search
 
-contains(Map, K) :- search(Map, K, _).
+contains(Map, H, K) :- search(Map, H, K, _).
 
-search(HM, K, search(HM, K)).
+contains(Map, K) :- contains(Map, hash(K)).
 
-search(HM, K) = search(HM, hash(K), K, 0).
+
+
+search(HM, H, K, search(HM, H, K)).
+
+search(HM, H, K) = search(HM, H, K, 0).
 
 :- func search(hashmap(K, V), hash, K, shift) = V is semidet.
 
@@ -785,20 +825,24 @@ search(full_branch(Array), H,  K, S) =
 	
 search(collision(H, Bucket), H, K,  _) = map.search(Bucket, K).
 
-:- pred pre_hashed_search(hashmap(K, V)::in, hash::in, K::in, V::out) 
-	is semidet.
+search(HM, K) = search(HM, hash(K), K).
 
-pre_hashed_search(HM, H, K, search(HM, H, K, 0)).
+search(HM, K, search(HM, K)).
 
-lookup(HM, K, lookup(HM, K)).
 
-lookup(HM, K) = 
-	(if search(HM, K) = Found
+lookup(HM, H, K, lookup(HM, H, K)).
+
+lookup(HM, H, K) = 
+	(if search(HM, H, K) = Found
 	then 
 		Found
 	else
 		report_lookup_error("hashmap.lookup: key not found", K)
 	).
+	
+lookup(HM, K, lookup(HM, K)).
+
+lookup(HM, K) = lookup(HM, hash(K), K).
 
 inverse_search(_, _, _) :- sorry($module, $pred, "inverse_search").
 lower_bound_search(_, _, _, _) :- sorry($module, $pred, "lower_bound_search").
@@ -809,9 +853,14 @@ upper_bound_lookup(_, _, _, _) :- sorry($module, $pred, "upper_bound_lookup").
 %-----------------------------------------------------------------------------%
 % Insertion
 
-insert(K, V, !HM) :- 
-	insert_tree(hash(K), K, V, 0, no, !HM).
+insert(K, H, V, !HM) :- 
+	insert_tree(H, K, V, 0, no, !HM).
 	
+insert(!.HM, H, K, V) = !:HM :-
+	insert(K, H, V, !HM).
+	
+insert(K, V, !HM) :- insert(hash(K), K, V, !HM).
+
 insert(!.HM, K, V) = !:HM :-
 	insert(K, V, !HM).
 	
@@ -893,19 +942,40 @@ insert_tree(H, K, V, S, R, !.HM@collision(CH, Bucket), !:HM) :-
 
 
 
-det_insert(K, V, !HM) :-
-	( if insert(K, V, !.HM, NewMap) then
+det_insert(H, K, V, !HM) :-
+	( if insert(H, K, V, !.HM, NewMap) then
         !:HM = NewMap
     else
         report_lookup_error("hashmap.det_insert: key already present", K, V)
     ).
 	
+:- pragma inline(det_insert/5).
+	
+det_insert(!.HM, H, K, V) = !:HM :- 
+	det_insert(K, H, V, !HM).
+	
 :- pragma inline(det_insert/4).
+
+det_insert(K, V, !HM) :- det_insert(hash(K), K, V, !HM).
 	
 det_insert(!.HM, K, V) = !:HM :- 
 	det_insert(K, V, !HM).
 	
-:- pragma inline(det_insert/3).
+det_insert_from_corresponding_lists(M0, Hs, Ks, Vs) = M :-
+    hashmap.det_insert_from_corresponding_lists(Ks, Hs, Vs, M0, M).
+
+det_insert_from_corresponding_lists([], [], [], !Map).
+det_insert_from_corresponding_lists([], [], [_ | _], _, _) :-
+    unexpected($pred, "list length mismatch").
+det_insert_from_corresponding_lists([], [_ | _], [], _, _) :-
+    unexpected($pred, "list length mismatch").
+det_insert_from_corresponding_lists([_ | _], [], [], _, _) :-
+    unexpected($pred, "list length mismatch").
+det_insert_from_corresponding_lists([_, _], [], [_ | _], _, _) :-
+    unexpected($pred, "list length mismatch").
+det_insert_from_corresponding_lists([H | Hs], [K | Ks], [V | Vs], !Map) :-
+    hashmap.det_insert(H, K, V, !Map),
+    hashmap.det_insert_from_corresponding_lists(Hs, Ks, Vs, !Map).
 	
 det_insert_from_corresponding_lists(M0, Ks, Vs) = M :-
     hashmap.det_insert_from_corresponding_lists(Ks, Vs, M0, M).
@@ -927,10 +997,12 @@ det_insert_from_assoc_list([K - V | KVs], !Map) :-
     hashmap.det_insert(K, V, !Map),
     hashmap.det_insert_from_assoc_list(KVs, !Map).	
 
-% search_insert(K, V, MaybOldV, !HM)
-search_insert(K, V, MaybOldV, !HM) :-
-	search_insert_tree(hash(K), K, V, 0, MaybOldV, !HM).
+% search_insert(H, K, V, MaybOldV, !HM)
+search_insert(H, K, V, MaybOldV, !HM) :-
+	search_insert_tree(H, K, V, 0, MaybOldV, !HM).
 
+search_insert(K, V, MaybOldV, !HM) :- 
+	search_insert(hash(K), K, V, MaybOldV, !HM).
 	
 %  pred search_insert_tree(Key, Value, Shift, MaybOldV, !HashTree) 
 :- pred search_insert_tree(hash::in, K::in, V::in, shift::in, maybe(V)::out,
@@ -1019,15 +1091,19 @@ search_insert_tree(H, K, V, S, Old, !.HM@collision(CH, Bucket), !:HM) :-
 	).
  
 
-set(K, V, !HM) :- 
-	(if insert_tree(hash(K), K, V, 0, yes, !HM)
+set(H, K, V, !HM) :- 
+	(if insert_tree(H, K, V, 0, yes, !HM)
 	then
 		!:HM = !.HM
 	else
 		unexpected($module, $pred, 
 			"Failure on insert_tree/6 with Replace = yes")
 	).
+	
+set(!.HM, H, K, V) = !:HM :-
+	set(H, K, V, !HM).
 
+set(K, V, !HM) :- set(hash(K), K, V, !HM).
 
 :- pragma inline(set/4).
 	
