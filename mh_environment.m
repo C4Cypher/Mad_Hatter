@@ -15,8 +15,12 @@
 
 :- interface.
 
+:- import_module ordered_set.
+
 :- import_module mh_term.
 :- import_module mh_term_map.
+:- import_module mh_scope.
+:- import_module mh_event.
 
 
 %-----------------------------------------------------------------------------%
@@ -55,10 +59,15 @@
 :- mode bound(in, out) is nondet.
 
 
-%:- pred ask(mh_environment::in, mh_term::in, mh_term::out) is det.
+:- pred ask(mh_scope, mh_term::in,mh_environment::in, mh_term::out) is det.
 
-%:- func ask(mh_envirronment, mh_term) = mh_term.
+:- func ask((mh_scope, mh_term, mh_environment) = mh_term.
 
+:- pred ask(mh_environment::in, mh_term::in, mh_term::out, event_log::out)
+	is det.
+
+:- pred query(mh_term::in, mh_term::out, event_log::in, event_log::out, 
+	mh_environment::in, mh_environment::out) is det.
 
 %-----------------------------------------------------------------------------%
 % Changes
