@@ -18,6 +18,7 @@
 :- import_module mh_term.
 :- import_module mh_scope.
 
+% TODO: involve timestamps?
 
 %-----------------------------------------------------------------------------%
 % Events
@@ -33,7 +34,7 @@
 % given term for custom events.
 :- func event_type(mh_event) = mh_term.
 
-:- func event_scope(mh_event) = mh_scope.
+:- func event_scope(mh_event) = mh_scope is semidet.
 
 % return the raw, unformatted message string
 :- func event_message_string(mh_event) = string.
@@ -70,6 +71,19 @@
 :- mode is_warning == ground >> mh_warning.
 
 :- pred is_warning(mh_event::is_warning) is semidet.
+
+%-----------------------------------------------------------------------------%
+% Event log
+
+:- type event_log == list(mh_event).
+:- type error_log == list(mh_error).
+:- type warning_log == list(mh_warning).
+
+:- func errors(event_log) = error_log.
+
+:- func warnings(event_log) = warning_log.
+
+
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
