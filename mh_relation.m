@@ -33,11 +33,11 @@
 % X = R(Arg)
 %
 % At it's core, they represent the 'head clause' of any horn clause, even for
-% predicates. In essene, a predicate in the traditional Prolog sense is a 
+%  s. In essene, a predicate in the traditional Prolog sense is a 
 % Relation that unifies with a success indicator or truth value, or to be more
 % specific, a function that returns a success indicator. The substitution 
 % contained in the success represents the variable bindings that resolve
-% to make the predicate 'true'
+% to make the fact 'true'
 
 % Relations can be  'moded', modes being pairings of pre-conditions and post
 % conditions that enforce the relation's soundness and purity.
@@ -55,7 +55,7 @@
 			% r(X) = Y :- p(X, Y).
 	--->	relation_clause(mh_clause)
 			% r(A, B) = C :- p({A, B, C}).
-	;		predicate_relation(predicate_term, mh_scope).
+	;		fact_relation(fact_term, mh_scope).
 			% r(X) = a(X) ; b(X). <-> r(X) = Y :- a(X) = Y ; b(X) = Y.
 	;		disj_relation(ordered_set(mh_relation))
 			% r(X) = a(X) , b(X). <-> r(X) = Y :- a(X) = Y , b(X) = Y. a = b.
@@ -93,7 +93,7 @@ ground_relation(_) :- sorry($module, $pred, "ground_relation/1").
 :- pragma no_determinism_warning(ground_relation/1).
 
 relation_arity(invalid_relation(_, _) = 0.
-relation_arity(relation(P)) = predicate_arity(P) - 1.
+relation_arity(relation(P)) = fact_arity(P) - 1.
 
 
 relation_arity(T, relation_arity(T)).
