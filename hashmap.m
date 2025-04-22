@@ -190,6 +190,12 @@
 	<= hashable(K).
 :- func set(hashmap(K, V), K, V) = hashmap(K, V) <= hashable(K).
 
+:- func set_from_corresponding_lists(hashmap(K, V), list(hash),list(K), 
+	list(V)) = hashmap(K, V).
+:- pred set_from_corresponding_lists(list(hash)::in, list(K)::in, list(V)::in,
+    hashmap(K, V)::in, hashmap(K, V)::out) is det.
+	
+
 :- func set_from_corresponding_lists(hashmap(K, V), list(K), list(V)) = 
 	hashmap(K, V) <= hashable(K).
 :- pred set_from_corresponding_lists(list(K)::in, list(V)::in,
@@ -201,9 +207,17 @@
     hashmap(K, V)::in, hashmap(K, V)::out) is det <= hashable(K).
 
 	% Overwrite an already existing element in a hashmap, fail if key not found
+:- pred update(hash::in, K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) 
+	is semidet.
+:- func update(hashmap(K, V), hash, K, V) = hashmap(K, V) is semidet.
+
 :- pred update(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) 
 	is semidet	<= hashable(K).
 :- func update(hashmap(K, V), K, V) = hashmap(K, V) is semidet <= hashable(K).
+
+:- pred det_update(hash::in, K::in, V::in, hashmap(K, V)::in, 
+	hashmap(K, V)::out)	is det.
+:- func det_update(hashmap(K, V), hash, K, V) = hashmap(K, V) is det.
 
 :- pred det_update(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) 
 	is det	<= hashable(K).
@@ -214,6 +228,9 @@
 
 	% Remove a key-value pair from a map and return the value.
 	% Fail if the key is not present.
+:- pred remove(hash::in, K::in, V::out, hashmap(K, V)::in, hashmap(K, V)::out) 
+	is semidet.
+
 :- pred remove(K::in, V::out, hashmap(K, V)::in, hashmap(K, V)::out) 
 	is semidet <= hashable(K).
 
@@ -221,7 +238,11 @@
 	is det <= hashable(K).
 
 	% Delete a key-value pair from a map.
-	% If the key is not present, leave the map unchanged.	
+	% If the key is not present, leave the map unchanged.
+:- pred delete(hash::in, K::in, hashmap(K, V)::in, hashmap(K, V)::out) is det.
+
+:- func delete(hashmap(K, V), hash, K) = hashmap(K, V).	
+
 :- pred delete(K::in, hashmap(K, V)::in, hashmap(K, V)::out) is det
 	<= hashable(K).
 :- func delete(hashmap(K, V), K) = hashmap(K, V) <= hashable(K).
@@ -971,6 +992,10 @@ det_insert_from_corresponding_lists([], [_ | _], [], _, _) :-
     unexpected($pred, "list length mismatch").
 det_insert_from_corresponding_lists([_ | _], [], [], _, _) :-
     unexpected($pred, "list length mismatch").
+det_insert_from_corresponding_lists([_, _], [_ | _],[],  _, _) :-
+    unexpected($pred, "list length mismatch").
+det_insert_from_corresponding_lists([], [_, _], [_ | _], _, _) :-
+    unexpected($pred, "list length mismatch").
 det_insert_from_corresponding_lists([_, _], [], [_ | _], _, _) :-
     unexpected($pred, "list length mismatch").
 det_insert_from_corresponding_lists([H | Hs], [K | Ks], [V | Vs], !Map) :-
@@ -1111,6 +1136,25 @@ set(!.HM, K, V) = !:HM :-
 	set(K, V, !HM).
 	
 :- pragma inline(set/3).
+set_from_corresponding_lists(M0, Hs, Ks, Vs) = M :-
+    hashmap.set_from_corresponding_lists(Hs, Ks, Vs, M0, M).
+
+set_from_corresponding_lists([], [], [], !Map).
+set_from_corresponding_lists([], [], [_ | _], _, _) :-
+    unexpected($pred, "list length mismatch").
+set_from_corresponding_lists([], [_ | _], [], _, _) :-
+    unexpected($pred, "list length mismatch").
+set_from_corresponding_lists([_ | _], [], [], _, _) :-
+    unexpected($pred, "list length mismatch").
+set_from_corresponding_lists([_ | _], [_ | _],[],  _, _) :-
+    unexpected($pred, "list length mismatch").
+set_from_corresponding_lists([], [_ | _], [_ | _], _, _) :-
+    unexpected($pred, "list length mismatch").
+set_from_corresponding_lists([_ | _], [], [_ | _], _, _) :-
+    unexpected($pred, "list length mismatch").
+set_from_corresponding_lists([H | Hs], [K | Ks], [V | Vs], !Map) :-
+    hashmap.set(H, K, V, !Map),
+    hashmap.set_from_corresponding_lists(Hs, Ks, Vs, !Map).
 
 set_from_corresponding_lists(M0, Ks, Vs) = M :-
     hashmap.set_from_corresponding_lists(Ks, Vs, M0, M).
@@ -1133,18 +1177,26 @@ set_from_assoc_list([K - V | KVs], !Map) :-
     hashmap.set_from_assoc_list(KVs, !Map).
 
 	
+update(H, K, V, HM, update(HM, H, K, V)).
+
+update(HM, H, K, V) = update(HM, H, K, V, 0).
+
 update(K, V, HM, update(HM, K, V)).
 
-update(HM, K, V) = update(HM, hash(K), K, V, 0).
-
+update(HM, K, V) = update(HM, hash(K), V).
 	
-det_update(K, V, !HM) :-
-	( if update(K, V, !.HM, NewMap) then
+det_update(H, K, V, !HM) :-
+	( if update(H, K, V, !.HM, NewMap) then
         !:HM = NewMap
     else
         report_lookup_error("hashmap.det_update: key not found", K, V)
     ).
 	
+det_update(!.HM, H, K, V) = !:HM :- 
+	det_update(H, K, V, !HM).
+
+det_update(K, V, !HM) :- det_update(hash(K), K, V, !HM).
+
 det_update(!.HM, K, V) = !:HM :- 
 	det_update(K, V, !HM).
 
@@ -1236,15 +1288,19 @@ two(S, L1@leaf(H1, _, _), L2@leaf(H2, _, _)) = indexed_branch(Bitmap, Array) :-
 
 
 
-remove(K, V, !HM) :- remove(hash(K), K, 0, V, !HM).
+remove(H, K, V, !HM) :- remove(H, K, 0, V, !HM).
 
-det_remove(K, V, !HM) :- 
-	( if remove(K, Found, !.HM, NewMap) then
+remove(K, V, !HM) :- remove(hash(K), K, V, !HM).
+
+det_remove(H, K, V, !HM) :- 
+	( if remove(H, K, Found, !.HM, NewMap) then
         V = Found,
 		!:HM = NewMap
     else
         report_lookup_error("hashmap.det_remove: key not found", K)
     ).
+	
+det_remove(K, V, !HM) :- det_remove(H, K, V, !HM).
 	
 
 :- pred remove(hash::in, K::in, shift::in, V::out, hashmap(K, V)::in, 
@@ -1320,12 +1376,15 @@ remove(H, K, _, V, collision(H, Bucket), HM) :-
 
 %-----------------------------------------------------------------------------%
 
+delete(H, K, HM, delete(HM, H, K)).
+:- pragma inline(delete/4).
 
-delete(K, HM, delete(HM, K)).
+delete(HM, H, K) = delete(HM, H, K, 0).
 :- pragma inline(delete/3).
 
-delete(HM, K) = delete(HM, hash(K), K, 0).
-:- pragma inline(delete/2).
+delete(K, HM, delete(HM, K)).
+
+delete(HM, K) = delete(HM, hash(K), K).
 
 :- func delete(hashmap(K, V), hash, K, shift) = hashmap(K, V).
 
