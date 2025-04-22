@@ -28,12 +28,13 @@
 % Scope
 
 :- type mh_scope 
-	--->	root_scope(root_context :: mh_context, names :: var_names),
+	--->	no_scope
+	;		root_scope(root_context :: mh_context, names :: var_names),
 	;		child_scope(
-		parent :: mh_scope, 
-		child_context::mh_context,
-		vars :: mh_var_set
-		). 
+				parent :: mh_scope, 
+			child_context::mh_context,
+			vars :: mh_var_set
+			). 
 % TODO: Add constructors for extended scopes with inlined calls
 % rename root_scope to clause_scope?
 

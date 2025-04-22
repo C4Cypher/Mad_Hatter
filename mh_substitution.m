@@ -17,7 +17,8 @@
 
 % :- import_module map.
 :- import_module array.
-% :- import_module enum.
+% :- import_module enum. 
+
 
 :- import_module mh_term.
 :- import_module mh_var_id.
