@@ -16,15 +16,14 @@
 
 :- interface.
 
-:- import_module univ.
-
-:- import_module mh_var_id.
 :- import_module mh_symbol.
+:- import_module mh_var_id.
+:- import_module mh_value.
 :- import_module mh_tuple.
 :- import_module mh_constraint.
 :- import_module mh_relation.
 :- import_module mh_scope.
-:- import_module mh_predicate.
+:- import_module mh_fact.
 :- import_module mh_substitution.
 :- import_module mh_arity.
 % :- import_module mh_scope.
@@ -48,26 +47,23 @@
 	;		var(var_id)
 	
 	% values
-	;		mr_value(univ)
+	;		value(mh_value)
 	
 	% compound terms
 	;		cons(car::mh_term, cdr::mh_term)
 	;		tuple_term(mh_tuple)
 	
 	% lazy constraints --- not sure if this is a good description
-	;		lazy(predicate_term) 	% X:Term(...) => X @ ?Term(...) => 
+	;		lazy(relation_term) 	% X:Term(...) => X @ ?Term(...) => 
 									% ?Term(..., X) 
 	
 	% Higher order terms
-	;		predicate(mh_predicate)
+	;		fact(mh_fact)
 	;		relation(mh_relation) 
 	
 	% Term substitutions (closures and var renamings into higher scopes)
 	;		term_sub(mh_term, mh_substitution).
-	
-:- func functor(mh_term) = functor is semidet.
 
-:- pred functor(mh_term::in, functor::out) is semidet.
 
 :- pred ground_term(mh_term::in) is semidet.
 
@@ -97,49 +93,13 @@
 
 :- instance arity(mh_term).
 
-%-----------------------------------------------------------------------------%
-%  Functor
-
-:- inst functor 
-	--->	atom(ground)
-	;		var(ground)
-	;		predicate(ground)
-	;		relation(ground)
-	;		term_sub(functor, ground).
-	% TODO: Add tuples as functors?
-
-:- type functor =< mh_term
-	% Atoms
-	---> 	atom(mh_symbol)
-	
-	% Variables
-	;		var(var_id)
-	
-	
-% Higher order terms
-	;		predicate(mh_predicate)
-	;		relation(mh_relation)
-	
-	% Substitution
-	;		term_sub(functor, mh_substitution).
-	
-:- pred ground_functor(functor::in) is semidet.
-
-:- func ground_functor(functor) = functor.
-:- mode ground_functor(in) = out is semidet.
-:- mode ground_functor(out) = in is semidet.
-	
-:- pred apply_functor_substitution(mh_substitution::in, 
-	functor::in, functor::out) is det.
-:- func apply_functor_substitution(mh_substitution, functor) = functor.
-
 
 %-----------------------------------------------------------------------------%
 % Atoms
 
 :- inst atom ---> atom(ground).
 
-:- type atom =< functor ---> atom(mh_symbol).
+:- type atom =< mh_term ---> atom(mh_symbol).
 
 :- mode is_atom == ground >> atom.
 
@@ -162,11 +122,8 @@
 %-----------------------------------------------------------------------------%
 %	Values
 
-:- type mercury_value =< mh_term
-	---> 	mr_value(univ).
-
-:- func new_value_term(T) = mh_term.	
-:- func new_value(T) = mercury_value.
+:- type value_term =< mh_term
+	---> 	value(mh_value).
 
 %-----------------------------------------------------------------------------%
 %	Simple terms
@@ -175,14 +132,14 @@
 	--->	nil
 	;		atom(ground)
 	;		var(ground)
-	;		mr_value(ground)
+	;		value(ground)
 	;		lazy(simple_term).
 	
 :- type simple_term =< mh_term
 	--->	nil
 	;		atom(mh_symbol)
 	;		var(var_id)
-	;		mr_value(univ)
+	;		value(mh_value)
 	;		lazy(simple_term).
 	
 :- mode simple_term == ground >> simple_term.
@@ -247,7 +204,7 @@
 :- inst mh_constraint ---> lazy(ground).
 
 :- type mh_constraint =< mh_term
-	--->	lazy(predicate_term).
+	--->	lazy(relation_term).
 	
 :- mode is_constraint == mh_term >> mh_constraint.
 
@@ -257,30 +214,26 @@
 % Higher Order terms
 
 :- inst lambda
-	--->	predicate(ground)
+	--->	fact(ground)
 	;		relation(ground)
 	;		term_sub(lambda, ground).
 
-:- type lambda =< functor
-	--->	predicate(mh_predicate)
+:- type lambda =< mh_term
+	--->	fact(mh_fact)
 	;		relation(mh_relation)
-
-	;		term_sub(lambda, mh_substitution)
-
-  % Substitution
 	;		term_sub(lambda, mh_substitution).
 	
 %-----------------------------------------------------------------------------%
-% Predicate terms
+% Fact terms
 
 
-:- inst predicate_term 
-	--->	predicate(ground)
-	;		term_sub(predicate_term, ground).
+:- inst fact_term 
+	--->	fact(ground)
+	;		term_sub(fact_term, ground).
 	
-:- type predicate_term =< lambda
-	--->	predicate(mh_predicate)
-	;		term_sub(predicate_term, mh_substitution).
+:- type fact_term =< lambda
+	--->	fact(mh_fact)
+	;		term_sub(fact_term, mh_substitution).
 	
 %-----------------------------------------------------------------------------%
 % Relation terms
@@ -294,7 +247,7 @@
 	;		term_sub(relation_term, mh_substitution).
 	
 %-----------------------------------------------------------------------------%
-% Term substitutions (lazy)
+% Term substitutions (closures and var renamings into higher scopes)
 
 :- inst term_sub(I) ---> term_sub(I, ground).
 
@@ -317,18 +270,13 @@
 %-----------------------------------------------------------------------------%
 % Terms
 
-functor(cons(F, _)) = F.
-functor(term_sub(T, S)) = term_sub(functor(T), S).
-
-functor(Term, functor(Term)).
-
 ground_term(T) :-
 	T = atom(_);
 	T = mr_value(_);
 	T = cons(ground_functor(_), ground_term(_));
 	T = tuple_term(U), ground_tuple(U);
 	T = relation(R), ground_relation(R);
-	T = predicate(P), ground_predicate(P);
+	T = fact(P), ground_fact(P);
 	T = function(F), ground_function(F);
 	T = term_sub(T0, Sub),
 		apply_term_substitution(Sub, T0, T1),
@@ -367,9 +315,9 @@ apply_term_substitution(Sub, !Term) :- 	require_complete_switch [!.Term]
 		apply_relation_substitution(Sub, Rel0, Rel),
 		!:Term = relation(Rel)
 		
-	;	!.Term = predicate(Pred0),
-		apply_predicate_substitution(Sub, Pred0, Pred),
-		!:Term = predicate(Pred)
+	;	!.Term = fact(Pred0),
+		apply_fact_substitution(Sub, Pred0, Pred),
+		!:Term = fact(Pred)
 		
 	;	!.Term = function(Func0),
 		apply_function_substitution(Sub, Func0, Func),
@@ -397,7 +345,7 @@ term_arity(T) = A :- require_complete_switch [T] (
 		;	T = mr_value(_)
 	
 
-		;	T = predicate(_) % TODO: proper HO arity
+		;	T = fact(_) % TODO: proper HO arity
 		;	T = relation(_)
 		;	T = function(_)
 		), A = 0
@@ -418,49 +366,11 @@ term_arity(T, term_arity(T)).
 :- instance arity(mh_term) where [ pred(arity/2) is term_arity ].
 
 % TODO: I need to re-think what 'arity' explicitly means at a term level
-% especially in relation to tuples, constraints and predicates
-% if predicates don't take arguments directly, but through relations, they should
+% especially in relation to tuples, constraints and facts
+% if facts don't take arguments directly, but through relations, they should
 % be arity zero
 
 
-	
-%-----------------------------------------------------------------------------%
-%  Functor
-
-ground_functor(F)  :-
-	F = atom(_);
-	F = relation(R), ground_relation(R);
-	F = predicate(P), ground_predicate(P);
-	F = function(Func), ground_function(Func);
-	F = term_sub(F0, Sub),
-		apply_functor_substitution(Sub, F0, F1),
-		ground_functor(F1).
-
-ground_functor(F) = F :- ground_functor(F).
-
-apply_functor_substitution(Sub, !Fun) :-
-		!.Fun = atom(_), !:Fun = !.Fun
-		
-	;	!:Fun = !.Fun @ var(_)
-	
-	;	!.Fun = relation(Rel0), 
-		apply_relation_substitution(Sub, Rel0, Rel),
-		!:Fun = relation(Rel)
-		
-	;	!.Fun = predicate(Pred0),
-		apply_predicate_substitution(Sub, Pred0, Pred),
-		!:Fun = predicate(Pred)
-	
-	;	!.Fun = function(Func0),
-		apply_function_substitution(Sub, Func0, Func),
-		!:Fun = function(Func)
-	
-	;	!.Fun = term_sub(SubFun, Sub0),
-		compose_substitutions(Sub0, Sub, Sub1),
-		!:Fun = term_sub(SubFun, Sub1).
-		
-apply_functor_substitution(Sub, !.Fun) = !:Fun :- 
-	apply_functor_substitution(Sub, !Fun).
 %-----------------------------------------------------------------------------%
 %	Atoms
 
@@ -574,8 +484,8 @@ term_description(lazy(Term)) =
 	"lazy " ++ term_description(Term).
 term_description(tuple_term(_)) = 
 	"mercury tuple term".
-term_description(predicate(_)) = 
-	"mercury predicate term".
+term_description(fact(_)) = 
+	"mercury fact term".
 term_description(relation(_)) =
 	"mercury relation term".
 term_description(function(_)) =

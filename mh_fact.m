@@ -17,13 +17,12 @@
 
 :- import_module list.
 
+:- import_module ordered_set.
+
 :- import_module mh_term.
 :- import_module mh_environment.
 :- import_module mh_substitution.
-:- import_module ordered_set.
-:- import_module mh_arity.
-:- import_module mh_tuple.
-:- import_module mh_tuple_map.
+:- import_module mh_event.
 
 
 %-----------------------------------------------------------------------------%
@@ -38,7 +37,13 @@
 	;		fact_disj(ordered_set(mh_fact))	% A ; B ; C
 	;		fact_conj(ordered_set(mh_fact))	% A , B , C
 	;		fact_neg(mh_fact)					% not A
-	;		fact_unification(ordered_set(mh_term), mh_substitution). % X = Y
+	;		fact_unify(mh_term, mh_term) 	% X = Y 
+%	;		fact_unification(ordered_set(mh_term)) % X = Y = Z
+	;		fact_substitution(mh_substitution)	% { X -> Y, Y -> Z, Z -> foo }
+	
+	% failed execution, semantically false, mh_error gets injected into
+	% event log
+	;		fact_error(mh_error).  
 	
 	
 :- pred apply_fact_substitution(mh_substitution::in, mh_fact::in,

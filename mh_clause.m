@@ -34,10 +34,10 @@
 
 
 :- type mh_clause 
-	---> 	horn_clause(predicate_term, arity, mh_scope). % p(X) :- 	
-	;		relation_clause(predicate_term, arity, mh_scope) % r(X) = Y :-
-	;		function_clause(predicate_term, arity, mh_scope) % f(X) -> Y
-	;		moded_clause(mh_mode, predicate_term, mh_scope). % r(X::out) = ...
+	---> 	horn_clause(fact_term, arity, mh_scope). % p(X) :- 	
+	;		relation_clause(fact_term, arity, mh_scope) % r(X) = Y :-
+	;		function_clause(fact_term, arity, mh_scope) % f(X) -> Y
+	;		moded_clause(mh_mode, fact_term, mh_scope). % r(X::out) = ...
 	
 :- func clause_arity(mh_clause) = arity.
 :- func clause_scope(mh_clause) = mh_scope.
