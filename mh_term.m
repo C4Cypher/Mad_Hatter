@@ -276,7 +276,7 @@ ground_term(T) :-
 	T = cons(ground_functor(_), ground_term(_));
 	T = tuple_term(U), ground_tuple(U);
 	T = relation(R), ground_relation(R);
-	T = fact(P), ground_fact(P);
+	T = fact(F), ground_fact(F);
 	T = function(F), ground_function(F);
 	T = term_sub(T0, Sub),
 		apply_term_substitution(Sub, T0, T1),
@@ -315,9 +315,9 @@ apply_term_substitution(Sub, !Term) :- 	require_complete_switch [!.Term]
 		apply_relation_substitution(Sub, Rel0, Rel),
 		!:Term = relation(Rel)
 		
-	;	!.Term = fact(Pred0),
-		apply_fact_substitution(Sub, Pred0, Pred),
-		!:Term = fact(Pred)
+	;	!.Term = fact(Fact0),
+		apply_fact_substitution(Sub, Fact0, Fact),
+		!:Term = fact(Fact)
 		
 	;	!.Term = function(Func0),
 		apply_function_substitution(Sub, Func0, Func),
