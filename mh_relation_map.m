@@ -173,16 +173,15 @@ T::out) is semidet.
 :- type predicate_tuple == array(predicate_term). 
 
 :- type mh_relation_map(T)
-	--->	empty_predicate_map
-	;		predicate_map(
+	--->	empty_relation_map
+	;		relation_map(
 				success :: maybe(T),
 				failure :: maybe(T),
 				disjunction :: mh_tuple_map(T),
 				conjunction :: mh_tuple_map(T),
 				negation :: mh_relation_map(T),
-				unification :: mh_term_map(T),
-				some [P] mr_predicate :: map(P, T) => predicate(P) 
+				unification :: mh_term_map(T)
 			).
 
-:- type symbol_map(T) == hashmap(mh_symbol, T).
+
 
