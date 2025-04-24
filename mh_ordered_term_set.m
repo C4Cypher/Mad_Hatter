@@ -1,7 +1,7 @@
 %-----------------------------------------------------------------------------%
 % vim: ft=mercury
 %-----------------------------------------------------------------------------%
-% Copyright (C) 2024 Charlie H. McGee IV.
+% Copyright (C) 2025 Charlie H. McGee IV.
 % This file may only be copied under the terms of the GNU Library General
 % Public License as described in the file LICENCE.
 %-----------------------------------------------------------------------------%
@@ -73,14 +73,14 @@
 % the set contains the same values in the same order. 
 :- pred equal(mh_ordered_term_set::in, mh_ordered_term_set::in) is semidet.
 
-%TODO: Equality with ordered_set(mh_term)
+
 
 % Succeeds if the sets have the same values, with duplicates removed
 % Equivalent to compare_ordered_term_sets((=)).
 :- pred equivalent(mh_ordered_term_set::in, mh_ordered_term_set::in) 
 	is semidet.
 	
-%TODO: Equivalence with ordered_set(mh_term)
+
 
 % Sorts and removes duplicates from the sets and compares them according to
 % the standard ordering. Used to implement mercury equality and comparison.
