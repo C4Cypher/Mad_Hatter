@@ -86,8 +86,8 @@
 :- func init = hashmap(K, _V).
 :- pred init(hashmap(K, _)::out.
 
-:- func singleton(hash, K, V) = hashmap(K, V).
-:- pred singleton(hash::in, K::in, V::in, hashmap(K, V)::out) is det.
+:- func hash_singleton(hash, K, V) = hashmap(K, V).
+:- pred hash_singleton(hash::in, K::in, V::in, hashmap(K, V)::out) is det.
 
 :- func singleton(K, V) = hashmap(K, V) <= hashable(K).
 :- pred singleton(K::in, V::in, hashmap(K, V)::out) is det <= hashable(K).
@@ -109,21 +109,21 @@
 % Search
 
 	% Succeeds if the map contains the given key
-:- pred contains(hashmap(K, _V)::in, hash::in, K::in) is semidet.
+:- pred hash_contains(hashmap(K, _V)::in, hash::in, K::in) is semidet.
 	
 :- pred contains(hashmap(K, _V)::in, K::in) is semidet <= hashable(K).
 
 	% Fails if the key is not found
 	
-:- pred search(hashmap(K, V)::in, hash::in, K::in, V::out) is semidet.
-:- func search(hashmap(K, V), hash, K) = V is semidet.	
+:- pred hash_search(hashmap(K, V)::in, hash::in, K::in, V::out) is semidet.
+:- func hash_search(hashmap(K, V), hash, K) = V is semidet.	
 	
 :- pred search(hashmap(K, V)::in, K::in, V::out) is semidet <= hashable(K).
 :- func search(hashmap(K, V), K) = V is semidet <= hashable(K).
 
 	% Throws an exception if the key is not found
-:- pred lookup(hashmap(K, V)::in, hash::in, K::in, V::out) is det.
-:- func lookup(hashmap(K, V), hash, K) = V is det.
+:- pred hash_lookup(hashmap(K, V)::in, hash::in, K::in, V::out) is det.
+:- func hash_lookup(hashmap(K, V), hash, K) = V is det.
 
 :- pred lookup(hashmap(K, V)::in, K::in, V::out) is det <= hashable(K).
 :- func lookup(hashmap(K, V), K) = V is det <= hashable(K).
@@ -144,24 +144,24 @@
 % Insertion
 
 	% Insert an element into a hashmap, fails if the element already exists 
-:- pred insert(hash::in, K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out)
-	is semidet.
-:- func insert(hashmap(K, V), hash, K, V) = hashmap(K, V) is semidet.
+:- pred hash_insert(hash::in, K::in, V::in, hashmap(K, V)::in, 
+	hashmap(K, V)::out) is semidet.
+:- func hash_insert(hashmap(K, V), hash, K, V) = hashmap(K, V) is semidet.
 
 :- pred insert(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) is semidet
 	<= hashable(K).
 :- func insert(hashmap(K, V), K, V) = hashmap(K, V) is semidet <= hashable(K).
 
-:- pred det_insert(hash::in, K::in, V::in, hashmap(K, V)::in, 
+:- pred det_hash_insert(hash::in, K::in, V::in, hashmap(K, V)::in, 
 	hashmap(K, V)::out) is det.
-:- func det_insert(hashmap(K, V), hash, K, V) = hashmap(K, V) is det.
+:- func det_hash_insert(hashmap(K, V), hash, K, V) = hashmap(K, V) is det.
 
 :- pred det_insert(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) is det
 	<= hashable(K).
 :- func det_insert(hashmap(K, V), K, V) = hashmap(K, V) is det <= hashable(K).
 
-:- func det_insert_from_corresponding_lists(hashmap(K, V), list(hash), list(K), 
-	list(V))  = hashmap(K, V).
+:- func det_hash_insert_from_corresponding_lists(hashmap(K, V), list(hash), 
+	list(K), list(V))  = hashmap(K, V).
 :- pred det_insert_from_corresponding_lists(list(hash)::in, list(K)::in, 
     list(V)::in, hashmap(K, V)::in, hashmap(K, V)::out) is det.
 	
@@ -175,16 +175,16 @@
 :- pred det_insert_from_assoc_list(assoc_list(K, V)::in,
     hashmap(K, V)::in, hashmap(K, V)::out) is det <= hashable(K).
 
-:- pred search_insert(hash::in, K::in, V::in, maybe(V)::out,
+:- pred hash_search_insert(hash::in, K::in, V::in, maybe(V)::out,
     hashmap(K, V)::in, hashmap(K, V)::out) is det.
 	
 :- pred search_insert(K::in, V::in, maybe(V)::out,
     hashmap(K, V)::in, hashmap(K, V)::out) is det <= hashable(K).
 
 	% Inserts an element into a hashmap, overwrite element if it already exists
-:- pred set(hash::in, K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out)
+:- pred hash_set(hash::in, K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out)
 	is det.
-:- func set(hashmap(K, V), hash, K, V) = hashmap(K, V).
+:- func hash_set(hashmap(K, V), hash, K, V) = hashmap(K, V).
 
 :- pred set(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) is det
 	<= hashable(K).
@@ -196,7 +196,7 @@
     hashmap(K, V)::in, hashmap(K, V)::out) is det.
 	
 
-:- func set_from_corresponding_lists(hashmap(K, V), list(K), list(V)) = 
+:- func hash_set_from_corresponding_lists(hashmap(K, V), list(K), list(V)) = 
 	hashmap(K, V) <= hashable(K).
 :- pred set_from_corresponding_lists(list(K)::in, list(V)::in,
     hashmap(K, V)::in, hashmap(K, V)::out) is det <= hashable(K).
@@ -207,17 +207,17 @@
     hashmap(K, V)::in, hashmap(K, V)::out) is det <= hashable(K).
 
 	% Overwrite an already existing element in a hashmap, fail if key not found
-:- pred update(hash::in, K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) 
-	is semidet.
-:- func update(hashmap(K, V), hash, K, V) = hashmap(K, V) is semidet.
+:- pred hash_update(hash::in, K::in, V::in, hashmap(K, V)::in, 
+	hashmap(K, V)::out)	is semidet.
+:- func hash_update(hashmap(K, V), hash, K, V) = hashmap(K, V) is semidet.
 
 :- pred update(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) 
 	is semidet	<= hashable(K).
 :- func update(hashmap(K, V), K, V) = hashmap(K, V) is semidet <= hashable(K).
 
-:- pred det_update(hash::in, K::in, V::in, hashmap(K, V)::in, 
+:- pred det_hash_update(hash::in, K::in, V::in, hashmap(K, V)::in, 
 	hashmap(K, V)::out)	is det.
-:- func det_update(hashmap(K, V), hash, K, V) = hashmap(K, V) is det.
+:- func det_hash_update(hashmap(K, V), hash, K, V) = hashmap(K, V) is det.
 
 :- pred det_update(K::in, V::in, hashmap(K, V)::in, hashmap(K, V)::out) 
 	is det	<= hashable(K).
@@ -233,15 +233,19 @@
 
 :- pred remove(K::in, V::out, hashmap(K, V)::in, hashmap(K, V)::out) 
 	is semidet <= hashable(K).
+	
+:- pred det_hash_remove(hash::in, K::in, V::out, hashmap(K, V)::in, 
+	hashmap(K, V)::out)	is det.	
 
 :- pred det_remove(K::in, V::out, hashmap(K, V)::in, hashmap(K, V)::out) 
 	is det <= hashable(K).
 
 	% Delete a key-value pair from a map.
 	% If the key is not present, leave the map unchanged.
-:- pred delete(hash::in, K::in, hashmap(K, V)::in, hashmap(K, V)::out) is det.
+:- pred hash_delete(hash::in, K::in, hashmap(K, V)::in, hashmap(K, V)::out) 
+	is det.
 
-:- func delete(hashmap(K, V), hash, K) = hashmap(K, V).	
+:- func hash_delete(hashmap(K, V), hash, K) = hashmap(K, V).	
 
 :- pred delete(K::in, hashmap(K, V)::in, hashmap(K, V)::out) is det
 	<= hashable(K).
@@ -270,25 +274,29 @@
 % Returning keys and values.
 
 	% All key value pairs stored in the hashmap, order is not garunteed
+:- pred hash_member(hashmap(K, V), hash, K, V).
+:- mode hash_member(in, in, in, out) is semidet.
+:- mode hash_member(in, out, out, out) is nondet.
+
 :- pred member(hashmap(K, V), K, V) <= hashable(K).
 :- mode member(in, in, out) is semidet.
 :- mode member(in, out, out) is nondet.
 
 	% Given a map, return a list of all the keys in the map.
-:- func keys(hashmap(K, _V)) = list(K) <= hashable(K).
-:- pred keys(hashmap(K, _V)::in, list(K)::out) is det <= hashable(K).
+:- func keys(hashmap(K, _V)) = list(K).
+:- pred keys(hashmap(K, _V)::in, list(K)::out) is det.
 
-:- func sorted_keys(hashmap(K, _V)) = list(K) <= hashable(K).
-:- pred sorted_keys(hashmap(K, _V)::in, list(K)::out) is det <= hashable(K).
+:- func sorted_keys(hashmap(K, _V)) = list(K).
+:- pred sorted_keys(hashmap(K, _V)::in, list(K)::out) is det.
 
-:- func keys_as_set(hashmap(K, _V)) = set(K) <= hashable(K).
-:- pred keys_as_set(hashmap(K, _V)::in, set(K)::out) is det <= hashable(K).
+:- func keys_as_set(hashmap(K, _V)) = set(K).
+:- pred keys_as_set(hashmap(K, _V)::in, set(K)::out) is det.
 
 :- func values(hashmap(_K, V)) = list(V).
 :- pred values(hashmap(_K, V)::in, list(V)::out) is det.
 
 :- pred keys_and_values(hashmap(K, V)::in, list(K)::out, list(V)::out)
-	is det <= hashable(K).
+	is det.
 	
 :- func max_key(hashmap(K, _)) = K is semidet.
 :- pred max_key(hashmap(K, _)::in, K::out) is semidet.
@@ -306,11 +314,19 @@
 	% Update the value at the given key by applying the supplied
 	% transformation to it. Fails if the key is not found. This is faster
 	% than first searching for the value and then updating it.
+:- pred hash_transform_value(pred(V, V)::in(pred(in, out) is det), hash::in,
+	K::in, hashmap(K, V)::in, hashmap(K, V)::out) is semidet.
+
 :- pred transform_value(pred(V, V)::in(pred(in, out) is det), K::in,
     hashmap(K, V)::in, hashmap(K, V)::out) is semidet <= hashable(K).
 
 	% Same as transform_value/4, but throws an exception if the key is not
 	% found.
+:- func det_hash_transform_value(func(V) = V, hash, K, hashmap(K, V)) 
+	= hashmap(K, V).
+:- pred det_hash_transform_value(pred(V, V)::in(pred(in, out) is det), 
+	hash::in, K::in, hashmap(K, V)::in, hashmap(K, V)::out) is det.
+
 :- func det_transform_value(func(V) = V, K, hashmap(K, V)) = hashmap(K, V)
 	<= hashable(K).
 :- pred det_transform_value(pred(V, V)::in(pred(in, out) is det), K::in,
@@ -768,8 +784,8 @@ init = empty_tree.
 init(init).
 
 
-singleton(H, K, V) = leaf(H, K, V).
-singleton(H, K, V, singleton(H, K, V)).
+hash_singleton(H, K, V) = leaf(H, K, V).
+hash_singleton(H, K, V, singleton(H, K, V)).
 
 singleton(K, V) = singleton(hash(K), K, V).
 singleton(K, V, singleton(K, V)).
@@ -814,15 +830,15 @@ array_equal(A1, A2) :-
 %-----------------------------------------------------------------------------%
 % Search
 
-contains(Map, H, K) :- search(Map, H, K, _).
+hash_contains(Map, H, K) :- hash_search(Map, H, K, _).
 
 contains(Map, K) :- contains(Map, hash(K)).
 
 
 
-search(HM, H, K, search(HM, H, K)).
+hash_search(HM, H, K, hash_search(HM, H, K)).
 
-search(HM, H, K) = search(HM, H, K, 0).
+hash_search(HM, H, K) = search(HM, H, K, 0).
 
 :- func search(hashmap(K, V), hash, K, shift) = V is semidet.
 
@@ -851,9 +867,9 @@ search(HM, K) = search(HM, hash(K), K).
 search(HM, K, search(HM, K)).
 
 
-lookup(HM, H, K, lookup(HM, H, K)).
+hash_lookup(HM, H, K, hash_lookup(HM, H, K)).
 
-lookup(HM, H, K) = 
+hash_lookup(HM, H, K) = 
 	(if search(HM, H, K) = Found
 	then 
 		Found
@@ -863,7 +879,7 @@ lookup(HM, H, K) =
 	
 lookup(HM, K, lookup(HM, K)).
 
-lookup(HM, K) = lookup(HM, hash(K), K).
+lookup(HM, K) = hash_lookup(HM, hash(K), K).
 
 inverse_search(_, _, _) :- sorry($module, $pred, "inverse_search").
 lower_bound_search(_, _, _, _) :- sorry($module, $pred, "lower_bound_search").
@@ -874,13 +890,13 @@ upper_bound_lookup(_, _, _, _) :- sorry($module, $pred, "upper_bound_lookup").
 %-----------------------------------------------------------------------------%
 % Insertion
 
-insert(K, H, V, !HM) :- 
+hash_insert(K, H, V, !HM) :- 
 	insert_tree(H, K, V, 0, no, !HM).
 	
-insert(!.HM, H, K, V) = !:HM :-
-	insert(K, H, V, !HM).
+hash_insert(!.HM, H, K, V) = !:HM :-
+	hash_insert(K, H, V, !HM).
 	
-insert(K, V, !HM) :- insert(hash(K), K, V, !HM).
+insert(K, V, !HM) :- hash_insert(hash(K), K, V, !HM).
 
 insert(!.HM, K, V) = !:HM :-
 	insert(K, V, !HM).
@@ -963,44 +979,48 @@ insert_tree(H, K, V, S, R, !.HM@collision(CH, Bucket), !:HM) :-
 
 
 
-det_insert(H, K, V, !HM) :-
+det_hash_insert(H, K, V, !HM) :-
 	( if insert(H, K, V, !.HM, NewMap) then
         !:HM = NewMap
     else
         report_lookup_error("hashmap.det_insert: key already present", K, V)
     ).
 	
-:- pragma inline(det_insert/5).
+:- pragma inline(det_hash_insert/5).
 	
-det_insert(!.HM, H, K, V) = !:HM :- 
-	det_insert(K, H, V, !HM).
+det_hash_insert(!.HM, H, K, V) = !:HM :- 
+	det_hash_insert(K, H, V, !HM).
 	
-:- pragma inline(det_insert/4).
+:- pragma inline(det_hash_insert/4).
 
-det_insert(K, V, !HM) :- det_insert(hash(K), K, V, !HM).
+det_insert(K, V, !HM) :- det_hash_insert(hash(K), K, V, !HM).	
+
+:- pragma inline(det_insert/4).
 	
 det_insert(!.HM, K, V) = !:HM :- 
 	det_insert(K, V, !HM).
 	
-det_insert_from_corresponding_lists(M0, Hs, Ks, Vs) = M :-
-    hashmap.det_insert_from_corresponding_lists(Ks, Hs, Vs, M0, M).
+:- pragma inline(det_insert/3).
+	
+det_hash_insert_from_corresponding_lists(M0, Hs, Ks, Vs) = M :-
+    hashmap.det_hash_insert_from_corresponding_lists(Ks, Hs, Vs, M0, M).
 
-det_insert_from_corresponding_lists([], [], [], !Map).
-det_insert_from_corresponding_lists([], [], [_ | _], _, _) :-
+det_hash_insert_from_corresponding_lists([], [], [], !Map).
+det_hash_insert_from_corresponding_lists([], [], [_ | _], _, _) :-
     unexpected($pred, "list length mismatch").
-det_insert_from_corresponding_lists([], [_ | _], [], _, _) :-
+det_hash_insert_from_corresponding_lists([], [_ | _], [], _, _) :-
     unexpected($pred, "list length mismatch").
-det_insert_from_corresponding_lists([_ | _], [], [], _, _) :-
+det_hash_insert_from_corresponding_lists([_ | _], [], [], _, _) :-
     unexpected($pred, "list length mismatch").
-det_insert_from_corresponding_lists([_, _], [_ | _],[],  _, _) :-
+det_hash_insert_from_corresponding_lists([_, _], [_ | _],[],  _, _) :-
     unexpected($pred, "list length mismatch").
-det_insert_from_corresponding_lists([], [_, _], [_ | _], _, _) :-
+det_hash_insert_from_corresponding_lists([], [_, _], [_ | _], _, _) :-
     unexpected($pred, "list length mismatch").
-det_insert_from_corresponding_lists([_, _], [], [_ | _], _, _) :-
+det_hash_insert_from_corresponding_lists([_, _], [], [_ | _], _, _) :-
     unexpected($pred, "list length mismatch").
-det_insert_from_corresponding_lists([H | Hs], [K | Ks], [V | Vs], !Map) :-
-    hashmap.det_insert(H, K, V, !Map),
-    hashmap.det_insert_from_corresponding_lists(Hs, Ks, Vs, !Map).
+det_hash_insert_from_corresponding_lists([H | Hs], [K | Ks], [V | Vs], !Map) :-
+    hashmap.det_hash_insert(H, K, V, !Map),
+    hashmap.det_hash_insert_from_corresponding_lists(Hs, Ks, Vs, !Map).
 	
 det_insert_from_corresponding_lists(M0, Ks, Vs) = M :-
     hashmap.det_insert_from_corresponding_lists(Ks, Vs, M0, M).
@@ -1023,7 +1043,7 @@ det_insert_from_assoc_list([K - V | KVs], !Map) :-
     hashmap.det_insert_from_assoc_list(KVs, !Map).	
 
 % search_insert(H, K, V, MaybOldV, !HM)
-search_insert(H, K, V, MaybOldV, !HM) :-
+hash_search_insert(H, K, V, MaybOldV, !HM) :-
 	search_insert_tree(H, K, V, 0, MaybOldV, !HM).
 
 search_insert(K, V, MaybOldV, !HM) :- 
@@ -1116,7 +1136,7 @@ search_insert_tree(H, K, V, S, Old, !.HM@collision(CH, Bucket), !:HM) :-
 	).
  
 
-set(H, K, V, !HM) :- 
+hash_set(H, K, V, !HM) :- 
 	(if insert_tree(H, K, V, 0, yes, !HM)
 	then
 		!:HM = !.HM
@@ -1125,8 +1145,12 @@ set(H, K, V, !HM) :-
 			"Failure on insert_tree/6 with Replace = yes")
 	).
 	
-set(!.HM, H, K, V) = !:HM :-
+:- pragma inline(hash_set/5).	
+	
+hash_set(!.HM, H, K, V) = !:HM :-
 	set(H, K, V, !HM).
+	
+:- pragma inline(hash_set/4).
 
 set(K, V, !HM) :- set(hash(K), K, V, !HM).
 
@@ -1136,25 +1160,26 @@ set(!.HM, K, V) = !:HM :-
 	set(K, V, !HM).
 	
 :- pragma inline(set/3).
-set_from_corresponding_lists(M0, Hs, Ks, Vs) = M :-
-    hashmap.set_from_corresponding_lists(Hs, Ks, Vs, M0, M).
 
-set_from_corresponding_lists([], [], [], !Map).
-set_from_corresponding_lists([], [], [_ | _], _, _) :-
+hash_set_from_corresponding_lists(M0, Hs, Ks, Vs) = M :-
+    hashmap.hash_set_from_corresponding_lists(Hs, Ks, Vs, M0, M).
+
+hash_set_from_corresponding_lists([], [], [], !Map).
+hash_set_from_corresponding_lists([], [], [_ | _], _, _) :-
+	unexpected($pred, "list length mismatch").
+hash_set_from_corresponding_lists([], [_ | _], [], _, _) :-
     unexpected($pred, "list length mismatch").
-set_from_corresponding_lists([], [_ | _], [], _, _) :-
+hash_set_from_corresponding_lists([_ | _], [], [], _, _) :-
     unexpected($pred, "list length mismatch").
-set_from_corresponding_lists([_ | _], [], [], _, _) :-
+hash_set_from_corresponding_lists([_ | _], [_ | _],[],  _, _) :-
     unexpected($pred, "list length mismatch").
-set_from_corresponding_lists([_ | _], [_ | _],[],  _, _) :-
+hash_set_from_corresponding_lists([], [_ | _], [_ | _], _, _) :-
     unexpected($pred, "list length mismatch").
-set_from_corresponding_lists([], [_ | _], [_ | _], _, _) :-
+hash_set_from_corresponding_lists([_ | _], [], [_ | _], _, _) :-
     unexpected($pred, "list length mismatch").
-set_from_corresponding_lists([_ | _], [], [_ | _], _, _) :-
-    unexpected($pred, "list length mismatch").
-set_from_corresponding_lists([H | Hs], [K | Ks], [V | Vs], !Map) :-
-    hashmap.set(H, K, V, !Map),
-    hashmap.set_from_corresponding_lists(Hs, Ks, Vs, !Map).
+hash_set_from_corresponding_lists([H | Hs], [K | Ks], [V | Vs], !Map) :-
+    hashmap.hash_set(H, K, V, !Map),
+    hashmap.hash_set_from_corresponding_lists(Hs, Ks, Vs, !Map).
 
 set_from_corresponding_lists(M0, Ks, Vs) = M :-
     hashmap.set_from_corresponding_lists(Ks, Vs, M0, M).
@@ -1177,22 +1202,22 @@ set_from_assoc_list([K - V | KVs], !Map) :-
     hashmap.set_from_assoc_list(KVs, !Map).
 
 	
-update(H, K, V, HM, update(HM, H, K, V)).
+hash_update(H, K, V, HM, hash_update(HM, H, K, V)).
 
-update(HM, H, K, V) = update(HM, H, K, V, 0).
+hash_update(HM, H, K, V) = update(HM, H, K, V, 0).
 
 update(K, V, HM, update(HM, K, V)).
 
 update(HM, K, V) = update(HM, hash(K), V).
 	
-det_update(H, K, V, !HM) :-
+det_hash_update(H, K, V, !HM) :-
 	( if update(H, K, V, !.HM, NewMap) then
         !:HM = NewMap
     else
         report_lookup_error("hashmap.det_update: key not found", K, V)
     ).
 	
-det_update(!.HM, H, K, V) = !:HM :- 
+det_hash_update(!.HM, H, K, V) = !:HM :- 
 	det_update(H, K, V, !HM).
 
 det_update(K, V, !HM) :- det_update(hash(K), K, V, !HM).
@@ -1288,19 +1313,19 @@ two(S, L1@leaf(H1, _, _), L2@leaf(H2, _, _)) = indexed_branch(Bitmap, Array) :-
 
 
 
-remove(H, K, V, !HM) :- remove(H, K, 0, V, !HM).
+hash_remove(H, K, V, !HM) :- remove(H, K, 0, V, !HM).
 
-remove(K, V, !HM) :- remove(hash(K), K, V, !HM).
+remove(K, V, !HM) :- hash_remove(hash(K), K, V, !HM).
 
-det_remove(H, K, V, !HM) :- 
-	( if remove(H, K, Found, !.HM, NewMap) then
+det_hash_remove(H, K, V, !HM) :- 
+	( if hash_remove(H, K, Found, !.HM, NewMap) then
         V = Found,
 		!:HM = NewMap
     else
         report_lookup_error("hashmap.det_remove: key not found", K)
     ).
 	
-det_remove(K, V, !HM) :- det_remove(H, K, V, !HM).
+det_remove(K, V, !HM) :- det_hash_remove(hash(K), K, V, !HM).
 	
 
 :- pred remove(hash::in, K::in, shift::in, V::out, hashmap(K, V)::in, 
@@ -1376,15 +1401,17 @@ remove(H, K, _, V, collision(H, Bucket), HM) :-
 
 %-----------------------------------------------------------------------------%
 
-delete(H, K, HM, delete(HM, H, K)).
+hash_delete(H, K, HM, hash_delete(HM, H, K)).
 :- pragma inline(delete/4).
 
-delete(HM, H, K) = delete(HM, H, K, 0).
+hash_delete(HM, H, K) = delete(HM, H, K, 0).
 :- pragma inline(delete/3).
 
 delete(K, HM, delete(HM, K)).
+:- pragma inline(delete/3).
 
-delete(HM, K) = delete(HM, hash(K), K).
+delete(HM, K) = hash_delete(HM, hash(K), K).
+:- pragma inline(delete/2).
 
 :- func delete(hashmap(K, V), hash, K, shift) = hashmap(K, V).
 
@@ -1482,6 +1509,25 @@ det_elem(Key, Map) = hashmap.lookup(Map, Key).
 
 %-----------------------------------------------------------------------------%
 % Returning keys and values.
+
+:- pragma promise_equivalent_clauses(hash_member/4).
+
+hash_member(HM::in, H::in, K::in, V::out) :- hash_search(HM, H, K, V).
+
+
+hash_member(leaf(H, K, V)::in, H::out, K::out, V::out).
+
+hash_member(indexed_branch(H, Array)::in, H::out, K::out, V::out) :-
+	array.member(Array, HM),
+	hash_member(HM, H, K, V).
+	
+hash_member(full_branch(Array)::in, K::out, V::out) :-
+	array.member(Array, HM),
+	hash_member(HM, H, K, V).
+	
+hash_member(collision(H, Bucket)::in, H::out,  K::out, V::out) :- 
+	map.member(Bucket, K, V).
+
 	
 :- pragma promise_equivalent_clauses(member/3).
 
@@ -1595,6 +1641,9 @@ min_key_acc(K, _, yes(Min), (K @< Min -> yes(K) ; yes(Min)) ).
 %-----------------------------------------------------------------------------%
 % Operations on values.
 
+
+hash_transform_value(P, H, K, !HM) :- transform_value_tree(P, H, K, 0, !HM).
+
 transform_value(P, K, !HM) :- transform_value_tree(P, hash(K), K, 0, !HM).
 
 :- pred transform_value_tree(pred(V, V)::in(pred(in, out) is det), hash::in,
@@ -1651,6 +1700,19 @@ transform_value_tree(P,H, K, _S, !HM) :-
 	else
 		!:HM = collision(H, Bucket)
 	).
+
+det_hash_transform_value(F, H, K, !.HM) = !:HM :-
+    det_hash_transform_value(pred(V0::in, V::out) is det :- V = F(V0), H, K,
+        !HM).
+		
+det_hash_transform_value(P, H, K, !HM) :-
+    ( if transform_value(P, H, K, !.HM, NewHM) then
+        !:HM = NewHM
+    else
+        report_lookup_error("hashmap.det_hash_transform_value: key not found",
+			K)
+    ).
+
 
 det_transform_value(F, K, !.HM) = !:HM :-
     det_transform_value(pred(V0::in, V::out) is det :- V = F(V0), K,
