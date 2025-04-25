@@ -84,7 +84,7 @@
 % Construction
 
 :- func init = hashmap(K, _V).
-:- pred init(hashmap(K, _)::out.
+:- pred init(hashmap(K, _)::out) is det.
 
 :- func hash_singleton(hash, K, V) = hashmap(K, V).
 :- pred hash_singleton(hash::in, K::in, V::in, hashmap(K, V)::out) is det.
@@ -162,7 +162,7 @@
 
 :- func det_hash_insert_from_corresponding_lists(hashmap(K, V), list(hash), 
 	list(K), list(V))  = hashmap(K, V).
-:- pred det_insert_from_corresponding_lists(list(hash)::in, list(K)::in, 
+:- pred det_hash_insert_from_corresponding_lists(list(hash)::in, list(K)::in, 
     list(V)::in, hashmap(K, V)::in, hashmap(K, V)::out) is det.
 	
 :- func det_insert_from_corresponding_lists(hashmap(K, V), list(K), list(V))
@@ -190,13 +190,12 @@
 	<= hashable(K).
 :- func set(hashmap(K, V), K, V) = hashmap(K, V) <= hashable(K).
 
-:- func set_from_corresponding_lists(hashmap(K, V), list(hash),list(K), 
+:- func hash_set_from_corresponding_lists(hashmap(K, V), list(hash),list(K), 
 	list(V)) = hashmap(K, V).
-:- pred set_from_corresponding_lists(list(hash)::in, list(K)::in, list(V)::in,
+:- pred hash_set_from_corresponding_lists(list(hash)::in, list(K)::in, list(V)::in,
     hashmap(K, V)::in, hashmap(K, V)::out) is det.
 	
-
-:- func hash_set_from_corresponding_lists(hashmap(K, V), list(K), list(V)) = 
+:- func set_from_corresponding_lists(hashmap(K, V), list(K), list(V)) = 
 	hashmap(K, V) <= hashable(K).
 :- pred set_from_corresponding_lists(list(K)::in, list(V)::in,
     hashmap(K, V)::in, hashmap(K, V)::out) is det <= hashable(K).
@@ -228,8 +227,8 @@
 
 	% Remove a key-value pair from a map and return the value.
 	% Fail if the key is not present.
-:- pred remove(hash::in, K::in, V::out, hashmap(K, V)::in, hashmap(K, V)::out) 
-	is semidet.
+:- pred hash_remove(hash::in, K::in, V::out, hashmap(K, V)::in, 
+	hashmap(K, V)::out) is semidet.
 
 :- pred remove(K::in, V::out, hashmap(K, V)::in, hashmap(K, V)::out) 
 	is semidet <= hashable(K).
@@ -785,9 +784,9 @@ init(init).
 
 
 hash_singleton(H, K, V) = leaf(H, K, V).
-hash_singleton(H, K, V, singleton(H, K, V)).
+hash_singleton(H, K, V, hash_singleton(H, K, V)).
 
-singleton(K, V) = singleton(hash(K), K, V).
+singleton(K, V) = hash_singleton(hash(K), K, V).
 singleton(K, V, singleton(K, V)).
 
 %-----------------------------------------------------------------------------%
@@ -832,7 +831,7 @@ array_equal(A1, A2) :-
 
 hash_contains(Map, H, K) :- hash_search(Map, H, K, _).
 
-contains(Map, K) :- contains(Map, hash(K)).
+contains(Map, K) :- hash_contains(Map, hash(K), K).
 
 
 
@@ -862,7 +861,7 @@ search(full_branch(Array), H,  K, S) =
 	
 search(collision(H, Bucket), H, K,  _) = map.search(Bucket, K).
 
-search(HM, K) = search(HM, hash(K), K).
+search(HM, K) = hash_search(HM, hash(K), K).
 
 search(HM, K, search(HM, K)).
 
@@ -870,7 +869,7 @@ search(HM, K, search(HM, K)).
 hash_lookup(HM, H, K, hash_lookup(HM, H, K)).
 
 hash_lookup(HM, H, K) = 
-	(if search(HM, H, K) = Found
+	(if hash_search(HM, H, K) = Found
 	then 
 		Found
 	else
@@ -890,11 +889,11 @@ upper_bound_lookup(_, _, _, _) :- sorry($module, $pred, "upper_bound_lookup").
 %-----------------------------------------------------------------------------%
 % Insertion
 
-hash_insert(K, H, V, !HM) :- 
+hash_insert(H, K, V, !HM) :- 
 	insert_tree(H, K, V, 0, no, !HM).
 	
 hash_insert(!.HM, H, K, V) = !:HM :-
-	hash_insert(K, H, V, !HM).
+	hash_insert(H, K, V, !HM).
 	
 insert(K, V, !HM) :- hash_insert(hash(K), K, V, !HM).
 
@@ -980,7 +979,7 @@ insert_tree(H, K, V, S, R, !.HM@collision(CH, Bucket), !:HM) :-
 
 
 det_hash_insert(H, K, V, !HM) :-
-	( if insert(H, K, V, !.HM, NewMap) then
+	( if hash_insert(H, K, V, !.HM, NewMap) then
         !:HM = NewMap
     else
         report_lookup_error("hashmap.det_insert: key already present", K, V)
@@ -989,7 +988,7 @@ det_hash_insert(H, K, V, !HM) :-
 :- pragma inline(det_hash_insert/5).
 	
 det_hash_insert(!.HM, H, K, V) = !:HM :- 
-	det_hash_insert(K, H, V, !HM).
+	det_hash_insert(H, K, V, !HM).
 	
 :- pragma inline(det_hash_insert/4).
 
@@ -1003,7 +1002,7 @@ det_insert(!.HM, K, V) = !:HM :-
 :- pragma inline(det_insert/3).
 	
 det_hash_insert_from_corresponding_lists(M0, Hs, Ks, Vs) = M :-
-    hashmap.det_hash_insert_from_corresponding_lists(Ks, Hs, Vs, M0, M).
+    hashmap.det_hash_insert_from_corresponding_lists(Hs, Ks, Vs, M0, M).
 
 det_hash_insert_from_corresponding_lists([], [], [], !Map).
 det_hash_insert_from_corresponding_lists([], [], [_ | _], _, _) :-
@@ -1012,11 +1011,11 @@ det_hash_insert_from_corresponding_lists([], [_ | _], [], _, _) :-
     unexpected($pred, "list length mismatch").
 det_hash_insert_from_corresponding_lists([_ | _], [], [], _, _) :-
     unexpected($pred, "list length mismatch").
-det_hash_insert_from_corresponding_lists([_, _], [_ | _],[],  _, _) :-
+det_hash_insert_from_corresponding_lists([_ | _], [_ | _], [],  _, _) :-
     unexpected($pred, "list length mismatch").
-det_hash_insert_from_corresponding_lists([], [_, _], [_ | _], _, _) :-
+det_hash_insert_from_corresponding_lists([], [_ | _], [_ | _], _, _) :-
     unexpected($pred, "list length mismatch").
-det_hash_insert_from_corresponding_lists([_, _], [], [_ | _], _, _) :-
+det_hash_insert_from_corresponding_lists([_ | _], [], [_ | _], _, _) :-
     unexpected($pred, "list length mismatch").
 det_hash_insert_from_corresponding_lists([H | Hs], [K | Ks], [V | Vs], !Map) :-
     hashmap.det_hash_insert(H, K, V, !Map),
@@ -1047,7 +1046,7 @@ hash_search_insert(H, K, V, MaybOldV, !HM) :-
 	search_insert_tree(H, K, V, 0, MaybOldV, !HM).
 
 search_insert(K, V, MaybOldV, !HM) :- 
-	search_insert(hash(K), K, V, MaybOldV, !HM).
+	hash_search_insert(hash(K), K, V, MaybOldV, !HM).
 	
 %  pred search_insert_tree(Key, Value, Shift, MaybOldV, !HashTree) 
 :- pred search_insert_tree(hash::in, K::in, V::in, shift::in, maybe(V)::out,
@@ -1148,11 +1147,11 @@ hash_set(H, K, V, !HM) :-
 :- pragma inline(hash_set/5).	
 	
 hash_set(!.HM, H, K, V) = !:HM :-
-	set(H, K, V, !HM).
+	hash_set(H, K, V, !HM).
 	
 :- pragma inline(hash_set/4).
 
-set(K, V, !HM) :- set(hash(K), K, V, !HM).
+set(K, V, !HM) :- hash_set(hash(K), K, V, !HM).
 
 :- pragma inline(set/4).
 	
@@ -1208,19 +1207,19 @@ hash_update(HM, H, K, V) = update(HM, H, K, V, 0).
 
 update(K, V, HM, update(HM, K, V)).
 
-update(HM, K, V) = update(HM, hash(K), V).
+update(HM, K, V) = hash_update(HM, hash(K), K, V).
 	
 det_hash_update(H, K, V, !HM) :-
-	( if update(H, K, V, !.HM, NewMap) then
+	( if hash_update(H, K, V, !.HM, NewMap) then
         !:HM = NewMap
     else
         report_lookup_error("hashmap.det_update: key not found", K, V)
     ).
 	
 det_hash_update(!.HM, H, K, V) = !:HM :- 
-	det_update(H, K, V, !HM).
+	det_hash_update(H, K, V, !HM).
 
-det_update(K, V, !HM) :- det_update(hash(K), K, V, !HM).
+det_update(K, V, !HM) :- det_hash_update(hash(K), K, V, !HM).
 
 det_update(!.HM, K, V) = !:HM :- 
 	det_update(K, V, !HM).
@@ -1329,7 +1328,7 @@ det_remove(K, V, !HM) :- det_hash_remove(hash(K), K, V, !HM).
 	
 
 :- pred remove(hash::in, K::in, shift::in, V::out, hashmap(K, V)::in, 
-	hashmap(K, V)::out)	is semidet <= hashable(K).
+	hashmap(K, V)::out)	is semidet.
 
 remove(H, K, _, V, leaf(H, K, V), empty_tree).
 
@@ -1521,7 +1520,7 @@ hash_member(indexed_branch(H, Array)::in, H::out, K::out, V::out) :-
 	array.member(Array, HM),
 	hash_member(HM, H, K, V).
 	
-hash_member(full_branch(Array)::in, K::out, V::out) :-
+hash_member(full_branch(Array)::in, H::out, K::out, V::out) :-
 	array.member(Array, HM),
 	hash_member(HM, H, K, V).
 	
@@ -1647,8 +1646,7 @@ hash_transform_value(P, H, K, !HM) :- transform_value_tree(P, H, K, 0, !HM).
 transform_value(P, K, !HM) :- transform_value_tree(P, hash(K), K, 0, !HM).
 
 :- pred transform_value_tree(pred(V, V)::in(pred(in, out) is det), hash::in,
-	K::in, shift::in, hashmap(K, V)::in, hashmap(K, V)::out) is semidet 
-	<= hashable(K). 
+	K::in, shift::in, hashmap(K, V)::in, hashmap(K, V)::out) is semidet. 
 
 transform_value_tree(P, H, K, _S, !HM) :-
 	!.HM = leaf(H, K, V0),
@@ -1706,7 +1704,7 @@ det_hash_transform_value(F, H, K, !.HM) = !:HM :-
         !HM).
 		
 det_hash_transform_value(P, H, K, !HM) :-
-    ( if transform_value(P, H, K, !.HM, NewHM) then
+    ( if hash_transform_value(P, H, K, !.HM, NewHM) then
         !:HM = NewHM
     else
         report_lookup_error("hashmap.det_hash_transform_value: key not found",
