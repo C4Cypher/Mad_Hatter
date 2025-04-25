@@ -3256,19 +3256,19 @@ foldl3(P, collision(_H, Bucket), !A, !B, !C) :-
 	map.foldl3(P, Bucket, !A, !B, !C).
 	
 	
-:- pred pre_hashed_foldl(pred(hash, K, V, A, A), hashmap(K, V), A, A).
-:- mode pre_hashed_foldl(in(pred(in, in, in, in, out) is det), in, in, out)
+:- pred hash_foldl(pred(hash, K, V, A, A), hashmap(K, V), A, A).
+:- mode hash_foldl(in(pred(in, in, in, in, out) is det), in, in, out)
 	is det.
-:- mode pre_hashed_foldl(in(pred(in, in, in, in, out) is semidet), in, in, out)
+:- mode hash_foldl(in(pred(in, in, in, in, out) is semidet), in, in, out)
 	is semidet.
 	
-pre_hashed_foldl(_P, empty_tree, !A).
-pre_hashed_foldl(P, leaf(H, K, V), !A) :- P(H, K, V, !A).
-pre_hashed_foldl(P, indexed_branch(_B, Array), !A) :-
-	array.foldl(pre_hashed_foldl(P), Array, !A).
-pre_hashed_foldl(P, full_branch(Array), !A) :-
-	array.foldl(pre_hashed_foldl(P), Array, !A).
-pre_hashed_foldl(P, collision(H, Bucket), !A) :- 
+hash_foldl(_P, empty_tree, !A).
+hash_foldl(P, leaf(H, K, V), !A) :- P(H, K, V, !A).
+hash_foldl(P, indexed_branch(_B, Array), !A) :-
+	array.foldl(hash_foldl(P), Array, !A).
+hash_foldl(P, full_branch(Array), !A) :-
+	array.foldl(hash_foldl(P), Array, !A).
+hash_foldl(P, collision(H, Bucket), !A) :- 
 	curry_hash(P, H, PH), 
 	map.foldl(PH, Bucket, !A).
 	
