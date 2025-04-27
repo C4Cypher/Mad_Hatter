@@ -21,16 +21,16 @@
 % allow mh_symbol_map to be used as a 'drop-in' replacement for map.map.
 % Note that most, but not all of the calls from map.m have been replicated.
 
-
 :- interface.
 
 :- import_module list.
 :- import_module assoc_list.
 :- import_module maybe.
 :- import_module set.
-:- import_module bool. 
 
 :- import_module hashmap.
+
+:- import_module mh_symbol.
 
 %-----------------------------------------------------------------------------%
 % Symbol_map
@@ -41,7 +41,7 @@
 % Construction
 
 :- func init = mh_symbol_map(_).
-:- pred init(mh_symbol_map(_)::out).
+:- pred init(mh_symbol_map(_)::out) is det.
 
 
 :- func singleton(mh_symbol, T) = mh_symbol_map(T).
@@ -113,10 +113,10 @@
 
 	% Inserts an element into a mh_symbol_map, overwrite element if it 
 	% already exists
-:- pred set(mh_symbol::in, T::in, mh_symbol_map(T)::in, mh_symbol_map(T)::out) is det.
+:- pred set(mh_symbol::in, T::in, mh_symbol_map(T)::in, mh_symbol_map(T)::out) 
+	is det.
 :- func set(mh_symbol_map(T), mh_symbol, T) = mh_symbol_map(T).
 	
-
 :- func set_from_corresponding_lists(mh_symbol_map(T), list(mh_symbol), 
 	list(T)) =	mh_symbol_map(T).
 :- pred set_from_corresponding_lists(list(mh_symbol)::in, list(T)::in,
@@ -190,8 +190,8 @@
 :- func keys_as_set(mh_symbol_map(_)) = set(mh_symbol).
 :- pred keys_as_set(mh_symbol_map(_)::in, set(mh_symbol)::out) is det.
 
-:- func values(mh_symbol_map(_mh_symbol, T)) = list(T).
-:- pred values(mh_symbol_map(_mh_symbol, T)::in, list(T)::out) is det.
+:- func values(mh_symbol_map(T)) = list(T).
+:- pred values(mh_symbol_map(T)::in, list(T)::out) is det.
 
 :- pred keys_and_values(mh_symbol_map(T)::in, list(mh_symbol)::out, list(T)::out)
 	is det.
@@ -207,7 +207,6 @@
 
 %-----------------------------------------------------------------------------%
 % Operations on values.
-
 
 	% Update the value at the given key by applying the supplied
 	% transformation to it. Fails if the key is not found. This is faster
@@ -230,7 +229,6 @@
 
 %---------------------------------------------------------------------------%
 % Operations on two or more maps.
-
 
 	% Note: Unlike Mercury standard map library, these calls perform the same,
 	% regardless of the order of the  arguments
@@ -303,9 +301,9 @@
 :- pred det_intersect((pred(T, T, T))::in(pred(in, in, out) is semidet),
     mh_symbol_map(T)::in, mh_symbol_map(T)::in, mh_symbol_map(T)::out) is det.
 	
-	% intersect_list(Pred, HM, [M | Ms ], Result):
-	% Recursively insersect HM with M and then recursively call the result with
-	% Ms, folding over the entire list. If the list is empty, return HM. 
+	% intersect_list(Pred, M, [M | Ms ], Result):
+	% Recursively insersect M with M and then recursively call the result with
+	% Ms, folding over the entire list. If the list is empty, return M. 
 :- pred intersect_list(pred(T, T, T), mh_symbol_map(T), list(mh_symbol_map(T)), 
 	mh_symbol_map(T)).
 :- mode intersect_list(in(pred(in, in, out) is det), in, in, out) is det.
@@ -349,8 +347,8 @@
 :- pred det_union(pred(T, T, T)::in(pred(in, in, out) is semidet),
     mh_symbol_map(T)::in, mh_symbol_map(T)::in, mh_symbol_map(T)::out) is det.
 	
-	% union_list(Pred, HM, [M | Ms ], Result):
-	% Recursively union HM with M and then recursively call the result with
+	% union_list(Pred, M, [M | Ms ], Result):
+	% Recursively union M with M and then recursively call the result with
 	% Ms, folding over the entire list. 
 :- pred union_list(pred(T, T, T), mh_symbol_map(T), list(mh_symbol_map(T)), 
 	mh_symbol_map(T)).
@@ -372,8 +370,6 @@
 :- pred difference(mh_symbol_map(T)::in, mh_symbol_map(_)::in,
 	mh_symbol_map(T)::out) is det.
 	
-
-
 %-----------------------------------------------------------------------------%
 % Standard higher order functions on collections.
 
@@ -492,8 +488,7 @@ sm(M) = symbol_map(M).
 init = sm(hashmap.init).
 init(init).
 
-
-singleton(S, T) = sm(hashmap.hash_singleton(symbol_hash(S), mh_symbol, T)).
+singleton(S, T) = sm(hashmap.hash_singleton(symbol_hash(S), S, T)).
 singleton(S, T, singleton(S, T)).
 
 %-----------------------------------------------------------------------------%
@@ -501,29 +496,28 @@ singleton(S, T, singleton(S, T)).
 
 is_empty(sm(M)) :- is_empty(M).
 
-count(sm(HM)) = count(HM).
-count(HM, count(HM)).
+count(sm(M)) = count(M).
+count(M, count(M)).
 
 equal(sm(A), sm(B)) :- equal(A, B).
 
 %-----------------------------------------------------------------------------%
 % Search
 
-contains(sm(Map), S) :- contains(Map, symbol_hash(S)).
+contains(sm(Map), S) :- hashmap.hash_contains(Map, symbol_hash(S), S).
 
-search(sm(HM), S, hashmap.hash_search(HM, symbol_hash(S), S)).
+search(sm(M), S, hashmap.hash_search(M, symbol_hash(S), S)).
 
-search(sm(HM), S) = hashmap.hash_search(HM, symbol_hash(S), S).
-
+search(sm(M), S) = hashmap.hash_search(M, symbol_hash(S), S).
 
 lookup(M, S, lookup(M, S)).
 
-lookup(sm(HM), S) = 
-	(if search(HM, symbol_hash(S), S) = Found
+lookup(sm(M), S) = 
+	(if hashmap.hash_search(M, symbol_hash(S), S) = Found
 	then 
 		Found
 	else
-		report_lookup_error("mh_symbol_map.lookup: key not found", K)
+		report_lookup_error("mh_symbol_map.lookup: key not found", S)
 	).
 	
 inverse_search(_, _, _) :- sorry($module, $pred, "inverse_search").
@@ -535,11 +529,11 @@ upper_bound_lookup(_, _, _, _) :- sorry($module, $pred, "upper_bound_lookup").
 %-----------------------------------------------------------------------------%
 % Insertion
 
-insert(S, T, sm(!.HM), sm(!:HM)) :- 
-	hashmap.hash_insert(symbol_hash(S), S, T, !HM).
+insert(S, T, sm(!.M), sm(!:M)) :- 
+	hashmap.hash_insert(symbol_hash(S), S, T, !M).
 	
-insert(sm(!.HM), S, T) = sm(!:HM) :-
-	insert(S, T, !HM).
+insert(sm(!.M), S, T) = sm(!:M) :-
+	insert(S, T, !M).
 
 
 det_insert(S, T, !M) :-
@@ -547,7 +541,7 @@ det_insert(S, T, !M) :-
         !:M = NewMap
     else
         report_lookup_error("mh_symbol_map.det_insert: key already present", 
-		mh_symbol, T)
+		S, T)
     ).
 	
 :- pragma inline(det_insert/4).
@@ -559,23 +553,26 @@ det_insert(!.M, S, T) = !:M :-
 	
 det_insert_from_corresponding_lists(sm(M0), Ss, Ts) = sm(M) :-
     hashmap.det_insert_from_corresponding_lists(Ss, Ts, M0, M).
+	
+det_insert_from_corresponding_lists(Ss, Ts, M, 
+	det_insert_from_corresponding_lists(M, Ss, Ts)).
 
 det_insert_from_assoc_list(sm(M0), AL) = sm(M) :-
     hashmap.det_insert_from_assoc_list(AL, M0, M).
 
-det_insert_from_assoc_list(AL, M, det_insert_from_assoc_list(AL, M)).
+det_insert_from_assoc_list(AL, M, det_insert_from_assoc_list(M, AL)).
 
-% search_insert(S, T, MaybOldT, !HM)
-search_insert(S, T, MaybOldT, sm(!.HM), sm(!:HM)) :- 
-	hashmap.hash_search_insert(symbol_hash(S), S, T, MaybOldT, !HM).
+% search_insert(S, T, MaybOldT, !M)
+search_insert(S, T, MaybOldT, sm(!.M), sm(!:M)) :- 
+	hashmap.hash_search_insert(symbol_hash(S), S, T, MaybOldT, !M).
  
 
-set(S, T, sm(!.HM), sm(!:HM)) :- set(symbol_hash(S), S, T, !HM).
+set(S, T, sm(!.M), sm(!:M)) :- hashmap.hash_set(symbol_hash(S), S, T, !M).
 
 :- pragma inline(set/4).
 	
 set(!.M, S, T) = !:M :-
-	set(S, T, !HM).
+	set(S, T, !M).
 	
 :- pragma inline(set/3).
 
@@ -584,15 +581,14 @@ set_from_corresponding_lists(sm(M0), Ss, Ts) = sm(M) :-
 
 
 set_from_corresponding_lists(Ss, Ts, M, 
-	set_from_corresponding_lists(Ss, Ts, M)).
-
+	set_from_corresponding_lists(M, Ss, Ts)).
 
 set_from_assoc_list(sm(M0), AL) = sm(M) :-
     hashmap.set_from_assoc_list(AL, M0, M).
 
-set_from_assoc_list(AL, M, set_from_assoc_list(AL, M))
+set_from_assoc_list(AL, M, set_from_assoc_list(M, AL)).
 	
-update(S, T, M, update(S, T, M)).
+update(S, T, M, update(M, S, T)).
 
 update(sm(M), S, T) = sm(hashmap.hash_update(M, symbol_hash(S), S, T)).
 
@@ -602,17 +598,14 @@ det_update(S, T, !M) :-
         !:M = NewMap
     else
         report_lookup_error("mh_symbol_map.det_update: key not found", 
-			mh_symbol, T)
+			S, T)
     ).
 	
 det_update(!.M, S, T) = !:M :- 
-	det_update(S, T, !HM).
-
+	det_update(S, T, !M).
 
 %-----------------------------------------------------------------------------%
 % Removal
-
-
 
 remove(S, T, sm(!.M), sm(!:M)) :- 
 	hashmap.hash_remove(symbol_hash(S), S, T, !M).
@@ -622,9 +615,8 @@ det_remove(S, T, !M) :-
         T = Found,
 		!:M = NewMap
     else
-        report_lookup_error("mh_symbol_map.det_remove: key not found", K)
+        report_lookup_error("mh_symbol_map.det_remove: key not found", S)
     ).
-
 
 %-----------------------------------------------------------------------------%
 
@@ -632,13 +624,12 @@ det_remove(S, T, !M) :-
 delete(S, M, delete(M, S)).
 :- pragma inline(delete/3).
 
-delete(M, S) = hashmap.hash_delete(M, symbol_hash(S), S).
+delete(sm(M), S) = sm(hashmap.hash_delete(M, symbol_hash(S), S)).
 :- pragma inline(delete/2).
 
 delete_list(M0, Ss) = M :-
     mh_symbol_map.delete_list(Ss, M0, M).
 
-delete_list([], !Map).
 delete_list(Symbols, sm(!.Map), sm(!:Map)) :-
     hashmap.delete_list(Symbols, !Map).
 	
@@ -663,7 +654,7 @@ det_elem(Key, Map) = mh_symbol_map.lookup(Map, Key).
 member(sm(M)::in, S::in, T::out) :- 
 	hashmap.hash_search(M, symbol_hash(S), S, T).
 
-member(M::in, S::out, T::out) :- hashmap.hash_member(M, _Hash, S, T).
+member(sm(M)::in, S::out, T::out) :- hashmap.hash_member(M, _Hash, S, T).
 
 keys(M) = Ks :- keys(M, Ks).
 
@@ -678,11 +669,11 @@ keys_as_set(M) = Set :-
 	
 keys_as_set(sm(M), Set) :- hashmap.keys_as_set(M, Set).
 
-values(HM) = Ts :- values(HM, Ts).
+values(M) = Ts :- values(M, Ts).
 
 values(sm(M), Ts) :- hashmap.values(M, Ts).
 
-keys_and_values(s(M), Ks, Ts) :- hashmap.keys_and_values(M, Ks, Ts).
+keys_and_values(sm(M), Ks, Ts) :- hashmap.keys_and_values(M, Ks, Ts).
 	
 max_key(M) = S :- max_key(M, S).
 max_key(sm(M), S) :- hashmap.max_key(M, S).
@@ -714,13 +705,13 @@ transform_value(P, S, sm(!.M), sm(!:M)) :-
 	hashmap.hash_transform_value(P, symbol_hash(S), S, !M).
 
 det_transform_value(F, S, !.M) = !:M :-
-    det_transform_value(pred(V0::in, V::out) is det :- V = F(V0), S, !HM).
+    det_transform_value(pred(V0::in, V::out) is det :- V = F(V0), S, !M).
 
 det_transform_value(P, S, !M) :-
     ( if transform_value(P, S, !.M, NewM) then
         !:M = NewM
     else
-        report_lookup_error("mh_symbol_map.det_transform_value: key not found", K)
+        report_lookup_error("mh_symbol_map.det_transform_value: key not found", S)
     ).
 	
 %-----------------------------------------------------------------------------%
@@ -739,11 +730,11 @@ merge(sm(M1), sm(M2), sm(M)) :- hashmap.merge(M1, M2, M).
 	
 overlay(M1, M2) = M :- overlay(M1, M2, M).
 
-overlay(m(M1), sm(M2), sm(M)) :- hashmap.overlay(M1, M2, M).
+overlay(sm(M1), sm(M2), sm(M)) :- hashmap.overlay(M1, M2, M).
 
 overlay_large_map(M1, M2) = M :- overlay_large_map(M1, M2, M).
 
-overlay_large_map(M1, M2, M) :- overlay(M1, M2, HM).
+overlay_large_map(M1, M2, M) :- overlay(M1, M2, M).
 
 %-----------------------------------------------------------------------------%
 % Common Subset	
@@ -757,10 +748,7 @@ common_subset(sm(M1), sm(M2), sm(Sub)) :- hashmap.common_subset(M1, M2, Sub).
 
 intersect(F, sm(M1), sm(M2)) = sm(hashmap.intersect(F, M1, M2)).
 	
-intersect(P, sm(M1), sm(M2) sm(Int)) :- hashmap.intersect(P, M1, M2, Int). 
-	reverse(P, PR),
-	intersect_tree(0, P, PR, HM1, HM2, Int).
-	
+intersect(P, sm(M1), sm(M2), sm(Int)) :- hashmap.intersect(P, M1, M2, Int).
 
 det_intersect(PF, M1, M2) = Int :-
     P = (pred(X::in, Y::in, Z::out) is semidet :- Z = PF(X, Y) ),
@@ -773,7 +761,7 @@ det_intersect(P, M1, M2, Int) :-
         unexpected($pred, "mh_symbol_map.intersect failed")
     ).
 	
-intersect_list(_P, HM, [], HM).
+intersect_list(_P, M, [], M).
 
 intersect_list(P, SM, [ M | Ms ], Res) :- 
 	intersect(P, SM, M, Int),
@@ -806,7 +794,7 @@ det_union(P, M1, M2, Union) :-
 	).
 
 	
-union_list(_P, SM, [], HM).
+union_list(_P, SM, [], SM).
 
 union_list(P, SM, [ M | Ms ], Res) :- 
 	union(P, SM, M, Union),
@@ -827,8 +815,8 @@ difference(sm(A), sm(B), sm(C)) :- hashmap.difference(A, B, C).
 
 foldl(F, sm(M), A) = hashmap.foldl(F, M, A).
 foldl(P, sm(M), !A) :- hashmap.foldl(P, M, !A).
-foldl2(P, sm(M), !A, !B) :- hashmap.foldl(P, M, !A, !B).
-foldl3(P, sm(M), !A, !B, !C) :- hashmap.foldl(P, M, !A, !B, !C).
+foldl2(P, sm(M), !A, !B) :- hashmap.foldl2(P, M, !A, !B).
+foldl3(P, sm(M), !A, !B, !C) :- hashmap.foldl3(P, M, !A, !B, !C).
 
 
 

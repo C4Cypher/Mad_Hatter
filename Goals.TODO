@@ -67,21 +67,13 @@ get a repl running
 							representation for foreign calls
 								integrate into mode system
 				evaluation
-					environment
+					environment  <- I am here
+						A mapping of symbols to relations 
+							(modules are envorionments)
 						basic interface for map structure
 							bind, bound 
 							a table of evaluations, serves as a truth table and
 							memo table for evaluation state
-						unification  <- I am here
-							term unification
-								literal unificaiton without environment
-							redesign tuples
-								partial evaluation of tuples (CPS?)
-								array tuple sub ranges
-								native lists ( cons('[|]', ?list) )
-						evaluation
-							environment 
-							scope
 						event
 							rework context - done
 							warning
@@ -91,6 +83,14 @@ get a repl running
 						groundedness
 							evaluate a numeric 'groundedness' based on free
 							variables and groundedness of sub components
+						redesign tuples
+							partial evaluation of tuples (CPS?)
+							array tuple sub ranges
+							native lists ( cons('[|]', ?list) )
+					unification
+						term unification
+							literal unificaiton without environment
+						
 					an evaluation may not produce a value that is less ground
 						than the input, out = In >> Out, In =< Out
 normalize value terms
