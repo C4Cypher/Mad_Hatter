@@ -6,12 +6,12 @@
 % Public License as described in the file LICENCE.
 %-----------------------------------------------------------------------------%
 % 
-% File: mh_template.m
+% File: mh_answer.m
 % Main author: C4Cypher.
 % Stability: low.
 %-----------------------------------------------------------------------------%
 
-:- module mh_template.
+:- module mh_answer.
 
 :- interface.
 
