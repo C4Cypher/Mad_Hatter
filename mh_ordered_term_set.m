@@ -265,11 +265,14 @@
 
 :- implementation.
 
+:- import_module set.
 :- import_module int.
 :- import_module bool.
 :- import_module require.
 
 :- import_module util.
+
+:- import_module mh_term_map.
 
 
 % Variable naming
@@ -288,7 +291,10 @@
 % Ordered set
 
 :- type mh_ordered_term_set 
-	--->	ordered_term_set(order::array(T), sorted::array(T))
+	--->	ordered_term_set(
+			order::array(mh_term), 
+			map::mh_term_map(set(int))
+		)
 		where comparison is compare_ordered_term_sets.
 
 % Deterministic constructor

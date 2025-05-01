@@ -36,6 +36,9 @@
 
 :- pred is_empty(mh_term_map(_)::in) is semidet.
 
+:- func size(mh_term_map(_)) = int.
+:- pred size(mh_term_map(_)::in, int::out) is det.
+
 :- pred equal(mh_term_map(T)::in, mh_term_map(T)::in) is semidet.
 
 
@@ -180,12 +183,11 @@ T::out) is semidet.
 				atom :: symbol_map(T),
 				var :: mh_var_map(T),
 				mr_value :: mr_value_map(T),
-				cons :: mh_term_map(mh_term_map(T)), % mh_tuple_map size 2?
+				cons :: mh_tuple_map(T), % mh_tuple_map size 2?
 				tuple :: mh_tuple_map(T),
 				lazy :: mh_term_map(T),
-				predicate ::
+				fact ::
 				relation ::
-				function ::
 			).
 
 :- type symbol_map(T) == hashmap(mh_symbol, T).

@@ -32,13 +32,15 @@ get a repl running
 					fact assertions
 					mercury types
 				finish mh_term, my high level AST
-					refactor tuples, done
+					refactor tuples, done -- need to do again
 					refactor substitutions
+					ordered term sets  <- I am here
+					partial set evaluation/iterators?
 					hash out higher order types (see below)
 						implement term sets
 							implement term map
-								implement predicate maps
-									finish predicate definition <- in progress
+								implement fact maps
+									finish fact definition <- in progress
 								implement relation maps
 								function maps?
 					define environments/symbol substitution
@@ -67,7 +69,7 @@ get a repl running
 							representation for foreign calls
 								integrate into mode system
 				evaluation
-					environment  <- I am here
+					environment 
 						A mapping of symbols to relations 
 							(modules are envorionments)
 						basic interface for map structure
