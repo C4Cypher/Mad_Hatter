@@ -18,6 +18,7 @@
 % :- import_module array.
 
 :- import_module mh_clause.
+:- import_module mh_proposition.
 :- import_module mh_term.
 :- import_module mh_scope.
 :- import_module ordered_set.
@@ -55,7 +56,7 @@
 			% r(X) = Y :- p(X, Y).
 	--->	relation_clause(mh_clause)
 			% r(A, B) = C :- p({A, B, C}).
-	;		fact_relation(fact_term, mh_scope).
+	;		prop_relation(mh_proposition, mh_scope)
 			% r(X) = a(X) ; b(X). <-> r(X) = Y :- a(X) = Y ; b(X) = Y.
 	;		disj_relation(ordered_set(mh_relation))
 			% r(X) = a(X) , b(X). <-> r(X) = Y :- a(X) = Y , b(X) = Y. a = b.

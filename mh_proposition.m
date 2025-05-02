@@ -17,10 +17,10 @@
 
 :- import_module list.
 
-:- import_module ordered_set.
+:- import_module ordered_set. % TODO: ordered proposition sets
 
+:- import_module mh_value.
 :- import_module mh_term.
-:- import_module mh_environment.
 :- import_module mh_substitution.
 :- import_module mh_event.
 
@@ -32,8 +32,7 @@
 % hell, do it with failures.  Prerequesite for this is evaluation.
 
 :- type mh_proposition 
-	--->	proposition_true		% proposition boolean values
-	;		proposition_false
+	--->	proposition_value(truth_value) % Boolean truth value
 	;		proposition_disj(ordered_set(mh_proposition))	% A ; B ; C
 	;		proposition_conj(ordered_set(mh_proposition))	% A , B , C
 	;		proposition_neg(mh_proposition)					% not A
@@ -44,6 +43,9 @@
 	% failed execution, semantically false, mh_error gets injected into
 	% event log
 	;		proposition_error(mh_error).  
+ 
+ :- func proposition_true = mh_proposition.
+ :- func proposition_false = mh_proposition.
 	
 	
 :- pred apply_proposition_substitution(mh_substitution::in, mh_proposition::in,

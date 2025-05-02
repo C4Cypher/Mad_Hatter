@@ -17,7 +17,7 @@
 
 :- import_module array.
 
-:- import_module mh_term.
+:- import_module mh_proposition.
 :- import_module mh_scope.
 :- import_module mh_mode.
 :- import_module mh_arity.
@@ -34,10 +34,10 @@
 
 
 :- type mh_clause 
-	---> 	horn_clause(fact_term, arity, mh_scope). % p(X) :- 	
-	;		relation_clause(fact_term, arity, mh_scope) % r(X) = Y :-
-	;		function_clause(fact_term, arity, mh_scope) % f(X) -> Y
-	;		moded_clause(mh_mode, fact_term, mh_scope). % r(X::out) = ...
+	---> 	horn_clause(mh_proposition, arity, mh_scope). % p(X) :- 	
+	;		relation_clause(mh_proposition, arity, mh_scope) % r(X) = Y :-
+	;		function_clause(mh_proposition, arity, mh_scope) % f(X) -> Y
+	;		moded_clause(mh_mode, mh_proposition, mh_scope). % r(X::out) = ...
 	
 :- func clause_arity(mh_clause) = arity.
 :- func clause_scope(mh_clause) = mh_scope.
