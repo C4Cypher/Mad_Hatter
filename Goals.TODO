@@ -32,44 +32,25 @@ get a repl running
 					fact assertions
 					mercury types
 				finish mh_term, my high level AST
-					refactor tuples, done -- need to do again
-					refactor substitutions
-					ordered term sets  <- I am here
-					partial set evaluation/iterators?
-					hash out higher order types (see below)
-						implement term sets
-							implement term map
-								implement fact maps
-									finish fact definition <- in progress
-								implement relation maps
-								function maps?
-					define environments/symbol substitution
-						finish substitutions 
-							term constraints 	
-					hash out higher order types 
-						predicates
-							represent clause bodies, truth values
-							propositional language
-							conj and disj rep by ordered sets
-								implement ordered sets - done
-						relations 
-							represent equivalences and clauses
-							work out internal representation 
-								unify relations
-								clauses
-									modes
-										pre-conditions
-										post-conditions/promises?
-								single mode of a relation = clause + mode?
-							define clauses in terms of relations
-							scope
-							term constraints			
+					finish higher order types 
+						relations <- I am here
+							clauses
+							ordered proposition sets
+								proposition maps 
+							ordered relation sets
+								relation maps
+							functions
+								representation for foreign calls
 							mode system
-								implement inst trees?
-							representation for foreign calls
-								integrate into mode system
+					ordered term sets
+						finish term map							
+					refactor substitutions
+					refactor tuples
+					partial set evaluation/iterators? 
 				evaluation
 					environment 
+						finish substitutions 
+							term constraints 	
 						A mapping of symbols to relations 
 							(modules are envorionments)
 						basic interface for map structure
@@ -90,19 +71,17 @@ get a repl running
 							array tuple sub ranges
 							native lists ( cons('[|]', ?list) )
 					unification
-						term unification
-							literal unificaiton without environment
-						
+					
 					an evaluation may not produce a value that is less ground
 						than the input, out = In >> Out, In =< Out
-normalize value terms
+normalize value terms - started
 make a logo for Mad Hatter
 optimize terms
 	re-order mh_term constructors for optimal ordering
 	re-write mh_term into a C foreign type that can be efficiently serialized
 		and represented in a bytecode form without impacting it's function
 optimize symbols
-	hash table for symbol pointers? HAMT? GC safe?
+	hash table for symbol pointers - done
 	ensure symbols are thread safe 
 module library system
 	namespace resolution
@@ -110,6 +89,7 @@ organize a folder space for multiple front ends in different languages?
 modular framework for back_ends
 compile to native at runtime
 bootstrap Mad Hatter (implement Mad Hatter in Mad Hatter)
+compile bootstrapped Mad Hatter into C
 ensure that Mad Hatter can be a fully backwards compatable Mercury compiler
 	
 	
