@@ -21,22 +21,32 @@
 :- import_module mh_symbol.
 
 %-----------------------------------------------------------------------------%
+% Values
 
 :- type mh_value  % struct union  struct { bool foreign, union {}}?
-	--->	mh_value(
+
+	% Truth values
+	--->	mh_true
+	
+	;		mh_false
+	
+	% Mercury values
+	;		mr_value(univ)
+
+	% Literal values
+	;		mh_value(
 				word::c_pointer, 
 				size::uint, 	% width of the value in bytes
 				literal::bool,	% word/1 is a pointer if literal is false 
 				format::mh_value_format	
 			)
-			
+	
+	% Foreign values
 	;		foreign_value(
 				foreign_word::c_pointer,
 				language::mh_symbol, 
 				value_type::mh_symbol
-			)
-			
-	;		mr_value(univ).
+			).
 	
 	/* bytecode constructors
 	
@@ -56,6 +66,51 @@
 	;		unsigned_int
 	;		float
 	;		string.
+	
+:- pred unify_values(mh_value, mh_value).
+:- mode unify_values(in, in) is semidet.
+:- mode unify_values(in, out) is nondet.
+:- mode unify_values(out, in) is nondet.
+
+%TODO: Rules on unification of different value 'kinds'
+	
+%-----------------------------------------------------------------------------%
+% Truth values
+
+:- inst truth_value ---> mh_true ; mh_false.
+
+:- type truth_value =< mh_value
+	--->	mh_true
+	;		mh_false.
+	
+:- mode is_truth_value == ground >> truth_value.
+
+:- pred is_truth_value(mh_value::is_truth_value) is semidet.
+
+%-----------------------------------------------------------------------------%
+% Mercury values
+
+:- inst mercury_value ---> mr_value(ground).
+
+:- type mercury_value =< mh_value
+	--->	mr_value(univ).
+	
+:- mode is_mercury_value == ground >> mercury_value.
+
+:- pred is_mercury_value(mh_value::is_mercury_value).
+
+
+%-----------------------------------------------------------------------------%
+% Literal Values
+
+%TODO
+
+%-----------------------------------------------------------------------------%
+% Foreign values
+
+% TODO
+
+
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -63,4 +118,21 @@
 :- implementation.
 
 %-----------------------------------------------------------------------------%
+% Values
+
+%-----------------------------------------------------------------------------%
+% Truth values
+
+is_truth_value(mh_true).
+is_truth_value(mh_false).
+
+%-----------------------------------------------------------------------------%
+% Mercury values
+
+is_mercury_value(mr_value(_)).
+
+%-----------------------------------------------------------------------------%
+% Literal Values
+
+%TODO
 
