@@ -16,9 +16,7 @@
 :- interface.
 
 :- import_module list.
-:- import_module array.
-
-:- import_module ordered_set.
+:- import_module set.
 
 :- import_module mh_tuple.
 
@@ -49,16 +47,14 @@
 % True if the order of the elements are sorted, even with duplicates.
 :- pred is_sorted(mh_ordered_term_set::in) is semidet.
 
-% Sort a given set without removing elements.
+% Sort a given set using the standard ordering without removing elements.
 :- func sort(mh_ordered_term_set) = mh_ordered_term_set.
+:- pred sort(mh_ordered_term_set::in, mh_ordered_term_set::out) is det.
 
-% If the order is sorted and has no duplicates
-:- pred is_sorted_set(mh_ordered_term_set::in) is semidet. 
-
-% True if the internal ordered and sorted arrays refer to the same array, 
-% Offers a cheaper incomplete alternative test to is_sorted_set/1
-
-:- pred is_merged_set(mh_ordered_term_set::in) is semidet.
+% Sort using the standard ordering and remove duplicaates
+:- func sort_and_remove_dups(mh_ordered_term_set) = mh_ordered_term_set.
+:- pred sort_and_remove_dups(mh_ordered_term_set::in, mh_ordered_term_set::out)
+	is det.
 
 % Return the number of elements in the ordered portion of the set
 :- func size(mh_ordered_term_set) = int.
@@ -124,15 +120,12 @@
 % Return the maximum and minimum valid indexes for the order, return -1 for 
 % both values if empty set
 :- pred bounds(mh_ordered_term_set::in, int::out, int::out) is det.
-:- pred set_bounds(mh_ordered_term_set::in, int::out, int::out) is det.
 
 % As above, but fail on emtpy set
 :- pred semidet_bounds(mh_ordered_term_set::in, int::out, int::out) is semidet.
-:- pred semidet_set_bounds(mh_ordered_term_set::in, int::out, int::out) is semidet.
 
 % Succeed if the given index is in bounds for the given ordered_term_set
 :- pred in_bounds(mh_ordered_term_set::in, int::in) is semidet.
-:- pred in_set_bounds(mh_ordered_term_set::in, int::in) is semidet.
 
 % Return the first index (should always be 1) unless the set is empty then -1
 :- func min(mh_ordered_term_set) = int is det.
@@ -141,24 +134,12 @@
 :- func semidet_min(mh_ordered_term_set) = int is semidet.
 :- pred semidet_min(mh_ordered_term_set::in, int::out) is semidet.
 
-:- func set_min(mh_ordered_term_set) = int is det.
-:- pred set_min(mh_ordered_term_set::in, int::out) is det.
-
-:- func semidet_set_min(mh_ordered_term_set) = int is semidet.
-:- pred semidet_set_min(mh_ordered_term_set::in, int::out) is semidet.
-
 % Return the last index
 :- func max(ordered_term_set) = int is det.
 :- pred max(ordered_term_set::in, int::out) is det.
 
 :- func semidet_max(ordered_term_set) = int is semidet.
 :- pred semidet_max(ordered_term_set::in, int::out) is semidet.
-
-:- func set_max(ordered_term_set) = int is det.
-:- pred set_max(ordered_term_set::in, int::out) is det.
-
-:- func semidet_set_max(ordered_term_set) = int is semidet.
-:- pred semidet_set_max(ordered_term_set::in, int::out) is semidet.
 
 :- pred contains(mh_ordered_term_set::in, mh_term::in) is semidet.
 
@@ -168,16 +149,10 @@
 :- func lookup(mh_ordered_term_set, int) = mh_term is det.
 :- pred lookup(mh_ordered_term_set::in, int::in, mh_term::out) is det.
 
-:- func set_lookup(mh_ordered_term_set, int) = mh_term is det.
-:- pred set_lookup(mh_ordered_term_set::in, int::in, mh_term::out) is det.
-
-% Search for the value and return it's index in the ordered array (linear)
+% Search for the value and return the index in the ordered array (linear)
 :- func search(mh_ordered_term_set, mh_term) = int is semidet.
 :- pred search(mh_ordered_term_set::in, mh_term::in, int::out) is semidet.
-
-% Search for the value and return it's index in the sorted set. (log N)
-:- func set_search(mh_ordered_term_set, mh_term) = int is semidet.
-:- pred set_search(mh_ordered_term_set::in, mh_term::in, int::out) is semidet.
+.
 
 
 
@@ -265,7 +240,7 @@
 
 :- implementation.
 
-:- import_module set.
+:- import_module array.
 :- import_module int.
 :- import_module bool.
 :- import_module require.
@@ -326,16 +301,16 @@ comparison operations.
 % Basic operations
 
 
-is_valid(os(A, sort_and_remove_dups(A))).
+is_valid(os(A, M)) :- %sort A and remove dups, compare size with M, ensure membership in M
 
 empty_set = OS :- empty_set(OS).
 
-empty_set(os(A, A)) :- make_empty_array(A).
+empty_set(os(A, init)) :- make_empty_array(A).
 
 
 is_empty(os(A, _)) :- size(A, 0).
 
-singleton(T) = os(A, A) :- init(1, T, A).
+singleton(T) = os(A, singleton(T)) :- init(1, T, A).
 
 singleton(T, singleton(T)).
 
@@ -360,7 +335,7 @@ is_sorted(A, Last, Index) :-
 		is_sorted(A, Next, Index + 1)
 	).
 	
-sort(os(O, S)) = os(sort(copy(O)), S).
+sort(os(O, M)) = os(sort(copy(O)), M).
 
 is_sorted_set(os(A, A)).
 
