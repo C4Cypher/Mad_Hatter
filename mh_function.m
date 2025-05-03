@@ -22,8 +22,7 @@
 
 :- type mh_function
 	--->	pure_function(mh_relation)
-	;		compiled_function(mh_relation, function_call)
-	;		
+	;		compiled_function(mh_relation, function_call).
 
 
 %-----------------------------------------------------------------------------%
@@ -34,8 +33,3 @@
 :- import_module require.
 
 %-----------------------------------------------------------------------------%
-
-apply_function_substitution(_, _, _) :- sorry($module, $pred,
-	"apply_function_substitution/3").
-	
-:- pragma no_determinism_warning(apply_function_substitution/3).

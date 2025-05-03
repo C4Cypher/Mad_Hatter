@@ -26,12 +26,14 @@
 :- type mh_value  % struct union  struct { bool foreign, union {}}?
 
 	% Truth values
-	--->	mh_true
+	--->	mh_false 	% lit NULL?
 	
-	;		mh_false
+	;		mh_true		% lit '1'?
 	
 	% Mercury values
-	;		mr_value(univ)
+	;		mr_value(univ).
+	
+	/*  Uneeded for getting the initial implementation running
 
 	% Literal values
 	;		mh_value(
@@ -48,14 +50,13 @@
 				value_type::mh_symbol
 			).
 	
-	/* bytecode constructors
+	% bytecode constructors
 	
 	;		bytecode_chunk(start::c_pointer, chunk_size::uint)
 	;		bytecode_term(term_pointer::c_pointer, parent_chunk::mh_chunk).
 	
 :- type mh_chunk =< mh_value
 	--->	bytecode_chunk(start::c_pointer, chunk_size::uint).
-	*/
 			
 % Todo:   See if I can organize a c union of structs that fits nicely together
 % 			for these constructors
@@ -66,6 +67,8 @@
 	;		unsigned_int
 	;		float
 	;		string.
+	
+	%Uneeded for getting the initial implementation running */
 	
 :- pred unify_values(mh_value, mh_value).
 :- mode unify_values(in, in) is semidet.

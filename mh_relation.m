@@ -51,12 +51,10 @@
 
 % Put it another way, a relation is a disjunction of clauses
 
-
+% TODO: replaced ordered_set/1  with mh_relation_set or mh_ordered_relation_set
 :- type mh_relation 
 			% r(X) = Y :- p(X, Y).
 	--->	relation_clause(mh_clause)
-			% r(A, B) = C :- p({A, B, C}).
-	;		prop_relation(mh_proposition, mh_scope)
 			% r(X) = a(X) ; b(X). <-> r(X) = Y :- a(X) = Y ; b(X) = Y.
 	;		disj_relation(ordered_set(mh_relation))
 			% r(X) = a(X) , b(X). <-> r(X) = Y :- a(X) = Y , b(X) = Y. a = b.
