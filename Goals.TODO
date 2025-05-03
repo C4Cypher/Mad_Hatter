@@ -16,7 +16,8 @@ Design Goals:
 * Implement Mad Hatter in C, allowing for independence from Mercury runtime
 
 
-
+Read up on Knuth–Bendix completion algorithm
+Read up on Huet's algorithm
 
 Outline
 Current goals
