@@ -17,6 +17,7 @@
 
 :- import_module array.
 
+:- import_module mh_tuple.
 :- import_module mh_proposition.
 :- import_module mh_scope.
 :- import_module mh_mode.
@@ -32,9 +33,9 @@
 % in the source code that generated them.
 
 
-
 :- type mh_clause 
-	---> 	horn_clause(mh_proposition, arity, mh_scope). % p(X) :- 	
+	---> 	fact_clause(mh_tuple, mh_scope) % f(X).
+	;		horn_clause(mh_proposition, arity, mh_scope). % p(X) :- 	
 	;		relation_clause(mh_proposition, arity, mh_scope) % r(X) = Y :-
 	;		function_clause(mh_proposition, arity, mh_scope) % f(X) -> Y
 	;		moded_clause(mh_mode, mh_proposition, mh_scope). % r(X::out) = ...
