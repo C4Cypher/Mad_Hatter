@@ -52,9 +52,6 @@
 	% lazy constraints 
 	;		lazy(mh_term) 	% X:Term(Y) => X @ ?Term(Y) => ?Term(Y, X) 
 	
-	% modes
-	;		mode_term(mh_mode)
-	
 	% Higher order terms
 	;		relation(mh_relation) 
 	
