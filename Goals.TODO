@@ -42,10 +42,10 @@ get a repl running
 								relation maps
 							functions
 								representation for foreign calls
-							mode system
+							mode system <- I am here
 					ordered term sets
-						finish term map	 
-							proposition map <- I am here
+						finish term map	 - on hold
+							proposition map
 							relation map
 							function map
 							mode map
@@ -80,6 +80,9 @@ get a repl running
 					
 					an evaluation may not produce a value that is less ground
 						than the input, out = In >> Out, In =< Out
+			Incorporate mh_scope into mr_term conversion <- I am here
+			
+			
 normalize value terms - started
 make a logo for Mad Hatter
 optimize terms
