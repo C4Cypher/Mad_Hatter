@@ -21,8 +21,10 @@
 :- type function_call == (func(mh_term) = mh_term)
 
 :- type mh_function
+			% f(X) -> Y :- r(X) = Y.
 	--->	pure_function(mh_relation)
-	;		compiled_function(mh_relation, function_call).
+	;		compiled_function(mh_relation, function_call)
+	;		foreign_function(string, function_call).
 
 
 %-----------------------------------------------------------------------------%

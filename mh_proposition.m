@@ -17,12 +17,12 @@
 
 :- import_module list.
 
-:- import_module ordered_set. % TODO: ordered proposition sets
+:- import_module ordered_set. % TODO: ordered proposition sets and sub sets
 
 :- import_module mh_value.
 :- import_module mh_term.
 :- import_module mh_substitution.
-:- import_module mh_event.
+:- import_module mh_function.
 
 
 %-----------------------------------------------------------------------------%
@@ -32,17 +32,25 @@
 % hell, do it with failures.  Prerequesite for this is evaluation.
 
 :- type mh_proposition 
-	--->	proposition_value(truth_value) % Boolean truth value
-	;		proposition_disj(ordered_set(mh_proposition))	% A ; B ; C
-	;		proposition_conj(ordered_set(mh_proposition))	% A , B , C
-	;		proposition_neg(mh_proposition)					% not A
-	;		proposition_unify(mh_term, mh_term) 	% X = Y 
-%	;		proposition_unification(ordered_set(mh_term)) % X = Y = Z
-	;		proposition_sub(mh_substitution)	% { X -> Y, Y -> Z, Z -> foo }
-	
-	% failed execution, semantically false, mh_error gets injected into
-	% event log
-	;		proposition_error(mh_error).  
+			% Boolean truth value
+	--->	proposition_false 	
+	;		proposition_true		
+			% A ; B ; C
+	;		proposition_disj(ordered_set(mh_proposition))
+			% A , B , C
+	;		proposition_conj(ordered_set(mh_proposition))
+			% not A
+	;		proposition_neg(mh_proposition)
+			% X = Y
+	;		proposition_unify(mh_term, mh_term)
+			% X = Y = Z
+%	;		proposition_unification(ordered_set(mh_term))
+			% if C then T else E = C , T ; not C , E
+	;		proposition_branch(mh_proposition, mh_proposition, mh_proposition)
+			% p(X, Y) :- f(X) -> Y.
+	;		proposition_apply(mh_function, mh_term, mh_term)
+			% { X -> Y, Y -> Z, Z -> foo }
+	;		proposition_sub(ordered_set(mh_substitution)).  
  
  :- func proposition_true = mh_proposition.
  :- func proposition_false = mh_proposition.

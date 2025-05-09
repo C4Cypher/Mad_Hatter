@@ -25,13 +25,9 @@
 
 :- type mh_value  % struct union  struct { bool foreign, union {}}?
 
-	% Truth values
-	--->	mh_false 	% lit NULL?
-	
-	;		mh_true		% lit '1'?
-	
 	% Mercury values
-	;		mr_value(univ).
+	--->	mr_value(univ).
+	
 	
 	/*  Uneeded for getting the initial implementation running
 

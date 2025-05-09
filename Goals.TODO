@@ -16,8 +16,8 @@ Design Goals:
 * Implement Mad Hatter in C, allowing for independence from Mercury runtime
 
 
-Read up on Knuth–Bendix completion algorithm
 Read up on Huet's algorithm
+Read up on Knuth–Bendix completion algorithm
 
 Outline
 Current goals
@@ -34,7 +34,7 @@ get a repl running
 					mercury types
 				finish mh_term, my high level AST
 					finish higher order types 
-						relations <- I am here
+						relations
 							clauses
 							ordered proposition sets
 								proposition maps 
@@ -44,7 +44,12 @@ get a repl running
 								representation for foreign calls
 							mode system
 					ordered term sets
-						finish term map							
+						finish term map	 
+							proposition map <- I am here
+							relation map
+							function map
+							mode map
+							substitution map
 					refactor substitutions
 					refactor tuples
 					partial set evaluation/iterators? 

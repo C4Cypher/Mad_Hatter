@@ -20,7 +20,7 @@
 :- import_module mh_var_id.
 :- import_module mh_value.
 :- import_module mh_tuple.
-:- import_module mh_constraint.
+:- import_module mh_mode.
 :- import_module mh_relation.
 :- import_module mh_scope.
 :- import_module mh_substitution.
@@ -31,7 +31,6 @@
 
 %NOTE: the ordering of constructors is relevant for structure traversal
 % top- down is smallest to largest with comparison of different constructors
-
 :- type mh_term  
 
 	% nil, the abscence of term
@@ -46,13 +45,15 @@
 	% values
 	;		value(mh_value)
 	
-	% compound terms
+	% compound terms cons(foo, bar) == foo(bar)
 	;		cons(car::mh_term, cdr::mh_term)
 	;		tuple_term(mh_tuple)
 	
-	% lazy constraints --- not sure if this is a good description
-	;		lazy(relation_term) 	% X:Term(...) => X @ ?Term(...) => 
-									% ?Term(..., X) 
+	% lazy constraints 
+	;		lazy(mh_term) 	% X:Term(Y) => X @ ?Term(Y) => ?Term(Y, X) 
+	
+	% modes
+	;		mode_term(mh_mode)
 	
 	% Higher order terms
 	;		relation(mh_relation) 

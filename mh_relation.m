@@ -15,13 +15,15 @@
 
 :- interface.
 
-% :- import_module array.
+:- import_module ordered_set.
 
 :- import_module mh_clause.
 :- import_module mh_proposition.
-:- import_module mh_term.
+:- import_module mh_arity.
+:- import_module mh_function.
 :- import_module mh_scope.
-:- import_module ordered_set.
+:- import_module mh_term.
+:- import_module mh_mode.
 
 %-----------------------------------------------------------------------------%
 % Relation type
@@ -51,14 +53,26 @@
 
 % Put it another way, a relation is a disjunction of clauses
 
-% TODO: replaced ordered_set/1  with mh_relation_set or mh_ordered_relation_set
+% TODO: replace ordered_set/1  with mh_relation_set or mh_ordered_relation_set
 :- type mh_relation 
-			% r(X) = Y :- p(X, Y).
-	--->	relation_clause(mh_clause)
+			% Direct from parsed clause
+	--->	clause_relation(mh_clause)
 			% r(X) = a(X) ; b(X). <-> r(X) = Y :- a(X) = Y ; b(X) = Y.
 	;		disj_relation(ordered_set(mh_relation))
-			% r(X) = a(X) , b(X). <-> r(X) = Y :- a(X) = Y , b(X) = Y. a = b.
-	;		conj_relation(ordered_set(mh_relation)).
+			% r(X) = a(X) , b(X). <-> r(X) = Y :- a(X) = Y , b(X) = Y. r = a@b.
+	;		conj_relation(ordered_set(mh_relation))
+			% r(X) = Y :- not Y = n(X)
+	;		negated_relation(mh_relation)
+			% r(X) = Y :- f(X) -> Y.
+	;		func_relation(mh_function) %Hmmm ...
+			% r(X) = Y :- p(X, Y).
+	;		horn_relation(arity, mh_proposition, mh_scope)
+			% r(X::out(constraint), Y::out(constraint), Z::out(constraint)). 
+	;		fact_relation(mh_tuple, mh_scope)
+			% Curried relation based on first argument, nil maps to thunk
+	;		tree_relation(mh_term_map(mh_term))
+			% m(X::M) = (Y::N) :- r([X, Y]::[M, N])
+	;		mode_relation(mh_mode, mh_relation). 
 	
 :- pred apply_relation_substitution(mh_substitution::in, mh_relation::in,
 	mh_relation::out) is det.
