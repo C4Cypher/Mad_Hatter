@@ -17,11 +17,16 @@
 
 
 :- import_module mh_term.
-:- import_module mh_var_id.
+%:- import_module mh_var_id.
+:- import_module map.
+
 
 %-----------------------------------------------------------------------------%
 % Term maps
 
+:- type mh_term_map(T) == map(mh_term, T).
+
+/* Implementation delayed until mh_term is stable
 :- type mh_term_map(T).
 :- type mh_term_map == mh_term_map(mh_term).
 :- type mh_term_set == mh_term_map(unit).
@@ -191,4 +196,6 @@ T::out) is semidet.
 			).
 
 :- type symbol_map(T) == hashmap(mh_symbol, T).
+
+*/
 
