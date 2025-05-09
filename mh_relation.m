@@ -71,18 +71,18 @@
 	;		fact_relation(mh_tuple, mh_scope)
 			% Curried relation based on first argument, nil maps to thunk
 	;		tree_relation(mh_term_map(mh_term))
-			% m(X::M) = (Y::N) :- r([X, Y]::[M, N])
-	;		mode_relation(mh_mode, mh_relation). 
+			% r1(?X::M) = (Y::N) :- r2(?[X, Y]::[M, N])
+	;		moded_relation(mh_mode, mh_relation)
+			% r(M:mode).
+	;		norm_rleation(mh_mode, mh_scope). 
 	
 :- pred apply_relation_substitution(mh_substitution::in, mh_relation::in,
 	mh_relation::out) is det.
 	
+:- func relation_scope(mh_relation) = mh_scope.
+	
  
 :- pred ground_relation(mh_relation::in) is semidet.
- 
-:- func relation_arity(mh_relation, int) = mh_relation.
- 
-:- pred relation_arity(mh_relation::in, int::in, mh_relation::out) is det.
  
 
 
@@ -104,11 +104,3 @@ apply_relation_substitution(_, _, _) :- sorry($module, $pred,
 ground_relation(_) :- sorry($module, $pred, "ground_relation/1").
 
 :- pragma no_determinism_warning(ground_relation/1).
-
-relation_arity(invalid_relation(_, _) = 0.
-relation_arity(relation(P)) = fact_arity(P) - 1.
-
-
-relation_arity(T, relation_arity(T)).
-
-:- instance arity(mh_relation) where [ pred(arity/2) is relation_arity ].
