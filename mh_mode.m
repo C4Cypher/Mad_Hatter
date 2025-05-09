@@ -18,16 +18,41 @@
 :- import_module array.
 
 :- import_module mh_term.
+:- import_module mh_tuple.
 
 %-----------------------------------------------------------------------------%
-% Term modes
-
+% Modes
 
 :- type mh_mode
-	--->	mh_constraint >> mh_constraint
-	;		in(mh_constraint)
-	;		out(mh_constraint)
+	--->	mh_term >> mh_term
+	% 		in(T) == T >> T	
+	;		in(mh_term)
+	% 		out(T) == free >> T
+	;		out(mh_term)
+	%		binds(T, U) == T >> (T , U)
+	;		binds(mh_term, mh_term)
+	%		compound_mode({ in(A), out(B) }) == { A, free } >> { A, B }
 	;		compound_mode(array(mh_mode)).
+	
+%-----------------------------------------------------------------------------%
+% Contracts
+
+:- inst mh_contract ---> ground >> ground.
+
+:- type mh_contract =< mh_mode
+	---> 	mh_term >> mh_term.
+	
+:- mode is_contract == mh_mode >> mh_contract.
+:- pred is_contract(mh_mode::is_contract) is semidet.
+	
+	
+:- pred mode_contract(mh_mode, mh_contract).
+:- mode mode_contract(in, out) is det.
+:- mode mode_contract(out, in) is multi.
+
+
+
+
 
 
 % Unify modes
@@ -36,3 +61,10 @@
 %-----------------------------------------------------------------------------%
 
 :- implementation.
+
+
+
+%-----------------------------------------------------------------------------%
+% Contracts
+
+is_contract(_ >> _).
