@@ -56,15 +56,6 @@
 :- mode tuple(in) = out is det.
 :- mode tuple(out) = in is semidet. 
 
-:- func tuple_list(T) = mh_tuple <= mr_tuple(T).
-:- mode tuple_list(in) = out is det.
-:- mode tuple_list(out) = in is semidet. 
-
-:- func tuple_array(T) = mh_tuple <= mr_tuple(T).
-:- mode tuple_array(in) = out is det.
-:- mode tuple_array(out) = in is semidet. 
-
-
 :- func to_list(mh_tuple) = list(mh_term).
 :- func from_list(list(mh_tuple)) = mh_tuple.
 
@@ -216,8 +207,7 @@ tuple(T::in) = (Tuple::out) :-
 			dynamic_cast(T, U:mh_tuple);
 			dynamic_cast(T, V:list(mh_term)), U = list_tuple(V);
 			dynamic_cast(T, V:array(mh_term)), U = array_tuple(V);
-			dynamic_cast(T, tuple_term(V):mh_term), U = tuple(V);
-			dynamic_cast(T, tuple_term(V):compound_term), U = tuple(V) %smelly
+			dynamic_cast(T, tuple_term(V):mh_term), U = tuple(V)
 		)
 	then
 		Tuple = U
@@ -229,11 +219,9 @@ tuple(T::out) = (Tuple::in) :-
 	require_complete_switch [Tuple] (
 		Tuple = mr_tuple(U), dynamic_cast(U, T);
 		Tuple = list_tuple(U), dynamic_cast(U, T);
-		Tuple = array_tuple(U), dynamic_cast(U, T);
-		Tuple = tuple_sub(Tup0, Sub), 
-			apply_tuple_substiution(Sub, Tup0, Tup1),
-			Tup1 = tuple(T)
+		Tuple = array_tuple(U), dynamic_cast(U, T)
 	).
+
 	
 to_list(mr_tuple(T)) = List :-
 	fold_mr_tuple(list.cons, T, [], List).
