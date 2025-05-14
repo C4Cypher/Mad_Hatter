@@ -42,7 +42,7 @@
 :- type mh_contract =< mh_mode
 	---> 	mh_term >> mh_term.
 	
-:- mode is_contract == mh_mode >> mh_contract.
+:- mode is_contract == ground >> mh_contract.
 :- pred is_contract(mh_mode::is_contract) is semidet.
 	
 	

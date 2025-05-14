@@ -76,7 +76,7 @@ convert_mr_term(M) =
 					Term = Atom
 				;
 					SubTerms = [ Arg | Args ],
-					Atom:functor = atom(symbol(Symbol)),
+					Atom:mh_term = atom(symbol(Symbol)),
 					( if Args = []
 					then 
 						Term = cons(Atom, convert_mr_term(Arg) )
@@ -110,7 +110,7 @@ convert_mr_term(M, Term, Context) :-
 					T = Atom
 				;
 					SubTerms = [ Arg | Args ],
-					Atom:functor = atom(symbol(Symbol)),
+					Atom:mh_term = atom(symbol(Symbol)),
 					( if Args = []
 					then 
 						T = cons(Atom, convert_mr_term(Arg) )

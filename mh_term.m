@@ -158,8 +158,6 @@
 
 :- pred compound_term(mh_term::compound_term) is semidet.
 
-:- instance arity(compound_term).
-% :- instance tuple(compound_term).
 
 %-----------------------------------------------------------------------------%
 %	Mad Hatter constructors
@@ -173,8 +171,6 @@
 
 :- pred mh_constructor(mh_term::mh_constructor) is semidet.
 
-:- instance arity(mh_constructor).
-% :- instance tuple(mh_constructor).
 
 %-----------------------------------------------------------------------------%
 %	Tuple terms
@@ -183,8 +179,6 @@
 
 :- type tuple_term =< compound_term
 	--->	tuple_term(mh_tuple).
-	
-:- instance arity(tuple_term).
 
 :- mode tuple_term == ground >> tuple_term.
 
@@ -199,7 +193,7 @@
 :- type mh_constraint =< mh_term
 	--->	lazy(relation_term).
 	
-:- mode is_constraint == mh_term >> mh_constraint.
+:- mode is_constraint == ground >> mh_constraint.
 
 :- pred is_constraint(mh_term::is_constraint) is semidet.
 
@@ -242,7 +236,7 @@
 ground_term(T) :-
 	T = atom(_);
 	T = mr_value(_);
-	T = cons(ground_functor(_), ground_term(_));
+	T = cons(ground_term(_), ground_term(_));
 	T = tuple_term(U), ground_tuple(U);
 	T = relation(R), ground_relation(R);
 	T = function(F), ground_function(F);
@@ -343,13 +337,6 @@ compound_term(T) :-
 
 mh_constructor(cons(_, _)).
 
-:- instance arity(mh_constructor) where [ 
-	arity(cons(_, T), Arg) :-
-		(	if T = tuple_term(Tuple)
-			then Arg = arity(Tuple)
-			else Arg = 1
-		) 
-].
 	
 %-----------------------------------------------------------------------------%
 %	Tuple terms

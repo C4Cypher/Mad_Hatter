@@ -20,10 +20,13 @@
 :- import_module mh_clause.
 :- import_module mh_proposition.
 :- import_module mh_arity.
-:- import_module mh_function.
+:- import_module mh_tuple.
 :- import_module mh_scope.
+:- import_module mh_term_map.
+:- import_module mh_function.
 :- import_module mh_term.
 :- import_module mh_mode.
+:- import_module mh_substitution.
 
 %-----------------------------------------------------------------------------%
 % Relation type

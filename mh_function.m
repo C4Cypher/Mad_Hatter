@@ -18,7 +18,7 @@
 :- import_module mh_term.
 :- import_module mh_relation.
 
-:- type function_call == (func(mh_term) = mh_term)
+:- type function_call == (func(mh_term) = mh_term).
 
 :- type mh_function
 			% f(X) -> Y :- r(X) = Y.

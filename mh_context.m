@@ -38,7 +38,7 @@
 %-----------------------------------------------------------------------------%
 % Context
 
-from_mr_context(context(File, Line)) = 
+from_mr_context(term_context.context(File, Line)) = 
 	(if File = "", Line = 0
 	then 
 		dummy_context

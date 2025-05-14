@@ -29,7 +29,7 @@
 
 :- type mh_scope 
 	--->	no_scope
-	;		root_scope(root_context :: mh_context, names :: var_names),
+	;		root_scope(root_context :: mh_context, names :: var_names)
 	;		child_scope(
 				parent :: mh_scope, 
 			child_context::mh_context,

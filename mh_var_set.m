@@ -166,7 +166,7 @@
 :- mode id_reverse_sparse_index(in, in) = out is semidet.
 :- mode id_reverse_sparse_index(out, in) = in is semidet.
 
-:- pred sparse_index(mh_var, mh_var_set, in).
+:- pred sparse_index(mh_var, mh_var_set, int).
 :- mode sparse_index(in, in, out) is semidet.
 :- mode sparse_index(out, in, in) is semidet.
 

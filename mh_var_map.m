@@ -6,12 +6,12 @@
 % Public License as described in the file LICENCE.
 %-----------------------------------------------------------------------------%
 % 
-% File: mh_var_map(T).m
+% File: mh_var_map(.m
 % Main author: C4Cypher.
 % Stability: low.
 %-----------------------------------------------------------------------------%
 
-:- module mh_var_map(T).
+:- module mh_var_map.
 
 :- interface.
 
@@ -76,7 +76,7 @@
 :- func id_search(mh_var_map(T), var_id) = T is semidet.
 
 :- pred search(mh_var_map(T)::in, mh_var::in, T::out) is semidet.
-:- func search(mh_var_map, mh_var) = T is semidet.
+:- func search(mh_var_map(T), mh_var) = T is semidet.
 
 % Find a given variable ID in the var_map, throw an exception if the id is not
 % found 
@@ -109,10 +109,10 @@
 % next(Map, Elem, Last, Current)
 % Retreive the next element using the iterator, fail if no more elements
 :- pred next(mh_var_map(T)::in, T::out, var_map_iterator::in, 
-	var_map:iterator::out) is semidet.
+	var_map_iterator::out) is semidet.
 
 :- pred next(mh_var_map(T)::in, var_id::out, T::out, var_map_iterator::in, 
-	var_map:iterator::out) is semidet.
+	var_map_iterator::out) is semidet.
 	
 	
 % For generating new var_map arrays
@@ -270,7 +270,7 @@
 
 % Var maps are represented by a sparse array indexed by a var_set
 
-:- type mh_var_map(T).
+:- type mh_var_map(T)
 	--->	var_map_empty
 	;		var_map(set::mh_var_set, array::array(T)).
 
@@ -365,11 +365,11 @@ lookup(var_map, Var) = Term :- lookup(var_map, Var, Term).
 %-----------------------------------------------------------------------------%
 % Iterator 
 
-:- type var_map_iterator = int.
+:- type var_map_iterator == int.
 
 first(var_map(_, A), array.lookup(A, Index), Index@0).
 first(var_map(S, A), id_reverse_sparse_index(Index, S), array.lookup(A, Index), 
-	Index@0)
+	Index@0).
 
 det_first(Map, T, I) :-
 	( if first(Map, T0, I0)
@@ -377,7 +377,7 @@ det_first(Map, T, I) :-
 		T = T0,
 		I = I0
 	else
-	report_lookup_error(
+		report_lookup_error(
 		"mh_var_map.det_first: Cannot produce iterator on empty map.")
 	).
 	
@@ -454,9 +454,9 @@ det_insert_from_assoc_list([K - V | KVs], !Map) :-
 search_insert(var(ID), T, Result, !Map) :-
 	( if search(!.Map, ID, Old)
 	then
-		Result = yes(Old),
+		Result = yes(Old)
 	else
-		Result = no.
+		Result = no
 	),
 	id_set(ID, T, !Map).
 	
@@ -536,7 +536,7 @@ id_delete(ID, !Map) :-
 			(if
 				!.Map = var_map(!.Set, !.Array),
 				id_sparse_index(ID, !.Set, Index),
-				var_set_remove_id(ID, !Set),			
+				var_set_remove_id(ID, !Set)		
 			then
 				(if 
 					not empty_var_set(!.Set),
@@ -626,8 +626,8 @@ intersect(F, M1@var_map(S1, _), M2@var_map(S2, _), Intersection) :-
 	else
 		init_first(S, FirstID, Iter),
 		array.init(ArraySize, element_intersect(F, M1, M2, FirstID), NewArray),
-		intersect_loop(F, M1, M2, S, Iter, NewArray, FinalArray).
-	)
+		intersect_loop(F, M1, M2, S, Iter, NewArray, FinalArray)
+	).
 	
 	
 	
@@ -671,8 +671,8 @@ difference(M1@var_map(S1, _), var_map(S2, _), Difference) :-
 	else
 		init_first(S, FirstID, Iter),
 		array.init(ArraySize, id_lookup(M1, FirstID), NewArray),
-		intersect_loop(F, M1, S, Iter, NewArray, FinalArray).
-	)
+		intersect_loop(F, M1, S, Iter, NewArray, FinalArray)
+	).
 	
 :- pred difference_loop(var_map(T)::in, mh_var_set::in,	var_map_iterator::in, 
 	array(T)::array_di, array(T)::array_uo) is det.

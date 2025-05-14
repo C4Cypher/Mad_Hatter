@@ -65,30 +65,19 @@
 	;		string.
 	
 	%Uneeded for getting the initial implementation running */
-	
+/*	
 :- pred unify_values(mh_value, mh_value).
 :- mode unify_values(in, in) is semidet.
 :- mode unify_values(in, out) is nondet.
 :- mode unify_values(out, in) is nondet.
+*/
 
 %TODO: Rules on unification of different value 'kinds'
-	
-%-----------------------------------------------------------------------------%
-% Truth values
 
-:- inst truth_value ---> mh_true ; mh_false.
-
-:- type truth_value =< mh_value
-	--->	mh_true
-	;		mh_false.
-	
-:- mode is_truth_value == ground >> truth_value.
-
-:- pred is_truth_value(mh_value::is_truth_value) is semidet.
 
 %-----------------------------------------------------------------------------%
 % Mercury values
-
+/* Redundant if mr_value is the only constructor.
 :- inst mercury_value ---> mr_value(ground).
 
 :- type mercury_value =< mh_value
@@ -97,7 +86,7 @@
 :- mode is_mercury_value == ground >> mercury_value.
 
 :- pred is_mercury_value(mh_value::is_mercury_value).
-
+*/
 
 %-----------------------------------------------------------------------------%
 % Literal Values
@@ -118,17 +107,10 @@
 
 %-----------------------------------------------------------------------------%
 % Values
-
-%-----------------------------------------------------------------------------%
-% Truth values
-
-is_truth_value(mh_true).
-is_truth_value(mh_false).
-
 %-----------------------------------------------------------------------------%
 % Mercury values
 
-is_mercury_value(mr_value(_)).
+%is_mercury_value(mr_value(_)).
 
 %-----------------------------------------------------------------------------%
 % Literal Values

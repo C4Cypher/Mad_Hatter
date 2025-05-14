@@ -18,12 +18,13 @@
 :- import_module list.
 :- import_module array.
 
+:- import_module ordered_set.
+
 :- import_module mh_arity.
 :- import_module mh_term.
 :- import_module mh_var_set.
 :- import_module mh_var_id.
 :- import_module mh_substitution.
-:- import_module mh_ordered_set.
 
 
 %-----------------------------------------------------------------------------%
@@ -40,10 +41,11 @@
 
 :- pred tuple_is_empty(mh_tuple::in) is semidet.
 
-:- func tuple_compare(mh_tuple::in, mh_tuple::in) = comparison_result.
-:- pred tuple_compare(comparison_result::out, mh_tuple::in, mh_tuple::in).
+:- func tuple_compare(mh_tuple, mh_tuple) = comparison_result.
+:- pred tuple_compare(comparison_result::out, mh_tuple::in, mh_tuple::in)
+	is det.
 
-:- pred tuple_equal(mh_tuple)
+:- pred tuple_equal(mh_tuple::in, mh_tuple::in) is semidet.
 
 %-----------------------------------------------------------------------------%
 % Tuple constructors and conversion
@@ -61,10 +63,6 @@
 :- func tuple_array(T) = mh_tuple <= mr_tuple(T).
 :- mode tuple_array(in) = out is det.
 :- mode tuple_array(out) = in is semidet. 
-
-:- func tuple_list(T) = mh_tuple <= mr_tuple(T).
-:- mode tuple_list(in) = out is det.
-:- mode tuple_list(out) = in is semidet. 
 
 
 :- func to_list(mh_tuple) = list(mh_term).

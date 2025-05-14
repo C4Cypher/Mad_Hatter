@@ -31,7 +31,7 @@
 	--->	sub_map(mh_var_map(mh_term))
 	;		ren_map(mh_var_map(var_id)).
 	
-:- inst term_sub
+:- inst term_substitution
 	--->	sub_map(ground).
 	
 :- pred init_sub(mh_substitution::out) is det.
@@ -49,7 +49,7 @@
 :- pred sub_from_offset_array(array(mh_term)::in, var_id_offset::in, 
 	mh_substitution::out) is det.
 	
-:- func sub_from_offset_array(array(mh_term), var_id_offset) = mh_substitution
+:- func sub_from_offset_array(array(mh_term), var_id_offset) = mh_substitution.
 
 
 % If a substitution consists only of var mappings, convert the internal
@@ -61,9 +61,10 @@
 	(mh_substitution::out(mh_renaming)) is semidet.
 	
 % If a substitution is in renaming form, convert to a var mapping substitution
-:- pred ren_to_sub(mh_substitution::in, mh_substitution::out(term_sub)) is det.
-:- func ren_to_sub(mh_substitution::in) = (mh_substitution::out(term_sub))
-	is det.
+:- pred ren_to_sub(mh_substitution::in, 
+	mh_substitution::out(term_substitution)) is det.
+:- func ren_to_sub(mh_substitution::in) = 
+	(mh_substitution::out(term_substitution)) is det.
 
 %-----------------------------------------------------------------------------%
 % Bounds
@@ -260,11 +261,11 @@ substitution_bounds(ren_array(Map),	Offset, Set) :-
 	else var_map_bounds(Map, Offset, Set)
 	).
 	
-det_substitution_bounds(sub_array(Map),	Offset, Set) :- 
-	var_map_bounds(Map, Offset, Set)).
+det_substitution_bounds(sub_array(Map),	Offset, Set) :-
+	var_map_bounds(Map, Offset, Set).
 	
 det_substitution_bounds(ren_array(Map),	Offset, Set) :- 
-	var_map_bounds(Map, Offset, Set)).
+	var_map_bounds(Map, Offset, Set).
 
 %-----------------------------------------------------------------------------%
 % Looking up variables in substitutions
@@ -360,7 +361,7 @@ renaming_bounds(ren_array(Map),	Offset, Set) :-
 	).
 
 renaming_bounds_det(ren_array(Map),	Offset, Set) :- 
-	var_map_bounds(Map, Offset, Set)).
+	var_map_bounds(Map, Offset, Set).
 	
 %-----------------------------------------------------------------------------%
 % Looking up variables in renamings
