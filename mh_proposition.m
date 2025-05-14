@@ -15,11 +15,10 @@
 
 :- interface.
 
-:- import_module list.
+%:- import_module list.
 
 :- import_module ordered_set. % TODO: ordered proposition sets and sub sets
 
-:- import_module mh_value.
 :- import_module mh_term.
 :- import_module mh_substitution.
 :- import_module mh_function.
@@ -51,9 +50,7 @@
 	;		proposition_apply(mh_function, mh_term, mh_term)
 			% { X -> Y, Y -> Z, Z -> foo }
 	;		proposition_sub(ordered_set(mh_substitution)).  
- 
- :- func proposition_true = mh_proposition.
- :- func proposition_false = mh_proposition.
+
 	
 	
 :- pred apply_proposition_substitution(mh_substitution::in, mh_proposition::in,

@@ -37,7 +37,6 @@
 :- type mh_tuple.
 
 :- instance arity(mh_tuple).
-:- instance mr_tuple(mh_tuple).
 
 :- pred tuple_is_empty(mh_tuple::in) is semidet.
 
@@ -52,8 +51,8 @@
 
 % reverse modes fail on type mismatch
 
-:- func tuple(T) = mh_tuple <= mr_tuple(T).
-:- mode tuple(in) = out is det.
+:- func tuple(T) = mh_tuple.
+:- mode tuple(in) = out is semidet.
 :- mode tuple(out) = in is semidet. 
 
 :- func to_list(mh_tuple) = list(mh_term).
@@ -120,45 +119,6 @@
 
 :- pred apply_tuple_substiution(mh_substitution::in, mh_tuple::in,
 	mh_tuple::out) is det.
-
-%-----------------------------------------------------------------------------%
-% Tuple typeclass
-
-% A mercury type that can represent a tuple
-
-:- typeclass mr_tuple(T) <= arity(T) where [
-
-	% tuple_index(Tuple, Index, Term) 
-	% retreive the Term from the Tuple at Index, throw an exception if
-	% index is out of range, nondet version will fail if tuple is of zero arity
-	pred mr_tuple_index(T, int, mh_term),
-	mode mr_tuple_index(in, in, out) is det,
-	
-	% fold_tuple(Closure, Tuple, !Accumulator)
-	% perform a left fold from index 1 to arity(Tuple), calling Closure on
-	% each term in Tuple with !Accumulator
-	pred fold_mr_tuple(pred(mh_term, A, A), T, A, A),
-	mode fold_mr_tuple(pred(in, in, out) is det, in, in, out) is det,
-	mode fold_mr_tuple(pred(in, in, out) is semidet, in, in, out) is semidet,
-	
-	% all_mr_tuple(Predicate, Tuple)
-	% call Predicate for each term in Tuple, failing on the first term that
-	% Predicate fails on
-	pred all_mr_tuple(pred(mh_term), T),
-	mode all_mr_tuple(pred(in) is semidet, in) is semidet
-	
-].
-
-%-----------------------------------------------------------------------------%
-% Function versions of tuple typeclass methods
-
-:- func mr_tuple_index(T, int) = mh_term <= mr_tuple(T).
-
-:- func fold_mr_tuple(func(mh_term, A) = A, T, A) = A <= mr_tuple(T).
-
-	
-	
-
 	
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -179,8 +139,7 @@
 % terminated by 'nil' unify with the mh_term constructor 'tuple_term/1'
 
 :- type mh_tuple
-	--->	some [T] mr_tuple(T) => mr_tuple(T)
-	;		list_tuple(list(mh_term))
+	--->	list_tuple(list(mh_term))
 	;		array_tuple(array(mh_term)).
 	%;		set_tuple(???)  data structure that organizes a tuple into a 
 	% 						 prefix tree structure?
@@ -202,24 +161,19 @@ tuple_equal(T1, T2) :- tuple_compare(=, T1, T2).
 :- pragma promise_equivalent_clauses(tuple/1).
 
 tuple(T::in) = (Tuple::out) :-
-	( if 
-		promise_equivalent_solutions [U] (
+	promise_equivalent_solutions [U] (
 			dynamic_cast(T, U:mh_tuple);
 			dynamic_cast(T, V:list(mh_term)), U = list_tuple(V);
 			dynamic_cast(T, V:array(mh_term)), U = array_tuple(V);
 			dynamic_cast(T, tuple_term(V):mh_term), U = tuple(V)
-		)
-	then
-		Tuple = U
-	else
-		Tuple = 'new mr_tuple'(T)
-	).
+		),
+	Tuple = U.
 		
 tuple(T::out) = (Tuple::in) :-
-	require_complete_switch [Tuple] (
-		Tuple = mr_tuple(U), dynamic_cast(U, T);
+	promise_equivalent_solutions [T] (
 		Tuple = list_tuple(U), dynamic_cast(U, T);
-		Tuple = array_tuple(U), dynamic_cast(U, T)
+		Tuple = array_tuple(U), dynamic_cast(U, T);
+		dynamic_cast(tuple_term(Tuple), T)
 	).
 
 	

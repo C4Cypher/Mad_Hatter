@@ -20,7 +20,7 @@
 
 % :- import_module mh_term.
 :- import_module mh_context.
-:- import_module mh_var_id.
+%:- import_module mh_var_id.
 :- import_module mh_var_set.
 % :- import_module mh_arity.
 
@@ -38,6 +38,7 @@
 % TODO: Add constructors for extended scopes with inlined calls
 % rename root_scope to clause_scope?
 
+/* unimplemented
 :- func scope_vars(mh_scope) = mh_var_set.
 
 :- func scope_context(mh_scope) = mh_context.
@@ -50,7 +51,7 @@
 
 % Fails if contains vars that are not members of parent scopes
 :- pred valid_scope(mh_scope::in) is semidet. 
-
+*/
 
 %-----------------------------------------------------------------------------%
 % Variable names

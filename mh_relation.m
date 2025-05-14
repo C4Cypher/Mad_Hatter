@@ -82,7 +82,7 @@
 :- pred apply_relation_substitution(mh_substitution::in, mh_relation::in,
 	mh_relation::out) is det.
 	
-:- func relation_scope(mh_relation) = mh_scope.
+%:- func relation_scope(mh_relation) = mh_scope.
 	
  
 :- pred ground_relation(mh_relation::in) is semidet.

@@ -43,9 +43,7 @@
 %-----------------------------------------------------------------------------%
 % Mercury primitives
 
-:- pred mercury_primitive_type(T::unused) is semidet.
-
-:- func some [T] convert_mr_primitive(mr_term(_)) = T is semidet. 
+:- some [T] func convert_mr_primitive(mr_term(_)) = T is semidet. 
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -56,10 +54,13 @@
 :- import_module list.
 :- import_module type_desc.
 :- import_module term_conversion.
+:- import_module require.
+:- import_module char.
 
 :- import_module mh_symbol.
 :- import_module mh_tuple.
 :- import_module mh_var_id.
+:- import_module mh_value.
 
 %-----------------------------------------------------------------------------%
 % Mercury terms
@@ -85,7 +86,10 @@ convert_mr_term(M) =
 					then 
 						Term = cons(Atom, convert_mr_term(Arg) )
 					else
-						Tuple = tuple(map(convert_mr_term, SubTerms)),
+						Tuple = 
+							tuple(
+								map(convert_mr_term, SubTerms):list(mh_term)
+								),
 						Term = cons(Atom,  tuple_term(Tuple))
 					)
 				)
@@ -96,8 +100,11 @@ convert_mr_term(M) =
 		)
 	then 
 		Term 
-	else 
-		new_value_term(M)		
+	else if Primitive = convert_mr_primitive(M)
+	then
+		value(mr_value(univ(Primitive)))
+	else
+		unexpected($module, $pred, "Non primitive mercury term")
 	).
 	
 convert_mr_term(M, convert_mr_term(M)).
@@ -119,7 +126,10 @@ convert_mr_term(M, Term, Context) :-
 					then 
 						T = cons(Atom, convert_mr_term(Arg) )
 					else
-						Tuple = tuple(map(convert_mr_term, SubTerms)),
+						Tuple = 
+							tuple(
+								map(convert_mr_term, SubTerms):list(mh_term)
+								),
 						T = cons(Atom,  tuple_term(Tuple))
 					)
 				)
@@ -131,17 +141,16 @@ convert_mr_term(M, Term, Context) :-
 	then 
 		Term = T, 
 		Context = C
-	else 
-		Term = new_value_term(M),
+	else if Primitive = convert_mr_primitive(M)	then
+		Term = value(mr_value(univ(Primitive))),
 		Context = term.get_term_context(M)
+	else
+		unexpected($module, $pred, "Non primitive mercury term")
 	).
 	
 %-----------------------------------------------------------------------------%
 % Mercury primitives
 
-mercury_primitive_type(T) :- 
-	has_type(T, PrimitiveDesc), 
-	mr_primitive_type_desc(PrimitiveDesc).
 
 :- pred mr_primitive_type_desc(type_desc::out) is multi.
 
@@ -152,9 +161,10 @@ mr_primitive_type_desc(type_of(_:char)).
 mr_primitive_type_desc(type_of(_:string)).
 
 convert_mr_primitive(Term) = T :- 
-	term_to_type(Term, T),
-	mercury_primitive_type(T).
-	
-
+	promise_equivalent_solutions [T] (
+		mr_primitive_type_desc(PrimitiveDesc),
+		has_type(T, PrimitiveDesc),
+		term_to_type(Term, T)
+	).
 	
 

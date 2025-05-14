@@ -18,7 +18,7 @@
 :- import_module array.
 
 :- import_module mh_term.
-:- import_module mh_tuple.
+%:- import_module mh_tuple.
 
 %-----------------------------------------------------------------------------%
 % Modes
@@ -45,11 +45,11 @@
 :- mode is_contract == ground >> mh_contract.
 :- pred is_contract(mh_mode::is_contract) is semidet.
 	
-	
+/* unimplemented
 :- pred mode_contract(mh_mode, mh_contract).
 :- mode mode_contract(in, out) is det.
 :- mode mode_contract(out, in) is multi.
-
+*/
 
 
 
