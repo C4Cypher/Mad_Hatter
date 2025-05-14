@@ -57,7 +57,7 @@
 :- mode tuple(out) = in is semidet. 
 
 :- func to_list(mh_tuple) = list(mh_term).
-:- func from_list(list(mh_tuple)) = mh_tuple.
+:- func from_list(list(mh_term)) = mh_tuple.
 
 :- func to_array(mh_tuple) = array(mh_term).
 :- func from_array(array(mh_term)) = mh_tuple.
