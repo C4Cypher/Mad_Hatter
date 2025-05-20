@@ -56,7 +56,7 @@
 :- pred from_offset_array(array(T)::in, var_id_offset::in, 
 	mh_var_map(T)::out) is det.
 	
-:- func from_array(array(T), var_id_offset) = mh_var_map(T).
+:- func from_offset_array(array(T), var_id_offset) = mh_var_map(T).
 	
 %-----------------------------------------------------------------------------%
 % Looking up variable id's in var_maps
@@ -175,6 +175,9 @@
 :- pred id_update(var_id::in, T::in, mh_var_map(T)::in, mh_var_map(T)::out) 
 	is semidet.
 	
+:- pred det_id_update(var_id::in, T::in, mh_var_map(T)::in, mh_var_map(T)::out) 
+	is det.
+	
 :- pred update(mh_var::in, T::in, mh_var_map(T)::in, mh_var_map(T)::out) 
 	is semidet.
 	
@@ -222,7 +225,8 @@
 
 :- func difference(mh_var_map(T), mh_var_map(_)) = mh_var_map(T).
 
-:- pred difference(mh_var_map(T)::in, mh_var_map(_)::in, mh_var_map(T)::out)	is det.
+:- pred difference(mh_var_map(T)::in, mh_var_map(_)::in, mh_var_map(T)::out)
+	is det.
 
 %-----------------------------------------------------------------------------%
 % Higher order
@@ -496,6 +500,13 @@ set_from_assoc_list([K - V | KVs], !Map) :-
 id_update(ID, T, var_map(Set, !.Array), var_map(Set, !:Array)) :-
 	id_sparse_index(ID, Set, Index),
 	slow_set(Index, T, !Array).
+	
+det_id_update(Var, T, !Map) :-	
+	(if id_update(Var, T, !Map)
+	then !:Map = !.Map
+	else report_lookup_error(
+		"mh_var_map.det_id_update: Var ID not present in map", Var, !.Map)
+	).
 
 update(var(ID), T, !Map) :- id_update(ID, T, !Map).
 

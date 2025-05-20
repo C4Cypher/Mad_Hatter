@@ -34,6 +34,10 @@
 :- inst term_substitution
 	--->	sub_map(ground).
 	
+:- mode is_term_substitution == ground >> term_substitution.
+
+:- pred is_term_substitution(mh_substitution::is_term_substitution) is semidet.
+	
 :- pred init_sub(mh_substitution::out) is det.
 :- func init_sub = mh_substitution.
 	
@@ -172,8 +176,6 @@
 
 :- pred ren_contains_id(mh_renaming::in, var_id::in) is semidet.
 
-:- pred renaming_offset(mh_renaming::in, var_id_offset::out) is semidet.
-
 :- pred ren_id_search(mh_renaming::in, var_id::in, var_id::out) 
 	is semidet.
 :- func ren_id_search(mh_renaming, var_id) = var_id is semidet.
@@ -216,6 +218,8 @@
 %-----------------------------------------------------------------------------%
 % 	Substitutions
 
+is_term_substitution(sub_map(_)).
+
 init_sub(init_sub).
 init_sub = sub_map(init).
 
@@ -234,44 +238,50 @@ sub_from_offset_array(Array, Offset, sub_from_offset_array(Array, Offset)).
 sub_from_offset_array(Array, Offset) = 
 	sub_map(mh_var_map.from_offset_array(Array, Offset)).
 	
-sub_to_ren(sub_map(!.Map), ren_map(!:Map)) :- map_id(var_to_id, !Map).
-sub_to_ren(Sub, Sub) :- is_renaming(Sub).
+sub_to_ren(sub_map(!.Map), Renaming @ ren_map(!:Map)) :- 
+	map_id(var_to_id, !Map), is_renaming(Renaming).
+sub_to_ren(ren_map(Map), ren_map(Map)).
 
-:- pred var_to_id(_::unused, mh_term::in, var_id::out) is semidet.
+sub_to_ren(!.Sub) = !:Sub :- sub_to_ren(!Sub).
+
+:- pred var_to_id(_::in, mh_term::in, var_id::out) is semidet.
 
 var_to_id(_, var(ID), ID).
 
-ren_to_sub(ren_map(!.Map), sub_map(!:Map)) :- map_id(id_to_var, !Map).
-ren_to_sub(Sub@sub_map(_), Sub).
+ren_to_sub(ren_map(!.Map), sub_map(!:Map)) :- 
+	map_id(id_to_var, !Map).
+ren_to_sub(sub_map(Map), sub_map(Map)).
 
-:- pred id_to_var(_::unused, var_id::in, mh_term::out) is det.
+ren_to_sub(!.Sub) = !:Sub :- ren_to_sub(!Sub).
+
+:- pred id_to_var(_::in, var_id::in, mh_term::out) is det.
 
 id_to_var(_, ID, var(ID)).
 
 %-----------------------------------------------------------------------------%
 % Bounds
 
-substitution_bounds(sub_array(Map),	Offset, Set) :-
+substitution_bounds(sub_map(Map),	Offset, Set) :-
 	(if empty_var_map(Map) then fail
 	else var_map_bounds(Map, Offset, Set)
 	).
 	
-substitution_bounds(ren_array(Map),	Offset, Set) :- 
+substitution_bounds(ren_map(Map),	Offset, Set) :- 
 	(if empty_var_map(Map) then fail
 	else var_map_bounds(Map, Offset, Set)
 	).
 	
-det_substitution_bounds(sub_array(Map),	Offset, Set) :-
+det_substitution_bounds(sub_map(Map),	Offset, Set) :-
 	var_map_bounds(Map, Offset, Set).
 	
-det_substitution_bounds(ren_array(Map),	Offset, Set) :- 
+det_substitution_bounds(ren_map(Map),	Offset, Set) :- 
 	var_map_bounds(Map, Offset, Set).
 
 %-----------------------------------------------------------------------------%
 % Looking up variables in substitutions
 
-sub_contains_id(sub_array(Map), ID) :- contains_id(Map, ID).
-sub_contains_id(ren_array(Map), ID) :- contains_id(Map, ID).
+sub_contains_id(sub_map(Map), ID) :- contains_id(Map, ID).
+sub_contains_id(ren_map(Map), ID) :- contains_id(Map, ID).
 
 sub_id_search(Sub, ID, sub_id_search(Sub, ID)).
 sub_id_search(sub_map(Map), ID) = id_search(Map, ID).
@@ -303,16 +313,19 @@ compose_substitutions(Sub1, Sub2, Sub3) :-
 	then
 		Sub3 = SubTemp
 	else if
-		Sub1 = ren_map(Map1), Sub2 = ren_map(Sub2)
+		Sub1 = ren_map(Map1), Sub2 = ren_map(Map2)
 	then
 		fold_id(remap_renaming(Map2), Map1, Map1 - Map2, Map03 - MapDiff),
-		fold_id(mh_var_map.det_insert, MapDiff, Map03, Map3),
+		fold(mh_var_map.det_insert, MapDiff, Map03, Map3),
 		Sub3 = ren_map(Map3)
 	else
 		ren_to_sub(Sub1) = sub_map(Map1), ren_to_sub(Sub2) = sub_map(Map2),
-		fold_id(remap_substitution(Sub2), Map1, Map1 - Map2, Map03 - MapDiff),
-		fold_id(mh_var_map.det_insert, MapDiff, Map03, Map3),
-		Sub3 = ren_map(Map3).
+		fold_id(remap_substitution(Map2), Map1, Map1 - Map2, Map03 - MapDiff),
+		fold(mh_var_map.det_insert, MapDiff, Map03, Map3),
+		Sub3 = sub_map(Map3).
+		
+compose_substitutions(Sub1, Sub2) = Sub3 :- 
+	compose_substitutions(Sub1, Sub2, Sub3).
 
 :- pred remap_substitution(mh_var_map(mh_term)::in, var_id::in, mh_term::in, 
 	pair(mh_var_map(mh_term), mh_var_map(mh_term))::in, 
@@ -324,7 +337,7 @@ remap_substitution(Map2, From1, To1, !.Map3 - !.MapDiff, !:Map3 - !:MapDiff)
 		To1 = var(Var1),
 		id_search(Map2, Var1, To2)
 	then
-		id_update(From1, To2, !Map3)
+		det_id_update(From1, To2, !Map3)
 	else true	
 	),
 	id_delete(From1, !MapDiff).
@@ -355,21 +368,21 @@ ren_from_offset_array(Array, Offset) =
 %-----------------------------------------------------------------------------%
 % Bounds
 
-renaming_bounds(ren_array(Map),	Offset, Set) :- 
+renaming_bounds(ren_map(Map),	Offset, Set) :- 
 	(if empty_var_map(Map) then fail
 	else var_map_bounds(Map, Offset, Set)
 	).
 
-renaming_bounds_det(ren_array(Map),	Offset, Set) :- 
+renaming_bounds_det(ren_map(Map),	Offset, Set) :- 
 	var_map_bounds(Map, Offset, Set).
 	
 %-----------------------------------------------------------------------------%
 % Looking up variables in renamings
 
-ren_contains_id(ren_array(Map), ID) :- contains_id(Map, ID).
+ren_contains_id(ren_map(Map), ID) :- contains_id(Map, ID).
 
 ren_id_search(Ren, ID, ren_id_search(Ren, ID)).
-ren_id_search(ren_map(Map), ID) = var(id_search(Map, ID)).
+ren_id_search(ren_map(Map), ID) = id_search(Map, ID).
 
 ren_id_lookup(Ren, !ID) :-
 	if ren_id_search(Ren, !.ID, Found)
@@ -388,7 +401,7 @@ ren_var_lookup(Ren, !.Var) = !:Var :- ren_var_lookup(Ren, !Var).
 % Renaming composition
 
 compose_renamings(Ren1, Ren2, Ren3) :-
-	if promise_equivalent_solutions [Ren3] 
+	if promise_equivalent_solutions [RenTemp] 
 	(
 		empty_renaming(Ren1), RenTemp = Ren2
 	;	
@@ -399,7 +412,7 @@ compose_renamings(Ren1, Ren2, Ren3) :-
 	else
 		Ren1 = ren_map(Map1), Ren2 = ren_map(Map2),
 		fold_id(remap_renaming(Map2), Map1, Map1 - Map2, Map03 - MapDiff),
-		fold_id(mh_var_map.det_insert, MapDiff, Map03, Map3),
+		fold(mh_var_map.det_insert, MapDiff, Map03, Map3),
 		Ren3 = ren_map(Map3).
 
 
@@ -412,7 +425,7 @@ remap_renaming(Map2, From1, To1, !.Map3 - !.MapDiff, !:Map3 - !:MapDiff)
 :-
 	(if id_search(Map2, To1, To2)
 	then
-		id_update(From1, To2, !Map3)
+		det_id_update(From1, To2, !Map3)
 	else true	
 	),
 	id_delete(From1, !MapDiff).
