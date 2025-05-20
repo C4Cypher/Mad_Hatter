@@ -15,7 +15,6 @@
 :- interface.
 
 :- import_module hashable.
-:- import_module hashmap.
 
 %-----------------------------------------------------------------------------%
 % Symbols
