@@ -213,51 +213,52 @@
 	 
 :- func id_set_weight(var_id_set)  = int.
 
-:- func array_var_id_set(array(_T)) = var_id_set. 
+:- func get_array_var_id_set(array(_T)) = var_id_set. 
 
-:- func offset_array_var_id_set(array(_T), var_id_offset) = var_id_set.
+:- func get_offset_array_var_id_set(array(_T), var_id_offset) = var_id_set.
 
-:- pred var_id_in_bounds(array(_T)::in, var_id::in) is semidet.
-:- pred var_id_in_bounds(array(_T)::in, var_id_offset::in, var_id::in) 
+:- pred var_id_array_in_bounds(array(_T)::in, var_id::in) is semidet.
+:- pred var_id_array_in_bounds(array(_T)::in, var_id_offset::in, var_id::in) 
 	is semidet.
 
-:- pred var_id_lookup(array(T)::in, var_id::in, T::out) is det.
-:- pred var_id_lookup(array(T)::in, var_id_offset::in, var_id::in, T::out) 
-	is det.
+:- pred var_id_array_lookup(array(T)::in, var_id::in, T::out) is det.
+:- pred var_id_array_lookup(array(T)::in, var_id_offset::in, var_id::in, 
+	T::out)	is det.
 
-:- func var_id_lookup(array(T), var_id) = T.
-:- func var_id_lookup(array(T), var_id_offset, var_id) = T.
+:- func var_id_array_lookup(array(T), var_id) = T.
+:- func var_id_array_lookup(array(T), var_id_offset, var_id) = T.
 
-:- pred var_id_semidet_lookup(array(T)::in, var_id::in, T::out) is semidet.
-:- pred var_id_semidet_lookup(array(T)::in, var_id_offset::in, 
+:- pred var_id_array_semidet_lookup(array(T)::in, var_id::in, T::out)
+	is semidet.
+:- pred var_id_array_semidet_lookup(array(T)::in, var_id_offset::in, 
 	var_id::in, T::out) is semidet.
 
-:- func var_id_semidet_lookup(array(T), var_id) = T is semidet.
-:- func var_id_semidet_lookup(array(T), var_id_offset, var_id) = T is semidet.
+:- func var_id_array_semidet_lookup(array(T), var_id) = T is semidet.
+:- func var_id_array_semidet_lookup(array(T), var_id_offset, var_id) = T 
+	is semidet.
 
-:- func var_id_elem(var_id, array(T)) = T. 
-:- func var_id_elem(var_id, var_id_offset, array(T)) = T. 
+:- func var_id_array_elem(var_id, array(T)) = T. 
+:- func var_id_array_elem(var_id, var_id_offset, array(T)) = T. 
 
-:- pred var_id_member(array(T), var_id, T).
-:- mode var_id_member(in, in, out) is semidet.
-:- mode var_id_member(in, out, out) is nondet.
+:- pred var_id_array_member(array(T), var_id, T).
+:- mode var_id_array_member(in, in, out) is semidet.
+:- mode var_id_array_member(in, out, out) is nondet.
 
-:- pred var_id_member(array(T), var_id_offset, var_id, T).
-:- mode var_id_member(in, in, in, out) is semidet.
-:- mode var_id_member(in, in, out, out) is nondet.
+:- pred var_id_array_member(array(T), var_id_offset, var_id, T).
+:- mode var_id_array_member(in, in, in, out) is semidet.
+:- mode var_id_array_member(in, in, out, out) is nondet.
 
-%TODO: rename to var_id_array_set? Current name ambiguous.
-:- pred var_id_set(var_id::in, T::in, array(T)::array_di, array(T)::array_uo) 
-	is det.
+:- pred var_id_array_set(var_id::in, T::in, array(T)::array_di, 
+	array(T)::array_uo)	is det.
 	
-:- pred var_id_set(var_id::in, T::in, var_id_offset::in, 
+:- pred var_id_array_set(var_id::in, T::in, var_id_offset::in, 
 	array(T)::array_di, array(T)::array_uo) is det.
 
 % slow set
-:- pred var_id_slow_set(var_id::in, T::in, array(T)::in, array(T)::array_uo)
-	is det.
+:- pred var_id_array_slow_set(var_id::in, T::in, array(T)::in,
+	array(T)::array_uo)	is det.
 
-:- pred var_id_slow_set(var_id::in, T::in, var_id_offset::in,
+:- pred var_id_array_slow_set(var_id::in, T::in, var_id_offset::in,
 	array(T)::in, array(T)::array_uo) is det.
 
 :- pred var_id_set_init_array(var_id_set::in, T::in, array(T)::array_uo) 
@@ -272,8 +273,12 @@
 :- func var_id_set_init_array(var_id_offset::in, var_id_set::in, T::in) = 
 	(array(T)::array_uo) is det.
 	
+
 %-----------------------------------------------------------------------------%
-% 
+% Higher order Indexing by var_id
+
+
+
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -397,12 +402,13 @@ var_id_set_order(Set1, Set2, SetL, SetG) :-
 	).
 
 require_valid_var_id_set(Set) :- 
-	require(valid_var_id_set(Set), "Invalid var_id_set. Last var_id: " ++ string(Set) 
-	++	" was less than zero.").
+	require(valid_var_id_set(Set), "Invalid var_id_set. Last var_id: "
+	++ string(Set)	++	" was less than zero.").
 
 expect_valid_var_id_set(Set, Module, Proc) :- 
-	expect(valid_var_id_set(Set), Module, Proc, "Invalid var_id_set. Last var_id: " 
-	++ string(Set) ++ " was less than zero.").
+	expect(valid_var_id_set(Set), Module, Proc, 
+	"Invalid var_id_set. Last var_id: "	++ string(Set) 
+	++ " was less than zero.").
 
 %-----------------------------------------------------------------------------%
 % Operations on var_ids and var_id_sets
@@ -522,7 +528,7 @@ accumulate_id_set_bounded(Max, ID, InBounds,
 			Unique = -1
 		else 
 			InBounds = yes,
-			ID_index =id_index(ID),
+			ID_index =id_array_index(ID),
 			AlreadyFound = unsafe_get_bit(!.Found, ID_index),
 			(
 				AlreadyFound = yes,
@@ -540,7 +546,7 @@ accumulate_id_set_bounded(Max, ID, InBounds,
 	
 accumulate_id_set_unbounded(ID, acc(!.Found, Unique0), acc(!:Found, Unique)) :-
 	require_valid_var_id(ID), % prevent resizing bitmap to negativee value
-	ID_index = id_index(ID),
+	ID_index = id_array_index(ID),
 	( if in_range(!.Found, ID_index)
 		then
 			AlreadyFound = unsafe_get_bit(!.Found, ID_index),
@@ -564,85 +570,93 @@ accumulate_id_set_unbounded(ID, acc(!.Found, Unique0), acc(!:Found, Unique)) :-
 %-----------------------------------------------------------------------------%
 % Indexing Arrays by var_id
 
-:- pragma inline(id_index/1).
+:- pragma inline(id_array_index/1).
 
-:- func id_index(var_id) = int.
-:- mode id_index(in) = out is det.
-:- mode id_index(out) = in is det.
+:- func id_array_index(var_id) = int.
+:- mode id_array_index(in) = out is det.
+:- mode id_array_index(out) = in is det.
 
-id_index(ID) = ID - 1.
+id_array_index(ID) = ID - 1.
 
-:- pragma inline(id_index/2).
+:- pragma inline(id_array_index/2).
 
-:- func id_index(var_id, var_id_offset) = int.
-:- mode id_index(in, in) = out is det.
-:- mode id_index(out, in) = in is det.
-:- mode id_index(in, out) = in is det.
+:- func id_array_index(var_id, var_id_offset) = int.
+:- mode id_array_index(in, in) = out is det.
+:- mode id_array_index(out, in) = in is det.
+:- mode id_array_index(in, out) = in is det.
 
-id_index(ID, Offset) = id_index(ID - Offset).
+id_array_index(ID, Offset) = id_array_index(ID - Offset).
 
 :- pragma promise_equivalent_clauses(sparse_index_weight/3).
 
 sparse_index_weight(ID, Offset, Set) = 
-	( if var_id_gt(Index@id_index(ID, Offset), Last)
+	( if var_id_gt(Index@id_array_index(ID, Offset), Last)
 	then next_var_id(Last)
 	else Index
 	) :- Last = last_var_id(Set).
 	
 reverse_sparse_index(Index, Offset, Set) = ID :-
-	id_index(ID, Offset) = Index,
+	id_array_index(ID, Offset) = Index,
 	contains_var_id(Offset, Set, ID).
 	
 id_set_weight(Set) = last_var_id(Set).
 	
-array_var_id_set(Array) = size(Array).
+get_array_var_id_set(Array) = size(Array).
 
-offset_array_var_id_set(Array, Offset) = size(Array) + Offset.
+get_offset_array_var_id_set(Array, Offset) = size(Array) + Offset.
 
-var_id_in_bounds(Array, ID) :- in_bounds(Array, id_index(ID)).
+var_id_array_in_bounds(Array, ID) :- in_bounds(Array, id_array_index(ID)).
 
-var_id_in_bounds(Array, Offset, ID) :- in_bounds(Array, id_index(ID, Offset)).
+var_id_array_in_bounds(Array, Offset, ID) :- 
+	in_bounds(Array, id_array_index(ID, Offset)).
 
-var_id_lookup(Array, ID, T) :- lookup(Array, id_index(ID), T).
-var_id_lookup(Array, Offset, ID, T) :- lookup(Array, id_index(ID, Offset), T).
+var_id_array_lookup(Array, ID, T) :- lookup(Array, id_array_index(ID), T).
+var_id_array_lookup(Array, Offset, ID, T) :- 
+	lookup(Array, id_array_index(ID, Offset), T).
 
-var_id_lookup(Array, ID) = lookup(Array, id_index(ID)).
-var_id_lookup(Array, Offset, ID) = lookup(Array, id_index(ID, Offset)).
+var_id_array_lookup(Array, ID) = lookup(Array, id_array_index(ID)).
+var_id_array_lookup(Array, Offset, ID) = 
+	lookup(Array, id_array_index(ID, Offset)).
 
-var_id_semidet_lookup(Array, ID, T) :- semidet_lookup(Array, id_index(ID), T).
-var_id_semidet_lookup(Array, Offset, ID, T) :- 
-	semidet_lookup(Array, id_index(ID, Offset), T).
+var_id_array_semidet_lookup(Array, ID, T) :- 
+	semidet_lookup(Array, id_array_index(ID), T).
+var_id_array_semidet_lookup(Array, Offset, ID, T) :- 
+	semidet_lookup(Array, id_array_index(ID, Offset), T).
 
-var_id_semidet_lookup(Array, ID) = T :- var_id_semidet_lookup(Array, ID, T).
-var_id_semidet_lookup(Array, Offset, ID) = T :- 
-	var_id_semidet_lookup(Array, Offset, ID, T).
-
-
-var_id_elem(ID, Array) = elem(id_index(ID), Array).
-var_id_elem(ID, Offset, Array) = elem(id_index(ID, Offset), Array).
+var_id_array_semidet_lookup(Array, ID) = T :- 
+	var_id_array_semidet_lookup(Array, ID, T).
+var_id_array_semidet_lookup(Array, Offset, ID) = T :- 
+	var_id_array_semidet_lookup(Array, Offset, ID, T).
 
 
-:- pragma promise_equivalent_clauses(var_id_member/3).
+var_id_array_elem(ID, Array) = elem(id_array_index(ID), Array).
+var_id_array_elem(ID, Offset, Array) = elem(id_array_index(ID, Offset), Array).
 
-var_id_member(Array::in, ID::in, T::out) :- 
-	var_id_semidet_lookup(Array, ID, T).
 
-var_id_member(Array::in, ID::out, T::out) :-
+:- pragma promise_equivalent_clauses(var_id_array_member/3).
+
+var_id_array_member(Array::in, ID::in, T::out) :- 
+	var_id_array_semidet_lookup(Array, ID, T).
+
+var_id_array_member(Array::in, ID::out, T::out) :-
 	nondet_int_in_range(array.min(Array), array.max(Array), Index),
 	unsafe_lookup(Array, Index, T),
-	id_index(ID) = Index.
+	id_array_index(ID) = Index.
 	
-var_id_member(Array, Offset, ID - Offset, T) :- var_id_member(Array, ID, T).
+var_id_array_member(Array, Offset, ID - Offset, T) :- 
+	var_id_array_member(Array, ID, T).
 
 
-var_id_set(ID, T, !Array) :- set(id_index(ID), T, !Array).
+var_id_array_set(ID, T, !Array) :- set(id_array_index(ID), T, !Array).
 
-var_id_set(ID, T, Offset, !Array) :- var_id_set(ID - Offset, T, !Array).
+var_id_array_set(ID, T, Offset, !Array) :- 
+	var_id_array_set(ID - Offset, T, !Array).
 
-var_id_slow_set(ID, T, !Array) :- slow_set(id_index(ID), T, !Array).
+var_id_array_slow_set(ID, T, !Array) :- 
+	slow_set(id_array_index(ID), T, !Array).
 
-var_id_slow_set(ID, T, Offset, !Array) :- 
-	var_id_slow_set(id_index(ID, Offset), T, !Array).
+var_id_array_slow_set(ID, T, Offset, !Array) :- 
+	var_id_array_slow_set(id_array_index(ID, Offset), T, !Array).
 
 var_id_set_init_array(Last, T, A) :- array.init(Last, T, A).
 

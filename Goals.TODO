@@ -80,7 +80,10 @@ get a repl running
 					
 					an evaluation may not produce a value that is less ground
 						than the input, out = In >> Out, In =< Out
-			Clean up and compile existing AST <- I am here
+			Clean up and compile existing AST
+				Refactor var_id.m including higher order indexing <- I am here
+				Fix broken calls in mh_var_map.m
+				Finish fixing mh_tuple using new higher order var indexing
 			Incorporate mh_scope into mr_term conversion
 			Mad Hatter ops table - add lazy operator - done
 			
