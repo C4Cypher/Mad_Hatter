@@ -564,8 +564,6 @@ accumulate_id_set_unbounded(ID, acc(!.Found, Unique0), acc(!:Found, Unique)) :-
 %-----------------------------------------------------------------------------%
 % Indexing Arrays by var_id
 
-
-
 :- pragma inline(id_index/1).
 
 :- func id_index(var_id) = int.
