@@ -20,9 +20,7 @@
 :- import_module mh_var_id.
 :- import_module mh_value.
 :- import_module mh_tuple.
-:- import_module mh_mode.
 :- import_module mh_relation.
-:- import_module mh_scope.
 :- import_module mh_substitution.
 
 
@@ -118,53 +116,13 @@
 
 :- pred is_value(mh_term::is_value) is semidet.
 
-%-----------------------------------------------------------------------------%
-%	Simple terms
-
-:- inst simple_term
-	--->	nil
-	;		atom(ground)
-	;		var(ground)
-	;		value(ground)
-	;		lazy(simple_term).
-	
-:- type simple_term =< mh_term
-	--->	nil
-	;		atom(mh_symbol)
-	;		var(var_id)
-	;		value(mh_value)
-	;		lazy(simple_term).
-	
-:- mode simple_term == ground >> simple_term.
-
-:- pred simple_term(mh_term::simple_term) is semidet.
-
-	
-
-%-----------------------------------------------------------------------------%
-%	Compound terms
-
-:- inst compound_term
-	--->	cons(ground, ground)
-	;		tuple_term(ground)
-	;		term_sub(compound_term, ground).
-
-:- type compound_term =< mh_term
-	--->	cons(car::mh_term, cdr::mh_term)
-	;		tuple_term(mh_tuple)
-	;		term_sub(compound_term, mh_substitution).
-	
-:- mode compound_term == ground >> compound_term.
-
-:- pred compound_term(mh_term::compound_term) is semidet.
-
 
 %-----------------------------------------------------------------------------%
 %	Mad Hatter constructors
 	
 :- inst mh_constructor ---> cons(ground, ground).
 	
-:- type mh_constructor =< compound_term
+:- type mh_constructor =< mh_term
 	--->	cons(car::mh_term, cdr::mh_term).
 	
 :- mode mh_constructor == ground >> mh_constructor.
@@ -177,7 +135,7 @@
 
 :- inst tuple_term ---> tuple_term(ground).
 
-:- type tuple_term =< compound_term
+:- type tuple_term =< mh_term
 	--->	tuple_term(mh_tuple).
 
 :- mode tuple_term == ground >> tuple_term.
@@ -235,11 +193,10 @@
 
 ground_term(T) :-
 	T = atom(_);
-	T = mr_value(_);
+	T = value(_);
 	T = cons(ground_term(_), ground_term(_));
 	T = tuple_term(U), ground_tuple(U);
 	T = relation(R), ground_relation(R);
-	T = function(F), ground_function(F);
 	T = term_sub(T0, Sub),
 		apply_term_substitution(Sub, T0, T1),
 		ground_term(T1).
@@ -255,14 +212,14 @@ apply_term_substitution(Sub, !Term) :- 	require_complete_switch [!.Term]
 		( 
 			!.Term = nil 
 		;	!.Term = atom(_) 
-		;	!.Term = mr_value(_) 
+		;	!.Term = value(_) 
 		), 
 		!:Term = !.Term 
 		
 	;	!.Term = var(ID), sub_id_lookup(Sub, ID, !:Term)
 			
 	;	!.Term = cons(Car0, Cdr0),
-		apply_functor_substitution(Sub, Car0, Car),
+		apply_term_substitution(Sub, Car0, Car),
 		apply_term_substitution(Sub, Cdr0, Cdr),
 		!:Term = cons(Car, Cdr)
 		
@@ -276,14 +233,6 @@ apply_term_substitution(Sub, !Term) :- 	require_complete_switch [!.Term]
 	;	!.Term = relation(Rel0), 
 		apply_relation_substitution(Sub, Rel0, Rel),
 		!:Term = relation(Rel)
-		
-	;	!.Term = literal(Fact0),
-		apply_literal_substitution(Sub, Fact0, Fact),
-		!:Term = literal(Fact)
-		
-	;	!.Term = function(Func0),
-		apply_function_substitution(Sub, Func0, Func),
-		!:Term = function(Func)
 		
 	;	!.Term = term_sub(SubTerm, Sub0),
 		compose_substitutions(Sub0, Sub, Sub1),
@@ -309,28 +258,6 @@ is_var(var(_)).
 %	Values
 
 is_value(value(_)).
-
-new_value_term(T) = mr_value(univ(T)).
-new_value(T) = mr_value(univ(T)).
-
-%-----------------------------------------------------------------------------%
-%	Simple terms
-
-simple_term(T) :-
-	T = nil;
-	T = atom(_);
-	T = var(_);
-	T = mr_value(_);
-	T = lazy(L), simple_term(L).
-
-%-----------------------------------------------------------------------------%
-%	Compound terms
-
-compound_term(T) :-
-	T = cons(_, _);
-	T = tuple_term(_);
-	T = term_sub(S, _), compound_term(S).
-
 
 %-----------------------------------------------------------------------------%
 %	Mad Hatter constructors
@@ -374,7 +301,7 @@ mr_type_name(T) = type_name(type_of(T)).
 term_description(nil) = "nil term".
 term_description(atom(Symbol)) = "atom """ ++ to_string(Symbol) ++ """".
 term_description(var(V)) = "variable with id " ++ string(V).
-term_description(mr_value(M)) = 
+term_description(value(M)) = 
 	"mercury value term of type " ++ mr_type_name(M).
 term_description(cons(A, R)) = 
 	"constructor " ++ string(A) ++ "(" ++ mr_type_name(R) ++ ")".
