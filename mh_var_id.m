@@ -8,7 +8,7 @@
 % 
 % File: mh_var_id.m
 % Main author: C4Cypher.
-% Stability: low.
+% Stability: medium?
 
 :- module mh_var_id.
 
@@ -19,6 +19,15 @@
 
 :- import_module mh_mercury_term.
 :- import_module mh_arity.
+
+% While possibly overkill, I wanted to avoid handling variable ID's as naked
+% integer values. Too much can go wrong, and it's hard for me to keep unmarked
+% numbers straight if the roles of 'variable id', 'variable set' and 'variable
+% offset' are not clearly deliniated.   Granted all of these are represented
+% by simple unboxed integer values, and this should compile into inlined basic
+% integer arithmetic, however it's critical for me that my code shows the
+% intent of the operations on these values, rather than nested arithmetic calls
+% that I will have to come back and make sense of later.
 
 %-----------------------------------------------------------------------------%
 % Variable ID's
@@ -49,9 +58,14 @@
 %-----------------------------------------------------------------------------%
 % Var ID Offsets
 
+% A var_id_offset represents the difference between two var_id's. 
+% In many cases, this is used to represent the difference a contiguous set of 
+% variables and a 'complete' var_id_set from 1 to N ... usually indicating
+% the first var_id of a set of variables.
+
 :- type var_id_offset.
 
-	% var_id_offset(A, B, A - B).
+	% var_id_offset(A, B, A - B). 
 :- pred var_id_offset(var_id, var_id, var_id_offset).
 :- mode var_id_offset(in, in, out) is det.
 :- mode var_id_offset(out, in, in) is det.
@@ -95,6 +109,9 @@
 
 %-----------------------------------------------------------------------------%
 % Variable id sets
+
+% A var_id_set represents a complete set of variable id's from 1 to N.
+% 
 
 :- type var_id_set.
 
