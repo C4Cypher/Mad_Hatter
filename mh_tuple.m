@@ -77,8 +77,6 @@
 :- pred tuple_var_id_set(mh_tuple::in, var_id_set::out) is det.
 :- func tuple_var_id_set(mh_tuple) = var_id_set.
 
-:- pred tuple_offset(mh_tuple::in, var_id_offset::out) is det.
-:- func tuple_offset(mh_tuple) = var_id_offset.
 
 :- pred ground_tuple(mh_tuple::in) is semidet.
 
@@ -215,6 +213,12 @@ tuple_size(tuple_sub(Tup, _), S) :- tuple_size(Tup, S).
 
 tuple_size(T) = S :- tuple_size(T, S).
 
+tuple_var_set(Tuple, Set) :- ...
+tuple_var_set(Tuple) = Set :- tuple_var_id_set(Tuple, Set).
+
+tuple_var_id_set(Tuple, Set) :- ...
+tuple_var_id_set(Tuple) = Set :- tuple_var_id_set(Tuple, Set).
+
 ground_tuple(T) :-  all_tuple(ground_term, T).
 
 ground_tuple(T) = T :- ground_tuple(T).
@@ -222,16 +226,6 @@ ground_tuple(T) = T :- ground_tuple(T).
 :- instance arity(mh_tuple) where [
 	pred(arity/2) is tuple_size
 ].
-
-
-:- instance mr_tuple(mh_tuple) where [
-	pred(mr_tuple_index/3) is tuple_index,
-	pred(fold_mr_tuple/4) is fold_tuple,
-	pred(all_mr_tuple/2) is all_tuple
-].
-
-
-
 
 %-----------------------------------------------------------------------------%
 % Tuple indexing
