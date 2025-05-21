@@ -246,6 +246,7 @@
 :- mode var_id_member(in, in, in, out) is semidet.
 :- mode var_id_member(in, in, out, out) is nondet.
 
+%TODO: rename to var_id_array_set? Current name ambiguous.
 :- pred var_id_set(var_id::in, T::in, array(T)::array_di, array(T)::array_uo) 
 	is det.
 	
@@ -270,7 +271,9 @@
 	
 :- func var_id_set_init_array(var_id_offset::in, var_id_set::in, T::in) = 
 	(array(T)::array_uo) is det.
-
+	
+%-----------------------------------------------------------------------------%
+% 
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
