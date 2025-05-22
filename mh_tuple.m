@@ -62,7 +62,7 @@
 :- func from_array(array(mh_term)) = mh_tuple.
 
 :- func to_set(mh_tuple) = ordered_set(mh_term).
-:- func from_set(ordered_set(T)) = mh_tuple.
+:- func from_set(ordered_set(mh_term)) = mh_tuple.
 
 
 %-----------------------------------------------------------------------------%
@@ -76,9 +76,6 @@
 
 :- pred tuple_var_id_set(mh_tuple::in, var_id_set::out) is det.
 :- func tuple_var_id_set(mh_tuple) = var_id_set.
-
-:- pred tuple_offset(mh_tuple::in, var_id_offset::out) is det.
-:- func tuple_offset(mh_tuple) = var_id_offset.
 
 :- pred ground_tuple(mh_tuple::in) is semidet.
 
@@ -144,7 +141,6 @@
 	%;		set_tuple(???)  data structure that organizes a tuple into a 
 	% 						 prefix tree structure?
 	
-tuple_is_empty(mr_tuple(T)) :- arity(T) = 0.
 tuple_is_empty(list_tuple([])).
 tuple_is_empty(array_tuple(A)) :- size(A) = 0.
 
@@ -165,7 +161,8 @@ tuple(T::in) = (Tuple::out) :-
 			dynamic_cast(T, U:mh_tuple);
 			dynamic_cast(T, V:list(mh_term)), U = list_tuple(V);
 			dynamic_cast(T, V:array(mh_term)), U = array_tuple(V);
-			dynamic_cast(T, tuple_term(V):mh_term), U = tuple(V)
+			dynamic_cast(T, tuple_term(V):mh_term), U = V;
+			dynamic_cast(T, tuple_term(V):tuple_term), U = V
 		),
 	Tuple = U.
 		
@@ -173,21 +170,17 @@ tuple(T::out) = (Tuple::in) :-
 	promise_equivalent_solutions [T] (
 		Tuple = list_tuple(U), dynamic_cast(U, T);
 		Tuple = array_tuple(U), dynamic_cast(U, T);
-		dynamic_cast(tuple_term(Tuple), T)
+		dynamic_cast(tuple_term(Tuple):mh_term, T);
+		dynamic_cast(tuple_term(Tuple):tuple_term, T)
 	).
 
 	
-to_list(mr_tuple(T)) = List :-
-	fold_mr_tuple(list.cons, T, [], List).
-
 to_list(list_tuple(List)) = List.
 
 to_list(array_tuple(Array)) = array.to_list(Array).
 
 from_list(List) = list_tuple(List).
 
-
-to_array(mr_tuple(T)) = array.generate(arity(T), mr_tuple_index(T)).
 
 to_array(list_tuple(List)) = array.from_list(List).
 
@@ -208,12 +201,16 @@ from_set(Set) = array_tuple(ordered_set.to_array(Set)).
 %-----------------------------------------------------------------------------%
 % Tuple properties	
 	
-tuple_size(mr_tuple(T), S) :- arity(T, S).
 tuple_size(list_tuple(L), S) :- length(L, S).
 tuple_size(array_tuple(Array), S) :- size(Array, S).
-tuple_size(tuple_sub(Tup, _), S) :- tuple_size(Tup, S).
 
 tuple_size(T) = S :- tuple_size(T, S).
+
+tuple_var_set(Tuple, complete_var_set(Set)) :- tuple_var_id_set(Tuple, Set).
+tuple_var_set(Tuple) = Set :- tuple_var_set(Tuple, Set).
+
+tuple_var_id_set(Tuple, Set) :- get_var_id_set(Tuple, tuple_size, Set).
+tuple_var_id_set(Tuple) = Set :- tuple_var_id_set(Tuple, Set).
 
 ground_tuple(T) :-  all_tuple(ground_term, T).
 
@@ -223,35 +220,14 @@ ground_tuple(T) = T :- ground_tuple(T).
 	pred(arity/2) is tuple_size
 ].
 
-
-:- instance mr_tuple(mh_tuple) where [
-	pred(mr_tuple_index/3) is tuple_index,
-	pred(fold_mr_tuple/4) is fold_tuple,
-	pred(all_mr_tuple/2) is all_tuple
-].
-
-
-
-
 %-----------------------------------------------------------------------------%
 % Tuple indexing
 
 tuple_contains(Tuple, Index) :- Index > 0, Index =< tuple_size(Tuple).
 
-tuple_index(mr_tuple(T), Index, Term) :- mr_tuple_index(T, Index, Term).
 tuple_index(list_tuple(L), Index, Term) :- list_index(L, Index, Term).
 tuple_index(array_tuple(A), Index, Term) :- array_index(A, Index, Term).
 
-tuple_index(tuple_sub(Tuple, Sub), Index, Term) :-
-	tuple_index(Tuple, Index, Term0),
-	( if 
-		Term0 = var(ID),
-		sub_id_search(Sub, ID, Term1)
-	then
-		Term = Term1
-	else
-		Term = Term0
-	).
 
 tuple_search(Tuple, Index, Term) :-
 	tuple_contains(Tuple, Index),
@@ -266,26 +242,16 @@ tuple_member(Tup, Index, Term) :-
 %-----------------------------------------------------------------------------%
 % Tuple fold
 
-fold_tuple(Closure, mr_tuple(T), !A) :- fold_mr_tuple(Closure, T, !A).
-
 fold_tuple(Closure, list_tuple(L), !A) :- fold_list_index(Closure, L, !A).
 
 fold_tuple(Closure, array_tuple(T), !A) :- 
 		fold_array_index(Closure, T, !A).
 		
-fold_tuple(Closure, tuple_sub(Tup0, S), !A) :-
-	apply_tuple_substiution(S, Tup0, Tup),
-	fold_tuple(Closure, Tup, !A).
 		
 fold_tuple(Closure, Tuple, !.A) = !:A :- fold_tuple(Closure, Tuple, !A).
 
-all_tuple(Pred, T) :- all_mr_tuple(Pred, T).
 all_tuple(Pred, list_tuple(L)) :- all_list_index(Pred, L).
 all_tuple(Pred, array_tuple(A)) :- all_array_index(Pred, A).
-
-all_tuple(Pred, tuple_sub(Tup0, Sub)) :- 
-	apply_tuple_substiution(Sub, Tup0, Tup),
-	all_tuple(Pred, Tup).
 
 %-----------------------------------------------------------------------------%
 % Tuple substitutions
@@ -294,16 +260,3 @@ apply_tuple_substiution(_, _, _) :- sorry($module, $pred,
 	"apply_tuple_substiution/3").
 	
 :- pragma no_determinism_warning(apply_tuple_substiution/3).
-
-%-----------------------------------------------------------------------------%
-% Function versions of tuple typeclass methods
-
-mr_tuple_index(T, I) = Term :- mr_tuple_index(T, I, Term).
-
-fold_mr_tuple(Func, T, !.A) = !:A :- 
-	fold_mr_tuple(function_closure(Func), T, !A).
-
-:- pred function_closure(func(T, A) = A, T, A, A).
-:- mode function_closure(func(in, in) = out is det, in, in, out) is det.
-
-function_closure(Func, T, !A) :- Func(T, !.A) = !:A.

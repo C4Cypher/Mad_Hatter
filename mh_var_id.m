@@ -277,7 +277,38 @@
 %-----------------------------------------------------------------------------%
 % Higher order Indexing by var_id
 
+:- type container_size_pred(T) == pred(T, int).
+:- inst container_size_pred == (pred(in, out) is det).
 
+:- pred get_var_id_set(T::in, container_size_pred(T)::in(container_size_pred),
+	var_id_set::out) is det.
+:- func get_var_id_set(T::in, container_size_pred(T)::in(container_size_pred))
+ =	(var_id_set::out) is det.
+
+:- type get_pred(T, V) == pred(T, int, V).
+:- inst get_pred_det == (pred(in, in, out) is det).
+:- inst get_pred_semidet == (pred(in, in, out) is semidet).
+
+
+:- pred var_id_index(T, var_id, get_pred(T, V), V).
+:- mode var_id_index(in, in, in(get_pred_det), out) is det.
+:- mode var_id_index(in, in, in(get_pred_semidet), out) is semidet.
+
+:- func var_id_index(T, var_id, get_pred(T, V)) = V.
+:- mode var_id_index(in, in, in(get_pred_det)) = out is det.
+:- mode var_id_index(in, in, in(get_pred_semidet)) = out is semidet. 
+
+:- type set_pred(T, V) == pred(int, V, T, T).
+:- inst set_pred_det == (pred(in, in, in, out) is det).
+:- inst set_pred_semidet == (pred(in, in, in, out) is semidet).
+:- inst set_pred_unique == (pred(in, in, di, uo) is det).
+:- inst set_pred_unique_semidet == (pred(in, in, di, uo) is semidet).
+
+:- pred var_id_index(var_id, V, set_pred(T, V), T, T).
+:- mode var_id_index(in, in, in(set_pred_det), in, out) is det.
+:- mode var_id_index(in, in, in(set_pred_semidet), in, out) is semidet.
+:- mode var_id_index(in, in, in(set_pred_unique), di, uo) is det.
+:- mode var_id_index(in, in, in(set_pred_unique_semidet), di, uo) is semidet.
 
 
 %-----------------------------------------------------------------------------%
@@ -590,10 +621,12 @@ id_array_index(ID, Offset) = id_array_index(ID - Offset).
 :- pragma promise_equivalent_clauses(sparse_index_weight/3).
 
 sparse_index_weight(ID, Offset, Set) = 
-	( if var_id_gt(Index@id_array_index(ID, Offset), Last)
+	( if var_id_gt(Index, Last)
 	then next_var_id(Last)
 	else Index
-	) :- Last = last_var_id(Set).
+	) :- 
+		Index = id_array_index(ID, Offset),
+		Last = last_var_id(Set).
 	
 reverse_sparse_index(Index, Offset, Set) = ID :-
 	id_array_index(ID, Offset) = Index,
@@ -668,4 +701,14 @@ var_id_set_init_array(Offset, Set, T) =
 	var_id_set_init_array(Set - Offset, T).
 	
 
-	
+%-----------------------------------------------------------------------------%
+% Higher order Indexing by var_id	
+
+get_var_id_set(T, P, S) :- P(T, S).
+get_var_id_set(T, P) = S :- get_var_id_set(T, P, S).
+
+var_id_index(T, I, P, V) :- P(T, I, V).
+
+var_id_index(T, I, P) = V :- var_id_index(T, I, P, V).
+
+var_id_index(I, V, P, !T) :- P(I, V, !T).

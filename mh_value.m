@@ -15,10 +15,7 @@
 
 :- interface.
 
-:- import_module bool.
 :- import_module univ.
-
-:- import_module mh_symbol.
 
 %-----------------------------------------------------------------------------%
 % Values
