@@ -199,14 +199,19 @@
 %-----------------------------------------------------------------------------%
 % Indexing Arrays by var_id 
 
-	% var_id_sparse_index(ID, Offset, Set)
+	% sparse_index_weight(ID, Offset, Set) = Index
 	% returns the sparse index corresponding to the ID if the id is within the
 	% bounds specified by Offset, and Set, otherwise returns the index of the
 	% element after the last element specified by Set
 :- func sparse_index_weight(var_id, var_id_offset, var_id_set) = int.
 
-	% Look up the ID refrenced by the given sparse index. Fails if the given 
-	% index refrences an ID that is not within the given Offset, id_set bounds
+	% var_id_sparse_index(ID, Offset, Set) = ID
+	% look up the ID refrenced by the given sparse index
+:- func var_id_sparse_index(var_id, var_id_offset, var_id_set) = var_id.
+
+	% Reverse look up the ID refrenced by the given sparse index. Fails if the 
+	% given index refrences an ID that is not within 
+	% the given Offset, id_set bounds
 	
 :- func reverse_sparse_index(int, var_id_offset, var_id_set) = var_id 
 	 is semidet.
@@ -618,8 +623,6 @@ id_array_index(ID) = ID - 1.
 
 id_array_index(ID, Offset) = id_array_index(ID - Offset).
 
-:- pragma promise_equivalent_clauses(sparse_index_weight/3).
-
 sparse_index_weight(ID, Offset, Set) = 
 	( if var_id_gt(Index, Last)
 	then next_var_id(Last)
@@ -627,6 +630,8 @@ sparse_index_weight(ID, Offset, Set) =
 	) :- 
 		Index = id_array_index(ID, Offset),
 		Last = last_var_id(Set).
+
+var_id_sparse_index(ID, Offset, Set) = sparse_index_weight(ID, Offset, Set).
 	
 reverse_sparse_index(Index, Offset, Set) = ID :-
 	id_array_index(ID, Offset) = Index,

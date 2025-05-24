@@ -34,6 +34,7 @@
 :- func init = mh_var_map(T).
 	
 :- pred empty_var_map(mh_var_map(T)::out) is det.
+:- func empty_var_map = mh_var_map(T).
 
 :- func singleton_id(var_id, T) = mh_var_map(T).
 :- pred singleton_id(var_id::in, T::in, mh_var_map(T)::out) is det.
@@ -84,8 +85,8 @@
 :- func id_lookup(mh_var_map(T), var_id) = T.
 
 
-:- pred lookup(mh_var_map(T)::in, mh_var::in, mh_term::out) is det.
-:- func lookup(mh_var_map(T), mh_var) = mh_term.
+:- pred lookup(mh_var_map(T)::in, mh_var::in, T::out) is det.
+:- func lookup(mh_var_map(T), mh_var) = T.
 
 %-----------------------------------------------------------------------------%
 % Iterator 
@@ -146,7 +147,7 @@
 	is det.
 
 
-:- pred det_insert_from_corresponding_lists(list(var_id)::in,
+:- pred det_insert_from_corresponding_lists(list(mh_var)::in,
     list(T)::in, mh_var_map(T)::in, mh_var_map(T)::out) is det.
 	
 
@@ -164,7 +165,7 @@
 :- pred set(mh_var::in, T::in, mh_var_map(T)::in, mh_var_map(T)::out) is det.
 
 
-:- pred set_from_corresponding_lists(list(var_id)::in, list(T)::in,
+:- pred set_from_corresponding_lists(list(mh_var)::in, list(T)::in,
     mh_var_map(T)::in, mh_var_map(T)::out) is det.
 	
 
@@ -235,8 +236,8 @@
 :- mode fold_id(in(pred(in, in, in, out) is det), in, in, out) is det.
 :- mode fold_id(in(pred(in, in, mdi, muo) is det), in, mdi, muo) is det.
 :- mode fold_id(in(pred(in, in, di, uo) is det), in, di, uo) is det.
-:- mode fold_id(in(pred(in, in, array_di, array_uo) is det), in, 
-	array_di, array_uo) is det.
+/*:- mode fold_id(in(pred(in, in, array_di, array_uo) is det), in, 
+	array_di, array_uo) is det. */
 :- mode fold_id(in(pred(in, in, in, out) is semidet), in, in, out) is semidet.
 :- mode fold_id(in(pred(in, in, mdi, muo) is semidet), in, mdi, muo) 
 	is semidet.
@@ -245,8 +246,8 @@
 :- mode fold(in(pred(in, in, in, out) is det), in, in, out) is det.
 :- mode fold(in(pred(in, in, mdi, muo) is det), in, mdi, muo) is det.
 :- mode fold(in(pred(in, in, di, uo) is det), in, di, uo) is det.
-:- mode fold(in(pred(in, in, array_di, array_uo) is det), in, 
-	array_di, array_uo) is det.
+/*:- mode fold(in(pred(in, in, array_di, array_uo) is det), in, 
+	array_di, array_uo) is det.*/
 :- mode fold(in(pred(in, in, in, out) is semidet), in, in, out) is semidet.
 :- mode fold(in(pred(in, in, mdi, muo) is semidet), in, mdi, muo) 
 	is semidet.
@@ -268,6 +269,9 @@
 :- import_module int.
 :- import_module require.
 :- import_module string.
+:- import_module pair.
+
+:- import_module util.
 
 %-----------------------------------------------------------------------------%
 %  Var Maps
@@ -278,16 +282,17 @@
 	--->	var_map_empty
 	;		var_map(set::mh_var_set, array::array(T)).
 
-init(init_var_map).
+init(init).
 init = var_map_empty.
 
 
-empty_var_map(init).
+empty_var_map(empty_var_map).
+empty_var_map = init.
 
 singleton_id(ID, T) = var_map(singleton_var_set(ID), array.init(1, T)).
 singleton_id(ID, T, singleton_id(ID, T)).
 
-singleton(var(ID), T) = singleton(ID, T).
+singleton(var(ID), T) = singleton_id(ID, T).
 singleton(Var, T, singleton(Var, T)).
 
 
@@ -306,18 +311,18 @@ from_array(Array, Map) :- from_offset_array(Array, null_var_id_offset, Map).
 from_array(Array) = Map :- from_array(Array, Map).
 
 from_offset_array(Array, Offset, Map) :- 
-	from_offset_array(Array, Offset, first_var_id, empty_var_map, Map).
+	from_offset_array(Array, Offset, first_var_id, var_map_empty, Map).
 
-from_offset_array(Array, Offset) = Map :- from_array(Array, Offset, Map).
+from_offset_array(Array, Offset) = Map :- from_offset_array(Array, Offset, Map).
 
 :- pred from_offset_array(array(T)::in, var_id_offset::in, var_id::in, 
 	mh_var_map(T)::in, mh_var_map(T)::out) is det.
 	
 from_offset_array(Array, Offset, Current, !Map) :-
-	(if var_id_in_bounds(Array, Current) then
-		var_id_lookup(Array, Current, T),
+	(if var_id_array_in_bounds(Array, Current) then
+		var_id_array_lookup(Array, Current, T),
 		var_id_offset(OffsetID, Current, Offset),
-		id_insert(OffsetID, T, !Map),
+		det_id_insert(OffsetID, T, !Map),
 		from_offset_array(Array, Offset, next_var_id(Current), !Map)
 	else
 		true
@@ -349,7 +354,7 @@ id_lookup(Map, ID, Term) :-
 	( if id_search(Map, ID, Found)
 	then Term = Found
 	 else
-        report_lookup_error("mh_var_map.id_lookup: Var ID not found.")
+        report_lookup_error("mh_var_map.id_lookup: Var ID not found.", ID)
 	).
 	
 id_lookup(Map, ID) = Term :- id_lookup(Map, ID, Term).
@@ -357,13 +362,13 @@ id_lookup(Map, ID) = Term :- id_lookup(Map, ID, Term).
 %-----------------------------------------------------------------------------%
 
 lookup(Map, var(ID), Term) :- 
-	( if id_search(var_map, ID, Found)
+	( if id_search(Map, ID, Found)
 	then Term = Found
 	 else
-        report_lookup_error("mh_var_map.lookup: Var ID not found.")
+        report_lookup_error("mh_var_map.lookup: Var ID not found.", ID)
 	).
 
-lookup(var_map, Var) = Term :- lookup(var_map, Var, Term).
+lookup(Map, Var) = Term :- lookup(Map, Var, Term).
 
 
 %-----------------------------------------------------------------------------%
@@ -381,7 +386,7 @@ det_first(Map, T, I) :-
 		T = T0,
 		I = I0
 	else
-		report_lookup_error(
+		error($pred,
 		"mh_var_map.det_first: Cannot produce iterator on empty map.")
 	).
 	
@@ -392,7 +397,7 @@ det_first(Map, ID, T, I) :-
 		T = T0,
 		I = I0
 	else
-	report_lookup_error(
+	error($pred,
 		"mh_var_map.det_first: Cannot produce iterator on empty map.")
 	).
 	
@@ -429,7 +434,7 @@ det_id_insert(ID, T, !Map) :-
 	(if id_insert(ID, T, !Map)
 	then true
 	else report_lookup_error(
-		"mh_var_map.det_id_insert: Var ID aleady present in map", Var, !.Map)
+		"mh_var_map.det_id_insert: Var ID aleady present in map", ID, !.Map)
 	).
 	
 insert(var(ID), T, !Map) :- id_insert(ID, T, !Map).
@@ -456,7 +461,7 @@ det_insert_from_assoc_list([K - V | KVs], !Map) :-
     det_insert_from_assoc_list(KVs, !Map).	
 	
 search_insert(var(ID), T, Result, !Map) :-
-	( if search(!.Map, ID, Old)
+	( if id_search(!.Map, ID, Old)
 	then
 		Result = yes(Old)
 	else
@@ -468,12 +473,13 @@ id_set(ID, T, !Map) :-
 	(if id_insert(ID, T, !Map)
 	then !:Map = !.Map
 	else 
-		some [!Array] (	
-			!.Map = var_map(Set, !.Array),
-			id_sparse_index(ID, Set, Index),
-			slow_set(Index, T, !Array),
-			!:Map = var_map(Set, !:Array)
-		;
+		( if
+			!.Map = var_map(Set, MapArray),
+			id_sparse_index(ID, Set, Index)
+		then
+			slow_set(Index, T, MapArray, NewMapArray),
+			!:Map = var_map(Set, NewMapArray)
+		else
 			unexpected($pred, 
 			"empty var_map or sparse index failure, this should be impossible")
 		)
@@ -526,7 +532,7 @@ id_remove(ID, T, var_map(Set0, Array0), Map) :-
 	lookup(Array0, Index, T),
 	(if empty_var_set(Set)
 	then
-		Map = empty_var_map
+		Map = var_map_empty
 	else
 		array_delete(Index, Array0, Array),
 		Map = var_map(Set, Array)
@@ -535,32 +541,30 @@ id_remove(ID, T, var_map(Set0, Array0), Map) :-
 remove(var(ID), T, !Map) :- id_remove(ID, T, !Map).
 
 det_remove(Var, T, !Map) :-	
-	(if remove(Var, T, !Map)
-	then !:Map = !.Map
+	(if remove(Var, Removed, !Map)
+	then !:Map = !.Map, T = Removed
 	else report_lookup_error(
 		"mh_var_map.det_remove: Var ID not present in map", Var, !.Map)
 	).
 
 id_delete(ID, !Map) :-
-	some [!Set, !Array] (
-		!:Map = 
-			(if
-				!.Map = var_map(!.Set, !.Array),
-				id_sparse_index(ID, !.Set, Index),
-				var_set_remove_id(ID, !Set)		
-			then
-				(if 
-					not empty_var_set(!.Set),
-					array_delete(Index, !Array)	
-				then var_set(!.Set, !.Array)
-				else empty_var_map
-				)
-			else
-				!.Map
+	!:Map =
+		(if
+			!.Map = var_map(Set, Array),
+			id_sparse_index(ID, Set, Index),
+			var_set_remove_id(ID, Set, NewSet)		
+		then
+			(if 
+				not empty_var_set(NewSet),
+				array_delete(Index, Array, NewArray)	
+			then var_map(NewSet, NewArray)
+			else var_map_empty
 			)
-	).
+		else
+			!.Map
+		).
 
-delete(var(ID), T, !Map) :- id_delete(ID, T, !Map).
+delete(var(ID), !Map) :- id_delete(ID, !Map).
 
 id_delete_list([], !Map).
 id_delete_list([ID | IDs], !Map) :- 
@@ -577,21 +581,31 @@ delete_list([ID | IDs], !Map) :-
 
 union(F, M1, M2) = M :-
     union(F, M1, M2, M).
-	
-union(_, empty_var_map, empty_var_map, empty_var_map).
-union(_, empty_var_map, M, M).
-union(_, M, empty_var_map, M).
 
-union(F, M1@var_map(S1, _), M2@var_map(S2, _), var_map(S, FinalArray)) :-
-	var_set_union(S1, S2, S),
-	var_set_count(S, ArraySize),
-	init_first(S, FirstID, Iter),
-	array.init(ArraySize, element_union(F, M1, M2, FirstID), NewArray),
-	union_loop(F, M1, M2, S, Iter, NewArray, FinalArray).
+union(F, M1, M2, M) :-
+	require_complete_switch [M1] (
+		M1 = var_map_empty, 
+		M = M2
+	;
+		M1 = var_map(S1, _),
+		require_complete_switch [M2] (
+			M2 = var_map_empty, 
+			M = M2
+		;
+			M2 = var_map(S2, _),		
+			var_set_union(S1, S2, S),
+			var_set_count(S, ArraySize),
+			init_first(S, FirstID, Iter),
+			array.init(ArraySize, element_union(F, M1, M2, FirstID), NewArray),
+			union_loop(F, M1, M2, S, Iter, NewArray, FinalArray),
+			M = var_map(S, FinalArray)
+		)
+	).
 	
-:- func element_union(func(T, T) = T, var_map(T), var_map(T), var_id) = T.
+:- func element_union(func(T, T) = T, mh_var_map(T), mh_var_map(T), var_id) 
+	= T.
 :- mode element_union(in(func(in, in) = out is det), in, in, in) = out is det.
-:- mode element_union(in(func(in, in) = out is semidet), in, in) = out
+:- mode element_union(in(func(in, in) = out is semidet), in, in, in) = out
 	is semidet.
 	
 element_union(F, M1, M2, ID) = 
@@ -606,7 +620,7 @@ element_union(F, M1, M2, ID) =
 	else id_lookup(M2, ID)
 	).
 	
-:- pred union_loop(func(T, T) = T, var_map(T), var_map(T), mh_var_set, 
+:- pred union_loop(func(T, T) = T, mh_var_map(T), mh_var_map(T), mh_var_set, 
 	var_map_iterator, array(T), array(T)).
 :- mode union_loop(in(func(in, in) = out is det), in, in, in, in,
 	array_di, array_uo)	is det.
@@ -622,35 +636,44 @@ union_loop(F, M1, M2, S, Last, !Array) :-
 		true
 	).
 	
-intersect(F, M1, M2) = M :-
-    intersect(F, M1, M2, M).
-	
-intersect(_, empty_var_map, empty_var_map, empty_var_map).
-intersect(_, empty_var_map, _, empty_var_map).
-intersect(_, _, empty_var_map, empty_var_map).
+intersect(F, M1, M2) = M :- 
+	intersect(F, M1, M2, M).
 
-intersect(F, M1@var_map(S1, _), M2@var_map(S2, _), Intersection) :-
-	var_set_intersection(S1, S2, S),
-	(if empty_var_set(S)
-	then
-		Intersection = empty_var_map
-	else
-		init_first(S, FirstID, Iter),
-		array.init(ArraySize, element_intersect(F, M1, M2, FirstID), NewArray),
-		intersect_loop(F, M1, M2, S, Iter, NewArray, FinalArray)
+intersect(F, M1, M2, M) :- 
+    require_complete_switch [M1] (
+		M1 = var_map_empty,
+		M = var_map_empty
+	;
+		M1 = var_map(S1, _),
+		require_complete_switch [M2] (
+			M2 = var_map_empty,
+			M = var_map_empty
+		;
+			M2 = var_map(S2, _),
+			var_set_intersection(S1, S2, S),
+			(if empty_var_set(S)
+			then
+				M = var_map_empty
+			else
+				init_first(S, FirstID, Iter),
+				var_set_count(S, ArraySize),
+				array.init(ArraySize, element_intersect(F, M1, M2, FirstID), NewArray),
+				intersect_loop(F, M1, M2, S, Iter, NewArray, FinalArray),
+				M = var_map(S, FinalArray)
+			)
+		)
 	).
+
 	
-	
-	
-:- func element_intersect(func(T, T) = T, var_map(T), var_map(T), var_id) = T.
+:- func element_intersect(func(T, T) = T, mh_var_map(T), mh_var_map(T), var_id) = T.
 :- mode element_intersect(in(func(in, in) = out is det), in, in, in) = out 
 	is det.
-:- mode element_intersect(in(func(in, in) = out is semidet), in, in) = out
+:- mode element_intersect(in(func(in, in) = out is semidet), in, in, in) = out
 	is semidet.
 	
 element_intersect(F, M1, M2, ID) = F(id_lookup(M1, ID), id_lookup(M2, ID)).
 	
-:- pred intersect_loop(func(T, T) = T, var_map(T), var_map(T), mh_var_set, 
+:- pred intersect_loop(func(T, T) = T, mh_var_map(T), mh_var_map(T), mh_var_set, 
 	var_map_iterator, array(T), array(T)).
 :- mode intersect_loop(in(func(in, in) = out is det), in, in, in, in,
 	array_di, array_uo)	is det.
@@ -669,24 +692,34 @@ intersect_loop(F, M1, M2, S, Last, !Array) :-
 	
 difference(M1, M2) = M :-
 	difference(M1, M2, M).
-
-difference(empty_var_map, empty_var_map, empty_var_map).
-difference(M, empty_tree, M).
-difference(empty_tree, var_map(_, _), empty_tree).
-
-difference(M1@var_map(S1, _), var_map(S2, _), Difference) :-
-	var_set_difference(S1, S2, S),
-	(if empty_var_set(S)
-	then
-		Difference = empty_var_map
-	else
-		init_first(S, FirstID, Iter),
-		array.init(ArraySize, id_lookup(M1, FirstID), NewArray),
-		intersect_loop(F, M1, S, Iter, NewArray, FinalArray)
-	).
 	
-:- pred difference_loop(var_map(T)::in, mh_var_set::in,	var_map_iterator::in, 
-	array(T)::array_di, array(T)::array_uo) is det.
+difference(M1, M2, M) :- 
+	require_complete_switch [M1] (
+		M1 = var_map_empty,
+		M = M1
+	;
+		M1 = var_map(S1, _),
+		require_complete_switch [M2] (
+			M2 = var_map_empty,
+			M = M1
+		;
+			M2 = var_map(S2, _),
+			var_set_difference(S1, S2, S),
+			(if empty_var_set(S)
+			then
+				M = var_map_empty
+			else
+				var_set_count(S, ArraySize),
+				init_first(S, FirstID, Iter),
+				array.init(ArraySize, id_lookup(M1, FirstID), NewArray),
+				difference_loop(M1, S, Iter, NewArray, FinalArray),
+				M = var_map(S, FinalArray)
+			)
+		)
+	).
+
+:- pred difference_loop(mh_var_map(T)::in, mh_var_set::in,
+	var_map_iterator::in, array(T)::array_di, array(T)::array_uo) is det.
 	
 difference_loop(M, S, Last, !Array) :-
 	(if init_next(S, ID, Last, Current)
@@ -723,26 +756,29 @@ fold_id(P, Map, !A, Iterator0) :-
 		fold_id(P, Map, !A, Iterator)
 	else true.
 	
-:- pred curry_fold(pred(var_id, T, A, A), mh_var, T, A, A).
+:- pred curry_fold(pred(mh_var, T, A, A), var_id, T, A, A).
 :- mode curry_fold(in(pred(in, in, in, out) is det), in, in, in, out) is det.
 :- mode curry_fold(in(pred(in, in, mdi, muo) is det), in, in, mdi, muo) is det.
 :- mode curry_fold(in(pred(in, in, di, uo) is det), in, in, di, uo) is det.
-:- mode curry_fold(in(pred(in, in, array_di, array_uo) is det), in, in, 
-	array_di, array_uo) is det.
+/*:- mode curry_fold(in(pred(in, in, array_di, array_uo) is det), in, in, 
+	array_di, array_uo) is det. */
 :- mode curry_fold(in(pred(in, in, in, out) is semidet), in, in, in, out)
 	is semidet.
 :- mode curry_fold(in(pred(in, in, mdi, muo) is semidet), in, in, mdi, muo) 
 	is semidet.
 	
-curry_fold(P, var(ID), T, !A) :- P(ID, T, !A).
+curry_fold(P, ID, T, !A) :- P(var(ID), T, !A).
 
-fold(P, Map, !A) :- fold_id(curry_fold(P), Map, !A).
+fold(P, Map, !A) :-
+	CurriedP = curry_fold(P),
+	fold_id(CurriedP, Map, !A).
 
 map_id(P, MapT, MapU) :-
-	if first(Map, ID, T, Iterator) then
+	if first(MapT, ID, T, Iterator) then
 		P(ID, T, U),
-		map_id(P, MapT, singleton_id(ID, U), MapU)
-	else true.
+		map_id(P, MapT, singleton_id(ID, U), MapU, Iterator)
+	else 
+		MapU = var_map_empty.
 
 :- pred map_id(pred(var_id, T, U), mh_var_map(T), mh_var_map(U), mh_var_map(U),
 	var_map_iterator).
@@ -750,16 +786,16 @@ map_id(P, MapT, MapU) :-
 :- mode map_id(in(pred(in, in, out) is semidet), in, in, out, in) is semidet.
 
 map_id(P, MapT, !MapU, Iterator0) :-
-	if next(Map, ID, T, Iterator0, Iterator) then
+	if next(MapT, ID, T, Iterator0, Iterator) then
 		P(ID, T, U),
 		det_id_insert(ID, U, !MapU),
-		map_id(P, MapT, !MapU)
+		map_id(P, MapT, !MapU, Iterator)
 	else true.
 	
-:- pred curry_map(pred(var_id, T, U), mh_var, T, U).
+:- pred curry_map(pred(mh_var, T, U), var_id, T, U).
 :- mode curry_map(in(pred(in, in, out) is det), in, in, out) is det.
 :- mode curry_map(in(pred(in, in, out) is semidet), in, in, out) is semidet.
 
-curry_map(P, var(ID), T, U) :- P(ID, T, U).
+curry_map(P, ID, T, U) :- P(var(ID), T, U).
 
 map(P, !Map) :- map_id(curry_map(P), !Map).

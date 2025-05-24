@@ -185,6 +185,7 @@
 
 :- import_module require.
 :- import_module string.
+:- import_module int.
 
 %-----------------------------------------------------------------------------%
 % Variable sets
@@ -647,7 +648,7 @@ sparse_index_fwd(ID, var_set(Offset, Set)) =
 sparse_index_fwd(ID, var_set(Offset, Set, Next)) = 
 	( if var_id_le(ID, last_var_id(Set)) 
 	then sparse_index_weight(ID, Offset, Set)
-	else sparse_index_fwd(var_id_sparse_index(ID, Offset, Set), ID, Next) 
+	else sparse_index_fwd(sparse_index_weight(ID, Offset, Set), ID, Next) 
 	) :-
 	var_id_ge(ID, first_var_id(Offset)).
 	
@@ -660,8 +661,8 @@ sparse_index_fwd(Sum, ID, var_set(Offset, Set)) =
 	
 sparse_index_fwd(Sum, ID, var_set(Offset, Set, Next)) = 
 	( if var_id_le(ID, last_var_id(Set)) 
-	then Sum + var_id_sparse_index(ID, Offset, Set)
-	else id_sparse_index(Sum + var_id_sparse_index(ID, Offset, Set), ID, Next) 
+	then Sum + sparse_index_weight(ID, Offset, Set)
+	else sparse_index_fwd(Sum + sparse_index_weight(ID, Offset, Set), ID, Next) 
 	) :-
 	var_id_ge(ID, first_var_id(Offset)).
 	
