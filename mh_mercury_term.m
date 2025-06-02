@@ -16,6 +16,8 @@
 :- interface.
 
 :- use_module term.
+:- use_module varset.
+:- import_module map.
 
 :- import_module mh_term.
 
@@ -29,16 +31,29 @@
 :- type mr_var(T) == term.var(T).
 :- type mr_var == term.var.
 
+:- type mr_varset(T) == varset.varset(T).
+:- type mr_varset == varset.varset.
+
 :- type mr_context == term.context.
+
+:- type context_map == map(mh_term, mr_context).
 
 %-----------------------------------------------------------------------------%
 % Mercury term conversion
 
+	% Convert mercury term to mh_term, wrapping any terms it can't in an
+	% mr_value constructor.
 :- func convert_mr_term(mr_term(_)) = mh_term.
 
 :- pred convert_mr_term(mr_term(_)::in, mh_term::out) is det.
 
-:- pred convert_mr_term(mr_term(_)::in, mh_term::out, mr_context::out) is det.
+	% Additionally returns a map of each term and sub term to the context
+	% it was parsed from.
+:- pred convert_mr_term(mr_term(_)::in, mh_term::out, context_map::out) is det.
+	
+	% Same as above, but adds context mappings to existing map
+:- pred convert_mr_term(mr_term(_)::in, mh_term::out, context_map::in, 
+	context_map::out) is det.
 
 %-----------------------------------------------------------------------------%
 % Mercury primitives
@@ -109,7 +124,10 @@ convert_mr_term(M) =
 	
 convert_mr_term(M, convert_mr_term(M)).
 
-convert_mr_term(M, Term, Context) :-  
+convert_mr_term(M, Term, ContextMap) :- 
+	convert_mr_term(M, Term, init, ContextMap).
+
+convert_mr_term(M, Term, !ContextMap) :-  
 	( if 
 		(
 			M = term.functor(Const, SubTerms, C),
@@ -140,12 +158,22 @@ convert_mr_term(M, Term, Context) :-
 		)
 	then 
 		Term = T, 
-		Context = C
+		insert_context(T, C, !ContextMap)
 	else if Primitive = convert_mr_primitive(M)	then
 		Term = value(mr_value(univ(Primitive))),
-		Context = term.get_term_context(M)
+		insert_context(Term, term.get_term_context(M), !ContextMap)
 	else
-		unexpected($module, $pred, "Non primitive mercury term")
+		%TODO: More robust error reporting involving the parsed context
+		unexpected($module, $pred, "Non primitive mercury term") 
+	).
+	
+:- pred insert_context(mh_term::in, mr_context::in, context_map::in,
+	context_map::out) is det.
+	
+insert_context(T, C, !M) :-
+	(if insert(T, C, !ContextMap)
+	then !:ContextMap = !.ContextMap
+	else unexpected($module, $pred, "Term already present in context map.")
 	).
 	
 %-----------------------------------------------------------------------------%

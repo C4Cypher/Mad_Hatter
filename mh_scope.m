@@ -16,6 +16,7 @@
 :- interface.
 
 :- import_module array.
+:- import_module maybe.
 
 
 % :- import_module mh_term.
@@ -32,8 +33,8 @@
 	;		root_scope(root_context :: mh_context, names :: var_names)
 	;		child_scope(
 				parent :: mh_scope, 
-			child_context::mh_context,
-			vars :: mh_var_set
+				child_context::maybe(mh_context), %If no, default to parent
+				vars :: mh_var_set
 			). 
 % TODO: Add constructors for extended scopes with inlined calls
 % rename root_scope to clause_scope?
@@ -61,7 +62,7 @@
 %-----------------------------------------------------------------------------%
 % Scope context
 
-:- type scope_context == mh_context.
+%:- type scope_context == mh_context.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
