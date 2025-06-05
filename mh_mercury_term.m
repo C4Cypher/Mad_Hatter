@@ -31,9 +31,6 @@
 :- type mr_var(T) == term.var(T).
 :- type mr_var == term.var.
 
-:- type mr_varset(T) == varset.varset(T).
-:- type mr_varset == varset.varset.
-
 :- type mr_context == term.context.
 
 :- type context_map == map(mh_term, mr_context).

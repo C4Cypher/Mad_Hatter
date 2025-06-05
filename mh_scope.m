@@ -25,6 +25,10 @@
 :- import_module mh_var_set.
 % :- import_module mh_arity.
 
+
+:- type mr_varset(T) == varset.varset(T).
+:- type mr_varset == varset.varset.
+
 %-----------------------------------------------------------------------------%
 % Scope
 
