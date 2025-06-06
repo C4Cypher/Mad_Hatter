@@ -55,6 +55,24 @@
 	
 	% Term substitutions (closures and var renamings into higher scopes)
 	;		term_sub(mh_term, mh_substitution).
+	
+%-----------------------------------------------------------------------------%
+% Subterms
+
+% Return the number of immediate subterms in a term 
+:- func subterm_count(mh_term) = int.
+:- pred subterm_count(mh_term::in, int::out) is det.
+
+% Return the subterm for the given index, fail if not present
+:- func search_subterm(mh_term, int) = mh_term is semidet.
+:- pred search_subterm(mh_term::in, int::in, mh_term::out) is semidet.
+
+% Return the subterm for the given index, nil if not present.
+:- func index_subterm(mh_term, int) = mh_term is det.
+:- pred index_subterm(mh_term::in, int::in, mh_term::out) is det.
+
+%-----------------------------------------------------------------------------%
+% Ground terms
 
 
 :- pred ground_term(mh_term::in) is semidet.
@@ -62,6 +80,9 @@
 :- func ground_term(mh_term) = mh_term.
 :- mode ground_term(in) = out is semidet.
 :- mode ground_term(out) = in is semidet.
+
+%-----------------------------------------------------------------------------%
+% Substitutions
 
 
 % Apply a substitution to a term, if the term is a variable, replace the
@@ -189,7 +210,21 @@
 :- import_module string.
 
 %-----------------------------------------------------------------------------%
-% Terms
+% Subterms
+
+subterm_count(nil) = 0.
+subterm_count(atom(_)) = 0.
+subterm_count(var(_)) = 0.
+subterm_count(value(_)) = 0.
+subterm_count(cons(_, _)) = 2.
+subterm_count(lazy(_)) = 1.
+subterm_count(relation(R)) = relation_subterm_count(R).
+subterm_count(term_sub(T, _)) = subterm_count(T).
+
+subterm_count(Term, subterm_count(Term)).
+
+%-----------------------------------------------------------------------------%
+% Ground terms
 
 ground_term(T) :-
 	T = atom(_);
@@ -205,7 +240,7 @@ ground_term(T) = T :- ground_term(T).
 	
 
 %-----------------------------------------------------------------------------%
-
+% Substitutions
 
 apply_term_substitution(Sub, !Term) :- 	require_complete_switch [!.Term] 
 	(
