@@ -138,8 +138,6 @@
 :- type mh_tuple
 	--->	list_tuple(list(mh_term))
 	;		array_tuple(array(mh_term)).
-	%;		set_tuple(???)  data structure that organizes a tuple into a 
-	% 						 prefix tree structure?
 	
 tuple_is_empty(list_tuple([])).
 tuple_is_empty(array_tuple(A)) :- size(A) = 0.
