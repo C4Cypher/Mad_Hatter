@@ -137,7 +137,8 @@
 
 :- type mh_tuple
 	--->	list_tuple(list(mh_term))
-	;		array_tuple(array(mh_term)).
+	;		array_tuple(array(mh_term))
+	;		slice_tuple(array(mh_term), int).
 	
 tuple_is_empty(list_tuple([])).
 tuple_is_empty(array_tuple(A)) :- size(A) = 0.
@@ -168,6 +169,7 @@ tuple(T::out) = (Tuple::in) :-
 	promise_equivalent_solutions [T] (
 		Tuple = list_tuple(U), dynamic_cast(U, T);
 		Tuple = array_tuple(U), dynamic_cast(U, T);
+		Tuple = slice_tuple(A, First)
 		dynamic_cast(tuple_term(Tuple):mh_term, T);
 		dynamic_cast(tuple_term(Tuple):tuple_term, T)
 	).
