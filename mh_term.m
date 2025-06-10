@@ -217,6 +217,7 @@ subterm_count(atom(_)) = 0.
 subterm_count(var(_)) = 0.
 subterm_count(value(_)) = 0.
 subterm_count(cons(_, _)) = 2.
+subterm_count(tuple_term(T)) = tuple_size(T).
 subterm_count(lazy(_)) = 1.
 subterm_count(relation(R)) = relation_subterm_count(R).
 subterm_count(term_sub(T, _)) = subterm_count(T).
