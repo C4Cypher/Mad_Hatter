@@ -55,6 +55,16 @@
 :- mode tuple(in) = out is semidet.
 :- mode tuple(out) = in is semidet. 
 
+% manipulating tuples as if they were s-expressions
+:- func tuple_cons(mh_term, mh_tuple) = mh_tuple.
+:- mode tuple_cons(in, in) = out is det.
+:- mode tuple_cons(out, out) = in is semidet.
+
+:- func tuple_car(mh_tuple) = mh_term is semidet.
+:- func tuple_cdr(mh_tuple) = mh_tuple is semidet.
+
+
+% Direct conversions to other containers
 :- func to_list(mh_tuple) = list(mh_term).
 :- func from_list(list(mh_term)) = mh_tuple.
 
@@ -126,6 +136,8 @@
 :- import_module int.
 :- import_module bool.
 
+:- import_module util.
+
 :- import_module mh_index.
 
 
@@ -147,8 +159,19 @@ tuple_compare(T1, T2) = array_compare(to_array(T1), to_array(T2)).
 tuple_compare(tuple_compare(T1, T2), T1, T2).
 
 tuple_equal(T1, T2) :- tuple_compare(=, T1, T2).
-	
 
+%-----------------------------------------------------------------------------%
+% Tuple slices
+
+:- func slice_index(int, int) = int.
+
+slice_index(First, Index) = Index - First.
+
+:- func unslice_array(array(mh_term), int) = array(mh_term).
+
+unslice_array(A, F) = generate(size(A) - First, slice_index(First)).
+
+:- pragma inline(unslice_array/2).
 
 %-----------------------------------------------------------------------------%
 % Tuple constructors and conversion
@@ -169,40 +192,74 @@ tuple(T::out) = (Tuple::in) :-
 	promise_equivalent_solutions [T] (
 		Tuple = list_tuple(U), dynamic_cast(U, T);
 		Tuple = array_tuple(U), dynamic_cast(U, T);
-		Tuple = slice_tuple(A, First)
+		Tuple = slice_tuple(Array, First), 
+			dynamic_cast(unslice_array(Array, First), T);
 		dynamic_cast(tuple_term(Tuple):mh_term, T);
 		dynamic_cast(tuple_term(Tuple):tuple_term, T)
 	).
+	
+
+:- pragma promise_equivalent_clauses(tuple_cons/2).
+
+tuple_cons(X::in, Xs::in) = (list_tuple([X | to_list(Xs)])::out).
+tuple_cons(tuple_car(T)::out, tuple_cdr(T)::out) = (T::in).
+
+tuple_car(list_tuple([T | _])) = T.
+tuple_car(array_tuple(A)) = T :- semidet_lookup(A, 0, T).
+tuple_car(slice_tuple(A, F)) = T :- semidet_lookup(A, F, T).
+
+tuple_cdr(list_tuple([_ | Ts])) = Ts.
+tuple_car(array_tuple(A)) = Xs :- 
+	(if size(A) > 1
+	then Xs = slice_tuple(A, 1)
+	else size(A) = 1, Xs = array_tuple(make_empty_array)
+	).
+	
+tuple_cdr(slice_tuple(A, F)) = Xs :-
+	(if (size(A) - F > 1)
+	then 
+		Xs = slice_tuple(A, F + 1)
+	else 
+		size(A) - F = 1, 
+		Xs = array_tuple(make_empty_array)
+	).
+
 
 	
 to_list(list_tuple(List)) = List.
 
 to_list(array_tuple(Array)) = array.to_list(Array).
 
-from_list(List) = list_tuple(List).
+to_list(slice_tuple(Array, First)) = slice_to_list(Array, First).
 
+:- func slice_to_list(array(mh_term), int) = list(mh_term).
+
+slice_to_list(A, F) = 
+    (if F > max(A) 
+        then [] 
+        else [ lookup(A, F) | slice_to_list(A, F + 1)]
+    ).
+
+from_list(List) = list_tuple(List).
 
 to_array(list_tuple(List)) = array.from_list(List).
 
 to_array(array_tuple(Array)) = Array.
+
+to_array(slice_tuple(Array, First)) = unslice_array(Array, First).
 
 from_array(Array) = array_tuple(Array).
 
 to_set(Tuple) = ordered_set.from_array(mh_tuple.to_array(Tuple)).
 
 from_set(Set) = array_tuple(ordered_set.to_array(Set)).
-
-
-
-
-	
-
 	
 %-----------------------------------------------------------------------------%
 % Tuple properties	
 	
 tuple_size(list_tuple(L), S) :- length(L, S).
 tuple_size(array_tuple(Array), S) :- size(Array, S).
+tuple_size(slice_tuple(A, F), size(A) - F).
 
 tuple_size(T) = S :- tuple_size(T, S).
 
@@ -227,6 +284,8 @@ tuple_contains(Tuple, Index) :- Index > 0, Index =< tuple_size(Tuple).
 
 tuple_index(list_tuple(L), Index, Term) :- list_index(L, Index, Term).
 tuple_index(array_tuple(A), Index, Term) :- array_index(A, Index, Term).
+tuple_index(slice_tuple(A, F), Index, Term) :- 
+	array_index(A, slice_index(F, Index), Term).
 
 
 tuple_search(Tuple, Index, Term) :-
