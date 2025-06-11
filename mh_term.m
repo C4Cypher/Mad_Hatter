@@ -228,14 +228,16 @@ subterm_count(Term, subterm_count(Term)).
 % Ground terms
 
 ground_term(T) :-
-	T = atom(_);
-	T = value(_);
-	T = cons(ground_term(_), ground_term(_));
-	T = tuple_term(U), ground_tuple(U);
-	T = relation(R), ground_relation(R);
-	T = term_sub(T0, Sub),
-		apply_term_substitution(Sub, T0, T1),
-		ground_term(T1).
+	require_complete_switch [T] (
+		T = atom(_);
+		T = value(_);
+		T = cons(ground_term(_), ground_term(_));
+		T = tuple_term(U), ground_tuple(U);
+		T = relation(R), ground_relation(R);
+		T = term_sub(T0, Sub),
+			apply_term_substitution(Sub, T0, T1),
+			ground_term(T1)
+	).
 		
 ground_term(T) = T :- ground_term(T).
 	
