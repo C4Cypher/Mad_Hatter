@@ -127,6 +127,8 @@
 :- pred apply_tuple_substiution(mh_substitution::in, mh_tuple::in,
 	mh_tuple::out) is det.
 	
+:- func apply_tuple_substiution(mh_tuple, mh_substitution) = mh_tuple.
+	
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
@@ -167,9 +169,13 @@ tuple_equal(T1, T2) :- tuple_compare(=, T1, T2).
 
 slice_index(First, Index) = Index - First.
 
+:- func slice_lookup(array(mh_term), int, int) = mh_term.
+
+slice_lookup(A, F, I) = lookup(A, slice_index(F, I)).
+
 :- func unslice_array(array(mh_term), int) = array(mh_term).
 
-unslice_array(A, F) = generate(size(A) - First, slice_index(First)).
+unslice_array(A, F) = generate(size(A) - F, slice_lookup(A, F)).
 
 :- pragma inline(unslice_array/2).
 
@@ -208,8 +214,8 @@ tuple_car(list_tuple([T | _])) = T.
 tuple_car(array_tuple(A)) = T :- semidet_lookup(A, 0, T).
 tuple_car(slice_tuple(A, F)) = T :- semidet_lookup(A, F, T).
 
-tuple_cdr(list_tuple([_ | Ts])) = Ts.
-tuple_car(array_tuple(A)) = Xs :- 
+tuple_cdr(list_tuple([_ | Ts])) = list_tuple(Ts).
+tuple_cdr(array_tuple(A)) = Xs :- 
 	(if size(A) > 1
 	then Xs = slice_tuple(A, 1)
 	else size(A) = 1, Xs = array_tuple(make_empty_array)
@@ -303,8 +309,26 @@ tuple_member(Tup, Index, Term) :-
 
 fold_tuple(Closure, list_tuple(L), !A) :- fold_list_index(Closure, L, !A).
 
-fold_tuple(Closure, array_tuple(T), !A) :- 
-		fold_array_index(Closure, T, !A).
+fold_tuple(Closure, array_tuple(Array), !Acc) :- 
+	fold_array_index(Closure, Array, !Acc).
+		
+fold_tuple(Closure, slice_tuple(Array, First), !Acc) :-
+	fold_slice_index(Closure, Array, First, !Acc).
+		
+:- pred fold_slice_index(pred(T, A, A), array(T), int, A, A). 
+:- mode fold_slice_index(pred(in, in, out) is det, in, in, in, out) is det.
+:- mode fold_slice_index(pred(in, in, out) is semidet, in, in, in, out) 
+	is semidet.
+	
+fold_slice_index(Closure, Array, First, !Acc) :-
+	(if First > max(Array) then true
+	else
+		lookup(Array, First, Term),
+		Closure(Term, !Acc),
+		fold_slice_index(Closure, Array, First + 1, !Acc)
+	).
+
+
 		
 		
 fold_tuple(Closure, Tuple, !.A) = !:A :- fold_tuple(Closure, Tuple, !A).
@@ -319,3 +343,5 @@ apply_tuple_substiution(_, _, _) :- sorry($module, $pred,
 	"apply_tuple_substiution/3").
 	
 :- pragma no_determinism_warning(apply_tuple_substiution/3).
+
+apply_tuple_substutition(!.T, S) = !:T :- apply_tuple_substiution(S, !T).
