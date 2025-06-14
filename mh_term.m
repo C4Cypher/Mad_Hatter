@@ -55,21 +55,13 @@
 	
 	% Term substitutions (closures and var renamings into higher scopes)
 	;		term_sub(mh_term, mh_substitution).
-	
+
 %-----------------------------------------------------------------------------%
 % Subterms
 
-% Return the number of immediate subterms in a term 
-:- func subterm_count(mh_term) = int.
-:- pred subterm_count(mh_term::in, int::out) is det.
-
-% Return the subterm for the given index, fail if not present
-:- func search_subterm(mh_term, int) = mh_term is semidet.
-:- pred search_subterm(mh_term::in, int::in, mh_term::out) is semidet.
-
-% Return the subterm for the given index, nil if not present.
-:- func index_subterm(mh_term, int) = mh_term is det.
-:- pred index_subterm(mh_term::in, int::in, mh_term::out) is det.
+% Return a tuple of a term's subterms, fail if there are none
+:- func subterms(mh_term) = mh_tuple is semidet.
+:- pred subterms(mh_term::in, mh_tuple::out) is semidet.
 
 %-----------------------------------------------------------------------------%
 % Ground terms
@@ -212,29 +204,28 @@
 %-----------------------------------------------------------------------------%
 % Subterms
 
-subterm_count(nil) = 0.
-subterm_count(atom(_)) = 0.
-subterm_count(var(_)) = 0.
-subterm_count(value(_)) = 0.
-subterm_count(cons(_, _)) = 2.
-subterm_count(tuple_term(T)) = tuple_size(T).
-subterm_count(lazy(_)) = 1.
-subterm_count(relation(R)) = relation_subterm_count(R).
-subterm_count(term_sub(T, _)) = subterm_count(T).
+subterms(cons(X, Xs)) = tuple([X, Xs]).
+subterms(tuple_term(T)) = T.
+subterms(lazy(T)) = subterms(T).
+subterms(relation(R)) = relation_subterms(R). % ???
+subterms(term_sub(T, Sub)) = apply_tuple_substiution(subterms(T), Sub).
 
-subterm_count(Term, subterm_count(Term)).
+subterms(Term, subterms(Term)).
 
 %-----------------------------------------------------------------------------%
 % Ground terms
 
 ground_term(T) :-
 	require_complete_switch [T] (
+		T = nil; % nil is itself considered ground
 		T = atom(_);
+		T = var(_), fail;
 		T = value(_);
 		T = cons(ground_term(_), ground_term(_));
 		T = tuple_term(U), ground_tuple(U);
-		T = relation(R), ground_relation(R);
-		T = term_sub(T0, Sub),
+		T = lazy(C), ground_term(C); %TODO: Rethink how deep I want to eagerly
+		T = relation(R), ground_relation(R);	% check constraints for
+		T = term_sub(T0, Sub), 					% groundedness
 			apply_term_substitution(Sub, T0, T1),
 			ground_term(T1)
 	).
