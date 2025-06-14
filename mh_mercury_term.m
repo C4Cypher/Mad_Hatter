@@ -16,7 +16,6 @@
 :- interface.
 
 :- use_module term.
-:- use_module varset.
 :- import_module map.
 
 :- import_module mh_term.
@@ -167,7 +166,7 @@ convert_mr_term(M, Term, !ContextMap) :-
 :- pred insert_context(mh_term::in, mr_context::in, context_map::in,
 	context_map::out) is det.
 	
-insert_context(T, C, !M) :-
+insert_context(T, C, !ContextMap) :-
 	(if insert(T, C, !ContextMap)
 	then !:ContextMap = !.ContextMap
 	else unexpected($module, $pred, "Term already present in context map.")

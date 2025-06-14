@@ -87,8 +87,12 @@
  
 :- pred ground_relation(mh_relation::in) is semidet.
  
+%-----------------------------------------------------------------------------%
+% Relation Subterms
 
-
+% Return subterms in a Relation 
+:- func relation_subterms(mh_relation) = mh_tuple is semidet.
+:- pred relation_subterms(mh_relation::in, mh_tuple::out) is semidet.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -107,3 +111,9 @@ apply_relation_substitution(_, _, _) :- sorry($module, $pred,
 ground_relation(_) :- sorry($module, $pred, "ground_relation/1").
 
 :- pragma no_determinism_warning(ground_relation/1).
+
+%-----------------------------------------------------------------------------%
+% Relation Subterms
+
+relation_subterm_count(_) = -1. %DUMMY VALUE NEED TO IMPLEMENT.
+relation_subterm_count(R, relation_subterm_count(R)).

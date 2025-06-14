@@ -17,6 +17,7 @@
 
 :- import_module array.
 :- import_module maybe.
+:- import_module varset.
 
 
 % :- import_module mh_term.
