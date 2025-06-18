@@ -20,11 +20,10 @@
 :- import_module varset.
 
 
-% :- import_module mh_term.
+:- import_module mh_term.
 :- import_module mh_context.
-%:- import_module mh_var_id.
+:- import_module mh_var_id.
 :- import_module mh_var_set.
-% :- import_module mh_arity.
 
 
 :- type mr_varset(T) == varset.varset(T).
@@ -35,14 +34,28 @@
 
 :- type mh_scope 
 	--->	no_scope
-	;		root_scope(root_context :: mh_context, names :: var_names)
+	;		root_scope(	root_context :: mh_context, 
+						id_set :: var_id_set, 
+						names :: var_names
+					)
 	;		child_scope(
 				parent :: mh_scope, 
 				child_context::maybe(mh_context), %If no, default to parent
 				vars :: mh_var_set
-			). 
-% TODO: Add constructors for extended scopes with inlined calls
-% rename root_scope to clause_scope?
+			)
+	;		extended_scope(scope_car :: mh_scope, scope_cdr :: mh_scope). 
+
+
+:- func scope_cons(mh_scope, mh_scope) = mh_scope.
+:- mode scope_cons(in, in) = out is det.
+:- mode scope_cons(out, out) = in is semidet.
+ 
+	% Throws an exception if input term contains variables not present in 
+	% varset.
+:- func new_root_scope(mh_term, mh_context, mr_varset) = mh_scope.
+:- pred new_root_scope(mh_term::in, mh_context::in, mr_varset::in, 
+	mh_scope::out) is det.
+	
 
 /* unimplemented
 :- func scope_vars(mh_scope) = mh_var_set.
