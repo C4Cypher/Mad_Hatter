@@ -15,13 +15,12 @@
 
 :- interface.
 
-:- import_module array.
 :- import_module maybe.
 :- import_module varset.
 
-
 :- import_module mh_term.
 :- import_module mh_context.
+:- import_module mh_var_map.
 :- import_module mh_var_id.
 :- import_module mh_var_set.
 
@@ -75,7 +74,7 @@
 %-----------------------------------------------------------------------------%
 % Variable names
 
-:- type var_names == array(string).
+:- type var_names == var_map(string).
 
 %-----------------------------------------------------------------------------%
 % Scope context
@@ -87,6 +86,28 @@
 
 :- implementation.
 
+:- import_module list.
+:- import_module map.
+
+:- import_module mh_mercury_term. % for mr_var.
+
 %-----------------------------------------------------------------------------%
 % Scope
+
+scope_cons(Car, Cdr) = extended_scope(Car, Cdr).
+
+new_root_scope(Term, Ctx, VarSet) = root_scope(Ctx, IdSet, Names) :-
+	Vars = vars(VarSet),
+	
+	% new_scope_vars(VarList, !LastId, !VarSet, !Names)
+:- pred new_scope_vars(
+		list(mh_var)::in, 
+		var_id::in, var_id::out,
+		mh_var_set::in, mh_var_set::out,
+		var_names::in, var_names::out
+	) is det.
+		
+new_scope_vars([], !LastId, !VarSet, !Names).
+
+new_scope_vars( [ Var])
 
