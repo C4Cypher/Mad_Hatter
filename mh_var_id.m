@@ -37,6 +37,7 @@
 
 :- type var_ids == list(var_id). 
 
+	% Converts a mercury term.var into a valid Mad Hatter var_id
 :- func mr_var_id(mr_var(_)) = var_id.
 
 
