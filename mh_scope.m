@@ -33,7 +33,7 @@
 
 :- type mh_scope 
 	--->	no_scope
-	;		root_scope(	root_context :: mh_context, 
+	;		root_scope(root_context :: mh_context, 
 						id_set :: var_id_set, 
 						names :: var_names
 					)
@@ -49,11 +49,11 @@
 :- mode scope_cons(in, in) = out is det.
 :- mode scope_cons(out, out) = in is semidet.
  
-	% Throws an exception if input term contains variables not present in 
-	% varset.
-:- func new_root_scope(mh_term, mh_context, mr_varset) = mh_scope.
-:- pred new_root_scope(mh_term::in, mh_context::in, mr_varset::in, 
-	mh_scope::out) is det.
+	% Throws an exception if input mr_varset does not contain a complete set 
+	% of variable ids from 1 to N.
+:- func root_scope_from_mr_varset(mh_context, mr_varset) = mh_scope.
+:- pred root_scope_from_mr_varset(mh_context::in, mr_varset::in, mh_scope::out)
+	is det.
 	
 
 /* unimplemented
@@ -88,6 +88,8 @@
 
 :- import_module list.
 :- import_module map.
+:- import_module require.
+:- import_module string.
 
 :- import_module mh_mercury_term. % for mr_var.
 
@@ -96,18 +98,34 @@
 
 scope_cons(Car, Cdr) = extended_scope(Car, Cdr).
 
-new_root_scope(Term, Ctx, VarSet) = root_scope(Ctx, IdSet, Names) :-
-	Vars = vars(VarSet),
+root_scope_from_mr_varset(Ctx, MrVarSet) = root_scope(Ctx, IdSet, Names) :-
+	new_scope_vars(MrVarSet, vars(MrVarSet), empty_var_set, VarSet,	
+		empty_var_map, Names),
+	(if complete_var_set(IdSet, VarSet) then true
+	else error($pred, 
+		"mr_varset did not contain a complete, continuous set of variable "++
+		"ids starting at 1")
+	).
+	
 	
 	% new_scope_vars(VarList, !LastId, !VarSet, !Names)
 :- pred new_scope_vars(
-		list(mh_var)::in, 
-		var_id::in, var_id::out,
+		mr_varset::in, list(mh_var)::in, 
 		mh_var_set::in, mh_var_set::out,
 		var_names::in, var_names::out
 	) is det.
 		
-new_scope_vars([], !LastId, !VarSet, !Names).
+new_scope_vars(_, [], !LastId, !VarSet, !Names).
 
-new_scope_vars( [ Var])
+new_scope_vars(MrVarset, [MrVar | Vars], !LastId, !VarSet, !Names) :-
+	% given that varset.vars should never produce duplicate var_id's, I'm
+	% skipping the check to see if the mh_var_set already contains it
+	var_set_merge_id(NewId, !VarSet), 
+	(if search_name(MrVarset, MrVar, Name)
+	then
+		det_id_insert(NewId, Name, !Names)
+	else true
+	),
+	new_scope_vars(MrVarset, Vars, !LastId, !VarSet, !Names).
+	
 
