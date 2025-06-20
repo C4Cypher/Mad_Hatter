@@ -28,6 +28,10 @@
 :- mode complete_var_set(in) = out is det.
 :- mode complete_var_set(out) = in is semidet.
 
+:- pred complete_var_set(var_id_set, mh_var_set).
+:- mode complete_var_set(in, out) is det.
+:- mode complete_var_set(out, in) is semidet.
+
 :- func contiguous_var_set(var_id_offset, var_id_set) = mh_var_set.
 :- mode contiguous_var_set(in, in) = out is det.
 :- mode contiguous_var_set(out, out) = in is semidet.
@@ -195,6 +199,7 @@
 	;		var_set(var_id_offset, var_id_set, mh_var_set).
 
 complete_var_set(Set) = var_set(null_var_id_offset, Set).
+complete_var_set(Set, complete_var_set(Set)).
 
 contiguous_var_set(Offset, Set) = var_set(Offset, Set).
 
