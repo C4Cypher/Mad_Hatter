@@ -18,7 +18,6 @@
 :- import_module maybe.
 :- import_module varset.
 
-:- import_module mh_term.
 :- import_module mh_context.
 :- import_module mh_var_map.
 :- import_module mh_var_id.
@@ -74,7 +73,7 @@
 %-----------------------------------------------------------------------------%
 % Variable names
 
-:- type var_names == var_map(string).
+:- type var_names == mh_var_map(string).
 
 %-----------------------------------------------------------------------------%
 % Scope context
@@ -91,6 +90,7 @@
 :- import_module require.
 :- import_module string.
 
+:- import_module mh_term.
 :- import_module mh_mercury_term. % for mr_var.
 
 %-----------------------------------------------------------------------------%
@@ -101,31 +101,35 @@ scope_cons(Car, Cdr) = extended_scope(Car, Cdr).
 root_scope_from_mr_varset(Ctx, MrVarSet) = root_scope(Ctx, IdSet, Names) :-
 	new_scope_vars(MrVarSet, vars(MrVarSet), empty_var_set, VarSet,	
 		empty_var_map, Names),
-	(if complete_var_set(IdSet, VarSet) then true
+	(if complete_var_set(CompleteSet, VarSet) 
+	then IdSet = CompleteSet
 	else error($pred, 
 		"mr_varset did not contain a complete, continuous set of variable "++
 		"ids starting at 1")
 	).
 	
+root_scope_from_mr_varset(Ctx, MrVarSet, 
+	root_scope_from_mr_varset(Ctx, MrVarSet)).
+	
 	
 	% new_scope_vars(VarList, !LastId, !VarSet, !Names)
 :- pred new_scope_vars(
-		mr_varset::in, list(mh_var)::in, 
+		mr_varset::in, list(mr_var)::in, 
 		mh_var_set::in, mh_var_set::out,
 		var_names::in, var_names::out
 	) is det.
 		
-new_scope_vars(_, [], !LastId, !VarSet, !Names).
+new_scope_vars(_, [], !VarSet, !Names).
 
-new_scope_vars(MrVarset, [MrVar | Vars], !LastId, !VarSet, !Names) :-
+new_scope_vars(MrVarset, [MrVar | Vars], !VarSet, !Names) :-
 	% given that varset.vars should never produce duplicate var_id's, I'm
 	% skipping the check to see if the mh_var_set already contains it
-	var_set_merge_id(NewId, !VarSet), 
+	var_set_merge_id(NewId@mr_var_id(MrVar), !VarSet), 
 	(if search_name(MrVarset, MrVar, Name)
 	then
 		det_id_insert(NewId, Name, !Names)
 	else true
 	),
-	new_scope_vars(MrVarset, Vars, !LastId, !VarSet, !Names).
+	new_scope_vars(MrVarset, Vars, !VarSet, !Names).
 	
 

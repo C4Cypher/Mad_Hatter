@@ -200,6 +200,7 @@
 :- import_module require.
 :- import_module type_desc.
 :- import_module string.
+:- import_module list.
 
 %-----------------------------------------------------------------------------%
 % Subterms

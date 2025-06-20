@@ -344,4 +344,4 @@ apply_tuple_substiution(_, _, _) :- sorry($module, $pred,
 	
 :- pragma no_determinism_warning(apply_tuple_substiution/3).
 
-apply_tuple_substutition(!.T, S) = !:T :- apply_tuple_substiution(S, !T).
+apply_tuple_substiution(!.T, S) = !:T :- apply_tuple_substiution(S, !T).
