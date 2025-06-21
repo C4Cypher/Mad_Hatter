@@ -15,13 +15,10 @@
 
 :- interface.
 
-:- import_module maybe.
 :- import_module varset.
 
 :- import_module mh_context.
 :- import_module mh_var_map.
-:- import_module mh_var_id.
-:- import_module mh_var_set.
 :- import_module mh_term.
 
 
@@ -34,13 +31,11 @@
 :- type mh_scope.
  
 	% Throws an exception if input mr_varset does not contain a complete set 
-	% of variable ids from 1 to N.
+	% of variable ids from 1 to N. Ignores any variable bindings in mr_varset
 :- func root_scope_from_mr_varset(mh_context, mr_varset) = mh_scope.
 :- pred root_scope_from_mr_varset(mh_context::in, mr_varset::in, mh_scope::out)
 	is det.
 	
-
-/* unimplemented
 
 %-----------------------------------------------------------------------------%
 % Scope context
@@ -58,6 +53,8 @@
 	% scope_context
 :- func root_context(mh_scope) = mh_context.
 :- pred root_context(mh_scope::in, mh_context::out) is det.
+
+/* unimplemented
 
 
 :- func scope_vars(mh_scope) = mh_var_set.
@@ -85,36 +82,29 @@
 
 :- type var_names == mh_var_map(string).
 
-%-----------------------------------------------------------------------------%
-% Scope context
-
-%:- type scope_context == mh_context.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
 :- implementation.
 
+:- import_module maybe.
 :- import_module list.
 :- import_module map.
 :- import_module require.
 :- import_module string.
 
+:- import_module mh_var_id.
+:- import_module mh_var_set.
 :- import_module mh_mercury_term. % for mr_var.
 
 %-----------------------------------------------------------------------------%
 % Scope
 
 :- type mh_scope 
-	--->	root_scope(root_context :: mh_context, 
-						id_set :: var_id_set, 
-						names :: var_names
-					)
-	;		child_scope(
-				parent :: mh_scope, 
-				child_context::maybe(mh_context), %If no, default to parent
-				vars :: mh_var_set
-			)
+	--->	root_scope(mh_context, var_id_set, var_names)
+		%If no child context, default to parent
+	;		child_scope(mh_scope, maybe(mh_context), mh_var_set) 
 	;		extended_scope(scope_car :: mh_scope, scope_cdr :: mh_scope). 
 
 
@@ -157,5 +147,29 @@ new_scope_vars(MrVarset, [MrVar | Vars], !VarSet, !Names) :-
 	else true
 	),
 	new_scope_vars(MrVarset, Vars, !VarSet, !Names).
+	
+%-----------------------------------------------------------------------------%
+% Scope context
+
+scope_context(root_scope(Ctx, _, _)) = Ctx.
+scope_context(child_scope(Parent, MaybCtx, _)) = 
+	(if MaybCtx = yes(Ctx)
+	then Ctx
+	else scope_context(Parent)
+	).
+scope_context(extended_scope(Car, _)) = scope_context(Car).
+
+scope_context(Scope, scope_context(Scope)).
+
+is_child(child_scope(_, _, _)).
+is_child(extended_scope(Car, _)) :- is_child(Car).
+
+is_root(Scope) :- not is_child(Scope).
+
+root_context(root_scope(Ctx, _, _)) = Ctx.
+root_context(child_scope(Parent, MaybCtx, _)) = root_context(Parent).
+root_context(extended_scope(Car, _)) = root_context(Car).
+
+root_context(Scope, root_context(Scope)).
 	
 
