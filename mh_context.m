@@ -25,11 +25,13 @@
 :- type mh_context
 	--->	dummy_context % unifies with context("", 0)
 	;		interactive_context(int) % For REPL commands
-	;		file_context(filename::string, linenumber::int).
+	;		file_context(filename::string, int).
 	%TODO: contexts for relations loaded from foreign library modules
 
 % Convert context from mercury term into a clause context or dummy context
 :- func from_mr_context(mr_context) = mh_context.	
+
+:- func linenumber(mh_context) = int is semidet.
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
@@ -45,3 +47,6 @@ from_mr_context(term_context.context(File, Line)) =
 	else
 		file_context(File, Line)
 	).
+	
+linenumber(interactive_context(N)) = N.
+linenumber(file_context(_, N)) = N.
