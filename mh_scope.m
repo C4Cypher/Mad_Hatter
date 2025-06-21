@@ -31,23 +31,7 @@
 %-----------------------------------------------------------------------------%
 % Scope
 
-:- type mh_scope 
-	--->	no_scope
-	;		root_scope(root_context :: mh_context, 
-						id_set :: var_id_set, 
-						names :: var_names
-					)
-	;		child_scope(
-				parent :: mh_scope, 
-				child_context::maybe(mh_context), %If no, default to parent
-				vars :: mh_var_set
-			)
-	;		extended_scope(scope_car :: mh_scope, scope_cdr :: mh_scope). 
-
-
-:- func scope_cons(mh_scope, mh_scope) = mh_scope.
-:- mode scope_cons(in, in) = out is det.
-:- mode scope_cons(out, out) = in is semidet.
+:- type mh_scope.
  
 	% Throws an exception if input mr_varset does not contain a complete set 
 	% of variable ids from 1 to N.
@@ -61,16 +45,23 @@
 %-----------------------------------------------------------------------------%
 % Scope context
 
-:- func scope_vars(mh_scope) = mh_var_set.
-:- pred scope_vars(mh_scope::in, mh_var_set::out) is det.
 
 :- func scope_context(mh_scope) = mh_context.
 :- pred scope_context(mh_scope::in, mh_context::out) is det.
 
+	% determines if the given scope is a child of another context
+	% is_child(X), not is_root(X) <=> not is_child(X), is_root(X).
+:- pred is_child(mh_scope::in) is semidet.
 :- pred is_root(mh_scope::in) is semidet.
 
+	% If the provided scope is a root context, returns the same value as
+	% scope_context
 :- func root_context(mh_scope) = mh_context.
 :- pred root_context(mh_scope::in, mh_context::out) is det.
+
+
+:- func scope_vars(mh_scope) = mh_var_set.
+:- pred scope_vars(mh_scope::in, mh_var_set::out) is det.
 
 
 :- func scope_var_names(mh_scope) = var_names.
@@ -113,6 +104,23 @@
 
 %-----------------------------------------------------------------------------%
 % Scope
+
+:- type mh_scope 
+	--->	root_scope(root_context :: mh_context, 
+						id_set :: var_id_set, 
+						names :: var_names
+					)
+	;		child_scope(
+				parent :: mh_scope, 
+				child_context::maybe(mh_context), %If no, default to parent
+				vars :: mh_var_set
+			)
+	;		extended_scope(scope_car :: mh_scope, scope_cdr :: mh_scope). 
+
+
+:- func scope_cons(mh_scope, mh_scope) = mh_scope.
+:- mode scope_cons(in, in) = out is det.
+:- mode scope_cons(out, out) = in is semidet.
 
 scope_cons(Car, Cdr) = extended_scope(Car, Cdr).
 
