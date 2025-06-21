@@ -22,6 +22,7 @@
 :- import_module mh_var_map.
 :- import_module mh_var_id.
 :- import_module mh_var_set.
+:- import_module mh_term.
 
 
 :- type mr_varset(T) == varset.varset(T).
@@ -56,18 +57,36 @@
 	
 
 /* unimplemented
+
+%-----------------------------------------------------------------------------%
+% Scope context
+
 :- func scope_vars(mh_scope) = mh_var_set.
+:- pred scope_vars(mh_scope::in, mh_var_set::out) is det.
 
 :- func scope_context(mh_scope) = mh_context.
+:- pred scope_context(mh_scope::in, mh_context::out) is det.
 
-% Different from scope_context in the event of a nested lambda clause.
-:- func clause_context(mh_scope) = mh_context. 
+:- pred is_root(mh_scope::in) is semidet.
+
+:- func root_context(mh_scope) = mh_context.
+:- pred root_context(mh_scope::in, mh_context::out) is det.
+
 
 :- func scope_var_names(mh_scope) = var_names.
 :- func parent_scope(mh_scope) = mh_scope is semidet.
 
 % Fails if contains vars that are not members of parent scopes
 :- pred valid_scope(mh_scope::in) is semidet. 
+
+
+% Fails if the variables in the provided term do not match those for the given
+% Scope
+:- pred valid_term_scope(mh_term::in, mh_scope::in).
+
+:- func child_term_scope(mh_term, mh_scope) = mh_scope.
+
+:- func nested_term_scope(mh_term, mh_scope) = mh_scope.
 */
 
 %-----------------------------------------------------------------------------%
@@ -90,7 +109,6 @@
 :- import_module require.
 :- import_module string.
 
-:- import_module mh_term.
 :- import_module mh_mercury_term. % for mr_var.
 
 %-----------------------------------------------------------------------------%
