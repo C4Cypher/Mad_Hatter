@@ -19,6 +19,7 @@
 
 :- import_module mh_context.
 :- import_module mh_var_map.
+:- import_module mh_var_set.
 :- import_module mh_term.
 
 
@@ -112,7 +113,6 @@
 :- import_module string.
 
 :- import_module mh_var_id.
-:- import_module mh_var_set.
 :- import_module mh_mercury_term. % for mr_var.
 
 %-----------------------------------------------------------------------------%
@@ -124,13 +124,22 @@
 		%If no child context, default to parent
 	;		child_scope(mh_scope, maybe(mh_context), mh_var_set). 
 	
+:- inst root_scope 
+	---> 	root_scope(ground, ground, ground)
+	;		extended_scope(ground, ground).
+	
 :- type mh_root_scope =< mh_scope 
 	--->	root_scope(mh_context, var_id_set, var_names)
 	;		extended_scope(scope_car :: mh_root_scope, scope_cdr :: mh_scope).
 	
-	
+:- mode scope_is_root == ground >> root_scope.
 
-:- func scope_cons(mh_scope, mh_scope) = mh_scope.
+:- pred scope_is_root(mh_scope::scope_is_root) is semidet.
+
+scope_is_root(root_scope(_, _, _)).
+scope_is_root(extended_scope(_, _)).
+
+:- func scope_cons(mh_root_scope, mh_scope) = mh_scope.
 :- mode scope_cons(in, in) = out is det.
 :- mode scope_cons(out, out) = in is semidet.
 
@@ -175,8 +184,18 @@ is_child(extended_scope(Car, _)) :- is_child(Car).
 
 is_root(Scope) :- not is_child(Scope).
 
+parent(Child) = Parent :-
+	require_complete_switch [Child] (
+		Child = root_scope(_, _, _), fail;
+		Child = child_scope(Parent, _, _);
+		% The following line has the coerce\1 call that generates our error
+		Child = extended_scope(Root, _), Parent = coerce(Root)
+	).
+
+/*
 parent(child_scope(Parent, _, _)) = Parent.
-parent(extended_scope(Child, _)) = parent(Child).
+parent(extended_scope(Child, _)) = parent(coerce(Child)). % cryptic mmc error
+*/
 
 parent(Child, parent(Child)).
 	
@@ -213,7 +232,7 @@ scope_contains_var(Scope, Var) :-
 
 scope_vars(root_scope(_, IDSet, _)) = complete_var_set(IDSet).
 scope_vars(child_scope(_, _, VarSet)) = VarSet.
-scope_vars(extended_scope(Car, Cdr)) = var_set_union(scope_vars)
+scope_vars(extended_scope(Car, Cdr)) = var_set_union(scope_vars).
 	
 
 scope_vars(Scope, scope_vars(Scope)).
