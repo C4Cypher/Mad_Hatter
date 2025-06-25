@@ -120,10 +120,15 @@
 
 :- type mh_scope 
 	--->	root_scope(mh_context, var_id_set, var_names)
+	;		extended_scope(scope_car :: mh_root_scope, scope_cdr :: mh_scope)
 		%If no child context, default to parent
-	;		child_scope(mh_scope, maybe(mh_context), mh_var_set) 
-	;		extended_scope(scope_car :: mh_scope, scope_cdr :: mh_scope). 
-
+	;		child_scope(mh_scope, maybe(mh_context), mh_var_set). 
+	
+:- type mh_root_scope =< mh_scope 
+	--->	root_scope(mh_context, var_id_set, var_names)
+	;		extended_scope(scope_car :: mh_root_scope, scope_cdr :: mh_scope).
+	
+	
 
 :- func scope_cons(mh_scope, mh_scope) = mh_scope.
 :- mode scope_cons(in, in) = out is det.
