@@ -19,6 +19,7 @@
 
 :- import_module mh_mercury_term.
 :- import_module mh_arity.
+:- import_module mh_var_set.
 
 % While possibly overkill, I wanted to avoid handling variable ID's as naked
 % integer values. Too much can go wrong, and it's hard for me to keep unmarked
@@ -146,6 +147,11 @@
 :- pred require_valid_var_id_set(var_id_set::in) is det.
 
 :- pred expect_valid_var_id_set(var_id_set::in, string::in, string::in) is det.
+
+:- pred append_var_id_sets(var_id_set, var_id_set, var_id_set).
+:- mode append_var_id_sets(in, in, out) is det.
+:- mode append_var_id_sets(out, in, in) is det.
+:- mode append_var_id_sets(in, out, in) is det.
 
 %-----------------------------------------------------------------------------%
 % Operations on var_ids and var_id_sets
@@ -316,6 +322,11 @@
 :- mode var_id_index(in, in, in(set_pred_unique), di, uo) is det.
 :- mode var_id_index(in, in, in(set_pred_unique_semidet), di, uo) is semidet.
 
+%-----------------------------------------------------------------------------%
+% mh_var_set id_set conversion
+
+:- pred generate_sparse_id_set_for_var_set(mh_var_set::in, var_id_set::out)
+	is det.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -446,6 +457,8 @@ expect_valid_var_id_set(Set, Module, Proc) :-
 	expect(valid_var_id_set(Set), Module, Proc, 
 	"Invalid var_id_set. Last var_id: "	++ string(Set) 
 	++ " was less than zero.").
+	
+append_var_id_sets(A, B, A + B).
 
 %-----------------------------------------------------------------------------%
 % Operations on var_ids and var_id_sets
@@ -718,3 +731,8 @@ var_id_index(T, I, P, V) :- P(T, I, V).
 var_id_index(T, I, P) = V :- var_id_index(T, I, P, V).
 
 var_id_index(I, V, P, !T) :- P(I, V, !T).
+
+%-----------------------------------------------------------------------------%
+% mh_var_set id_set conversion
+
+generate_sparse_id_set_for_var_set(VarSet, var_set_count(VarSet)). 
