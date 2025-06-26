@@ -112,6 +112,7 @@
 :- import_module map.
 :- import_module require.
 :- import_module string.
+:- import_module int.
 
 :- import_module mh_var_id.
 :- import_module mh_mercury_term. % for mr_var.
@@ -141,10 +142,11 @@
 :- mode scope_is_root == ground >> root_scope.
 
 :- pred scope_is_root(mh_scope::scope_is_root) is semidet.
-*/
 
 scope_is_root(root_scope(_, _, _)).
 scope_is_root(extended_scope(_, _)).
+*/
+
 
 :- func scope_cons(mh_scope, mh_scope) = mh_scope.
 :- mode scope_cons(in, in) = out is det.
@@ -229,8 +231,8 @@ scope_var_count(child_scope(_, _, VarSet)) = var_set_count(VarSet).
 root_scope_id_set(root_scope(_, IDSet, _)) = IDSet.
 root_scope_id_set(extended_scope(Car, Cdr)) = 
 	append_var_id_sets(root_scope_id_set(Car), sparse_scope_id_set(Cdr)).
-root_scope_id_set(child_scope(_, _, _)) :-	unexpected($module, $pred, 
-		"Attempted to derive root scope ID set from child scope.")
+root_scope_id_set(child_scope(_, _, _)) = unexpected($module, $pred, 
+		"Attempted to derive root scope ID set from child scope.").
 
 :- func sparse_scope_id_set(mh_scope) = var_id_set.
 sparse_scope_id_set(root_scope(_, IDSet, _)) = IDSet.
@@ -240,9 +242,10 @@ sparse_scope_id_set(child_scope(_, _, VarSet)) =
 
 
 
-scope_contains_var(Scope, Var@var(ID)) :- 
+scope_contains_var(Scope, Var) :-
 	require_complete_switch [Scope] (
-		(	Scope = root_scope(_, _, _) ; Scope = extended_scope(_, _) ), 
+		(	Scope = root_scope(_, _, _) ; Scope = extended_scope(_, _) ),
+		Var = var(ID), 
 		contains_var_id(root_scope_id_set(Scope), ID)
 	;
 		Scope = child_scope(_, _, VarSet), var_set_contains(VarSet, Var)
