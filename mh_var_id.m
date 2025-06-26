@@ -332,6 +332,8 @@
 	% var_id_set as if the variables within the set were indexed sparsely
 :- pred generate_sparse_id_set_for_var_set(mh_var_set::in, var_id_set::out)
 	is det.
+	
+:- func generate_sparse_id_set_for_var_set(mh_var_set) = var_id_set.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -742,3 +744,5 @@ var_id_index(I, V, P, !T) :- P(I, V, !T).
 % mh_var_set id_set conversion
 
 generate_sparse_id_set_for_var_set(VarSet, var_set_count(VarSet)). 
+generate_sparse_id_set_for_var_set(VarSet) = IDSet :- 
+	generate_sparse_id_set_for_var_set(VarSet, IDSet).
