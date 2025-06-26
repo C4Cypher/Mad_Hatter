@@ -76,10 +76,14 @@
 :- func scope_vars(mh_scope) = mh_var_set.
 :- pred scope_vars(mh_scope::in, mh_var_set::out) is det.
 
+%-----------------------------------------------------------------------------%
+% Variable names
+
+:- func var_name(mh_scope, mh_var) = string is semidet.
+:- pred var_name(mh_scope::in, mh_var::in, string::out) is semidet.
+
 
 /* unimplemented
-
-:- func scope_var_name(mh_scope, mh_var) = string.
 
 :- func scope_var_names(mh_scope) = var_names.
 
@@ -256,5 +260,20 @@ scope_vars(child_scope(_, _, VarSet)) = VarSet.
 scope_vars(extended_scope(_, _)@Scope) = 
 	complete_var_set(root_scope_id_set(Scope)).
 	
-
 scope_vars(Scope, scope_vars(Scope)).
+
+%-----------------------------------------------------------------------------%
+% Variable names
+
+var_name(root_scope(_, _, VarNames), Var) = search(VarNames, Var).
+var_name(extended_scope(Car, Cdr)) = Name :-
+	(if scope_contains_var(Car, Var)
+	then var_name(Car, Var, Name)
+	else
+		CarIDSet = root_scope_id_set(Car),
+		%Taking a break, need to reverse sparse index the var name in CDR and bind it to Name
+	)
+var_name(child_scope(Parent, _, ChildVarSet), Var) = var_name(Parent, Var) :-
+	var_set_contains(ChildVarSet, Var).
+		
+var_name(Scope, Var, var_name(Scope, Var)).
