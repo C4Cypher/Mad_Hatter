@@ -79,8 +79,9 @@
 
 /* unimplemented
 
+:- func scope_var_name(mh_scope, mh_var) = string.
+
 :- func scope_var_names(mh_scope) = var_names.
-:- func parent_scope(mh_scope) = mh_scope is semidet.
 
 % Fails if contains vars that are not members of parent scopes
 :- pred valid_scope(mh_scope::in) is semidet. 
@@ -120,10 +121,15 @@
 
 :- type mh_scope 
 	--->	root_scope(mh_context, var_id_set, var_names)
-	;		extended_scope(scope_car :: mh_root_scope, scope_cdr :: mh_scope)
+	;		extended_scope(scope_car :: mh_scope, scope_cdr :: mh_scope)
 		%If no child context, default to parent
 	;		child_scope(mh_scope, maybe(mh_context), mh_var_set). 
-	
+
+/* Compiler error, skipping the subtyping
+%%% UNDER NO CIRCUMSTANCES SHOULD A CHILD SCOPE BE PLACED AS THE FIRST %%%
+%%% ARGUMENT OF extended_scope/2
+
+
 :- inst root_scope 
 	---> 	root_scope(ground, ground, ground)
 	;		extended_scope(ground, ground).
@@ -135,11 +141,12 @@
 :- mode scope_is_root == ground >> root_scope.
 
 :- pred scope_is_root(mh_scope::scope_is_root) is semidet.
+*/
 
 scope_is_root(root_scope(_, _, _)).
 scope_is_root(extended_scope(_, _)).
 
-:- func scope_cons(mh_root_scope, mh_scope) = mh_scope.
+:- func scope_cons(mh_scope, mh_scope) = mh_scope.
 :- mode scope_cons(in, in) = out is det.
 :- mode scope_cons(out, out) = in is semidet.
 
@@ -184,18 +191,9 @@ is_child(extended_scope(Car, _)) :- is_child(Car).
 
 is_root(Scope) :- not is_child(Scope).
 
-parent(Child) = Parent :-
-	require_complete_switch [Child] (
-		Child = root_scope(_, _, _), fail;
-		Child = child_scope(Parent, _, _);
-		% The following line has the coerce\1 call that generates our error
-		Child = extended_scope(Root, _), Parent = coerce(Root)
-	).
-
-/*
 parent(child_scope(Parent, _, _)) = Parent.
-parent(extended_scope(Child, _)) = parent(coerce(Child)). % cryptic mmc error
-*/
+parent(extended_scope(Child, _)) = parent(Child). 
+
 
 parent(Child, parent(Child)).
 	
@@ -221,18 +219,39 @@ root_context(Scope, root_context(Scope)).
 %-----------------------------------------------------------------------------%
 % Scope variables
 
-scope_contains_var(Scope, Var) :- 
+scope_var_count(root_scope(_, IDSet, _)) = var_id_count(IDSet).
+scope_var_count(extended_scope(Car, Cdr)) = 
+	scope_var_count(Car) + scope_var_count(Cdr).
+scope_var_count(child_scope(_, _, VarSet)) = var_set_count(VarSet).
+
+:- func root_scope_id_set(mh_scope) = var_id_set.
+
+root_scope_id_set(root_scope(_, IDSet, _)) = IDSet.
+root_scope_id_set(extended_scope(Car, Cdr)) = 
+	append_var_id_sets(root_scope_id_set(Car), sparse_scope_id_set(Cdr)).
+root_scope_id_set(child_scope(_, _, _)) :-	unexpected($module, $pred, 
+		"Attempted to derive root scope ID set from child scope.")
+
+:- func sparse_scope_id_set(mh_scope) = var_id_set.
+sparse_scope_id_set(root_scope(_, IDSet, _)) = IDSet.
+sparse_scope_id_set(Scope@extended_scope(_, _)) = root_scope_id_set(Scope).
+sparse_scope_id_set(child_scope(_, _, VarSet)) = 
+	generate_sparse_id_set_for_var_set(VarSet).
+
+
+
+scope_contains_var(Scope, Var@var(ID)) :- 
 	require_complete_switch [Scope] (
-		Scope = root_scope(_, IDSet, _), Var = var(ID), 
-			contains_var_id(IDSet, ID);
-		Scope = child_scope(_, _, VarSet), var_set_contains(VarSet, Var);
-		Scope = extended_scope(Car, Cdr), %This is wrong, need to normalize Cdr indexes
-			( scope_contains_var(Car, Var) ; scope_contains_var(Cdr, Var) )
-		).
+		(	Scope = root_scope(_, _, _) ; Scope = extended_scope(_, _) ), 
+		contains_var_id(root_scope_id_set(Scope), ID)
+	;
+		Scope = child_scope(_, _, VarSet), var_set_contains(VarSet, Var)
+	).
 
 scope_vars(root_scope(_, IDSet, _)) = complete_var_set(IDSet).
 scope_vars(child_scope(_, _, VarSet)) = VarSet.
-scope_vars(extended_scope(Car, Cdr)) = var_set_union(scope_vars).
+scope_vars(extended_scope(_, _)@Scope) = 
+	complete_var_set(root_scope_id_set(Scope)).
 	
 
 scope_vars(Scope, scope_vars(Scope)).
