@@ -113,7 +113,8 @@
 % Variable id sets
 
 % A var_id_set represents a complete set of variable id's from 1 to N.
-% 
+% implementation wise, it's just an aliased int, but I do NOT want that value
+% to be manipulated outside of a controlled context
 
 :- type var_id_set.
 
@@ -152,6 +153,8 @@
 :- mode append_var_id_sets(in, in, out) is det.
 :- mode append_var_id_sets(out, in, in) is det.
 :- mode append_var_id_sets(in, out, in) is det.
+
+:- func append_var_id_sets(var_id_set, var_id_set) = var_id_set.
 
 %-----------------------------------------------------------------------------%
 % Operations on var_ids and var_id_sets
@@ -325,6 +328,8 @@
 %-----------------------------------------------------------------------------%
 % mh_var_set id_set conversion
 
+	% Effectively takes the weight (count) of the var_set and converts it to a
+	% var_id_set as if the variables within the set were indexed sparsely
 :- pred generate_sparse_id_set_for_var_set(mh_var_set::in, var_id_set::out)
 	is det.
 
@@ -459,6 +464,7 @@ expect_valid_var_id_set(Set, Module, Proc) :-
 	++ " was less than zero.").
 	
 append_var_id_sets(A, B, A + B).
+append_var_id_sets(A, B) = C :- append_var_id_sets(A, B, C).
 
 %-----------------------------------------------------------------------------%
 % Operations on var_ids and var_id_sets
