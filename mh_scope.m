@@ -16,6 +16,7 @@
 :- interface.
 
 :- import_module varset.
+:- import_module list.
 
 :- import_module mh_context.
 :- import_module mh_var_map.
@@ -36,6 +37,9 @@
 :- func root_scope_from_mr_varset(mh_context, mr_varset) = mh_scope.
 :- pred root_scope_from_mr_varset(mh_context::in, mr_varset::in, mh_scope::out)
 	is det.
+	
+	%TODO: construct a child scope by providing a scope and a varset
+	%TODO: construct a root scope by extending it with another scope
 	
 	% determines if the given scope is a child of another context
 :- pred is_child(mh_scope::in) is semidet.
@@ -73,19 +77,57 @@
 :- mode scope_contains_var(in, in) is semidet.
 :- mode scope_contains_var(in, out) is nondet.
 
+:- pred scope_contains_var_semidet(mh_scope::in, mh_var::in) is semidet.
+
+
 :- func scope_vars(mh_scope) = mh_var_set.
 :- pred scope_vars(mh_scope::in, mh_var_set::out) is det.
 
 %-----------------------------------------------------------------------------%
 % Variable names
 
+	% Retreives the rootmost name assigned to a variable in a scope, fails
+	% if there is no name assigned to said varaible
 :- func var_name(mh_scope, mh_var) = string is semidet.
 :- pred var_name(mh_scope::in, mh_var::in, string::out) is semidet.
 
 
+	% produce a list of variable names assigned to a given variable, starting
+	% at the root and working outward. Fail if var is anonymous. Will not 
+	% return empty list.
+:- func var_names(mh_scope::in, mh_var::in) = 
+	(list(string)::out(non_empty_list)) is semidet.
+:- pred var_names(mh_scope::in, mh_var::in, list(string)::out(non_empty_list))
+	is semidet.
+
+	% as above, but produce an empty list in the event that there are no
+	% var_names
+:- func det_var_names(mh_scope, mh_var) = list(string) is det.
+:- pred det_var_names(mh_scope::in, mh_var::in, list(string)::out) is det.
+
+	% If there are other additional names assigned to a variable, aside from
+	% the root name. Fails if there are none
+:- func other_names(mh_scope::in, mh_var::in) = 
+	(list(string)::out(non_empty_list)) is semidet.
+:- pred other_names(mh_scope::in, mh_var::in, 
+	list(string)::out(non_empty_list)) is semidet.
+	
+%TODO: Do I need a det_ variant of other_names?
+
+
+:- type var_names == mh_var_map(string).
+
+
 /* unimplemented
 
-:- func scope_var_names(mh_scope) = var_names.
+	% produces an mh_var_map(string) of variables to root names equivalent
+	% to calling var_name for each variable present in a scope
+:- func var_name_map(mh_scope) = var_names.
+:- pred var_name_map(mh_scope::in, var_names::out) is det.
+
+
+
+
 
 % Fails if contains vars that are not members of parent scopes
 :- pred valid_scope(mh_scope::in) is semidet. 
@@ -100,11 +142,6 @@
 :- func nested_term_scope(mh_term, mh_scope) = mh_scope.
 */
 
-%-----------------------------------------------------------------------------%
-% Variable names
-
-:- type var_names == mh_var_map(string).
-
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -112,7 +149,6 @@
 :- implementation.
 
 :- import_module maybe.
-:- import_module list.
 :- import_module map.
 :- import_module require.
 :- import_module string.
@@ -246,14 +282,24 @@ sparse_scope_id_set(child_scope(_, _, VarSet)) =
 
 
 
-scope_contains_var(Scope, Var) :-
+scope_contains_var(Scope, var(ID)) :- scope_contains_id(Scope, ID). 
+
+scope_contains_var_semidet(Scope, Var) :- 
+	scope_contains_var(Scope, Var).
+	
+:- pred scope_contains_id(mh_scope, var_id).
+:- mode scope_contains_id(in, in) is semidet.
+:- mode scope_contains_id(in, out) is nondet.
+
+scope_contains_id(Scope, ID) :-
 	require_complete_switch [Scope] (
 		(	Scope = root_scope(_, _, _) ; Scope = extended_scope(_, _) ),
-		Var = var(ID), 
 		contains_var_id(root_scope_id_set(Scope), ID)
 	;
-		Scope = child_scope(_, _, VarSet), var_set_contains(VarSet, Var)
+		Scope = child_scope(_, _, VarSet), var_set_contains_id(VarSet, ID)
 	).
+	
+:- pragma inline(scope_contains_id/2).
 
 scope_vars(root_scope(_, IDSet, _)) = complete_var_set(IDSet).
 scope_vars(child_scope(_, _, VarSet)) = VarSet.
@@ -265,15 +311,69 @@ scope_vars(Scope, scope_vars(Scope)).
 %-----------------------------------------------------------------------------%
 % Variable names
 
-var_name(root_scope(_, _, VarNames), Var) = search(VarNames, Var).
-var_name(extended_scope(Car, Cdr)) = Name :-
-	(if scope_contains_var(Car, Var)
-	then var_name(Car, Var, Name)
+var_name(Scope, Var) = Name :- var_name(Scope, Var, Name).
+var_name(Scope, var(ID), Name) :- id_name(Scope, ID, Name).
+
+:- pred id_name(mh_scope::in, var_id::in, string::out) is semidet.
+
+id_name(root_scope(_, _, VarNames), ID, id_search(VarNames, ID)).
+id_name(extended_scope(Car, Cdr), ID, Name) :-
+	(if scope_contains_id(Car, ID)
+	then id_name(Car, ID, Name)
 	else
-		CarIDSet = root_scope_id_set(Car),
-		%Taking a break, need to reverse sparse index the var name in CDR and bind it to Name
-	)
-var_name(child_scope(Parent, _, ChildVarSet), Var) = var_name(Parent, Var) :-
-	var_set_contains(ChildVarSet, Var).
-		
-var_name(Scope, Var, var_name(Scope, Var)).
+		% Shift the index left by the weight of the Car scope
+		CarOffset = offset_from_id_set(root_scope_id_set(Car)),
+		var_id_offset(CdrID, ID, CarOffset),
+		sparse_id_name(Cdr, CdrID, Name)
+	).
+	
+id_name(child_scope(Parent, _, ChildVarSet), ID, Name)  :-
+	%Ensure that the ID actuaally belongs to the child before looking up the
+	%Name in the parent
+	var_set_contains_id(ChildVarSet, ID),
+	id_name(Parent, ID, Name). 
+
+% :- pred id_name_nondet(mh_scope::in, var_id::in, string::out) is nondet.
+
+:- pred sparse_id_name(mh_scope::in, var_id::in, string::out) is semidet.
+
+sparse_id_name(Scope, ID, Name) :-
+	% Due to the fact that variables in root scopes and extended scopes are 
+	% already church encoded (1 .. N with no gaps), their sparse indexes are
+	% also their direct indexes
+	require_complete_switch [Scope] (
+		(	Scope = root_scope(_, _, _) ; Scope = extended_scope(_, _) ),
+		id_name(Scope, ID, Name)
+	;
+		Scope = child_scope(Parent, _, VarSet),
+		% due to the fact that we're indexing by church index, index the
+		% members of the child scope's varset by order, not by literal
+		% var_id
+		id_name(Parent, id_reverse_church_index(ID, VarSet), Name)
+	).
+	
+var_names(Scope, Var) = det_var_names(Scope, Var)@[_ | _].
+
+var_names(Scope, Var, var_names(Scope, Var)).
+	
+det_var_names(Scope@root_scope(_, _, _), Var) = 
+	(if var_name(Scope, Var, Name)
+	then [ Name ]
+	else []
+	).
+
+det_var_names(extended_scope(Car, Cdr), Var) = 
+	append(det_var_names(Car, Var), det_var_names(Cdr, Var)).
+
+det_var_names(child_scope(Parent, _, VarSet), Var) = 
+	(if var_set_contains(VarSet, Var)
+	then det_var_names(Parent, Var)
+	else []
+	).
+
+det_var_names(Scope, Var, det_var_names(Scope, Var)).
+
+other_names(Scope, Var) = List@[_ | _] :-
+	var_names(Scope, Var) = [ _ | List ].
+	
+other_names(Scope, Var, var_names(Scope, Var)).
