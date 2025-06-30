@@ -185,6 +185,40 @@
 :- mode reverse_sparse_index(out, in) = in is semidet.
 
 %-----------------------------------------------------------------------------%
+% Church indexing
+
+	% Similar to sparse indexing for arrays, church indexing is effectively
+	% Sparse indexing, but for church encoding in other structures 
+	% only 1 based, rather than 0 based for the above calls, given that var_ids
+	% start at 1, not 0
+
+:- pred id_church_index(var_id, mh_var_set, var_id).
+:- mode id_church_index(in, in, out) is semidet.
+:- mode id_church_index(out, in, in) is semidet.
+:- mode id_church_index(out, in, out) is nondet.
+
+:- func id_church_index(var_id, mh_var_set) = var_id.
+:- mode id_church_index(in, in) = out is semidet.
+:- mode id_church_index(out, in) = in is semidet.
+
+:- func id_reverse_church_index(var_id, mh_var_set) = var_id.
+:- mode id_reverse_church_index(in, in) = out is semidet.
+:- mode id_reverse_church_index(out, in) = in is semidet.
+
+:- pred church_index(mh_var, mh_var_set, mh_var).
+:- mode church_index(in, in, out) is semidet.
+:- mode church_index(out, in, in) is semidet.
+:- mode church_index(out, in, out) is nondet.
+
+:- func church_index(mh_var, mh_var_set) = mh_var.
+:- mode church_index(in, in) = out is semidet.
+:- mode church_index(out, in) = in is semidet.
+
+:- func reverse_church_index(mh_var, mh_var_set) = mh_var.
+:- mode reverse_church_index(in, in) = out is semidet.
+:- mode reverse_church_index(out, in) = in is semidet.
+
+%-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
 :- implementation.
@@ -689,4 +723,20 @@ sparse_index(var(ID), Set, Index) :- id_sparse_index(ID, Set, Index).
 sparse_index(var(ID), Set) = id_sparse_index(ID, Set).
 
 reverse_sparse_index(sparse_index(Var, Set), Set) = Var.
+
+%-----------------------------------------------------------------------------%
+% Church indexing
+	
+id_church_index(ID, VarSet, Cid) :- 
+	var_set_church_index(ID, VarSet, Cid).
+	
+id_church_index(ID, Set) = Cid :- id_church_index(ID, Set, Cid).
+
+id_reverse_church_index(id_church_index(ID, Set), Set) = ID.
+
+church_index(var(ID), Set, var(Cid)) :- id_church_index(ID, Set, Cid).
+church_index(var(ID), Set) = var(id_church_index(ID, Set)).
+
+reverse_church_index(church_index(Var, Set), Set) = Var.
+	
 	
