@@ -16,7 +16,6 @@
 :- interface.
 
 :- import_module varset.
-:- import_module list.
 
 :- import_module mh_context.
 :- import_module mh_var_map.
@@ -93,15 +92,15 @@
 
 :- type var_names == mh_var_map(string).
 
+	% produce a map of variables to names equivalent
+	% to calling var_name for each variable present in a scope
+:- func var_names(mh_scope) = var_names.
+:- pred var_names(mh_scope::in, var_names::out) is det.
+
+
+
 
 /* unimplemented
-
-	% produces an mh_var_map(string) of variables to root names equivalent
-	% to calling var_name for each variable present in a scope
-:- func var_name_map(mh_scope) = var_names.
-:- pred var_name_map(mh_scope::in, var_names::out) is det.
-
-
 
 
 
@@ -243,22 +242,6 @@ scope_var_count(extended_scope(Car, Cdr)) =
 	scope_var_count(Car) + scope_var_count(Cdr).
 scope_var_count(child_scope(_, _, VarSet)) = var_set_count(VarSet).
 
-:- func root_scope_id_set(mh_scope) = var_id_set.
-
-root_scope_id_set(root_scope(_, IDSet, _)) = IDSet.
-root_scope_id_set(extended_scope(Car, Cdr)) = 
-	append_var_id_sets(root_scope_id_set(Car), sparse_scope_id_set(Cdr)).
-root_scope_id_set(child_scope(_, _, _)) = unexpected($module, $pred, 
-		"Attempted to derive root scope ID set from child scope.").
-
-:- func sparse_scope_id_set(mh_scope) = var_id_set.
-sparse_scope_id_set(root_scope(_, IDSet, _)) = IDSet.
-sparse_scope_id_set(Scope@extended_scope(_, _)) = root_scope_id_set(Scope).
-sparse_scope_id_set(child_scope(_, _, VarSet)) = 
-	generate_sparse_id_set_for_var_set(VarSet).
-
-
-
 scope_contains_var(Scope, var(ID)) :- scope_contains_id(Scope, ID). 
 
 scope_contains_var_semidet(Scope, Var) :- 
@@ -275,6 +258,20 @@ scope_contains_id(Scope, ID) :-
 	;
 		Scope = child_scope(_, _, VarSet), var_set_contains_id(VarSet, ID)
 	).
+
+:- func root_scope_id_set(mh_scope) = var_id_set.
+
+root_scope_id_set(root_scope(_, IDSet, _)) = IDSet.
+root_scope_id_set(extended_scope(Car, Cdr)) = 
+	append_var_id_sets(root_scope_id_set(Car), sparse_scope_id_set(Cdr)).
+root_scope_id_set(child_scope(_, _, _)) = unexpected($module, $pred, 
+		"Attempted to derive root scope ID set from child scope.").
+
+:- func sparse_scope_id_set(mh_scope) = var_id_set.
+sparse_scope_id_set(root_scope(_, IDSet, _)) = IDSet.
+sparse_scope_id_set(Scope@extended_scope(_, _)) = root_scope_id_set(Scope).
+sparse_scope_id_set(child_scope(_, _, VarSet)) = 
+	generate_sparse_id_set_for_var_set(VarSet).
 	
 :- pragma inline(scope_contains_id/2).
 
@@ -328,3 +325,53 @@ sparse_id_name(Scope, ID, Name) :-
 		% var_id
 		id_name(Parent, id_reverse_church_index(ID, VarSet), Name)
 	).
+
+var_names(root_scope(_, _, VarNames)) = VarNames.
+var_names(extended_scope(Car, Cdr)@Scope) = VarNames :- some [!NameMap] (
+	!.NameMap = var_names(Car),
+	CarOffset = offset_from_id_set(root_scope_id_set(Car)), 
+	CdrIDSet = sparse_scope_id_set(Cdr),
+	names_from_cdr(Cdr, CarOffset, CdrIDSet, !NameMap),
+	VarNames = !:NameMap	
+).
+
+:- pred names_from_cdr(mh_scope::in, var_id_offset::in, 
+	var_id_set::in, var_names::in, var_names::out) is det.
+	
+names_from_cdr(Cdr, CarOffset, CdrIDSet, !Names) :-
+	names_from_cdr_loop(Cdrr, CarOffset, first_var_id, CdrIDSet, !Names).
+
+:- pred names_from_cdr_loop(mh_scope::in, var_id_offset::in, 
+	var_id::in, var_id_set::in, var_names::in, var_names::out) is det.	
+
+names_from_cdr_loop(Cdr, CarOffset, Current, CdrIDSet, !Names) :-
+	(if contains(Current, CdrIDSet)
+	then
+		(if sparse_id_name(Cdr, Current, Name)
+		then
+			var_id_offset(MapVarID, Current, CarOffset),
+			% Will throw an exception on var_id collision, shouldn't happen
+			det_id_insert(MapVarID, Name, !Names)
+		else true
+		),
+		names_from_cdr_loop(Cdr, CarOffset, next_var_id(Current), CdrIDSet,
+			!Names)
+	else true
+	).
+	
+var_names(child_scope(Parent, _, VarSet)) = VarNames :-
+	var_names(Parent, ParentNames),
+	fold_id(insert_parent_name(Parent), VarSet, init, VarNames).
+	
+:- pred insert_parent_name(mh_scope::in, var_id::in, var_names::in, 
+	var_names::out) is det.
+	
+insert_parent_name(Parent, ID, !Names) :-
+	(if id_name(Parent, ID, Name)
+	then 
+		det_id_insert(ID, Name, !Names)
+	else true
+	).
+	
+var_names(Scope, var_names(Scope)).
+
