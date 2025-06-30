@@ -91,30 +91,6 @@
 :- func var_name(mh_scope, mh_var) = string is semidet.
 :- pred var_name(mh_scope::in, mh_var::in, string::out) is semidet.
 
-
-	% produce a list of variable names assigned to a given variable, starting
-	% at the root and working outward. Fail if var is anonymous. Will not 
-	% return empty list.
-:- func var_names(mh_scope::in, mh_var::in) = 
-	(list(string)::out(non_empty_list)) is semidet.
-:- pred var_names(mh_scope::in, mh_var::in, list(string)::out(non_empty_list))
-	is semidet.
-
-	% as above, but produce an empty list in the event that there are no
-	% var_names
-:- func det_var_names(mh_scope, mh_var) = list(string) is det.
-:- pred det_var_names(mh_scope::in, mh_var::in, list(string)::out) is det.
-
-	% If there are other additional names assigned to a variable, aside from
-	% the root name. Fails if there are none
-:- func other_names(mh_scope::in, mh_var::in) = 
-	(list(string)::out(non_empty_list)) is semidet.
-:- pred other_names(mh_scope::in, mh_var::in, 
-	list(string)::out(non_empty_list)) is semidet.
-	
-%TODO: Do I need a det_ variant of other_names?
-
-
 :- type var_names == mh_var_map(string).
 
 
@@ -149,6 +125,7 @@
 :- implementation.
 
 :- import_module maybe.
+:- import_module list.
 :- import_module map.
 :- import_module require.
 :- import_module string.
@@ -351,29 +328,3 @@ sparse_id_name(Scope, ID, Name) :-
 		% var_id
 		id_name(Parent, id_reverse_church_index(ID, VarSet), Name)
 	).
-	
-var_names(Scope, Var) = det_var_names(Scope, Var)@[_ | _].
-
-var_names(Scope, Var, var_names(Scope, Var)).
-	
-det_var_names(Scope@root_scope(_, _, _), Var) = 
-	(if var_name(Scope, Var, Name)
-	then [ Name ]
-	else []
-	).
-
-det_var_names(extended_scope(Car, Cdr), Var) = 
-	append(det_var_names(Car, Var), det_var_names(Cdr, Var)).
-
-det_var_names(child_scope(Parent, _, VarSet), Var) = 
-	(if var_set_contains(VarSet, Var)
-	then det_var_names(Parent, Var)
-	else []
-	).
-
-det_var_names(Scope, Var, det_var_names(Scope, Var)).
-
-other_names(Scope, Var) = List@[_ | _] :-
-	var_names(Scope, Var) = [ _ | List ].
-	
-other_names(Scope, Var, var_names(Scope, Var)).
