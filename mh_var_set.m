@@ -219,6 +219,30 @@
 :- mode reverse_church_index(out, in) = in is semidet.
 
 %-----------------------------------------------------------------------------%
+% Higher order
+
+:- pred fold_id(pred(var_id, A, A), mh_var_set, A, A).
+:- mode fold_id(in(pred(in, in, in, out) is det), in, in, out) is det.
+:- mode fold_id(in(pred(in, in, mdi, muo) is det), in, mdi, muo) is det.
+:- mode fold_id(in(pred(in, in, di, uo) is det), in, di, uo) is det.
+/*:- mode fold_id(in(pred(in, in, array_di, array_uo) is det), in, 
+	array_di, array_uo) is det. */
+:- mode fold_id(in(pred(in, in, in, out) is semidet), in, in, out) is semidet.
+:- mode fold_id(in(pred(in, in, mdi, muo) is semidet), in, mdi, muo) 
+	is semidet.
+
+:- pred fold(pred(mh_var, A, A), mh_var_set, A, A).
+:- mode fold(in(pred(in, in, in, out) is det), in, in, out) is det.
+:- mode fold(in(pred(in, in, mdi, muo) is det), in, mdi, muo) is det.
+:- mode fold(in(pred(in, in, di, uo) is det), in, di, uo) is det.
+/*:- mode fold(in(pred(in, in, array_di, array_uo) is det), in, 
+	array_di, array_uo) is det.*/
+:- mode fold(in(pred(in, in, in, out) is semidet), in, in, out) is semidet.
+:- mode fold(in(pred(in, in, mdi, muo) is semidet), in, mdi, muo) 
+	is semidet.
+
+
+%-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
 :- implementation.
@@ -738,5 +762,36 @@ church_index(var(ID), Set, var(Cid)) :- id_church_index(ID, Set, Cid).
 church_index(var(ID), Set) = var(id_church_index(ID, Set)).
 
 reverse_church_index(church_index(Var, Set), Set) = Var.
+
+%-----------------------------------------------------------------------------%
+% Higher order
+
+fold_id(P, Set, !A) :-
+	(if empty_var_set(Set))
+	then true
+	else
+		ID = var_set_first_id(Set),
+		P(ID, !A),
+		var_set_remove_id(ID, Set, Next),
+		fold_id(P, Next, !A)
+	).
+	
+:- pred curry_fold(pred(mh_var, A, A), var_id, A, A).
+:- mode curry_fold(in(pred(in, in, in, out) is det), in, in, in, out) is det.
+:- mode curry_fold(in(pred(in, in, mdi, muo) is det), in, in, mdi, muo) is det.
+:- mode curry_fold(in(pred(in, in, di, uo) is det), in, in, di, uo) is det.
+/*:- mode curry_fold(in(pred(in, in, array_di, array_uo) is det), in, in, 
+	array_di, array_uo) is det. */
+:- mode curry_fold(in(pred(in, in, in, out) is semidet), in, in, in, out)
+	is semidet.
+:- mode curry_fold(in(pred(in, in, mdi, muo) is semidet), in, in, mdi, muo) 
+	is semidet.
+	
+curry_fold(P, ID, !A) :- P(var(ID), !A).
+
+fold(P, Map, !A) :-
+	CurriedP = curry_fold(P),
+	fold_id(CurriedP, Map, !A).
+		
 	
 	
