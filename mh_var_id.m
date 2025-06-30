@@ -226,6 +226,9 @@
 :- func reverse_sparse_index(int, var_id_offset, var_id_set) = var_id 
 	 is semidet.
 	 
+
+	 
+	% Effectively returns the number of variables in a set
 :- func id_set_weight(var_id_set)  = int.
 
 :- func get_array_var_id_set(array(_T)) = var_id_set. 
@@ -326,7 +329,7 @@
 :- mode var_id_index(in, in, in(set_pred_unique_semidet), di, uo) is semidet.
 
 %-----------------------------------------------------------------------------%
-% mh_var_set id_set conversion
+% mh_var_set var id conversions
 
 	% Effectively takes the weight (count) of the var_set and converts it to a
 	% var_id_set as if the variables within the set were indexed sparsely
@@ -334,6 +337,12 @@
 	is det.
 	
 :- func generate_sparse_id_set_for_var_set(mh_var_set) = var_id_set.
+
+	% Var set sparse index calls for use with church encoding scope variables
+:- pred var_set_church_index(var_id, mh_var_set, var_id).
+:- mode var_set_church_index(in, in, out) is semidet.
+:- mode var_set_church_index(out, in, in) is semidet.
+:- mode var_set_church_index(out, in, out) is nondet.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -399,7 +408,8 @@ var_id_set_offset(Set, Offset) = Set + Offset.
 
 null_var_id_offset = 0.
 
-offset_from_id_set(S) = S - 1.
+% offset_from_id_set(S) = S - 1. % This seems off
+offset_from_id_set(S) = S.
 offset_from_arity(T) = arity(T).
 
 offset_lt(Offset1, Offset2) :- Offset1 < Offset2.
@@ -659,6 +669,8 @@ reverse_sparse_index(Index, Offset, Set) = ID :-
 	id_array_index(ID, Offset) = Index,
 	contains_var_id(Offset, Set, ID).
 	
+
+	
 id_set_weight(Set) = last_var_id(Set).
 	
 get_array_var_id_set(Array) = size(Array).
@@ -741,8 +753,21 @@ var_id_index(T, I, P) = V :- var_id_index(T, I, P, V).
 var_id_index(I, V, P, !T) :- P(I, V, !T).
 
 %-----------------------------------------------------------------------------%
-% mh_var_set id_set conversion
+% mh_var_set var id conversions
 
 generate_sparse_id_set_for_var_set(VarSet, var_set_count(VarSet)). 
 generate_sparse_id_set_for_var_set(VarSet) = IDSet :- 
 	generate_sparse_id_set_for_var_set(VarSet, IDSet).
+	
+	 % To be used for church indexing sparse indexes instead of indexing
+	 % variables in arrays. Not intended for use outside of mh_var_set
+:- func church_id(int) = var_id.
+:- mode church_id(in) = out is det.
+:- mode church_id(out) = in is det.
+
+church_id(Idx) = Idx + 1.
+
+:- pragma inline(church_id/1).
+
+var_set_church_index(ID, VarSet, church_id(Idx)) :- 
+	id_sparse_index(ID, VarSet, Idx).
