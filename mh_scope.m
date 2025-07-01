@@ -52,7 +52,11 @@
 	% parent(Child, Parent). Note that Child scopes cannot be determined from
 	% the parent.
 :- pred parent(mh_scope::in, mh_scope::out) is semidet.
-	
+
+% Throws an exception if a scope contains name mappings outside of the scope,
+% If the root (CAR) of an extended scope is a child, or if a child scope 
+% contains variables outside the scope of it's parent.
+:- pred require_valid_scope(mh_scope::in) is det.
 
 %-----------------------------------------------------------------------------%
 % Scope context
@@ -104,8 +108,7 @@
 
 
 
-% Fails if contains vars that are not members of parent scopes
-:- pred valid_scope(mh_scope::in) is semidet. 
+
 
 
 % Fails if the variables in the provided term do not match those for the given
@@ -210,10 +213,65 @@ is_child(extended_scope(Car, _)) :- is_child(Car).
 is_root(Scope) :- not is_child(Scope).
 
 parent(child_scope(Parent, _, _)) = Parent.
-parent(extended_scope(Child, _)) = parent(Child). 
-
 
 parent(Child, parent(Child)).
+
+require_valid_scope(root_scope(_, IDSet, Names)) :-
+	(if first(Names, ID, _, Iterator)
+	then
+		valid_root_names(IDSet, Names, ID, Iterator)
+	else true
+	).
+	
+:- pred valid_root_names(var_id_set::in, var_names::in, var_id::in, 
+	var_map_iterator::in) is det.
+	
+valid_root_names(IDSet, Names, ID, Iterator) :-
+	(if contains_var_id(IDSet, ID)
+	then
+		(if next(Names, NextID, _, Iterator, NextIterator)
+		then valid_root_names(IDSet, Names, NextID, NextIterator)
+		else true
+		)
+	else
+		unexpected($module, "require_valid_scope/1", 
+			"Scope contained name mappings to variables not in scope.")
+	).
+	
+require_valid_scope(extended_scope(Car, Cdr)) :-
+	(if Car = child_scope(_, _, _)
+	then
+		unexpected($module, $pred, "Attempt to extend child scope")
+	else
+		require_valid_scope(Car),
+		require_valid_scope(Cdr)
+	).
+	
+require_valid_scope(child_scope(Parent, _, VarSet)) :-
+	require_valid_scope(Parent),
+	valid_child_scope(Parent, VarSet).
+
+:- pred valid_child_scope(mh_scope::in, mh_var_set::in) is det.
+
+valid_child_scope(Parent, VarSet) :-
+	(if scope_contains_id(Parent, var_set_first_id(VarSet)@ID)
+	then
+		(if var_set_remove_id(ID, VarSet, NextVarSet)
+		then 
+			(if NextVarSet = empty_var_set
+			then true
+			else
+				valid_child_scope(Parent, NextVarSet)
+			)
+		else
+			unexpected($module, $pred, 
+				"Failed to remove first id from set, should be impossible")
+		)
+	else
+		unexpected($module, "require_valid_scope/1",
+			"child scope contains variables not in parent scope")
+	).
+	
 	
 %-----------------------------------------------------------------------------%
 % Scope context
@@ -327,25 +385,25 @@ sparse_id_name(Scope, ID, Name) :-
 	).
 
 var_names(root_scope(_, _, VarNames)) = VarNames.
-var_names(extended_scope(Car, Cdr)@Scope) = VarNames :- some [!NameMap] (
-	!.NameMap = var_names(Car),
+var_names(extended_scope(Car, Cdr)) = VarNames :- some [!NameMap] (
+	!:NameMap = var_names(Car),
 	CarOffset = offset_from_id_set(root_scope_id_set(Car)), 
 	CdrIDSet = sparse_scope_id_set(Cdr),
 	names_from_cdr(Cdr, CarOffset, CdrIDSet, !NameMap),
-	VarNames = !:NameMap	
+	VarNames = !.NameMap	
 ).
 
 :- pred names_from_cdr(mh_scope::in, var_id_offset::in, 
 	var_id_set::in, var_names::in, var_names::out) is det.
 	
 names_from_cdr(Cdr, CarOffset, CdrIDSet, !Names) :-
-	names_from_cdr_loop(Cdrr, CarOffset, first_var_id, CdrIDSet, !Names).
+	names_from_cdr_loop(Cdr, CarOffset, first_var_id, CdrIDSet, !Names).
 
 :- pred names_from_cdr_loop(mh_scope::in, var_id_offset::in, 
 	var_id::in, var_id_set::in, var_names::in, var_names::out) is det.	
 
 names_from_cdr_loop(Cdr, CarOffset, Current, CdrIDSet, !Names) :-
-	(if contains(Current, CdrIDSet)
+	(if contains_var_id(CdrIDSet, Current)
 	then
 		(if sparse_id_name(Cdr, Current, Name)
 		then
@@ -361,7 +419,7 @@ names_from_cdr_loop(Cdr, CarOffset, Current, CdrIDSet, !Names) :-
 	
 var_names(child_scope(Parent, _, VarSet)) = VarNames :-
 	var_names(Parent, ParentNames),
-	fold_id(insert_parent_name(Parent), VarSet, init, VarNames).
+	fold_id(insert_parent_name(Parent), VarSet, ParentNames, VarNames).
 	
 :- pred insert_parent_name(mh_scope::in, var_id::in, var_names::in, 
 	var_names::out) is det.
