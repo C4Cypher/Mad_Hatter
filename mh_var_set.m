@@ -124,6 +124,7 @@
 :- mode var_set_insert_id(in, out, in) is semidet.
 :- mode var_set_insert_id(out, in, in) is semidet.
 
+
 % If the id is already a member of the set, the set is unchanged
 
 :- pred var_set_merge_id(var_id, mh_var_set, mh_var_set).
@@ -222,23 +223,23 @@
 % Higher order
 
 :- pred fold_id(pred(var_id, A, A), mh_var_set, A, A).
-:- mode fold_id(in(pred(in, in, in, out) is det), in, in, out) is det.
-:- mode fold_id(in(pred(in, in, mdi, muo) is det), in, mdi, muo) is det.
-:- mode fold_id(in(pred(in, in, di, uo) is det), in, di, uo) is det.
+:- mode fold_id(in(pred(in, in, out) is det), in, in, out) is det.
+:- mode fold_id(in(pred(in, mdi, muo) is det), in, mdi, muo) is det.
+:- mode fold_id(in(pred(in, di, uo) is det), in, di, uo) is det.
 /*:- mode fold_id(in(pred(in, in, array_di, array_uo) is det), in, 
 	array_di, array_uo) is det. */
-:- mode fold_id(in(pred(in, in, in, out) is semidet), in, in, out) is semidet.
-:- mode fold_id(in(pred(in, in, mdi, muo) is semidet), in, mdi, muo) 
+:- mode fold_id(in(pred(in, in, out) is semidet), in, in, out) is semidet.
+:- mode fold_id(in(pred(in, mdi, muo) is semidet), in, mdi, muo) 
 	is semidet.
 
 :- pred fold(pred(mh_var, A, A), mh_var_set, A, A).
-:- mode fold(in(pred(in, in, in, out) is det), in, in, out) is det.
-:- mode fold(in(pred(in, in, mdi, muo) is det), in, mdi, muo) is det.
-:- mode fold(in(pred(in, in, di, uo) is det), in, di, uo) is det.
+:- mode fold(in(pred(in, in, out) is det), in, in, out) is det.
+:- mode fold(in(pred(in, mdi, muo) is det), in, mdi, muo) is det.
+:- mode fold(in(pred(in, di, uo) is det), in, di, uo) is det.
 /*:- mode fold(in(pred(in, in, array_di, array_uo) is det), in, 
 	array_di, array_uo) is det.*/
-:- mode fold(in(pred(in, in, in, out) is semidet), in, in, out) is semidet.
-:- mode fold(in(pred(in, in, mdi, muo) is semidet), in, mdi, muo) 
+:- mode fold(in(pred(in, in, out) is semidet), in, in, out) is semidet.
+:- mode fold(in(pred(in, mdi, muo) is semidet), in, mdi, muo) 
 	is semidet.
 
 
@@ -462,7 +463,6 @@ var_set_insert_id(ID::in, VS1::out, VS2::in) :-
 	
 var_set_insert_id(ID::out, VS1::in, VS2::in) :- 
 	var_set_merge_id(ID, VS1, VS2).
-
 
 :- pragma promise_equivalent_clauses(var_set_merge_id/3).
 	
@@ -767,24 +767,29 @@ reverse_church_index(church_index(Var, Set), Set) = Var.
 % Higher order
 
 fold_id(P, Set, !A) :-
-	(if empty_var_set(Set))
+	(if empty_var_set(Set)
 	then true
 	else
 		ID = var_set_first_id(Set),
 		P(ID, !A),
-		var_set_remove_id(ID, Set, Next),
-		fold_id(P, Next, !A)
+		(if var_set_remove_id(ID, Set, Next)
+		then
+			fold_id(P, Next, !A)
+		else
+			unexpected($module, $pred, 
+				"Failed to remove first id from set, should be impossible")
+		)
 	).
 	
 :- pred curry_fold(pred(mh_var, A, A), var_id, A, A).
-:- mode curry_fold(in(pred(in, in, in, out) is det), in, in, in, out) is det.
-:- mode curry_fold(in(pred(in, in, mdi, muo) is det), in, in, mdi, muo) is det.
-:- mode curry_fold(in(pred(in, in, di, uo) is det), in, in, di, uo) is det.
+:- mode curry_fold(in(pred(in, in, out) is det), in, in, out) is det.
+:- mode curry_fold(in(pred(in, mdi, muo) is det), in, mdi, muo) is det.
+:- mode curry_fold(in(pred(in, di, uo) is det), in, di, uo) is det.
 /*:- mode curry_fold(in(pred(in, in, array_di, array_uo) is det), in, in, 
 	array_di, array_uo) is det. */
-:- mode curry_fold(in(pred(in, in, in, out) is semidet), in, in, in, out)
+:- mode curry_fold(in(pred(in, in, out) is semidet), in, in, out)
 	is semidet.
-:- mode curry_fold(in(pred(in, in, mdi, muo) is semidet), in, in, mdi, muo) 
+:- mode curry_fold(in(pred(in, mdi, muo) is semidet), in, mdi, muo) 
 	is semidet.
 	
 curry_fold(P, ID, !A) :- P(var(ID), !A).
