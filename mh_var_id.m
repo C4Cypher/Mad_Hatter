@@ -84,7 +84,7 @@
 :- func prev_offset(var_id_offset) = var_id_offset.
 
 
-	% apply_var_id_offset(A, var_id_offset(A, B)) = B.
+	% apply_var_id_offset(B, var_id_offset(A, B)) = A.
 :- func apply_var_id_offset(var_id, var_id_offset) = var_id.
 :- mode apply_var_id_offset(in, in) = out is det.
 :- mode apply_var_id_offset(in, out) = in is det.
@@ -407,7 +407,7 @@ var_id_offset(ID1, ID2) = Offset :- var_id_offset(ID1, ID2, Offset).
 next_offset(Offset) = Offset + 1.
 prev_offset(Offset) = Offset - 1.
 
-apply_var_id_offset(ID1, Offset) = ID2 :- var_id_offset(ID1, ID2, Offset).
+apply_var_id_offset(ID2, Offset) = ID1 :- var_id_offset(ID1, ID2, Offset).
 
 var_id_set_offset(Set, Offset, Set + Offset).
 
