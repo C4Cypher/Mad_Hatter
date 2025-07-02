@@ -128,6 +128,9 @@
 
 :- func empty_var_id_set = var_id_set.
 
+:- pred empty_var_id_offset_and_id_set(var_id_offset::in, var_id_set::in)
+	is semidet.
+
 :- func var_id_set_from_offset(var_id_offset) = var_id_set.
 
 :- pred var_id_count(var_id_set::in, int::out) is det.
@@ -444,6 +447,8 @@ init_var_id_set = 0.
 init_var_id_set(init_var_id_set).
 
 empty_var_id_set = init_var_id_set.
+
+empty_var_id_offset_and_id_set(O, S) :- O = S.
 
 var_id_set_from_offset(O) = O + 1.
 
