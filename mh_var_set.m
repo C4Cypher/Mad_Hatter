@@ -45,6 +45,10 @@
 :- pred empty_var_set(mh_var_set::out) is det.
 :- func empty_var_set = mh_var_set.
 
+:- pred is_empty(mh_var_set::in) is semidet.
+
+:- pred expect_non_empty_var_set(mh_var_set::in) is det.
+
 :- pred singleton_var_set(var_id, mh_var_set).
 :- mode singleton_var_set(in, out) is det.
 :- mode singleton_var_set(out, in) is semidet.
@@ -55,6 +59,10 @@
 
 :- func var_set_first_id(mh_var_set) = var_id.
 :- func var_set_last_id(mh_var_set) = var_id.
+
+	% Extract the first id from a var_set and provide the var set with the id
+	% removed. Throw an exception if the var_set is empty.
+:- pred var_set_first_id(var_id::out, mh_var_set::in, mh_var_set::out) is det.
 
 :- func var_set_first(mh_var_set) = mh_var.
 :- func var_set_last(mh_var_set) = mh_var.
@@ -124,6 +132,11 @@
 :- mode var_set_insert_id(in, out, in) is semidet.
 :- mode var_set_insert_id(out, in, in) is semidet.
 
+:- pred var_set_insert(mh_var, mh_var_set, mh_var_set).
+:- mode var_set_insert(in, in, out) is semidet.
+:- mode var_set_insert(in, out, in) is semidet.
+:- mode var_set_insert(out, in, in) is semidet.
+
 
 % If the id is already a member of the set, the set is unchanged
 
@@ -132,11 +145,21 @@
 :- mode var_set_merge_id(in, out, in) is det.
 :- mode var_set_merge_id(out, in, in) is semidet.
 
+:- pred var_set_merge(mh_var, mh_var_set, mh_var_set).
+:- mode var_set_merge(in, in, out) is det.
+:- mode var_set_merge(in, out, in) is det.
+:- mode var_set_merge(out, in, in) is semidet.
+
 % Inverse of var_set_insert_id
 :- pred var_set_remove_id(var_id, mh_var_set, mh_var_set).
 :- mode var_set_remove_id(in, in, out) is semidet.
 :- mode var_set_remove_id(in, out, in) is semidet.
 :- mode var_set_remove_id(out, in, in) is semidet.
+
+:- pred var_set_remove(mh_var, mh_var_set, mh_var_set).
+:- mode var_set_remove(in, in, out) is semidet.
+:- mode var_set_remove(in, out, in) is semidet.
+:- mode var_set_remove(out, in, in) is semidet.
 
 %-----------------------------------------------------------------------------%
 % Var Set composition
@@ -325,17 +348,28 @@ require_valid_var_set_step(Last, var_set(Offset, Set, Next)) :-
 
 %-----------------------------------------------------------------------------%
 
-	
 is_complete_var_set(var_set(null_var_id_offset, _)).
 
 is_contiguous_var_set(var_set(_, _)).
 
 %-----------------------------------------------------------------------------%
 
-
 empty_var_set(empty_var_set).
 
 empty_var_set = var_set(null_var_id_offset, init_var_id_set).
+
+is_empty(VarSet) :- 
+	require_valid_var_set(VarSet),
+	VarSet = var_set(O, S),
+	empty_var_id_offset_and_id_set(O, S).
+	
+expect_non_empty_var_set(VarSet) :-
+	(if is_empty(VarSet)
+	then
+		unexpected($module, $pred, "Expected non-empty var_set")
+	else
+		true
+	).
 
 %-----------------------------------------------------------------------------%
 
@@ -352,6 +386,10 @@ var_set_first_id(var_set(Offset, _, _)) = first_var_id(Offset).
 
 var_set_last_id(var_set(_, Set)) = last_var_id(Set).
 var_set_last_id(var_set(_,_, Next)) = var_set_last_id(Next).
+
+var_set_first_id(ID@var_set_first_id(Set), Set, NewSet) :-
+	expect_non_empty_var_set(Set),
+	var_set_remove_id(ID, Set, NewSet).
 
 var_set_first(Set) = var(var_set_first_id(Set)).
 var_set_last(Set) = var(var_set_last_id(Set)).
@@ -463,6 +501,8 @@ var_set_insert_id(ID::in, VS1::out, VS2::in) :-
 	
 var_set_insert_id(ID::out, VS1::in, VS2::in) :- 
 	var_set_merge_id(ID, VS1, VS2).
+	
+var_set_insert(var(ID), VS1, VS2) :- var_set_insert_id(ID, VS1, VS2).
 
 :- pragma promise_equivalent_clauses(var_set_merge_id/3).
 	
@@ -475,9 +515,11 @@ var_set_merge_id(ID::in, VS1::out, VS2::in) :-
 var_set_merge_id(ID::out, VS1::in, VS2::in) :-
 	var_set_difference(VS2, VS1, singleton_var_set(ID)).
 	
+var_set_merge(var(ID), VS1, VS2) :- var_set_merge_id(ID, VS1, VS2).
+	
 var_set_remove_id(ID, VS1, VS2) :- var_set_insert_id(ID, VS2, VS1).
 	
-	
+var_set_remove(var(ID), VS1, VS2) :- var_set_remove_id(ID, VS1, VS2).
 
 %-----------------------------------------------------------------------------%
 % Var Set composition
