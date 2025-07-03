@@ -42,8 +42,8 @@
 :- func singleton(mh_var, T) = mh_var_map(T).
 :- pred singleton(mh_var::in, T::in, mh_var_map(T)::out) is det.
 
-% var_map_bounds(var_mapsitution, Min, Max)
-% Return the minimum and maximum var_id's indexed by var_map
+	% var_map_bounds(var_mapsitution, Min, Max)
+	% Return the minimum and maximum var_id's indexed by var_map
 :- pred var_map_bounds(mh_var_map(T)::in, var_id_offset::out, 
 	var_id_set::out) is det.
 
@@ -69,9 +69,8 @@
 	% Succeed if the var_map can index the provided mh_var
 :- pred contains(mh_var_map(T)::in, mh_var::in) is semidet.
 
-% Find a given variable ID in the var_map, fail if the id is not found
-% If the var_map is a renaming, return the indexed var_id as a variable
-
+	% Find a given variable ID in the var_map, fail if the id is not found
+	% If the var_map is a renaming, return the indexed var_id as a variable
 :- pred id_search(mh_var_map(T)::in, var_id::in, T::out) 
 	is semidet.
 :- func id_search(mh_var_map(T), var_id) = T is semidet.
@@ -79,8 +78,8 @@
 :- pred search(mh_var_map(T)::in, mh_var::in, T::out) is semidet.
 :- func search(mh_var_map(T), mh_var) = T is semidet.
 
-% Find a given variable ID in the var_map, throw an exception if the id is not
-% found 
+	% Find a given variable ID in the var_map, throw an exception if the id is 
+	% not found 
 :- pred id_lookup(mh_var_map(T)::in, var_id::in, T::out) is det.
 :- func id_lookup(mh_var_map(T), var_id) = T.
 
@@ -91,24 +90,25 @@
 %-----------------------------------------------------------------------------%
 % Iterator 
 
+
 :- type var_map_iterator.
 
-% Retreive  first element of a var map (left traversal) and an iterator, 
-% fails if var map is empty
+	% Retreive  first element of a var map (left traversal) and an iterator, 
+	% fails if var map is empty
 :- pred first(mh_var_map(T)::in, T::out, var_map_iterator::out) 
 	is semidet.
 
-% Also produce the corresponding var_id
+	% Also produce the corresponding var_id
 :- pred first(mh_var_map(T)::in, var_id::out, T::out, var_map_iterator::out) 
 	is semidet.
-% Throws an exception if var_map is empty
+	% Throws an exception if var_map is empty
 :- pred det_first(mh_var_map(T)::in, var_id::out, T::out, 
 	var_map_iterator::out) is det.
 
 :- pred det_first(mh_var_map(T)::in, T::out, var_map_iterator::out) is det.
 	
-% next(Map, Elem, Last, Current)
-% Retreive the next element using the iterator, fail if no more elements
+	% next(Map, Elem, Last, Current)
+	% Retreive the next element using the iterator, fail if no more elements
 :- pred next(mh_var_map(T)::in, T::out, var_map_iterator::in, 
 	var_map_iterator::out) is semidet.
 
@@ -116,16 +116,16 @@
 	var_map_iterator::out) is semidet.
 	
 	
-% For generating new var_map arrays
+	% For generating new var_map arrays
 :- pred init_first(mh_var_set::in, var_id::out, var_map_iterator::out) is det.
 
-% init_next(Set, ID, Last, Current)
-% Fails if there should be no next element
-% Be sure to index off of the Current iterator, not the Last!
+	% init_next(Set, ID, Last, Current)
+	% Fails if there should be no next element
+	% Be sure to index off of the Current iterator, not the Last!
 :- pred init_next(mh_var_set::in, var_id::out, var_map_iterator::in,
 	var_map_iterator::out) is semidet.
 	
-% Array index from iterator
+	% Array index from iterator
 :- func iterator_index(var_map_iterator) = int.
 
 
@@ -276,7 +276,7 @@
 %-----------------------------------------------------------------------------%
 %  Var Maps
 
-% Var maps are represented by a sparse array indexed by a var_set
+	% Var maps are represented by a sparse array indexed by a var_set
 
 :- type mh_var_map(T)
 	--->	var_map_empty

@@ -16,6 +16,7 @@
 :- interface.
 
 :- import_module varset.
+:- import_module maybe.
 
 :- import_module mh_context.
 :- import_module mh_var_map.
@@ -37,14 +38,19 @@
 :- func root_scope_from_mr_varset(mh_context, mr_varset) = mh_scope.
 :- pred root_scope_from_mr_varset(mh_context::in, mr_varset::in, mh_scope::out)
 	is det.
+	
+	%TODO: provide a variant of the above call that also returns a substitution
+	% that renames the variables into a church encoding if not already, and
+	% maps any bound terms in the mr_varset
 
 	% Generate a root scope from a context, varset and name mapping. If the
 	% varset is not church encoded (complete from 1 to N), provide a variable
 	% renaming that will normalize the variables to the new church encoding
 	% in the root scope
 :- pred root_scope_from_var_set(mh_context::in, mh_var_set::in, var_names::in,
-	mh_scope::out, maybe(mh_renaming)::out)
+	mh_scope::out, maybe(mh_renaming)::out) is det.
 	
+	%TODO: construct a root scope by providing a term and var_names
 	%TODO: construct a child scope by providing a scope and a varset
 	%TODO: construct a root scope by extending it with another scope
 	
@@ -116,7 +122,6 @@
 
 :- implementation.
 
-:- import_module maybe.
 :- import_module list.
 :- import_module map.
 :- import_module require.

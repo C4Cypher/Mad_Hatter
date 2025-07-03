@@ -389,7 +389,11 @@ var_set_last_id(var_set(_,_, Next)) = var_set_last_id(Next).
 
 var_set_first_id(ID@var_set_first_id(Set), Set, NewSet) :-
 	expect_non_empty_var_set(Set),
-	var_set_remove_id(ID, Set, NewSet).
+	(if var_set_remove_id(ID, Set, Removed)
+	then NewSet = Removed
+	else unexpected($module, $pred,
+		"Removal of an mh_var_set's first ID from itself failed")
+	).
 
 var_set_first(Set) = var(var_set_first_id(Set)).
 var_set_last(Set) = var(var_set_last_id(Set)).

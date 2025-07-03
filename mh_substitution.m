@@ -461,10 +461,8 @@ rename_var_map(ren_map(Ren), !Map) :-
 	is semidet.
 	
 remap(From, To, !Map) :-
-	(if id_search(!.Map, From, ID)
-	then
-		id_remove(ID, T, !Map),
-		id_insert(To, T, !Map), % Fails if !.Map already has a binding from To
+	(if id_remove(From, T, !Map)
+	then id_insert(To, T, !Map) % Fails if !.Map already has a binding from To
 	else true
 	).
 	
