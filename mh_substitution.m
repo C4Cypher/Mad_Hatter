@@ -56,15 +56,16 @@
 :- func sub_from_offset_array(array(mh_term), var_id_offset) = mh_substitution.
 
 
-% If a substitution consists only of var mappings, convert the internal
-% representation to a renaming
+	% If a substitution consists only of var mappings, convert the internal
+	% representation to a renaming
 :- pred sub_to_ren(mh_substitution::in, mh_substitution::out(mh_renaming))
 	is semidet.
 
 :- func sub_to_ren(mh_substitution::in) = 
 	(mh_substitution::out(mh_renaming)) is semidet.
 	
-% If a substitution is in renaming form, convert to a var mapping substitution
+	% If a substitution is in renaming form, convert to a var mapping
+	% substitution
 :- pred ren_to_sub(mh_substitution::in, 
 	mh_substitution::out(term_substitution)) is det.
 :- func ren_to_sub(mh_substitution::in) = 
@@ -86,14 +87,15 @@
 % Looking up variables in substitutions
 
 
-% Succeed if the substitution can index the provided ID
-% note that this will fail for any input with the ren_offset/1 constructor
+	% Succeed if the substitution can index the provided ID
+	% note that this will fail for any input with the ren_offset/1 constructor
 
 :- pred sub_contains_id(mh_substitution::in, var_id::in) is semidet.
 
 
-% Find a given variable ID in the substitution, fail if the id is not found
-% If the substitution is a renaming, return the indexed var_id as a variable
+	% Find a given variable ID in the substitution, fail if the id is not 
+	% found ff the substitution is a renaming, return the indexed var_id as 
+	% a variable
 
 :- pred sub_id_search(mh_substitution::in, var_id::in, mh_term::out) 
 	is semidet.
@@ -115,9 +117,9 @@
 %-----------------------------------------------------------------------------%
 % Substitution composition
 
-% compose_substitutions(S1, S2, S3) 
-% Create a substitution that, when applied, has the same effect as applying
-% S1 and then S2
+	% compose_substitutions(S1, S2, S3) 
+	% Create a substitution that, when applied, has the same effect as applying
+	% S1 and then S2
 
 :- pred compose_substitutions(mh_substitution::in, 
 	mh_substitution::in, mh_substitution::out) is det.
@@ -194,9 +196,9 @@
 %-----------------------------------------------------------------------------%
 % Renaming composition
 
-% compose_renamings(R1, R2, R3) 
-% Create a renaming that, when applied, has the same effect as applying
-% R1 and then R2
+	% compose_renamings(R1, R2, R3) 
+	% Create a renaming that, when applied, has the same effect as applying
+	% R1 and then R2
 
 :- pred compose_renamings(mh_renaming::in, 
 	mh_renaming::in, mh_renaming::out) is det.
@@ -204,6 +206,24 @@
 :- func compose_renamings(mh_renaming, mh_renaming) = 
 	mh_renaming.
 	
+%-----------------------------------------------------------------------------%
+% Renaming var_maps
+
+	% Re-map the variable bindings in an mh_var_map, fails if any
+	% of the new bindings collide with existing ones in the var map.
+	% This operation performs an in place left fold, it should not fail if only
+	% shifting elements to the left into bindings that are othewise unoccupied.
+	% This call is specifically designed for mh_scope.root_scope_from_var_set/5
+:- pred rename_var_map(mh_renaming::in, mh_var_map(T)::in, mh_var_map(T)::out)
+	is semidet.
+	
+	% TODO: A more robust renaming call implemented in a manner similar to
+	% compose_renamings/3 ... probably wait until more of the language is
+	% implemented
+	
+	% Throws an exception if any of the new bindings collide with existing ones
+:- pred det_rename_var_map(mh_renaming::in, mh_var_map(T)::in, 
+	mh_var_map(T)::out) is det. 
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -342,7 +362,6 @@ remap_substitution(Map2, From1, To1, !.Map3 - !.MapDiff, !:Map3 - !:MapDiff)
 	),
 	id_delete(From1, !MapDiff).
 	
-
 %-----------------------------------------------------------------------------%
 % Renaming
 
@@ -415,8 +434,6 @@ compose_renamings(Ren1, Ren2, Ren3) :-
 		fold(mh_var_map.det_insert, MapDiff, Map03, Map3),
 		Ren3 = ren_map(Map3).
 
-
-
 :- pred remap_renaming(mh_var_map(var_id)::in, var_id::in, var_id::in, 
 	pair(mh_var_map(var_id), mh_var_map(var_id))::in, 
 	pair(mh_var_map(var_id), mh_var_map(var_id))::out) is det.
@@ -429,11 +446,35 @@ remap_renaming(Map2, From1, To1, !.Map3 - !.MapDiff, !:Map3 - !:MapDiff)
 	else true	
 	),
 	id_delete(From1, !MapDiff).
-
+	
 
 
 compose_renamings(Ren1, Ren2) = Ren3 :- compose_renamings(Ren1, Ren2, Ren3).
 
+%-----------------------------------------------------------------------------%
+% Renaming var_maps
+
+rename_var_map(ren_map(Ren), !Map) :-
+	fold_id(remap, Ren, !Map).
+	
+:- pred remap(var_id::in, var_id::in, mh_var_map(T)::in, mh_var_map(T)::out)
+	is semidet.
+	
+remap(From, To, !Map) :-
+	(if id_search(!.Map, From, ID)
+	then
+		id_remove(ID, T, !Map),
+		id_insert(To, T, !Map), % Fails if !.Map already has a binding from To
+	else true
+	).
+	
+det_rename_var_map(Renaming, !Map) :-
+(if rename_var_map(Renaming, !Map)
+	then true
+	else unexpected($module, $pred, 
+		"Attempted to rename variable map to a variable already bound in map.")
+).
+	
 %-----------------------------------------------------------------------------%
 % Utility
 
