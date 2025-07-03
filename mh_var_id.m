@@ -79,10 +79,11 @@
 :- mode var_id_offset(in, out) = in is det.
 :- mode var_id_offset(out, in) = in is det.
 
+/* Smells, not sure if I want to manipulate offsets like this
 	% increment and decrement offsets
 :- func next_offset(var_id_offset) = var_id_offset.
 :- func prev_offset(var_id_offset) = var_id_offset.
-
+*/
 
 	% apply_var_id_offset(B, var_id_offset(A, B)) = A.
 :- func apply_var_id_offset(var_id, var_id_offset) = var_id.
@@ -407,8 +408,10 @@ var_id_offset(ID1, ID2, ID1 - ID2).
 
 var_id_offset(ID1, ID2) = Offset :- var_id_offset(ID1, ID2, Offset).
 
+/* see interface
 next_offset(Offset) = Offset + 1.
 prev_offset(Offset) = Offset - 1.
+*/
 
 apply_var_id_offset(ID2, Offset) = ID1 :- var_id_offset(ID1, ID2, Offset).
 
