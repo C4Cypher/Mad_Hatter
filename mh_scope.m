@@ -193,8 +193,9 @@ new_scope_vars_from_mr_varset(MrVarset, [MrVar | Vars], !VarSet, !Names) :-
 root_scope_from_var_set(Context, VarSet, Names, Scope, MaybRenaming) :-
 	church_renaming_for_varset(VarSet, MaybRenaming, IDSet),
 	(if MaybRenaming = yes(Renaming)
-	then
-	)
+	then det_rename_var_map(Renaming, Names, NewNames)
+	else NewNames = Names
+	),
 	Scope = root_scope(Context, IDSet, NewNames).
 	
 % Does NOT rename variables in varset that are already church encoded
