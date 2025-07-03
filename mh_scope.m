@@ -20,6 +20,7 @@
 :- import_module mh_context.
 :- import_module mh_var_map.
 :- import_module mh_var_set.
+:- import_module mh_substitution.
 :- import_module mh_term.
 
 
@@ -36,6 +37,13 @@
 :- func root_scope_from_mr_varset(mh_context, mr_varset) = mh_scope.
 :- pred root_scope_from_mr_varset(mh_context::in, mr_varset::in, mh_scope::out)
 	is det.
+
+	% Generate a root scope from a context, varset and name mapping. If the
+	% varset is not church encoded (complete from 1 to N), provide a variable
+	% renaming that will normalize the variables to the new church encoding
+	% in the root scope
+:- pred root_scope_from_var_set(mh_context::in, mh_var_set::in, var_names::in,
+	mh_scope::out, maybe(mh_renaming)::out)
 	
 	%TODO: construct a child scope by providing a scope and a varset
 	%TODO: construct a root scope by extending it with another scope
@@ -103,24 +111,6 @@
 
 
 
-
-/* unimplemented
-
-
-
-
-
-
-% Fails if the variables in the provided term do not match those for the given
-% Scope
-:- pred valid_term_scope(mh_term::in, mh_scope::in).
-
-:- func child_term_scope(mh_term, mh_scope) = mh_scope.
-
-:- func nested_term_scope(mh_term, mh_scope) = mh_scope.
-*/
-
-
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
@@ -145,9 +135,9 @@
 		%If no child context, default to parent
 	;		child_scope(mh_scope, maybe(mh_context), mh_var_set). 
 
-/* Compiler error, skipping the subtyping
 %%% UNDER NO CIRCUMSTANCES SHOULD A CHILD SCOPE BE PLACED AS THE FIRST %%%
 %%% ARGUMENT OF extended_scope/2
+/* Compiler error, skipping the subtyping, might reintroduce later, doubtful
 
 
 :- inst root_scope 
@@ -166,15 +156,8 @@ scope_is_root(root_scope(_, _, _)).
 scope_is_root(extended_scope(_, _)).
 */
 
-
-:- func scope_cons(mh_scope, mh_scope) = mh_scope.
-:- mode scope_cons(in, in) = out is det.
-:- mode scope_cons(out, out) = in is semidet.
-
-scope_cons(Car, Cdr) = extended_scope(Car, Cdr).
-
 root_scope_from_mr_varset(Ctx, MrVarSet) = root_scope(Ctx, IDSet, Names) :-
-	new_scope_vars(MrVarSet, vars(MrVarSet), empty_var_set, VarSet,	
+	new_scope_vars_from_mr_varset(MrVarSet, vars(MrVarSet), empty_var_set, VarSet,	
 		empty_var_map, Names),
 	(if complete_var_set(CompleteSet, VarSet) 
 	then IDSet = CompleteSet
@@ -187,16 +170,16 @@ root_scope_from_mr_varset(Ctx, MrVarSet,
 	root_scope_from_mr_varset(Ctx, MrVarSet)).
 	
 	
-	% new_scope_vars(VarList, !LastID, !VarSet, !Names)
-:- pred new_scope_vars(
+	% new_scope_vars_from_mr_varset(VarList, !LastID, !VarSet, !Names)
+:- pred new_scope_vars_from_mr_varset(
 		mr_varset::in, list(mr_var)::in, 
 		mh_var_set::in, mh_var_set::out,
 		var_names::in, var_names::out
 	) is det.
 		
-new_scope_vars(_, [], !VarSet, !Names).
+new_scope_vars_from_mr_varset(_, [], !VarSet, !Names).
 
-new_scope_vars(MrVarset, [MrVar | Vars], !VarSet, !Names) :-
+new_scope_vars_from_mr_varset(MrVarset, [MrVar | Vars], !VarSet, !Names) :-
 	% given that varset.vars should never produce duplicate var_id's, I'm
 	% skipping the check to see if the mh_var_set already contains it
 	var_set_merge_id(NewID@mr_var_id(MrVar), !VarSet), 
@@ -205,7 +188,50 @@ new_scope_vars(MrVarset, [MrVar | Vars], !VarSet, !Names) :-
 		det_id_insert(NewID, Name, !Names)
 	else true
 	),
-	new_scope_vars(MrVarset, Vars, !VarSet, !Names).
+	new_scope_vars_from_mr_varset(MrVarset, Vars, !VarSet, !Names).
+	
+root_scope_from_var_set(Context, VarSet, Names, Scope, MaybRenaming) :-
+	church_renaming_for_varset(VarSet, MaybRenaming, IDSet),
+	(if MaybRenaming = yes(Renaming)
+	then
+	)
+	Scope = root_scope(Context, IDSet, NewNames).
+	
+% Does NOT rename variables in varset that are already church encoded
+% (1 .. N)
+:- pred church_renaming_for_varset(mh_var_set::in, maybe(mh_renaming)::out, 
+	var_id_set::out) is det.
+
+church_renaming_for_varset(VarSet, Renaming, IDSet) :-
+	%expect_non_empty_var_set(VarSet), 
+	church_renaming_for_varset_loop(VarSet, init, IDMap, empty_var_id_set,		IDSet),
+	(if empty_var_map(IDMap)
+	then
+		Renaming = no
+	else
+		Renaming = yes(ren_map(IDMap))
+	).
+
+:- pred church_renaming_for_varset_loop(mh_var_set::in,	mh_var_map(var_id)::in,
+	mh_var_map(var_id)::out, var_id_set::in, var_id_set::out) is det.
+	
+church_renaming_for_varset_loop(VarSet, !IDMap, PrevIDSet, FullIDSet) :-
+	(if is_empty(VarSet) 
+	then FullIDSet = PrevIDSet
+	else
+		PrevID = last_var_id(PrevIDSet),
+		CurrentID = next_var_id(PrevID) @ last_var_id(CurrentIDSet),
+		var_set_first_id(ID, VarSet, NextVarSet),
+		% If the variable id is already church encoded, don't map it
+		(if ID = CurrentID
+		then true
+		else
+			%var_set_first_id/3 should never produce duplicate IDs
+			det_id_insert(ID, CurrentID, !IDMap)
+		),
+		church_renaming_for_varset_loop(NextVarSet, !IDMap, CurrentIDSet,
+			FullIDSet)
+	).
 
 is_child(child_scope(_, _, _)).
 is_child(extended_scope(Car, _)) :- is_child(Car).
@@ -258,7 +284,7 @@ valid_child_scope(Parent, VarSet) :-
 	then
 		(if var_set_remove_id(ID, VarSet, NextVarSet)
 		then 
-			(if NextVarSet = empty_var_set
+			(if is_empty(NextVarSet)
 			then true
 			else
 				valid_child_scope(Parent, NextVarSet)
