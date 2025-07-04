@@ -144,7 +144,6 @@
 %%% ARGUMENT OF extended_scope/2
 /* Compiler error, skipping the subtyping, might reintroduce later, doubtful
 
-
 :- inst root_scope 
 	---> 	root_scope(ground, ground, ground)
 	;		extended_scope(ground, ground).
@@ -159,6 +158,17 @@
 
 scope_is_root(root_scope(_, _, _)).
 scope_is_root(extended_scope(_, _)).
+	
+:- inst child_scope ---> child_scope(ground, ground, ground).
+
+:- type mh_child_scope 
+	--->	child_scope(mh_scope, maybe(mh_context), mh_var_set).
+	
+:- mode scope_is_child == ground >> child_scope.
+
+:- pred scope_is_root(mh_scope::scope_is_child) is semidet.
+
+scope_is_child(child_scope(_, _, _)).
 */
 
 root_scope_from_mr_varset(Ctx, MrVarSet) = root_scope(Ctx, IDSet, Names) :-
