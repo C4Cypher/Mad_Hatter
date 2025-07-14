@@ -264,8 +264,7 @@
 :- mode fold(in(pred(in, in, out) is semidet), in, in, out) is semidet.
 :- mode fold(in(pred(in, mdi, muo) is semidet), in, mdi, muo) 
 	is semidet.
-
-
+	
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
