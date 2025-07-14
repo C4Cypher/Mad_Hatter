@@ -453,7 +453,8 @@ empty_var_id_set = init_var_id_set.
 
 empty_var_id_offset_and_id_set(O, S) :- O = S.
 
-var_id_set_from_offset(O) = O + 1.
+%var_id_set_from_offset(O) = O + 1. % Keep an eye on this
+var_id_set_from_offset(O) = O.
 
 var_id_count(Set, var_id_count(Set)).
 
