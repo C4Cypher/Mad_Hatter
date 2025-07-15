@@ -162,7 +162,7 @@
 :- mode var_set_remove(out, in, in) is semidet.
 
 %-----------------------------------------------------------------------------%
-% Var Set composition
+% Var Set composition and set operations
 
 :- pred var_set_union(mh_var_set::in, mh_var_set::in, mh_var_set::out) is det.
 :- func var_set_union(mh_var_set, mh_var_set) = mh_var_set.
@@ -174,6 +174,11 @@
 :- pred var_set_difference(mh_var_set::in, mh_var_set::in, mh_var_set::out) 
 	is det.
 :- func var_set_difference(mh_var_set, mh_var_set) = mh_var_set.
+
+	% Subsets and supersets are inclusive of equal sets
+:- pred var_set_subset(mh_var_set::in, mh_var_set::in) is semidet.
+
+:- pred var_set_superset(mh_var_set::in, mh_var_set::in) is semidet.
 
 %-----------------------------------------------------------------------------%
 % Var Set indexing
@@ -531,7 +536,7 @@ var_set_remove_id(ID, VS1, VS2) :- var_set_insert_id(ID, VS2, VS1).
 var_set_remove(var(ID), VS1, VS2) :- var_set_remove_id(ID, VS1, VS2).
 
 %-----------------------------------------------------------------------------%
-% Var Set composition
+% Var Set composition and set operations
 
 var_set_union(VS1, VS2, var_set_union(VS1, VS2)).
 
@@ -570,10 +575,7 @@ var_set_union(var_set(O1, S1, Next1), var_set(O2, S2, Next2)) =
 		var_set_union_pairs(O1, S1, O2, S2),
 		var_set_union(Next1, Next2)
 	).
-			
-
-
-
+	
 :- func var_set_union_pairs(
 	var_id_offset, var_id_set,
 	var_id_offset, var_id_set) = mh_var_set.
@@ -738,7 +740,10 @@ var_set_difference_pairs(O1, S1, O2, S2) = Diff :-
 	else
 		Diff = empty_var_set
 	).
-	
+
+%-----------------------------------------------------------------------------%
+
+var_set_subset(Sub, Super) :- is_empty(var_set_difference(Sub, Super)).
 	
 %-----------------------------------------------------------------------------%
 % Var Set indexing	
