@@ -264,7 +264,10 @@
 :- mode fold(in(pred(in, in, out) is semidet), in, in, out) is semidet.
 :- mode fold(in(pred(in, mdi, muo) is semidet), in, mdi, muo) 
 	is semidet.
-	
+
+:- pred all_true(pred(mh_var), mh_var_set).
+:- mode all_true(in(pred(in) is semidet), in) is semidet.
+
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
@@ -842,6 +845,21 @@ curry_fold(P, ID, !A) :- P(var(ID), !A).
 fold(P, Map, !A) :-
 	CurriedP = curry_fold(P),
 	fold_id(CurriedP, Map, !A).
+	
+all_true(P, Set) :-
+	(if empty_var_set(Set)
+	then true
+	else
+		ID = var_set_first_id(Set),
+		P(ID),
+		(if var_set_remove_id(ID, Set, Next)
+		then
+			all_true(P, Next)
+		else
+			unexpected($module, $pred, 
+				"Failed to remove first id from set, should be impossible")
+		)
+	).
 		
 	
 	
