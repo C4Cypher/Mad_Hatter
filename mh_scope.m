@@ -17,7 +17,7 @@
 
 :- import_module varset.
 :- import_module maybe.
-% :- import_module list.
+:- import_module list.
 
 :- import_module mh_context.
 :- import_module mh_var_map.
@@ -31,6 +31,26 @@
 
 %-----------------------------------------------------------------------------%
 % Scope
+
+% The mh_scope type is a container for three things: a context (usually file
+% name and line number), a set of variables, and a mapping of some of those
+% variables to string names.
+
+% A 'root'  scope represents a complete set of variables from id 1 to N, the
+% complete set of variables for a clause
+
+% 'root' scopes can be extended with other root scopes, for sake of discussion
+% I like to refer to the scope being extended as the 'Car' and the scope being
+% embedded to extend is the 'Cdr'.  The number of variables contained by the 
+% Cdr scope are appended to the end of the 'Car' scope, and renamings are 
+% additionally provided to re map any terms under the 'Cdr' scope to
+% match the newly extended 'Cons' scope 
+
+% Child scopes represent a subset of another scope, unlike root scopes, they
+% may contain a sparse collection of variable id's ... however, all variables
+% in a child scope must also be present in a parent.  I intend child scopes to
+% represent lexical scopes, reflecting partial visiblility of variables, 
+% 'views' as it were, in subterms of a parent term
 
 :- type mh_scope.
 
@@ -86,19 +106,31 @@
 :- pred extend_root_scope(mh_scope::in, mh_scope::in, mh_scope::out, 
 	mh_renaming::out) is det.
 
-/* redundant?
-	% Extend a root scope by providing a var_set and var_names, provides a 
-	% renaming that maps the var_set's new variable assignments in the scope
-:- pred extend_root_scope(mh_scope::in, mh_context::in mh_var_set::in, 
-	var_names::in, mh_scope::out, mh_renaming::out) is det.
-*/
+	% Decomposes an extended scope into it's root and the scopes that extend
+	% it.  If the scope is not extended, returns the input scope as root and
+	% an empty list as the extended portion.
+:- pred scope_composition(mh_scope::in, mh_scope::out, list(mh_scope)::out)
+	is det.
+	
+	% Similar to scope_composition/3, but returns a single list with the root
+	% at the front of the list. If the scope is not extended, returns a list
+	% with the scope as the single item in it.
+:- func decompose_scope(mh_scope) = list(mh_scope).
 
 	%TODO: extend a root scope by providing a var_set, a prefix and offset
 	
 %-----------------------------------------------------------------------------%
 % Child Scopes	
 	
-	%TODO: construct a child scope by providing a scope and a varset
+	% Construct a child scope by providing a scope and a varset.  Throws an
+	% exception if the provided mh_var_set is not a subset of the parent scope.
+	% If there is no provided context, it will default to the parent's context.
+	% Child scopes may use other child scopes as their parent.
+:- pred create_child_scope(mh_scope::in, maybe(mh_context)::in, mh_var_set::in,
+	mh_scope::out) is det.
+	
+:- func create_child_scope(mh_scope, maybe(mh_context), mh_var_set) = mh_scope.
+
 	
 	% determines if the given scope is a child of another context
 :- pred is_child(mh_scope::in) is semidet.
@@ -162,7 +194,6 @@
 
 :- implementation.
 
-:- import_module list.
 :- import_module map.
 :- import_module require.
 :- import_module string.
@@ -181,7 +212,7 @@
 	;		child_scope(mh_scope, maybe(mh_context), mh_var_set). 
 
 %%% UNDER NO CIRCUMSTANCES SHOULD A CHILD SCOPE BE PLACED AS THE FIRST %%%
-%%% ARGUMENT OF extended_scope/2
+%%% ARGUMENT OF extended_scope/2, check using is_root/1 and is_child/1 %%%
 /* Compiler error, skipping the subtyping, might reintroduce later, doubtful
 
 :- inst root_scope 
@@ -400,9 +431,24 @@ extended_renaming_loop(Offset, ChurchRen, FromID, !ExMap) :-
 	ToID = apply_var_id_offset(ChurchID, Offset),
 	det_id_insert(FromID, ToID, !ExMap).
 	
-	
+scope_composition(Scope, det_head(List), det_tail(List)) :-
+	List = decompose_scope(Scope).
+
+decompose_scope(Root@root_scope(_, _, _)) = [Root].
+decompose_scope(extended_scope(Car, Cdr)) = decompose_scope(Car) ++ [Cdr].
+decompose_scope(Child@child_scope(_, _, _)) = [Child].
+
+
 %-----------------------------------------------------------------------------%
 % Child Scopes		
+
+create_child_scope(Parent, Ctx, Vars, child_scope(Parent, Ctx, Vars)) :-
+	if all_true_id(scope_contains_id_semidet(Parent), Vars)
+	then true
+	else error($pred, "var_set for child contained variables not in parent.").
+	
+create_child_scope(Parent, Ctx, Vars) = Child :- 
+	create_child_scope(Parent, Ctx, Vars, Child).
 
 is_child(child_scope(_, _, _)).
 is_child(extended_scope(Car, _)) :- is_child(Car).
@@ -457,6 +503,11 @@ scope_contains_id(Scope, ID) :-
 	;
 		Scope = child_scope(_, _, VarSet), var_set_contains_id(VarSet, ID)
 	).
+	
+:- pred scope_contains_id_semidet(mh_scope::in, var_id::in) is semidet.
+
+scope_contains_id_semidet(Scope, ID) :- scope_contains_id(Scope, ID).
+
 
 :- func root_scope_id_set(mh_scope) = var_id_set.
 
