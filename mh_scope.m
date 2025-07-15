@@ -143,6 +143,11 @@
 	% the parent.
 :- pred parent(mh_scope::in, mh_scope::out) is semidet.
 
+	% if the scope is a root, return itself, otherwise, if it is a child
+	% return the root_ancestor of it's parent.
+:- func root_ancestor(mh_scope) = mh_scope.
+:- pred root_ancestor(mh_scope::in, mh_scope::out) is det.
+
 
 %-----------------------------------------------------------------------------%
 % Scope context
@@ -457,6 +462,13 @@ is_child(extended_scope(Car, _)) :- is_child(Car).
 parent(child_scope(Parent, _, _)) = Parent.
 
 parent(Child, parent(Child)).
+
+root_ancestor(Scope) = 
+	if parent(Scope, Parent) 
+	then root_ancestor(Parent)
+	else Scope.
+	
+root_ancestor(Scope, root_ancestor(Scope)).
 
 	
 	
