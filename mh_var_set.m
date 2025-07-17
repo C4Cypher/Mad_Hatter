@@ -744,6 +744,8 @@ var_set_difference_pairs(O1, S1, O2, S2) = Diff :-
 %-----------------------------------------------------------------------------%
 
 var_set_subset(Sub, Super) :- is_empty(var_set_difference(Sub, Super)).
+
+var_set_superset(Super, Sub) :- var_set_subset(Sub, Super).
 	
 %-----------------------------------------------------------------------------%
 % Var Set indexing	
