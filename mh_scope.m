@@ -25,7 +25,6 @@
 :- import_module mh_substitution.
 :- import_module mh_term.
 
-
 :- type mr_varset(T) == varset.varset(T).
 :- type mr_varset == varset.varset.
 
@@ -36,7 +35,7 @@
 % name and line number), a set of variables, and a mapping of some of those
 % variables to string names.
 
-% A 'root'  scope represents a complete set of variables from id 1 to N, the
+% A 'root' scope represents a complete set of variables from id 1 to N, the
 % complete set of variables for a clause
 
 % 'root' scopes can be extended with other root scopes, for sake of discussion
@@ -54,11 +53,23 @@
 
 :- type mh_scope.
 
-
-% Throws an exception if a scope contains name mappings outside of the scope,
-% If the root (CAR) of an extended scope is a child, or if a child scope 
-% contains variables outside the scope of it's parent.
+	% Throws an exception if a scope contains name mappings outside of the 
+	% scope, if the root (CAR) of an extended scope is a child, or if a child 
+	% scope contains variables outside the scope of it's parent.
 :- pred require_valid_scope(mh_scope::in) is det.
+
+	% True of two scopes share the same context and the same set of variables,
+	% Ignores differences in the name mappings.
+:- pred equivalent_scopes(mh_scope::in, mh_scope::in) is semidet.
+
+	% Succeeds if the first scope is compatable with the second, true if
+	% they are equivalent, the second scope is an extended version of the
+	% first, or if the first scope's parent is compatable with the second. 
+	% If true, variables under the first scope can be considered valid members 
+	% of the second. Garuntees that all members of the first scope are present
+	% in and represent the same values as the second.
+:- pred compatable_scope(mh_scope::in, mh_scope::in) is semidet.  
+
 
 %-----------------------------------------------------------------------------%
 % Root Scopes
@@ -91,6 +102,7 @@
 	% in the root scope
 :- pred root_scope_from_var_set(mh_context::in, mh_var_set::in, var_names::in,
 	mh_scope::out, maybe(mh_renaming)::out) is det.
+
 	
 %-----------------------------------------------------------------------------%
 % Extended Root Scopes
@@ -106,6 +118,9 @@
 :- pred extend_root_scope(mh_scope::in, mh_scope::in, mh_scope::out, 
 	mh_renaming::out) is det.
 
+%TODO: extend a root scope by providing a var_set, a prefix and offset
+% May implement in another module
+
 	% Decomposes an extended scope into it's root and the scopes that extend
 	% it.  If the scope is not extended, returns the input scope as root and
 	% an empty list as the extended portion.
@@ -117,7 +132,10 @@
 	% with the scope as the single item in it.
 :- func decompose_scope(mh_scope) = list(mh_scope).
 
-	%TODO: extend a root scope by providing a var_set, a prefix and offset
+	% Prerequisite test for compatable_scope/2, true if the second scope is an
+	% extended version of the first.  Fails if the scopes are the same or if 
+	% either scope is a child scope
+:- pred extended_scope_subset(mh_scope::in, mh_scope::in) is semidet.
 	
 %-----------------------------------------------------------------------------%
 % Child Scopes	
@@ -287,22 +305,28 @@ require_valid_scope(child_scope(Parent, _, VarSet)) :-
 
 valid_child_scope(Parent, VarSet) :-
 	(if scope_contains_id(Parent, var_set_first_id(VarSet)@ID)
-	then
-		(if var_set_remove_id(ID, VarSet, NextVarSet)
-		then 
-			(if is_empty(NextVarSet)
+	then (if var_set_remove_id(ID, VarSet, NextVarSet)
+		then (if is_empty(NextVarSet)
 			then true
-			else
-				valid_child_scope(Parent, NextVarSet)
+			else valid_child_scope(Parent, NextVarSet)
 			)
-		else
-			unexpected($module, $pred, 
-				"Failed to remove first id from set, should be impossible")
+		else unexpected($module, $pred, 
+			"Failed to remove first id from set, should be impossible")
 		)
-	else
-		unexpected($module, "require_valid_scope/1",
-			"child scope contains variables not in parent scope")
+	else unexpected($module, "require_valid_scope/1",
+		"child scope contains variables not in parent scope")
 	).
+
+equivalent_scopes(S, S).
+equivalent_scopes(S1, S2) :- 
+	root_context(S1, Ctx), root_context(S2, Ctx),
+	scope_vars(S1, Vars), scope_vars(S2, Vars).
+
+compatable_scope(S1, S2) :- 
+	root_context(S1, Ctx), root_context(S2, Ctx),
+	scope_vars(S1, V1), scope_vars(S2, V2),
+	var_set_subset(V1, V2).
+
 
 %-----------------------------------------------------------------------------%
 % Root Scopes
@@ -443,6 +467,12 @@ decompose_scope(Root@root_scope(_, _, _)) = [Root].
 decompose_scope(extended_scope(Car, Cdr)) = decompose_scope(Car) ++ [Cdr].
 decompose_scope(Child@child_scope(_, _, _)) = [Child].
 
+extended_scope_subset(Subset, extended_scope(Subset, _)).
+extended_scope_subset(Subset, extended_scope(Car, _)) :- 
+	extended_scope_subset(Subset, Car).
+	
+	
+
 
 %-----------------------------------------------------------------------------%
 % Child Scopes		
@@ -464,9 +494,10 @@ parent(child_scope(Parent, _, _)) = Parent.
 parent(Child, parent(Child)).
 
 root_ancestor(Scope) = 
-	if parent(Scope, Parent) 
+	(if parent(Scope, Parent) 
 	then root_ancestor(Parent)
-	else Scope.
+	else Scope
+	).
 	
 root_ancestor(Scope, root_ancestor(Scope)).
 
