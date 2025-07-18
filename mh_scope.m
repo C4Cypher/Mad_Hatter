@@ -575,6 +575,12 @@ scope_vars(extended_scope(_, _)@Scope) =
 	
 scope_vars(Scope, scope_vars(Scope)).
 
+:- func car_offset(mh_scope) = var_id_offset.
+
+car_offset(Scope) = offset_from_id_set(root_scope_id_set(Scope)).
+
+:- pragma inline(car_offset/1).
+
 %-----------------------------------------------------------------------------%
 % Variable names
 
@@ -589,10 +595,10 @@ id_name(extended_scope(Car, Cdr), ID, Name) :-
 	then id_name(Car, ID, Name)
 	else
 		% Shift the index left by the weight of the Car scope
-		CarOffset = offset_from_id_set(root_scope_id_set(Car)),
-		var_id_offset(CdrID, ID, CarOffset),
+		var_id_offset(CdrID, ID, car_offset(Car)),
 		sparse_id_name(Cdr, CdrID, Name)
 	).
+
 	
 id_name(child_scope(Parent, _, ChildVarSet), ID, Name)  :-
 	%Ensure that the ID actuaally belongs to the child before looking up the
