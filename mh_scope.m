@@ -195,6 +195,22 @@
 :- func scope_vars(mh_scope) = mh_var_set.
 :- pred scope_vars(mh_scope::in, mh_var_set::out) is det.
 
+
+	% Given that root scopes can be extended, not all variables in a scope may
+	% originate from the same root scope. This call allows us to query a 
+	% scope as to the originating scope of a specific variable. When called
+	% on a child scope, the root ancestor will be queried. Throws an exception
+	% if variable is not a member of the scope.
+:- func scope_variable_root(mh_scope, mh_var) = mh_scope.
+
+:- pred scope_variable_root(mh_scope::in, mh_var::in, mh_scope::out) is det.
+
+	% As above, but fails if variable is not a member of the scope.
+:- func semidet_scope_variable_root(mh_scope, mh_var) = mh_scope is semidet.
+
+:- pred semidet_scope_variable_root(mh_scope::in, mh_var::in, mh_scope::out)
+	is semidet.	
+
 %-----------------------------------------------------------------------------%
 % Variable names
 
@@ -575,12 +591,47 @@ scope_vars(extended_scope(_, _)@Scope) =
 	
 scope_vars(Scope, scope_vars(Scope)).
 
+scope_variable_root(Scope, Var) = 
+	(if semidet_scope_variable_root(Scope, Var) = Root
+	then Root
+	else unexpected($module, $pred, 
+		"Varaible was not a member of provided scope")).
+		
+scope_variable_root(Scope, Var, scope_variable_root(Scope, Var)).
+
+semidet_scope_variable_root(root_scope(_, Set, _)@Root, var(ID)) = Root :-
+	contains_var_id(Set, ID).
+	
+semidet_scope_variable_root(extended_scope(Car, Cdr), Var) = 
+	(if semidet_scope_variable_root(Car, Var) = Root
+	then Root
+	else extended_variable_root(Car, Cdr, Var)
+	).
+	
+:- func extended_variable_root(mh_scope, mh_scope, mh_var) = mh_scope is semidet.
+
+	% Determine the root of the variable in the Cdr, knowing that it has 
+	% already been determined that said variable is not a member of the Car
+extended_variable_root(Car, Cdr, var(ID)) = 
+		semidet_scope_variable_root(Cdr, var(OffsetID)) :-
+	% Shift the ID left by the weight of the Car
+	var_id_offset(ID, OffsetID, car_offset(Car)).
+
+:- pragma inline(extended_variable_root/3).
+	
 :- func car_offset(mh_scope) = var_id_offset.
 
 car_offset(Scope) = offset_from_id_set(root_scope_id_set(Scope)).
 
 :- pragma inline(car_offset/1).
 
+semidet_scope_variable_root(child_scope(Parent, _, Set), Var@var(ID)) =
+	semidet_scope_variable_root(Parent, Var) :- 
+		var_set_contains_id(Set, ID).
+
+semidet_scope_variable_root(Scope, Var, 
+	semidet_scope_variable_root(Scope, Var)).
+	
 %-----------------------------------------------------------------------------%
 % Variable names
 
