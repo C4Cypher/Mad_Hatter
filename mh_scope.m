@@ -189,7 +189,7 @@
 :- mode scope_contains_var(in, in) is semidet.
 :- mode scope_contains_var(in, out) is nondet.
 
-:- pred scope_contains_var_semidet(mh_scope::in, mh_var::in) is semidet.
+:- pred semidet_scope_contains_var(mh_scope::in, mh_var::in) is semidet.
 
 
 :- func scope_vars(mh_scope) = mh_var_set.
@@ -478,7 +478,7 @@ extended_scope_subset(Subset, extended_scope(Car, _)) :-
 % Child Scopes		
 
 create_child_scope(Parent, Ctx, Vars, child_scope(Parent, Ctx, Vars)) :-
-	if all_true_id(scope_contains_id_semidet(Parent), Vars)
+	if all_true_id(semidet_scope_contains_id(Parent), Vars)
 	then true
 	else error($pred, "var_set for child contained variables not in parent.").
 	
@@ -532,7 +532,7 @@ scope_var_count(child_scope(_, _, VarSet)) = var_set_count(VarSet).
 
 scope_contains_var(Scope, var(ID)) :- scope_contains_id(Scope, ID). 
 
-scope_contains_var_semidet(Scope, Var) :- 
+semidet_scope_contains_var(Scope, Var) :- 
 	scope_contains_var(Scope, Var).
 	
 :- pred scope_contains_id(mh_scope, var_id).
@@ -547,9 +547,9 @@ scope_contains_id(Scope, ID) :-
 		Scope = child_scope(_, _, VarSet), var_set_contains_id(VarSet, ID)
 	).
 	
-:- pred scope_contains_id_semidet(mh_scope::in, var_id::in) is semidet.
+:- pred semidet_scope_contains_id(mh_scope::in, var_id::in) is semidet.
 
-scope_contains_id_semidet(Scope, ID) :- scope_contains_id(Scope, ID).
+semidet_scope_contains_id(Scope, ID) :- scope_contains_id(Scope, ID).
 
 
 :- func root_scope_id_set(mh_scope) = var_id_set.
