@@ -101,6 +101,7 @@
 :- mode var_id_set_offset(out, in) = in is det.
 :- mode var_id_set_offset(in, out) = in is det.
 
+:- func next_offset_from_id_set(var_id_set) = var_id_offset.
 :- func offset_from_id_set(var_id_set) = var_id_offset.
 :- func offset_from_arity(T) = var_id_offset <= arity(T).
 
@@ -132,6 +133,7 @@
 :- pred empty_var_id_offset_and_id_set(var_id_offset::in, var_id_set::in)
 	is semidet.
 
+:- func var_id_set_from_next_offset(var_id_offset) = var_id_set.
 :- func var_id_set_from_offset(var_id_offset) = var_id_set.
 
 :- pred var_id_count(var_id_set::in, int::out) is det.
@@ -421,7 +423,7 @@ var_id_set_offset(Set, Offset) = Set + Offset.
 
 null_var_id_offset = 0.
 
-% offset_from_id_set(S) = S - 1. % This seems off
+next_offset_from_id_set(S) = S - 1. 
 offset_from_id_set(S) = S.
 offset_from_arity(T) = arity(T).
 
@@ -453,7 +455,7 @@ empty_var_id_set = init_var_id_set.
 
 empty_var_id_offset_and_id_set(O, S) :- O = S.
 
-%var_id_set_from_offset(O) = O + 1. % Keep an eye on this
+var_id_set_from_next_offset(O) = O + 1. 
 var_id_set_from_offset(O) = O.
 
 var_id_count(Set, var_id_count(Set)).
