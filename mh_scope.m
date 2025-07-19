@@ -58,16 +58,21 @@
 	% scope contains variables outside the scope of it's parent.
 :- pred require_valid_scope(mh_scope::in) is det.
 
-	% True of two scopes share the same context and the same set of variables,
-	% Ignores differences in the name mappings.
+% These two calls assume that mh_context refers to specific origins for
+% variables in source code, and that each root context is unique to the
+% root that was constructed with it.  The following calls may return false
+% positives if the contexts the scopes were created with are not unique to
+% said scopes.
+
+	% True of two scopes if each variable in both scopes share the same 
+	% context.  Two scopes may have different structures, or variable namings
+	% but if the variables within are the same, and came from the same place
+	% they can be considered the same scopes.
 :- pred equivalent_scopes(mh_scope::in, mh_scope::in) is semidet.
 
 	% Succeeds if the first scope is compatable with the second, true if
-	% they are equivalent, the second scope is an extended version of the
-	% first, or if the first scope's parent is compatable with the second. 
-	% If true, variables under the first scope can be considered valid members 
-	% of the second. Garuntees that all members of the first scope are present
-	% in and represent the same values as the second.
+	% each variable in the first scope is present in the second scope and
+	% has the same context for it's counterpart in the second scope.
 :- pred compatable_scope(mh_scope::in, mh_scope::in) is semidet.  
 
 
@@ -132,9 +137,9 @@
 	% with the scope as the single item in it.
 :- func decompose_scope(mh_scope) = list(mh_scope).
 
-	% Prerequisite test for compatable_scope/2, true if the second scope is an
-	% extended version of the first.  Fails if the scopes are the same or if 
-	% either scope is a child scope
+	% (was) Prerequisite test for compatable_scope/2, true if the second scope 
+	% is an extended version of the first.  Fails if the scopes are the same 
+	% or if either scope is a child scope
 :- pred extended_scope_subset(mh_scope::in, mh_scope::in) is semidet.
 	
 %-----------------------------------------------------------------------------%
@@ -210,6 +215,20 @@
 
 :- pred semidet_scope_variable_root(mh_scope::in, mh_var::in, mh_scope::out)
 	is semidet.	
+
+	% Derives the context from results of scope_variable_context, effectively
+	% scope_variable_context(S, V) = scope_context(scope_variable_root(S, V)).
+:- func scope_variable_context(mh_scope, mh_var) = mh_context.
+
+:- pred scope_variable_context(mh_scope::in, mh_var::in, mh_context::out) 
+	is det.
+
+	% Likewise, fails if variable is not a member of the provided scope.
+:- func semidet_scope_variable_context(mh_scope, mh_var) = mh_context
+	is semidet.
+
+:- pred semidet_scope_variable_context(mh_scope::in, mh_var::in, 
+	mh_context::out) is semidet.
 
 %-----------------------------------------------------------------------------%
 % Variable names
@@ -335,13 +354,17 @@ valid_child_scope(Parent, VarSet) :-
 
 equivalent_scopes(S, S).
 equivalent_scopes(S1, S2) :- 
-	root_context(S1, Ctx), root_context(S2, Ctx),
-	scope_vars(S1, Vars), scope_vars(S2, Vars).
+	scope_vars(S1, Vars), scope_vars(S2, Vars),
+	all_true(equivalent_var_context(S1, S2), Vars).
+	
+:- pred equivalent_var_context(mh_scope::in, mh_scope::in, mh_var::in) is semidet.
+
+equivalent_var_context(S1, S2, V) :-
+	semidet_scope_variable_context(S1, V, Ctx),
+	semidet_scope_variable_context(S2, V, Ctx).
 
 compatable_scope(S1, S2) :- 
-	root_context(S1, Ctx), root_context(S2, Ctx),
-	scope_vars(S1, V1), scope_vars(S2, V2),
-	var_set_subset(V1, V2).
+	all_true(equivalent_var_context(S1, S2), scope_vars(S1)).
 
 
 %-----------------------------------------------------------------------------%
@@ -608,7 +631,8 @@ semidet_scope_variable_root(extended_scope(Car, Cdr), Var) =
 	else extended_variable_root(Car, Cdr, Var)
 	).
 	
-:- func extended_variable_root(mh_scope, mh_scope, mh_var) = mh_scope is semidet.
+:- func extended_variable_root(mh_scope, mh_scope, mh_var) = mh_scope 
+	is semidet.
 
 	% Determine the root of the variable in the Cdr, knowing that it has 
 	% already been determined that said variable is not a member of the Car
@@ -631,6 +655,15 @@ semidet_scope_variable_root(child_scope(Parent, _, Set), Var@var(ID)) =
 
 semidet_scope_variable_root(Scope, Var, 
 	semidet_scope_variable_root(Scope, Var)).
+	
+scope_variable_context(S, V) = scope_context(scope_variable_root(S, V)).
+
+scope_variable_context(S, V, scope_variable_context(S, V)).
+
+semidet_scope_variable_context(S, V) = 
+	scope_context(semidet_scope_variable_root(S, V)).
+
+semidet_scope_variable_context(S, V, semidet_scope_variable_context(S, V)).
 	
 %-----------------------------------------------------------------------------%
 % Variable names
