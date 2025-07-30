@@ -66,7 +66,7 @@
 			
 	## Semantics
 	
-		### Term
+		### term
 			Fundamental element of a Mad Hatter program, serves as a node in 
 			Mad Hatter's abstract syntax tree
 			Union of the following:
@@ -86,7 +86,7 @@
 				a variable that may be bound to another term in a given
 				context
 				
-			#### Compound terms
+			#### compound terms
 				`cons(car::term, cdr::term)`
 				`car(cdr)`
 				`'()'(car, cdr)`
@@ -97,7 +97,7 @@
 				A compound term with multiple arguments `car(term, term, ...)`
 				Is syntax sugar for a tuple of the arguments as  the 'cdr'
 				
-				##### Tuples
+				##### tuple
 				`{ term, term, ... }` 
 				`[ term | tuple ]`
 				`[]`
@@ -125,13 +125,13 @@
 				compound term `car(arg, ...)` will be parsed as if the
 				arguments were constructed with a tuple as mentioned above
 				
-			#### Constraints
+			#### constraint
 				`?term`
 				The lazy operator `?/1` defines a constraint, a non-ground
 				term with a build in guard relation that narrows which term
 				any variable bound to the constraint may successfully unify 
-				with. If the argument of the constraint does itself evaluate
-				(or just is) to a ground term, it may itself be considered 
+				with. If the argument of the constraint does itself evaluate to
+				(or just is) a ground term, it may itself be considered 
 				semantically ground, yet the evaulation of said argument is
 				delayed until the constraint is unified with another ground
 				term and is treated as non ground until such a unification
@@ -141,7 +141,7 @@
 				If a constraint is unified with another constraint, a seperate
 				check is made to see if the constraints contradict, failing
 				the unification if so, and evaluating *both* terms into a
-				conjunction of constraints `(?A, ?B)`.
+				conjunction of constraints `(?A, ?B)` if not.
 				
 				Note that a constraint behaves slightly differently depending
 				on whether or not it is being unified directly with another
