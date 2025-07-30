@@ -1,8 +1,7 @@
-# A formal specification for the Mad Hatter programming language, by C4Cypher
-
+# A formal specification for the Mad Hatter programming language 
+	by C4Cypher
 # Defintions, Syntax and Semantics
 	## Syntax
-	
 		### String
 			A sequence of charachters, usually in the form of an unboxed char 
 			array. When enclosed by single or double quotes, are parsed as
