@@ -1,14 +1,13 @@
 # A formal specification for the Mad Hatter programming language 
-	by C4Cypher
+by C4Cypher
 # Defintions, Syntax and Semantics
-	## Syntax
-		### String
-			A sequence of charachters, usually in the form of an unboxed char 
-			array. When enclosed by single or double quotes, are parsed as
-			literal string values.  Note that paired double or singue quotes
-			inside of a string are parsed to represent a single single or 
-			double quote charachter.   `"foo""bar" == 'foo"bar'`
-			
+## Syntax
+### String
+A sequence of charachters, usually in the form of an unboxed char array. When 
+enclosed by single or double quotes, are parsed as literal string values.  
+Note that paired double or singue quotesinside of a string are parsed to 
+represent a single single or double quote charachter.  
+ `"foo""bar" == 'foo"bar'`	
 		### White space
 			White space charachters (chars) are spaces, tabs, carrige returns 
 			and new lines, they are used to seperate other parsed tokens,
