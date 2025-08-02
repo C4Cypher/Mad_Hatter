@@ -58,53 +58,27 @@ curly braces or square braces
 Fundamental element of a Mad Hatter program, serves as a node in 
 Mad Hatter's abstract syntax tree
 Union of the following:
-- nil
-`nil`, `~ "nil"`
+- `nil`, `~ "nil"`
 a nil value, absence of value, may unify with an empty tuple
-- atom
-`atom(symbol)`
+- `atom(symbol)`
 an atomic term, or 'atom', represents a concept that holds no 
 other values outside of it's identifying symbol and any 
 relations that may give the atom further meaning
--- variable
-`var(var_id)`
+- `var(var_id)`
 a variable that may be bound to another term in a given
 context
 - compound terms
+
 `cons(car::term, cdr::term)`
 `car(cdr)`
 `'()'(car, cdr)`
+
 an application of the head 'car' (a relation in the
 vast majority of cases) to the monoid argument 'cdr'
 to represent another term.
 A compound term with multiple arguments `car(term, term, ...)`
 Is syntax sugar for a tuple of the arguments as  the 'cdr'
-##### tuple
 
-`{ term, term, ... }` 
-`[ term | tuple ]`
-`[]`
-`[ term, term ]` == `[ term | [ term | [] ] ]`
-
-  While tuples are represented as their own branch of the 'term'
-type in the Mercury prototype implementation of Mad Hatter,
-semantically tuples should be considered a type class of terms 
-that contains an ordered collection of terms.  
-  Internally, tuples may be represented by either boxed arrays
-or linked list, but any tuple should be able to be indexed 
-like an array or deconstructed like a linked list. More
-importantly, the compiler is free to convert a tuple into
-  a form of it's choosing at any time during compilation.
-The tuple constructors suggest which kind of structure should
-be used to store the tuple, `{}/1` for arrays and `[|]/2`  
-for linked lists.  Note that `[]/1` unifes with *any* empty
-tuple, and `[|]` will deconstruct the first element of *any*
-tuple, along with the remainder.  A comma seperated list in
-square brackets `[ term, term, term , ...]` will be pre-parsed
-into `[|]/2` `[]/1` form.
-  Like comma seperated list constructors, arguments of a 
-compound term `car(arg, ...)` will be parsed as if the
-arguments were constructed with a tuple as mentioned above
 - constraint
 `?term`
   The lazy operator `?/1` defines a constraint, a non-ground
@@ -152,6 +126,32 @@ if I can get a decidable, functional programming language out
 of it, as such, the semantics for Mad Hatter as a whole, 
 and constraints in paticular may change as I fit things
 together.
+#### tuple
+
+`{ term, term, ... }` 
+`[ term | tuple ]`
+`[]`
+`[ term, term ]` == `[ term | [ term | [] ] ]`
+
+  While tuples are represented as their own branch of the 'term'
+type in the Mercury prototype implementation of Mad Hatter,
+semantically tuples should be considered a type class of terms 
+that contains an ordered collection of terms.  
+  Internally, tuples may be represented by either boxed arrays
+or linked list, but any tuple should be able to be indexed 
+like an array or deconstructed like a linked list. More
+importantly, the compiler is free to convert a tuple into
+  a form of it's choosing at any time during compilation.
+The tuple constructors suggest which kind of structure should
+be used to store the tuple, `{}/1` for arrays and `[|]/2`  
+for linked lists.  Note that `[]/1` unifes with *any* empty
+tuple, and `[|]` will deconstruct the first element of *any*
+tuple, along with the remainder.  A comma seperated list in
+square brackets `[ term, term, term , ...]` will be pre-parsed
+into `[|]/2` `[]/1` form.
+  Like comma seperated list constructors, arguments of a 
+compound term `car(arg, ...)` will be parsed as if the
+arguments were constructed with a tuple as mentioned above
 ### Operations
 Symbol operator '~', `~ string`
 Return operator '->' '<-',  `term -> term`
