@@ -15,7 +15,7 @@
 
 :- interface.
 
-%:- import_module list.
+:- import_module list.
 
 :- import_module ordered_set. % TODO: ordered proposition sets and sub sets
 
@@ -33,7 +33,9 @@
 :- type mh_proposition 
 			% Boolean truth value
 	--->	proposition_false 	
-	;		proposition_true		
+	;		proposition_true	
+			% Propositional reason for failure, equivalent to proposition_false
+	;		proposition_fail(reason)
 			% A ; B ; C
 	;		proposition_disj(ordered_set(mh_proposition))
 			% A , B , C
@@ -51,13 +53,24 @@
 			% { X -> Y, Y -> Z, Z -> foo }
 	;		proposition_sub(ordered_set(mh_substitution)).  
 
+% Add a from_relation(mh_proposition, mh_relation) wrapper constructor to add
+% further tracability?-
 	
 	
 :- pred apply_proposition_substitution(mh_substitution::in, mh_proposition::in,
 	mh_proposition::out) is det.
 	
- :- pred ground_proposition(mh_proposition::in) is semidet.
+:- pred ground_proposition(mh_proposition::in) is semidet.
 
+%-----------------------------------------------------------------------------%
+% Failure reason
+
+:- type reason
+	---> 	disj_failure(list(reason))
+	;		conj_failure(reason)
+	;		neg_failure(mh_proposition)
+	;		unification_failure(mh_term, mh_term)
+	
  
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
