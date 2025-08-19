@@ -28,8 +28,7 @@
 
 :- type mh_environment
 	--->	map_env(mh_term_map)
-	;		ext_env(mh_environment, mh_term_map) % Extended env
-	;		cmp_env(mh_environment, mh_environment). % Composition of envs
+	;		ext_env(mh_environment, mh_term_map). % Extended env
 
 :- func empty_environment = mh_environment.
 
@@ -46,9 +45,11 @@
 % E.T = B   
 
 :- pred bound(mh_environment, mh_term, mh_term).
-:- mode bound(in, in, in) is semidet.
 :- mode bound(in, in, out) is semidet. 
 :- mode bound(in, out, out) is nondet.
+
+:- pred semidet_bound(mh_environment, mh_term, mh_term).
+:- mode semidet_bound(in, in, out) is semidet. 
 
 :- func bound(mh_environment, mh_term) = mh_term is semidet.
 
@@ -58,8 +59,8 @@
 :- mode bound(in, in) is semidet.
 :- mode bound(in, out) is nondet.
 
-
-:- pred ask(mh_scope, mh_term::in,mh_environment::in, mh_term::out) is det.
+/*
+:- pred ask(mh_scope, mh_term::in, mh_environment::in, mh_term::out) is det.
 
 :- func ask((mh_scope, mh_term, mh_environment) = mh_term.
 
@@ -68,6 +69,7 @@
 
 :- pred query(mh_term::in, mh_term::out, event_log::in, event_log::out, 
 	mh_environment::in, mh_environment::out) is det.
+*/
 
 %-----------------------------------------------------------------------------%
 % Changes
