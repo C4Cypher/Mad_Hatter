@@ -1,0 +1,73 @@
+Core Semantics for Relations in Mad Hatter
+Before layering on modes or inference, let’s treat every relation uniformly as a two-place predicate
+R(A) = B  
+
+
+and then desugar your arrows (->, <-) into that core form.
+
+1. Relation Definitions as Sets of Clauses
+Every relation name R in a module maps to a (possibly infinite) disjunction of clauses, each of the shape:
+R(p₁,…,pₙ) = r  :-  G
+
+
+- pᵢ are pattern terms (variables, constructors, lambdas, etc.)
+- r is the “result” term for that clause
+- G is a guard—a proposition that must succeed after pattern matching
+Interpretation
+The clause holds under any substitution σ for which:
+- σ unifies each pattern pᵢ with the actual argument Aᵢ.
+- σ unifies r with the goal term B.
+- Gσ (the guard under σ) resolves to success.
+The full relation R is the union of all its clause instances.
+
+2. Desugaring Arrow Notation
+Treat -> and <- as just syntactic sugar for partially applied two-place relations:
+- Forward function
+R(A) -> B  
+- ↝
+exists B.  R(A) = B  
+- Backward (co-)function
+R(A) <- B  
+- ↝
+exists A.  R(A) = B  
+- Pure relation
+R(A) = B  
+- is already the core form.
+After this desugaring, every call is just R(arg₁,…,argₙ) = argₙ₊₁ and can be resolved by the same engine.
+
+3. Resolution & Unification Pipeline
+- Clause Selection
+For a goal R(t₁,…,tₙ) = tₙ₊₁, look up all clauses for R in the current (module-local) environment.
+- Freshening
+Alpha-rename each clause’s bound variables so they don’t clash with live variables in your goal.
+- Pattern Unification
+Attempt to unify clause patterns pᵢ with tᵢ, yielding substitution σ₁.
+If it fails, discard this clause.
+- Result Unification
+Apply σ₁ and unify the clause’s result term r against tₙ₊₁, giving σ₂.
+Failure prunes this path too.
+- Guard Evaluation
+Normalize G under σ₂. If Gσ₂ succeeds—possibly spawning further sub-goals—you collect the final substitution σ₃.
+- Collect Substitutions
+Each successful σ₃ is one solution for the original goal. Mad Hatter can table these, feed them back, or present them in the REPL.
+
+4. Why This Core Matters
+- You unify every form—=, ->, <-—via one mechanism.
+- Mode inference becomes a rewrite step on top of this:
+- Annotate arguments as in or out but keep the solver identical.
+- Infer mode tags after you’ve nailed down the search procedure.
+- Tabling, pruning, speculative narrowing—all plug into step 5 (guard evaluation) without redefining the resolution engine.
+
+Next Steps
+- Sketch the unification rules for your term language (variables, constructors, lambdas).
+- Define a minimal MHProposition datatype that can express guards and conjunctions/disjunctions.
+- Prototype a small mh_resolve function in your REPL:
+mh_resolve :: Env 
+           -> RelationName 
+           -> [Term] 
+           -> Term 
+           -> [Substitution]
+
+
+- and test it on simple foo(A) = B examples.
+Would you like to dive into the unification rules next, or draft the MHProposition structure to handle conjunctions, disjunctions, and tabling?
