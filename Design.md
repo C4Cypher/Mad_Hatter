@@ -61,9 +61,9 @@ Union of the following:
 - `nil`, `~ "nil"`
 a nil value, absence of value, may unify with an empty tuple
 - `atom(symbol)`
-an atomic term, or 'atom', represents a concept that holds no 
-other values outside of it's identifying symbol and any 
-relations that may give the atom further meaning
+an atomic term, or 'atom', represents a concept that holds no other values 
+outside of it's identifying symbol and any relations that may give the atom 
+further meaning.
 - `var(var_id)`
 a variable that may be bound to another term in a given
 context
@@ -79,8 +79,8 @@ to represent another term.
 A compound term with multiple arguments `car(term, term, ...)`
 Is syntax sugar for a tuple of the arguments as  the 'cdr'
 
-- constraint
-`?term`
+- `?term`
+
   The lazy operator `?/1` defines a constraint, a non-ground
 term with a build in guard relation that narrows which term
 any variable bound to the constraint may successfully unify 
@@ -126,7 +126,7 @@ if I can get a decidable, functional programming language out
 of it, as such, the semantics for Mad Hatter as a whole, 
 and constraints in paticular may change as I fit things
 together.
-#### tuple
+### tuple
 
 `{ term, term, ... }` 
 `[ term | tuple ]`
