@@ -58,26 +58,20 @@
 
 % TODO: replace ordered_set/1  with mh_relation_set or mh_ordered_relation_set
 :- type mh_relation 
-			% Direct from parsed clause
-	--->	clause_relation(mh_clause)
-			% r(X) = a(X) ; b(X). <-> r(X) = Y :- a(X) = Y ; b(X) = Y.
-	;		disj_relation(ordered_set(mh_relation))
-			% r(X) = a(X) , b(X). <-> r(X) = Y :- a(X) = Y , b(X) = Y. r = a@b.
-	;		conj_relation(ordered_set(mh_relation))
-			% r(X) = Y :- not Y = n(X)
-	;		negated_relation(mh_relation)
-			% r(X) = Y :- f(X) -> Y.
-	;		func_relation(mh_function) %Hmmm ...
-			% r(X) = Y :- p(X, Y).
-	;		horn_relation(arity, mh_proposition, mh_scope)
-			% r(X::out(constraint), Y::out(constraint), Z::out(constraint)). 
-	;		fact_relation(mh_tuple, mh_scope)
-			% Curried relation based on first argument, nil maps to thunk
-	;		tree_relation(mh_term_map(mh_term))
-			% r1(?X::M) = (Y::N) :- r2(?[X, Y]::[M, N])
-	;		moded_relation(mh_mode, mh_relation)
-			% r(M:mode).
-	;		norm_rleation(mh_mode, mh_scope). 
+			% relation_apply(S, A, B) == \(A) = B.
+	--->	relation_apply(mh_scope, mh_term, mh_term)
+			% ';'(a, b)(X) == a(X) ; b(X).
+	;		disj_relation(mh_scope, ordered_set(mh_relation))
+			% ','(a, b)(X) == a(X) , b(X),  a = b.
+	;		conj_relation(mh_scope, ordered_set(mh_relation))
+			% 'not'(a)(X) ==  a(X), fail ; not a(X), true.
+	;		negated_relation(mh_scope, mh_relation)
+			% \(X) -> Y == f(X) -> Y.
+	;		func_relation(mh_scope, mh_function) %Hmmm ...
+			% \(X) = Y :- p(X, Y).
+	;		horn_relation(mh_scope, mh_proposition). 
+			% \(X) :- p(X).
+	;		predicate_relation(mh_scope, mh_proposition).
 	
 :- pred apply_relation_substitution(mh_substitution::in, mh_relation::in,
 	mh_relation::out) is det.
