@@ -44,12 +44,10 @@
 	;		value(mh_value)
 	
 	% compound terms cons(foo, bar) == foo(bar)
-	;		cons(car::mh_term, cdr::mh_term)
+	;		apply(mh_term, mh_term) % direct application F.Y == F(Y) (one arg)
+	;		cons(mh_term, mh_tuple) % curried application F(A1, A2, A3)
 	;		tuple_term(mh_tuple)
-	
-	% lazy constraints 
-	;		lazy(mh_term) 	% X:Term(Y) => X @ ?Term(Y) => ?Term(Y, X) 
-	
+
 	% Higher order terms
 	;		relation(mh_relation) 
 	
