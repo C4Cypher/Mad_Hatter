@@ -43,16 +43,11 @@
 	% values
 	;		value(mh_value)
 	
-	% compound terms cons(foo, bar) == foo(bar)
-	;		apply(mh_term, mh_term) % direct application F.Y == F(Y) (one arg)
-	;		cons(mh_term, mh_tuple) % curried application F(A1, A2, A3)
-	;		tuple_term(mh_tuple)
+	% compound terms (cons stands for 'constructor')
+	;		cons(mh_term, mh_tuple) % F(A1, A2, A3)
 
 	% Higher order terms
-	;		relation(mh_relation) 
-	
-	% Term substitutions (closures and var renamings into higher scopes)
-	;		term_sub(mh_term, mh_substitution).
+	;		relation(mh_relation).
 
 %-----------------------------------------------------------------------------%
 % Subterms
@@ -134,7 +129,7 @@
 :- inst mh_constructor ---> cons(ground, ground).
 	
 :- type mh_constructor =< mh_term
-	--->	cons(car::mh_term, cdr::mh_term).
+	--->	cons(mh_term, mh_tuple).
 	
 :- mode mh_constructor == ground >> mh_constructor.
 
@@ -142,53 +137,14 @@
 
 
 %-----------------------------------------------------------------------------%
-%	Tuple terms
-
-:- inst tuple_term ---> tuple_term(ground).
-
-:- type tuple_term =< mh_term
-	--->	tuple_term(mh_tuple).
-
-:- mode tuple_term == ground >> tuple_term.
-
-:- pred tuple_term(mh_term::tuple_term) is semidet.
-
-
-%-----------------------------------------------------------------------------%
-% Constraints (lazy terms)
-
-:- inst mh_constraint ---> lazy(ground).
-
-:- type mh_constraint =< mh_term
-	--->	lazy(relation_term).
-	
-:- mode is_constraint == ground >> mh_constraint.
-
-:- pred is_constraint(mh_term::is_constraint) is semidet.
-
-	
-%-----------------------------------------------------------------------------%
 % Relation terms
 
 :- inst relation_term 
-	--->	relation(ground)
-	;		term_sub(relation_term, ground).
+	--->	relation(ground).
 	
 :- type relation_term =< mh_term
-	--->	relation(mh_relation)
-	;		term_sub(relation_term, mh_substitution).
+	--->	relation(mh_relation).
 	
-%-----------------------------------------------------------------------------%
-% Term substitutions (closures and var renamings into higher scopes)
-
-:- inst term_sub(I) ---> term_sub(I, ground).
-
-:- inst term_sub ---> term_sub(ground, ground).
-
-:- type term_sub =< mh_term
-	--->	term_sub(mh_term, mh_substitution).
-
-
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -203,11 +159,7 @@
 %-----------------------------------------------------------------------------%
 % Subterms
 
-subterms(cons(X, Xs)) = tuple([X, Xs]).
-subterms(tuple_term(T)) = T.
-subterms(lazy(T)) = subterms(T).
-subterms(relation(R)) = relation_subterms(R). % ???
-subterms(term_sub(T, Sub)) = apply_tuple_substiution(subterms(T), Sub).
+subterms(cons(X, Xs)) = tuple([X, Xs]). %TODO: Redefine concept of subterms
 
 subterms(Term, subterms(Term)).
 
@@ -220,13 +172,8 @@ ground_term(T) :-
 		T = atom(_);
 		T = var(_), fail;
 		T = value(_);
-		T = cons(ground_term(_), ground_term(_));
-		T = tuple_term(U), ground_tuple(U);
-		T = lazy(C), ground_term(C); %TODO: Rethink how deep I want to eagerly
-		T = relation(R), ground_relation(R);	% check constraints for
-		T = term_sub(T0, Sub), 					% groundedness
-			apply_term_substitution(Sub, T0, T1),
-			ground_term(T1)
+		T = cons(ground_term(_), Tuple), ground_tuple(Tuple); 
+		T = relation(R), ground_relation(R)
 	).
 		
 ground_term(T) = T :- ground_term(T).
