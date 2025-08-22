@@ -88,7 +88,9 @@
 :- func relation_subterms(mh_relation) = mh_tuple is semidet.
 :- pred relation_subterms(mh_relation::in, mh_tuple::out) is semidet.
 
-
+% Return an empty tuple if there are no subterms.
+:- func det_relation_subterms(mh_term) = mh_tuple is det.
+:- pred det_relation_subterms(mh_term::in, mh_tuple::out) is det.
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 

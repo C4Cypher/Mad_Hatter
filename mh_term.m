@@ -56,6 +56,10 @@
 :- func subterms(mh_term) = mh_tuple is semidet.
 :- pred subterms(mh_term::in, mh_tuple::out) is semidet.
 
+% Return an empty tuple if there are no subterms.
+:- func det_subterms(mh_term) = mh_tuple is det.
+:- pred det_subterms(mh_term::in, mh_tuple::out) is det.
+
 %-----------------------------------------------------------------------------%
 % Ground terms
 
@@ -159,10 +163,23 @@
 %-----------------------------------------------------------------------------%
 % Subterms
 
-subterms(cons(X, Xs)) = tuple([X, Xs]). %TODO: Redefine concept of subterms
+%TODO: append for mh_tuple
+subterms(cons(Car, Cdr)) = 
+	list_tuple( [ Car | to_list(Cdr) ] ).
 
+subterms(relation(R)) = relation_subterms(R).
+		
 subterms(Term, subterms(Term)).
 
+det_subterms(Term) = 
+	(if Subterms = subterms(Term) 
+	then 
+		SubTerms
+	else 
+		list_tuple([]) 
+	).
+
+det_subterms(Term, det_subterms(Term)).
 %-----------------------------------------------------------------------------%
 % Ground terms
 
