@@ -38,12 +38,15 @@
 %
 % X = R(Arg)
 %
+
+/* Depreciated documentation
 % At it's core, they represent the 'head clause' of any horn clause, even for
 %  s. In essene, a predicate in the traditional Prolog sense is a 
 % Relation that unifies with a success indicator or truth value, or to be more
 % specific, a function that returns a success indicator. The substitution 
 % contained in the success represents the variable bindings that resolve
 % to make the fact 'true'
+*/
 
 % Relations can be  'moded', modes being pairings of pre-conditions and post
 % conditions that enforce the relation's soundness and purity.
@@ -53,8 +56,6 @@
 % unifiable and able to encapsulate clauses before and after mode analysis
 % PLUS handling foreign function calls. I need to define modes. Preconditions
 % and postconditions.
-
-% Put it another way, a relation is a disjunction of clauses
 
 % TODO: replace ordered_set/1  with mh_relation_set or mh_ordered_relation_set
 :- type mh_relation 
