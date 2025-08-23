@@ -212,23 +212,11 @@ apply_term_substitution(Sub, !Term) :- 	require_complete_switch [!.Term]
 			
 	;	!.Term = cons(Car0, Cdr0),
 		apply_term_substitution(Sub, Car0, Car),
-		apply_term_substitution(Sub, Cdr0, Cdr),
-		!:Term = cons(Car, Cdr)
-		
-	;	!.Term = tuple_term(Tup0),
-		apply_tuple_substiution(Sub, Tup0, Tup),
-		!:Term = tuple_term(Tup)
-		
-	;	!.Term = lazy(ConTerm),
-		!:Term = lazy(term_sub(ConTerm, Sub))
-	
+		apply_tuple_substitution(Sub, Cdr0, Cdr),
+		!:Term = cons(Car, Cdr)	
 	;	!.Term = relation(Rel0), 
 		apply_relation_substitution(Sub, Rel0, Rel),
 		!:Term = relation(Rel)
-		
-	;	!.Term = term_sub(SubTerm, Sub0),
-		compose_substitutions(Sub0, Sub, Sub1),
-		!:Term = term_sub(SubTerm, Sub1)
 	).
 
 apply_term_substitution(S, !.T) = !:T :- apply_term_substitution(S, !T).
@@ -256,23 +244,10 @@ is_value(value(_)).
 
 mh_constructor(cons(_, _)).
 
-	
-%-----------------------------------------------------------------------------%
-%	Tuple terms
-
-tuple_term(tuple_term(_)).
-
-%-----------------------------------------------------------------------------%
-% Constraints (lazy terms)
-
-is_constraint(lazy(_)).
 
 %-----------------------------------------------------------------------------%
 % Higher Order terms
 
-
-%-----------------------------------------------------------------------------%
-% Term substitutions (lazy)
 
 
 %-----------------------------------------------------------------------------%
@@ -297,10 +272,6 @@ term_description(value(M)) =
 	"mercury value term of type " ++ mr_type_name(M).
 term_description(cons(A, R)) = 
 	"constructor " ++ string(A) ++ "(" ++ mr_type_name(R) ++ ")".
-term_description(lazy(Term)) =
-	"lazy " ++ term_description(Term).
-term_description(tuple_term(_)) = 
-	"mercury tuple term".
 term_description(relation(_)) =
 	"mercury relation term".
 term_description(term_sub(Term, _)) =
