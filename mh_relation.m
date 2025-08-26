@@ -59,20 +59,28 @@
 
 % TODO: replace ordered_set/1  with mh_relation_set or mh_ordered_relation_set
 :- type mh_relation 
-			% relation_apply(S, A, B) == \(A) = B.
-	--->	relation_apply(mh_scope, mh_term, mh_term)
-			% ';'(a, b)(X) == a(X) ; b(X).
-	;		disj_relation(mh_scope, ordered_set(mh_relation))
+	---> 	conjunction(mh_scope, ordered_set(mh_term))
 			% ','(a, b)(X) == a(X) , b(X),  a = b.
-	;		conj_relation(mh_scope, ordered_set(mh_relation))
-			% 'not'(a)(X) ==  a(X), fail ; not a(X), true.
-	;		negated_relation(mh_scope, mh_relation)
-			% \(X) -> Y == f(X) -> Y.
+			
+	;		disjunction(mh_scope, ordered_set(mh_term))
+			% ';'(a, b)(X) == a(X) ; b(X).
+	
+	;		negation(mh_scope, mh_relation)
+			% 'not'(a)(X) ==  a(X), fail ; not a(X).
+			
+	;		apply(mh_scope, mh_term, mh_term)
+			% apply(S, A, B) == \(A) = B.
+			
+			
+/* sort this out later
+			
 	;		func_relation(mh_scope, mh_function) %Hmmm ...
-			% \(X) = Y :- p(X, Y).
+			% \(X) -> Y == f(X) -> Y.
 	;		horn_relation(mh_scope, mh_proposition). 
-			% \(X) :- p(X).
+			% \(X) = Y :- p(X, Y).
 	;		predicate_relation(mh_scope, mh_proposition).
+			% \(X) :- p(X).
+*/
 	
 :- pred apply_relation_substitution(mh_substitution::in, mh_relation::in,
 	mh_relation::out) is det.

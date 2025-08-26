@@ -29,13 +29,10 @@
 
 %NOTE: the ordering of constructors is relevant for structure traversal
 % top- down is smallest to largest with comparison of different constructors
-:- type mh_term  
-
-	% nil, the abscence of term
-	---> 	nil
+:- type mh_term 
 	
 	% atomic values
-	;		atom(mh_symbol)
+	--->	atom(mh_symbol)
 
 	% variables
 	;		var(var_id)

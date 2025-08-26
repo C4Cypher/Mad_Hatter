@@ -69,7 +69,7 @@
 	---> 	disj_failure(list(reason))
 	;		conj_failure(reason)
 	;		neg_failure(mh_proposition)
-	;		unification_failure(mh_term, mh_term)
+	;		unification_failure(mh_term, mh_term).
 	
  
 %-----------------------------------------------------------------------------%
