@@ -33,25 +33,35 @@
 :- type mh_proposition 
 			% Boolean truth value
 	--->	proposition_false 	
-	;		proposition_true	
+	;		proposition_true
+	
 			% Propositional reason for failure, equivalent to proposition_false
 	;		proposition_fail(reason)
+	
 			% A ; B ; C
 	;		proposition_disj(ordered_set(mh_proposition))
+	
 			% A , B , C
 	;		proposition_conj(ordered_set(mh_proposition))
+	
 			% not A
 	;		proposition_neg(mh_proposition)
-			% X = Y
-	;		proposition_unify(mh_term, mh_term)
+	
+			% X := Y
+	;		proposition_bound(mh_var, mh_term)
+	
 			% X = Y = Z
-%	;		proposition_unification(ordered_set(mh_term))
-			% if C then T else E = C , T ; not C , E
+	;		proposition_unification(ordered_set(mh_term))
+	
+			% if C then T else E 
+			% C , T ; not C , E
 	;		proposition_branch(mh_proposition, mh_proposition, mh_proposition)
+	
 			% p(X, Y) :- f(X) -> Y.
 	;		proposition_apply(mh_function, mh_term, mh_term)
+	
 			% { X -> Y, Y -> Z, Z -> foo }
-	;		proposition_sub(ordered_set(mh_substitution)).  
+	;		proposition_success(ordered_set(mh_substitution)).  
 
 % Add a from_relation(mh_proposition, mh_relation) wrapper constructor to add
 % further tracability?-

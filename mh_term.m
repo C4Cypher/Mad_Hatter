@@ -60,12 +60,15 @@
 %-----------------------------------------------------------------------------%
 % Ground terms
 
-
+% True if a term is semantically ground under no context
 :- pred ground_term(mh_term::in) is semidet.
 
 :- func ground_term(mh_term) = mh_term.
 :- mode ground_term(in) = out is semidet.
 :- mode ground_term(out) = in is semidet.
+
+% True if a term is semantically ground with the given substitution.
+% :- pred ground_term(mh_term::in, mh_substitution::in) is semidet.
 
 %-----------------------------------------------------------------------------%
 % Substitutions

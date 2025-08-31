@@ -58,28 +58,52 @@
 % and postconditions.
 
 % TODO: replace ordered_set/1  with mh_relation_set or mh_ordered_relation_set
-:- type mh_relation 
-	---> 	conjunction(mh_scope, ordered_set(mh_term))
-			% ','(a, b)(X) == a(X) , b(X),  a = b.
-			
-	;		disjunction(mh_scope, ordered_set(mh_term))
-			% ';'(a, b)(X) == a(X) ; b(X).
+:- type mh_relation
+	--->	conjunction(mh_relation, mh_scope, ordered_set(mh_term))
+	%		','(a, b)(X) == a(X) , b(X),  a = b.
+	%		','() == true. 
+
+	;		disjunction(mh_relation, mh_scope, ordered_set(mh_term))
+	%		';'(a, b)(X) == a(X) ; b(X).
+	% 		';'() == false. 
+
+	;		negation(mh_relation, mh_scope, mh_term)
+	%		'not'(a)(X) ==  a(X), false; not a(X).
+
+	;		lambda(mh_relation, mh_scope, mh_term, mh_term)
+	%		lambda(E, S, A, B) == \A = B.
+	%		(\A = B)(A) = B.
+	%		\A = B == (\A -> B), (\A <- B). 
 	
-	;		negation(mh_scope, mh_relation)
-			% 'not'(a)(X) ==  a(X), fail ; not a(X).
-			
-	;		apply(mh_scope, mh_term, mh_term)
-			% apply(S, A, B) == \(A) = B.
+	;		apply(mh_relation, mh_scope, mh_term, mh_term)
+	%		apply(E, S, A, B) == \A -> B.	Substitute A into B
+	
+	;		depend(mh_relation, mh_scope, mh_term, mh_term)
+	%		depend(E, S, A, B) == \A <- B.	Capture and unify A from pattern B
+	
+	;		lazy(mh_relation, mh_scope, mh_term)
+	%		lazy(E, S, C) == ?C 
+	%
+	%		A 'lazy' term presents an applied constraint, a body clause bound
+	%		to a variable, successfully unifying with any term that is applied
+	%		to it.
+	%
+	% 		Conjunction of term and applied constraint
+	%		X, ?C == X, C(X). 
+	%
+	%		The 'constraint' operator ':'/2 
+	%		X:C == X, ?C.
+	
+	;		proposition(mh_relation, mh_scope, mh_proposition)
+	% 		Succeed or fail based on evaluation of the embedded proposition;
+	%		Should return either a success or failure as defined in 
+	%		mh_proposition.m
 			
 			
 /* sort this out later
 			
-	;		func_relation(mh_scope, mh_function) %Hmmm ...
+	;		func_relation(mh_relation, mh_scope, mh_function) %Hmmm ...
 			% \(X) -> Y == f(X) -> Y.
-	;		horn_relation(mh_scope, mh_proposition). 
-			% \(X) = Y :- p(X, Y).
-	;		predicate_relation(mh_scope, mh_proposition).
-			% \(X) :- p(X).
 */
 	
 :- pred apply_relation_substitution(mh_substitution::in, mh_relation::in,
