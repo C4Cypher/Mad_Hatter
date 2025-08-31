@@ -16,19 +16,29 @@
 :- interface.
 
 :- import_module ops.
+:- import_module map.
+:- import_module bool.
 
 %-----------------------------------------------------------------------------%
 % Mad Hatter Ops Table
 
-:- type mh_op_table.
-
-
-:- func init_mh_op_table = (mh_op_table::uo) is det.
+:- type mh_op_table ---> mh_op_table(
+	op_info_map :: map(string, op_infos),
+	use_mercury_op_table :: bool	
+).
 
 :- instance op_table(mh_op_table).
+
+:- func standard_mh_op_table = mh_op_table.
+
 %-----------------------------------------------------------------------------%
+% Operators
 
+% Lazy Operator "?" fx 80
+:- func lazy_operator_op_infos = op_infos.
 
+% Co-function arrow "<-" xfy 1050
+:- func cofunction_operator_op_infos = op_infos.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -38,8 +48,6 @@
 
 %-----------------------------------------------------------------------------%
 % Mad Hatter Ops Table
-
-:- type mh_op_table ---> mh_op_table.
 
 :- instance op_table(mh_op_table) where [
 pred(lookup_infix_op/5) is          	mh_op_table_lookup_infix_op,
@@ -57,67 +65,106 @@ pred(lookup_infix_op/5) is          	mh_op_table_lookup_infix_op,
 
 ].
 
-init_mh_op_table = mh_op_table.
-
 :- pred mh_op_table_lookup_infix_op(mh_op_table::in, string::in, priority::out,
         arg_prio_gt_or_ge::out, arg_prio_gt_or_ge::out) is semidet.
 
-mh_op_table_lookup_infix_op(_OpTable, Name, OpPriority, LeftGtOrGe, 
-	RightGtOrGe) :-
-	mercury_op_table_search_infix_op(Name, OpPriority, LeftGtOrGe, RightGtOrGe).
+mh_op_table_lookup_infix_op(mh_op_table(Map, UseMR), Name, OpPriority,
+	LeftGtOrGe,	RightGtOrGe) :-
+	
+	(if 
+		search(Map, Name, op_infos(in(P, Left, Right), _, _, _))
+	then
+		OpPriority = P, LeftGtOrGe = Left, RightGtOrGe = Right
+	else 
+		UseMR = yes,
+		mercury_op_table_search_infix_op(Name, OpPriority, LeftGtOrGe,
+			RightGtOrGe)
+	).
+	
+	
 
 :- pred mh_op_table_lookup_prefix_op(mh_op_table::in, string::in,
         priority::out, arg_prio_gt_or_ge::out) is semidet.
 	
-mh_op_table_lookup_prefix_op(_OpTable, Name, OpPriority, LeftGtOrGe) :-
-	if (Name = "?") 
+mh_op_table_lookup_prefix_op(mh_op_table(Map, UseMR), Name, OpPriority,
+	RightGtOrGe) :-
+	
+	(if 
+		search(Map, Name, op_infos(_, _, pre(P, Right), _))
 	then
-		OpPriority = lazy_operator_priority, 
-		LeftGtOrGe = lazy_operator_right_arg_prio_gt_or_ge
-	else
-		mercury_op_table_search_prefix_op(Name, OpPriority, LeftGtOrGe).
+		OpPriority = P, 
+		RightGtOrGe = Right
+	else 
+		UseMR = yes,
+		mercury_op_table_search_prefix_op(Name, OpPriority, RightGtOrGe)
+	).
 
 :- pred mh_op_table_lookup_binary_prefix_op(mh_op_table::in, string::in,
         priority::out, arg_prio_gt_or_ge::out, arg_prio_gt_or_ge::out)
         is semidet.
 
-mh_op_table_lookup_binary_prefix_op(_OpTable, Name, OpPriority,
-        LeftGtOrGe, RightGtOrGe) :-
-    mercury_op_table_search_binary_prefix_op(Name, OpPriority,
-        LeftGtOrGe, RightGtOrGe).
+mh_op_table_lookup_binary_prefix_op(mh_op_table(Map, UseMR), Name, OpPriority,
+	LeftGtOrGe, RightGtOrGe) :-
+	
+	(if 
+		search(Map, Name, op_infos(_, bin_pre(P, Left, Right), _, _))
+	then
+		OpPriority = P, LeftGtOrGe = Left, RightGtOrGe = Right
+	else 
+		UseMR = yes,
+		mercury_op_table_search_binary_prefix_op(Name, OpPriority, LeftGtOrGe,
+			RightGtOrGe)
+	).
 
 		
-:- pred mh_op_table_lookup_postfix_op(mh_op_table::in, string::in, priority::out,
-        arg_prio_gt_or_ge::out) is semidet.
+:- pred mh_op_table_lookup_postfix_op(mh_op_table::in, string::in, 
+	priority::out, arg_prio_gt_or_ge::out) is semidet.
 		
-mh_op_table_lookup_postfix_op(_OpTable, Name, OpPriority, LeftGtOrGe) :-
-    mercury_op_table_search_postfix_op(Name, OpPriority, LeftGtOrGe).
+mh_op_table_lookup_postfix_op(mh_op_table(Map, UseMR), Name, OpPriority, 		LeftGtOrGe) :-
+
+	(if 
+		search(Map, Name, op_infos(_, _, _, post(P, Left)))
+	then
+		OpPriority = P, 
+		LeftGtOrGe = Left
+	else 
+		UseMR = yes,
+		mercury_op_table_search_postfix_op(Name, OpPriority, LeftGtOrGe)
+	).
 
 :- pred mh_op_table_is_op(mh_op_table::in, string::in) is semidet.
 
-mh_op_table_is_op(_OpTable, Name) :-
-    mercury_op_table_is_op(Name) ; Name = "?".
+mh_op_table_is_op(mh_op_table(Map, UseMR), Name) :-
+	contains(Map, Name) ; UseMR = yes, mercury_op_table_is_op(Name).
 
-:- pred mh_op_table_lookup_op_infos(mh_op_table::in, string::in, op_infos::out) 
-	is semidet.
+:- pred mh_op_table_lookup_op_infos(mh_op_table::in, string::in,
+	op_infos::out)	is semidet.
 
-mh_op_table_lookup_op_infos(_OpTable, Name, OpInfos) :-
-	if Name = "?" then
-		OpInfos = lazy_operator_op_infos
+mh_op_table_lookup_op_infos(mh_op_table(Map, UseMR), Name, OpInfos) :-
+	(if 
+		search(Map, Name, OI)
+	then 
+		OpInfos = OI
 	else
-		mercury_op_table_search_op_infos(Name, OpInfos).
+		UseMR = yes,
+		mercury_op_table_search_op_infos(Name, OpInfos)
+	).
 	
 :- pred mh_op_table_lookup_operator_term(mh_op_table::in, priority::out,
         arg_prio_gt_or_ge::out, arg_prio_gt_or_ge::out) is det.
 
+	% I don't see any reason to deviate from standard Mercury behavior for 
+	% 'operator terms'  which are terms of the form "X `Op` Y"
 mh_op_table_lookup_operator_term(_OpTable, OpPriority, LeftGtOrGe, RightGtOrGe) :-
     mercury_op_table_lookup_operator_term(OpPriority, LeftGtOrGe, RightGtOrGe).
 
+	% Mercury returns 0 ... no reason to change
 :- func mh_op_table_universal_priority(mh_op_table) = priority.
 
 mh_op_table_universal_priority(_Table) =
     mercury_op_table_universal_priority.
 
+	% Mercury returns 1 ... no reason to change
 :- func mh_op_table_loosest_op_priority(mh_op_table) = priority.
 
 mh_op_table_loosest_op_priority(_Table) =
@@ -125,43 +172,92 @@ mh_op_table_loosest_op_priority(_Table) =
 
 :- func mh_op_table_tightest_op_priority(mh_op_table) = priority.
 
-mh_op_table_tightest_op_priority(_Table) =
-    mercury_op_table_tightest_op_priority.
+mh_op_table_tightest_op_priority(mh_op_table(Map, UseMR)) = 
+	foldl(fold_tightest_priority, Map,
+		(if UseMR = yes 
+		then 
+			mercury_op_table_tightest_op_priority 
+		else
+			prio(0u)
+		)
+	).
+	
+:- func fold_tightest_priority(string, op_infos, priority)  = priority.
+
+
+% Ugly as sin if chain, but I don't see a better way of doing this
+fold_tightest_priority(_, Infos, !.Tightest ) = !:Tightest :-
+
+	( if oi_infix(Infos) = in(InfixP, _, _), priority_gt(InfixP, !.Tightest)
+	then
+		!:Tightest = InfixP
+	else true
+	),
+	
+	( if 
+		oi_binary_prefix(Infos) = bin_pre(BinPreP, _, _), 
+		priority_gt(BinPreP, !.Tightest)
+	then
+		!:Tightest = BinPreP
+	else true
+	),
+	
+	( if 
+		oi_prefix(Infos) = pre(PreP, _), 
+		priority_gt(PreP, !.Tightest)
+	then
+		!:Tightest = PreP
+	else true
+	),
+	
+	( if 
+		oi_postfix(Infos) = post(PostP, _), 
+		priority_gt(PostP, !.Tightest)
+	then
+		!:Tightest = PostP
+	else true
+	).
+
+% Let's not overload the priority for ',' and ';' for now, please?
 
 :- func mh_op_table_comma_priority(mh_op_table) = priority.
 	
 mh_op_table_comma_priority(_Table) =
     mercury_op_table_comma_priority.
 
+% No idea what messing with this will do to the syntax, for now will leave 
+% alone
+
 :- func mh_op_table_arg_priority(mh_op_table) = priority.
 
 mh_op_table_arg_priority(_Table) =
     mercury_op_table_arg_priority.
 	
+standard_mh_op_table = mh_op_table(Map, yes) :-
+	some [!M] (
+		!:M = init,
+		det_insert("?", lazy_operator_op_infos, !M),
+		det_insert("<-", cofunction_operator_op_infos, !M),
+		Map = !.M
+	).
+	
 %-----------------------------------------------------------------------------%
-% Lazy Operator "?"
+% Operators
 
-% Remember kiddos, constant values must only be defined ONCE
-
-:- func lazy_operator_op_infos = op_infos.
-
+% Lazy Operator "?" fx 80
 lazy_operator_op_infos = 
 	op_infos(
 		no_in, 
 		no_bin_pre, 
-		lazy_operator_maybe_op_info_prefix,
+		pre(prio(80u), arg_gt),
 		no_post
 	).
 
-:- func lazy_operator_maybe_op_info_prefix = maybe_op_info_prefix.
-
-lazy_operator_maybe_op_info_prefix = 
-	pre(lazy_operator_priority, lazy_operator_right_arg_prio_gt_or_ge).
-
-:- func lazy_operator_priority = priority.
-
-lazy_operator_priority = prio(80u).
-
-:- func lazy_operator_right_arg_prio_gt_or_ge = arg_prio_gt_or_ge.
-
-lazy_operator_right_arg_prio_gt_or_ge = arg_gt.
+% Co-function arrow "<-" xfy 1050
+cofunction_operator_op_infos = 
+	op_infos(
+		in(prio(1050u), arg_ge, arg_gt), 
+		no_bin_pre, 
+		no_pre,
+		no_post
+	).
