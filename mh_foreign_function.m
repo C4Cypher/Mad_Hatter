@@ -11,7 +11,7 @@
 % Stability: low.
 %-----------------------------------------------------------------------------%
 
-:- module mh_function.
+:- module mh_foreign_function.
 
 :- interface.
 
@@ -20,18 +20,19 @@
 
 :- type function_call == (func(mh_term) = mh_term).
 
-:- type mh_function
+:- type mh_foreign_function
 			% f(X) -> Y :- r(X) = Y.
-	--->	pure_function(mh_relation)
-	;		compiled_function(mh_relation, function_call)
-	;		foreign_function(string, function_call).
+	--->	mr_function(string, function_call).
 
+:- func foreign_function_uid(mh_foreign_function) = string.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
 :- implementation.
 
-:- import_module require.
+% :- import_module require.
+
+foreign_function_uid(mr_function(UID, _)) = UID.
 
 %-----------------------------------------------------------------------------%
