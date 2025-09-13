@@ -15,17 +15,16 @@
 
 :- interface.
 
+:- import_module univ.
+
 :- import_module ordered_set.
 
-:- import_module mh_clause.
-:- import_module mh_proposition.
-:- import_module mh_arity.
-:- import_module mh_tuple.
 :- import_module mh_scope.
-:- import_module mh_term_map.
-:- import_module mh_function.
 :- import_module mh_term.
-:- import_module mh_mode.
+:- import_module mh_proposition.
+:- import_module mh_function.
+:- import_module mh_tuple.
+:- import_module mh_term_map.
 :- import_module mh_substitution.
 
 %-----------------------------------------------------------------------------%
@@ -46,7 +45,7 @@
 % specific, a function that returns a success indicator. The substitution 
 % contained in the success represents the variable bindings that resolve
 % to make the fact 'true'
-*/
+
 
 % Relations can be  'moded', modes being pairings of pre-conditions and post
 % conditions that enforce the relation's soundness and purity.
@@ -56,32 +55,34 @@
 % unifiable and able to encapsulate clauses before and after mode analysis
 % PLUS handling foreign function calls. I need to define modes. Preconditions
 % and postconditions.
+*/
 
+% TODO: mh_relation_map and mh_relation_set
 % TODO: replace ordered_set/1  with mh_relation_set or mh_ordered_relation_set
 :- type mh_relation
-	--->	conjunction(mh_relation, mh_scope, ordered_set(mh_term))
+	--->	all(mh_scope, ordered_set(mh_term))
 	%		','(a, b)(X) == a(X) , b(X),  a = b.
 	%		','() == true. 
 
-	;		disjunction(mh_relation, mh_scope, ordered_set(mh_term))
+	;		some(mh_scope, ordered_set(mh_term))
 	%		';'(a, b)(X) == a(X) ; b(X).
 	% 		';'() == false. 
 
-	;		negation(mh_relation, mh_scope, mh_term)
+	;		not(mh_scope, mh_term)
 	%		'not'(a)(X) ==  a(X), false; not a(X).
 
-	;		lambda(mh_relation, mh_scope, mh_term, mh_term)
+	;		lambda(mh_scope, mh_term, mh_term)
 	%		lambda(E, S, A, B) == \A = B.
 	%		(\A = B)(A) = B.
 	%		\A = B == (\A -> B), (\A <- B). 
 	
-	;		apply(mh_relation, mh_scope, mh_term, mh_term)
+	;		apply(mh_scope, mh_term, mh_term)
 	%		apply(E, S, A, B) == \A -> B.	Substitute A into B
 	
-	;		depend(mh_relation, mh_scope, mh_term, mh_term)
+	;		depend(mh_scope, mh_term, mh_term)
 	%		depend(E, S, A, B) == \A <- B.	Capture and unify A from pattern B
 	
-	;		lazy(mh_relation, mh_scope, mh_term)
+	;		lazy(mh_scope, mh_term)
 	%		lazy(E, S, C) == ?C 
 	%
 	%		A 'lazy' term presents an applied constraint, a body clause bound
@@ -94,16 +95,26 @@
 	%		The 'constraint' operator ':'/2 
 	%		X:C == X, ?C.
 	
-	;		proposition(mh_relation, mh_scope, mh_proposition)
+	;		proposition(mh_scope, mh_proposition)
 	% 		Succeed or fail based on evaluation of the embedded proposition;
 	%		Should return either a success or failure as defined in 
 	%		mh_proposition.m
 			
-			
-/* sort this out later
-			
-	;		func_relation(mh_relation, mh_scope, mh_function) %Hmmm ...
-			% \(X) -> Y == f(X) -> Y.
+	;		call(mh_scope, mh_foreign_function).
+			% Call a foreign function as if it were an application.
+			% \(X) -> Y == F(X) := Y.
+
+/* Refrence values ... I'll need to implement this for anything that isn't
+% easily serializable to source
+
+	;		refrence(mh_relation, univ)
+			% A refrence to a foreign object. Unification of which being
+			% dictated by the relation
+			% X = refrence(R, O) == X = R(O)
+	
+	;		unique_refrence(string, univ).
+			% A refrence to a foreign object that only unifies with other
+			% refrences that have the same uid
 */
 	
 :- pred apply_relation_substitution(mh_substitution::in, mh_relation::in,
