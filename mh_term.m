@@ -45,6 +45,34 @@
 
 	% Higher order terms
 	;		relation(mh_relation).
+	
+%-----------------------------------------------------------------------------%
+% Concrete terms
+
+	% Terms that have a concrete representation in source code
+	
+:- type mh_concrete_term =< mh_term
+	% atomic values
+	--->	atom(mh_symbol)
+
+	% variables
+	;		var(var_id)
+	
+	% values
+	;		value(mh_value)
+	
+	% compound terms (cons stands for 'constructor')
+	;		cons(mh_term, mh_tuple) % F(A1, A2, A3).
+	
+:- inst concrete
+	--->	atom(ground)
+	;		var(ground)
+	;		value(ground)
+	;		cons(ground, ground).
+	
+:- mode is_concrete == ground >> concrete.
+
+:- pred is_concrete(mh_term::is_concrete) is semidet.
 
 %-----------------------------------------------------------------------------%
 % Subterms
