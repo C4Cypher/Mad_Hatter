@@ -236,9 +236,9 @@
 %-----------------------------------------------------------------------------%
 % Scope environment
 
-:- func scope_environment(mh_scope) = mh_relation.
+:- func scope_environment(mh_scope) = mh_environment.
 
-:- pred scope_environment(mh_scope::in, mh_relation::out) is det.
+:- pred scope_environment(mh_scope::in, mh_environment::out) is det.
 
 %-----------------------------------------------------------------------------%
 % Variable names
@@ -274,7 +274,7 @@
 % Scope
 
 :- type mh_scope 
-	--->	root_scope(mh_relation, mh_context, var_id_set, var_names)
+	--->	root_scope(mh_environment, mh_context, var_id_set, var_names)
 	;		extended_scope(scope_car :: mh_scope, scope_cdr :: mh_scope)
 		%If no child context, default to parent
 	;		child_scope(mh_scope, maybe(mh_context), mh_var_set). 
