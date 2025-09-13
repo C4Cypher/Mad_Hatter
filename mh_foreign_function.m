@@ -26,6 +26,8 @@
 
 :- func foreign_function_uid(mh_foreign_function) = string.
 
+% call_foreign_function ... call function_call with a try catch
+
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 

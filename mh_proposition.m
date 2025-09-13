@@ -21,7 +21,7 @@
 
 :- import_module mh_term.
 :- import_module mh_substitution.
-:- import_module mh_function.
+:- import_module mh_foreign_function.
 
 
 %-----------------------------------------------------------------------------%
@@ -58,13 +58,12 @@
 	;		proposition_branch(mh_proposition, mh_proposition, mh_proposition)
 	
 			% p(X, Y) :- f(X) -> Y.
-	;		proposition_apply(mh_function, mh_term, mh_term)
+	;		proposition_call(mh_foreign_function, mh_term, mh_term)
 	
-			% { X -> Y, Y -> Z, Z -> foo }
+			% { X -> Y, Y -> Z, Z -> foo } ; { X -> ...}
 	;		proposition_success(ordered_set(mh_substitution)).  
 
-% Add a from_relation(mh_proposition, mh_relation) wrapper constructor to add
-% further tracability?-
+
 	
 	
 :- pred apply_proposition_substitution(mh_substitution::in, mh_proposition::in,
