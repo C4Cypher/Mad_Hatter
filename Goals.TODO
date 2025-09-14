@@ -27,6 +27,7 @@ get a repl running
 			Define TOP level constructs 
 				definitions for module -  basic structure finished
 					method dispatch for top level atoms, done, mh_environment
+					finish mh_environment design - see below
 				declarations
 					pragmas
 					promises
@@ -40,7 +41,8 @@ get a repl running
 						Unification
 					finish higher order types 
 						relations
-							clauses
+							scope
+							environment transition
 							ordered proposition sets
 								proposition maps 
 							ordered relation sets
@@ -81,6 +83,9 @@ get a repl running
 							partial evaluation of tuples (CPS?)
 							array tuple sub ranges
 							native lists ( cons('[|]', ?list) )
+					eval table
+						memo table for evaluations
+						segregated by calling environment
 					unification
 					
 					an evaluation may not produce a value that is less ground
@@ -114,7 +119,7 @@ ensure that Mad Hatter can be a fully backwards compatable Mercury compiler
 			
 Higher order constructs:
 	* A relation is unification with a disjunction of higher order terms
-	* A predicate represents a truth value
+	* A proposition represents a truth value
 		- As such, it can be represented as a function that returns a truth val
 	% A function represents a one way transformation from one term to another
 	% A constraint represents a non-ground value a term can unify with
