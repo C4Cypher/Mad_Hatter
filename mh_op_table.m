@@ -50,7 +50,7 @@
 % Mad Hatter Ops Table
 
 :- instance op_table(mh_op_table) where [
-pred(lookup_infix_op/5) is          	mh_op_table_lookup_infix_op,
+	pred(lookup_infix_op/5) is         	mh_op_table_lookup_infix_op,
     pred(lookup_prefix_op/4) is         mh_op_table_lookup_prefix_op,
     pred(lookup_binary_prefix_op/5) is  mh_op_table_lookup_binary_prefix_op,
     pred(lookup_postfix_op/4) is        mh_op_table_lookup_postfix_op,
