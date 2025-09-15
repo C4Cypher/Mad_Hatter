@@ -61,11 +61,11 @@
 % TODO: replace ordered_set/1  with mh_relation_set or mh_ordered_relation_set
 :- type mh_relation
 	--->	all(mh_scope, ordered_set(mh_term))
-	%		','(a, b)(X) == a(X) , b(X),  a = b.
+	%		(a , b)(X) == a(X) , b(X),  a = b.
 	%		','() == true. 
 
 	;		some(mh_scope, ordered_set(mh_term))
-	%		';'(a, b)(X) == a(X) ; b(X).
+	%		(a ; b)(X) == a(X) ; b(X).
 	% 		';'() == false. 
 
 	;		not(mh_scope, mh_term)
@@ -97,8 +97,17 @@
 	
 	;		proposition(mh_scope, mh_proposition)
 	% 		Succeed or fail based on evaluation of the embedded proposition;
-	%		Should return either a success or failure as defined in 
+	%		Should evaluate to either a success or failure as defined in 
 	%		mh_proposition.m
+	
+	;		closure(mh_scope, mh_term, mh_substitution)
+	%		Evaluates to the given term with the applied variable substitution
+	%		Allows for terms from incompatable scope to be grounded into the
+	%		enclosing scope when the raw conjunction of a term and a
+	%		substitution would create an environment conflict. May also serve
+	%		to short cut pattern matching terms passed between environments.
+	%
+	%		closure(Term, Sub) -> Term, Sub
 			
 	;		call(mh_scope, mh_foreign_function).
 			% Call a foreign function as if it were an application.
