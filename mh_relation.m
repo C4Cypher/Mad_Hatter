@@ -60,27 +60,36 @@
 % TODO: mh_relation_map and mh_relation_set
 % TODO: replace ordered_set/1  with mh_relation_set or mh_ordered_relation_set
 :- type mh_relation
-	--->	all(mh_scope, ordered_set(mh_term))
+	--->	conjunction(mh_scope, ordered_set(mh_term))
+	%		A relation that contains a set of terms, and succesfully unifies
+	%		with any member of the given set so long as every member of the
+	%		set unifies with each other, otherwise the entire expression fails
 	%		(a , b)(X) == a(X) , b(X),  a = b.
 	%		','() == true. 
 
-	;		some(mh_scope, ordered_set(mh_term))
+	;		disjunction(mh_scope, ordered_set(mh_term))
+	%		A relation that contains a set of terms, and succesfully unifies
+	%		with any member of the given set, however the expression is not
+	%		considered deterministic, representing the possibility that the
+	%		term could be any one of it's members
 	%		(a ; b)(X) == a(X) ; b(X).
 	% 		';'() == false. 
 
 	;		not(mh_scope, mh_term)
 	%		'not'(a)(X) ==  a(X), false; not a(X).
 
-	;		lambda(mh_scope, mh_term, mh_term)
-	%		lambda(E, S, A, B) == \A = B.
-	%		(\A = B)(A) = B.
+	;		lambda_equivalence(mh_scope, mh_term, mh_term)
+	%		lambda_equivalence(S, A, B) == \A = B.
+	%		(\A = B)(A) = B. 
 	%		\A = B == (\A -> B), (\A <- B). 
 	
-	;		apply(mh_scope, mh_term, mh_term)
-	%		apply(E, S, A, B) == \A -> B.	Substitute A into B
+	;		lambda_application(mh_scope, mh_term, mh_term)
+	%		lambda_application(S, A, B) == \A -> B. 
+	%		Substitute A into B
 	
-	;		depend(mh_scope, mh_term, mh_term)
-	%		depend(E, S, A, B) == \A <- B.	Capture and unify A from pattern B
+	;		lambda_match(mh_scope, mh_term, mh_term)
+	%		lambda_match(S, A, B) == \A <- B. 
+	%		Capture and unify A from pattern B
 	
 	;		lazy(mh_scope, mh_term)
 	%		lazy(E, S, C) == ?C 
