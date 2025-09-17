@@ -87,6 +87,7 @@
 :- pred require_root_scope(mh_scope::in) is det.
 
 	% As above, but passes the provided $module and $pred values to the message
+	%	require_root_scope(Module, Pred, Scope).
 :- pred require_root_scope(string::in, string::in, mh_scope::in) is det.
  
 	% Throws an exception if input mr_varset does not contain a complete set 

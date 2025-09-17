@@ -6,19 +6,24 @@
 % Public License as described in the file LICENCE.
 %-----------------------------------------------------------------------------%
 % 
-% File: mh_environment.m
+% File: mh_evaluation.m
 % Main author: C4Cypher.
 % Stability: low.
 %-----------------------------------------------------------------------------%
 
-:- module mh_environment.
+:- module mh_evaluation.
 
 :- interface.
 
 :- import_module ordered_set.
 
 :- import_module mh_term.
-:- import_module mh_term_map.
+:- import_module mh_symbol.
+:- import_module mh_symbol_map.
 :- import_module mh_scope.
-:- import_module mh_event.
+
+%-----------------------------------------------------------------------------%
+% Evaluation map
+
+:- type mh_evaluation_table == mh
 
