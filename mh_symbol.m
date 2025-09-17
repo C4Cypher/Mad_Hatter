@@ -72,6 +72,11 @@ to_string(symbol(String)) = String.
 
 
 symbol_hash(symbol(String), cast_to_int(Hash)) :- fnv1a_hash(String, Hash).
+
+:- pragma memo(symbol_hash/2).
+
 symbol_hash(symbol(String)) =  fnv1a_hash(String).
+
+:- pragma memo(symbol_hash/1).
 
 :- instance hashable(mh_symbol) where [ func(hash/1) is symbol_hash ].
