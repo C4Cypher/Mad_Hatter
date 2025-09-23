@@ -83,8 +83,8 @@
 %-----------------------------------------------------------------------------%
 % Construction
 
-:- func init = hashmap(K, _V).
-:- pred init(hashmap(K, _)::out) is det.
+:- func init = (hashmap(K, _V)::uo) is det.
+:- pred init(hashmap(K, _)::uo) is det.
 
 :- func hash_singleton(hash, K, V) = hashmap(K, V).
 :- pred hash_singleton(hash::in, K::in, V::in, hashmap(K, V)::out) is det.
