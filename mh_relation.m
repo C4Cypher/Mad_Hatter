@@ -64,8 +64,8 @@
 	%		A relation that contains a set of terms, and succesfully unifies
 	%		with any member of the given set so long as every member of the
 	%		set unifies with each other, otherwise the entire expression fails
-	%		(a , b)(X) == a(X) , b(X),  a = b.
-	%		','() == true. 
+	%		(a , b)(X) -> a(X) , b(X),  a = b, a(X) = b(X).
+	%		conjunction(_, []) == true. 
 
 	;		disjunction(mh_scope, ordered_set(mh_term))
 	%		A relation that contains a set of terms, and succesfully unifies
@@ -79,17 +79,18 @@
 	%		'not'(a)(X) ==  a(X), false; not a(X).
 
 	;		lambda_equivalence(mh_scope, mh_term, mh_term)
-	%		lambda_equivalence(S, A, B) == \A = B.
-	%		(\A = B)(A) = B. 
-	%		\A = B == (\A -> B), (\A <- B). 
+	%		lambda_equivalence(S, A, B) -> \A = B.
+	%		(\A = B) -> (\A -> B), (\A <- B). 
 	
 	;		lambda_application(mh_scope, mh_term, mh_term)
-	%		lambda_application(S, A, B) == \A -> B. 
-	%		Substitute A into B
+	%		lambda_application(S, A, B) -> (\A -> B). 
+	%		(\A -> B)(A) = B. 
+	%		The lambda expression \A evaluates to B with A substituted into B
 	
-	;		lambda_match(mh_scope, mh_term, mh_term)
-	%		lambda_match(S, A, B) == \A <- B. 
-	%		Capture and unify A from pattern B
+	;		lambda_unification(mh_scope, mh_term, mh_term)
+	%		lambda_match(S, A, B) -> (\A <- B). 
+	%		The lambda expresssion \A successsfully unifies with B without loss
+	%		of information
 	
 	;		lazy(mh_scope, mh_term)
 	%		lazy(E, S, C) == ?C 
