@@ -25,13 +25,16 @@
 :- type mh_relation_map(T).
 :- type mh_relation_set == mh_relation_map(unit).
 
- 
-:- pred init(mh_relation_map(_)::uo) is det.
+:- func init = mh_relation_map(_). 
+:- pred init(mh_relation_map(_)::out) is det.
 
 :- func singleton(mh_term, T) = mh_relation_map(T).
 :- func singleton(mh_term) = mh_term_set.
 
 :- pred is_empty(mh_relation_map(_)::in) is semidet.
+
+:- func count(mh_relation_map(_)) = int.
+:- pred count(mh_relation_map(_)::in, int::out) is det.
 
 :- pred equal(mh_relation_map(T)::in, mh_relation_map(T)::in) is semidet.
 
@@ -160,28 +163,36 @@ T::out) is semidet.
 :- import_module type_desc.
 :- import_module univ.
 
+:- import_module hashmap.
+
+:- import_module mh_environment.
 :- import_module mh_term.
 :- import_module mh_symbol.
 :- import_module mh_value_map.
 :- import_module mh_var_map.
-:- import_module hashmap.
 :- import_module mh_tuple_map.
 
 %-----------------------------------------------------------------------------%
-% Term maps
+% Environment map
 
-:- type predicate_tuple == array(predicate_term). 
+:- type environment_map(T) == map(mh_environment, T).
+
+%-----------------------------------------------------------------------------%
+% Relation Map
 
 :- type mh_relation_map(T)
 	--->	empty_relation_map
-	;		relation_map(
-				success :: maybe(T),
-				failure :: maybe(T),
-				disjunction :: mh_tuple_map(T),
-				conjunction :: mh_tuple_map(T),
-				negation :: mh_relation_map(T),
-				unification :: mh_term_map(T)
+	;		relation_map(environment_map(relation_tree(T)).
+				
+
+:- type relation_tree(T)
+	--->	relation_tree(
+				conjunction_map :: mh_tuple_map(T),
+				disjunction_map :: mh_tuple_map(T),
+				negation_map :: mh_relation_map(T),
+				lambda_equivalence_map :: 
 			).
 
+)
 
 

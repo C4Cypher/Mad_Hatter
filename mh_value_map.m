@@ -29,6 +29,9 @@
 :- func singleton(K, V) = mh_value_map(V).
 :- func singleton_univ(univ, T) = mh_value_map(T).
 
+:- func count(mh_value_map(_)) = int.
+:- pred count(mh_value_map(_)::in, int::out) is det.
+
 :- pred is_empty(mh_value_map(_)::in) is semidet.
 
 %-----------------------------------------------------------------------------%
@@ -137,6 +140,9 @@ singleton_univ(U, V) = value_map(map.singleton(Ktype, TypeMap)) :-
 	Ktype = univ_type(U),
 	K = univ_value(U),
 	TypeMap = 'new type_map'(map.singleton(K, V)).
+	
+count(value_map(Map)) = map.count(Map).
+count(Map, count(Map)).
 	
 is_empty(value_map(M)) :- map.is_empty(M).
 

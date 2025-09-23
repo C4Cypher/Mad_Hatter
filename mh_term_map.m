@@ -15,36 +15,37 @@
 
 :- interface.
 
+:- import_module unit.
+:- import_module map.
 
 :- import_module mh_term.
 %:- import_module mh_var_id.
-:- import_module map.
 
 
 %-----------------------------------------------------------------------------%
 % Term maps
 
-:- type mh_term_map(T) == map(mh_term, T).
-
-/* Implementation delayed until mh_term is stable
 :- type mh_term_map(T).
-:- type mh_term_map == mh_term_map(mh_term).
+
 :- type mh_term_set == mh_term_map(unit).
 
-:- type key_term_func(T) == (func(T) = mh_term).
+% :- type key_term_func(T) == (func(T) = mh_term).
 
-:- func init = (mh_term_map(T)::uo) is det.
-:- pred init(mh_term_map(_)::uo) is det.
+:- func init = mh_term_map(T).
+:- pred init(mh_term_map(_)::out) is det.
 
 :- func singleton(mh_term, T) = mh_term_map(T).
 :- func singleton(mh_term) = mh_term_set.
 
 :- pred is_empty(mh_term_map(_)::in) is semidet.
 
-:- func size(mh_term_map(_)) = int.
-:- pred size(mh_term_map(_)::in, int::out) is det.
+:- func count(mh_term_map(_)) = int.
+:- pred count(mh_term_map(_)::in, int::out) is det.
+
+/* Implementation delayed until mh_term is stable
 
 :- pred equal(mh_term_map(T)::in, mh_term_map(T)::in) is semidet.
+
 
 
 
@@ -158,6 +159,7 @@ T::out) is semidet.
 :- pred difference(mh_term_map(T)::in, mh_term_map(_)::in, 
 	mh_term_map(T)::out) is det.
 
+*/
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -181,21 +183,43 @@ T::out) is semidet.
 %-----------------------------------------------------------------------------%
 % Term maps
 
+
 :- type mh_term_map(T)
 	--->	empty_term_map
 	;		term_map(
-				nil :: maybe(T),
 				atom :: symbol_map(T),
 				var :: mh_var_map(T),
-				mr_value :: mr_value_map(T),
-				cons :: mh_tuple_map(T), % mh_tuple_map size 2?
-				tuple :: mh_tuple_map(T),
-				lazy :: mh_term_map(T),
-				fact ::
-				relation ::
+				value :: mh_value_map(T),
+				cons :: mh_tuple_map(T), 
+				relation :: mh_relation_map(T)
 			).
 
 :- type symbol_map(T) == hashmap(mh_symbol, T).
 
-*/
+:- func prototype_map = mh_term_map(_).
+
+prototype_map = term_map(
+	mh_symbol_map.init,
+	mh_var_map.init,
+	mh_value_map.init,
+	mh_tuple_map.init,
+	mh_relation_map.init
+).
+
+init = empty_term_map.
+init(init).
+
+singleton(Term, Value) = Map :- det_insert(Term, Value, prototype_map, Map).
+singleton(Term) = singleton(Term, unit). 
+
+is_empty(empty_term_map).
+
+count(empty_term_map) = 0.
+
+count( term_map( Atoms, Vars, Vals, Cons, Relations) ) = 
+	count(Atoms) + count(Vars) + count(Vals) + count(Cons) + count(Relations).
+
+
+
+
 

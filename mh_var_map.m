@@ -33,14 +33,17 @@
 :- pred init(mh_var_map(T)::out) is det.
 :- func init = mh_var_map(T).
 	
-:- pred empty_var_map(mh_var_map(T)::out) is det.
-:- func empty_var_map = mh_var_map(T).
+:- pred empty_var_map(mh_var_map(T)::uo) is det.
+:- func empty_var_map = (mh_var_map(T)::uo) is det.
 
 :- func singleton_id(var_id, T) = mh_var_map(T).
 :- pred singleton_id(var_id::in, T::in, mh_var_map(T)::out) is det.
 
 :- func singleton(mh_var, T) = mh_var_map(T).
 :- pred singleton(mh_var::in, T::in, mh_var_map(T)::out) is det.
+
+:- func count(mh_var_map(_)) = int.
+:- pred count(mh_var_map(_)::in, int::out) is det.
 
 	% var_map_bounds(var_mapsitution, Min, Max)
 	% Return the minimum and maximum var_id's indexed by var_map
@@ -295,7 +298,10 @@ singleton_id(ID, T, singleton_id(ID, T)).
 singleton(var(ID), T) = singleton_id(ID, T).
 singleton(Var, T, singleton(Var, T)).
 
+count(var_map_empty) = 0.
 
+count(var_map(Set, _)) = var_set_count(Set). 
+count(Map, count(Map)).
 
 var_map_bounds(var_map_empty, Offset, ID_Set) :- 
 	var_set_bounds(empty_var_set, Offset, ID_Set).

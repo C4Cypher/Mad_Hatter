@@ -40,8 +40,8 @@
 %-----------------------------------------------------------------------------%
 % Construction
 
-:- func init = mh_symbol_map(_).
-:- pred init(mh_symbol_map(_)::out) is det.
+:- func init = (mh_symbol_map(_)::uo) is det.
+:- pred init(mh_symbol_map(_)::uo) is det.
 
 
 :- func singleton(mh_symbol, T) = mh_symbol_map(T).
