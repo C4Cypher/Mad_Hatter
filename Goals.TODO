@@ -94,8 +94,10 @@ get a repl running
 				Add mr_varset handling in term conversion
 			Mad Hatter ops table - add lazy operator - done
 			
-			
-normalize value terms - started
+destructive updates for map types (optimization) 
+	- not possible using normal unique modes, mh_var_maps contain arrays which
+		utilize ad-hoc destructive updates instead of unique modes
+normalize value terms - done for now, everything is a mercury value for now
 make a logo for Mad Hatter
 optimize terms
 	re-order mh_term constructors for optimal ordering
@@ -103,7 +105,7 @@ optimize terms
 		and represented in a bytecode form without impacting it's function
 optimize symbols
 	hash table for symbol pointers - done
-	ensure symbols are thread safe 
+	ensure symbols are thread safe - ??? - long term
 module library system
 	namespace resolution
 organize a folder space for multiple front ends in different languages?
