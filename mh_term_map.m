@@ -42,8 +42,6 @@
 :- func count(mh_term_map(_)) = int.
 :- pred count(mh_term_map(_)::in, int::out) is det.
 
-/* Implementation delayed until mh_term is stable
-
 :- pred equal(mh_term_map(T)::in, mh_term_map(T)::in) is semidet.
 
 
@@ -54,6 +52,8 @@
 
 	% Succeeds if the map contains the given key
 :- pred contains(mh_term_map(T)::in, mh_term::in) is semidet.
+
+/* Implementation delayed until mh_term is stable
 
 	% Fails if the key is not found
 :- pred search(mh_term_map(T)::in, mh_term::in, 
@@ -219,7 +219,24 @@ count(empty_term_map) = 0.
 count( term_map( Atoms, Vars, Vals, Cons, Relations) ) = 
 	count(Atoms) + count(Vars) + count(Vals) + count(Cons) + count(Relations).
 
+equal(empty_term_map, empty_term_map).
 
+% mh_var_map should be able to unify directly, due to lack of usage of
+% mercury's map type or the hashmap type
+
+equal(
+	term_map(Atoms1, Vars, Vals1, Cons1, Rels1),
+	term_map(Atoms2, Vars, Vals2, Cons2, Rels2)
+) :-
+	mh_symbol_map.equal(Atoms1, Atoms2),
+	mh_value_map.equal(Vals1, Vals2),
+	mh_tuple_map.equal(Cons1, Cons2),
+	mh_relation_map.equal(Rels1, Rels2).
+	
+
+%-----------------------------------------------------------------------------%
+% Search
+	
 
 
 

@@ -32,6 +32,8 @@
 :- func count(mh_value_map(_)) = int.
 :- pred count(mh_value_map(_)::in, int::out) is det.
 
+:- pred equal(mh_value_map(T)::in, mh_value_map(T)::in) is semidet.
+
 :- pred is_empty(mh_value_map(_)::in) is semidet.
 
 %-----------------------------------------------------------------------------%
@@ -143,6 +145,8 @@ singleton_univ(U, V) = value_map(map.singleton(Ktype, TypeMap)) :-
 	
 count(value_map(Map)) = map.count(Map).
 count(Map, count(Map)).
+
+equal(Map1, Map2) :- map.equal(Map1, Map2).
 	
 is_empty(value_map(M)) :- map.is_empty(M).
 
