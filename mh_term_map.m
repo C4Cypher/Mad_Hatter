@@ -51,7 +51,7 @@
 % Search
 
 	% Succeeds if the map contains the given key
-:- pred contains(mh_term_map(T)::in, mh_term::in) is semidet.
+:- pred contains(mh_term_map(_)::in, mh_term::in) is semidet.
 
 /* Implementation delayed until mh_term is stable
 
@@ -233,10 +233,19 @@ equal(
 	mh_tuple_map.equal(Cons1, Cons2),
 	mh_relation_map.equal(Rels1, Rels2).
 	
-
 %-----------------------------------------------------------------------------%
 % Search
 	
+contains(term_map(Map, _, _, _, _), atom(Symbol)) :- contains(Map, Symbol).
 
+contains(term_map(_, Map, _, _, _), var(ID)) :- contains_id(Map, ID).
+
+contains(term_map(_, _, Map, _, _), value(mr_value(Univ)) ) :- 
+	contains_univ(Map, Univ).
+	
+contains(term_map(_, _, _, Map, _), cons(Functor, Args)) :- 
+	contains(Map, tuple_cons(Functor, Args)).
+	
+contains(term_map(_, _, _, _, Map), relation(Rel)) :- contains(Map, Rel).
 
 
