@@ -288,15 +288,15 @@ det_insert_from_corresponding_lists([K | Ks], [V | Vs], !Map) :-
     det_insert(K, V, !Map),
     det_insert_from_corresponding_lists(Ks, Vs, !Map).
 	
-det_insert_from_list([], !Set).
-det_insert_from_list([ Tuple | List]) :-
-	det_insert(Tuple, !Set),
-	det_insert_from_list(List, !Set).
-	
 det_insert_from_assoc_list([], !Map).
 det_insert_from_assoc_list([K - V | KVs], !Map) :-
     det_insert(K, V, !Map),
     det_insert_from_assoc_list(KVs, !Map).
+	
+det_insert_from_list([], !Set).
+det_insert_from_list([ Tuple | List]) :-
+	det_insert(Tuple, !Set),
+	det_insert_from_list(List, !Set).
 	
 
 set(Tuple, T, tuple_exact_map(!.E, !.L), tuple_exact_map(!:E, !:L)) :-
