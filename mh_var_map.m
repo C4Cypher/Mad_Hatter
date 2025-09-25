@@ -36,6 +36,8 @@
 :- pred empty_var_map(mh_var_map(T)::uo) is det.
 :- func empty_var_map = (mh_var_map(T)::uo) is det.
 
+:- pred is_empty(mh_var_map(_)::in) is semidet.
+
 :- func singleton_id(var_id, T) = mh_var_map(T).
 :- pred singleton_id(var_id::in, T::in, mh_var_map(T)::out) is det.
 
@@ -294,6 +296,8 @@ empty_var_map = init.
 
 singleton_id(ID, T) = var_map(singleton_var_set(ID), array.init(1, T)).
 singleton_id(ID, T, singleton_id(ID, T)).
+
+is_empty(empty_var_map).
 
 singleton(var(ID), T) = singleton_id(ID, T).
 singleton(Var, T, singleton(Var, T)).
