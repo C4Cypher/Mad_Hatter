@@ -111,7 +111,6 @@
 :- pred union(func(T, T) = T, univ_map(T), univ_map(T), 
 	univ_map(T)).
 :- mode union(in(func(in, in) = out is det), in, in, out) is det.
-:- mode union(in(func(in, in) = out is semidet), in, in, out) is semidet.
 
 :- func intersect(func(T, T) = T, univ_map(T), univ_map(T)) = 
 	univ_map(T).
@@ -119,7 +118,6 @@
 :- pred intersect(func(T, T) = T, univ_map(T), univ_map(T),
 	univ_map(T)).
 :- mode intersect(in(func(in, in) = out is det), in, in, out) is det.
-:- mode intersect(in(func(in, in) = out is semidet), in, in, out) is semidet.
 
 :- func difference(univ_map(T), univ_map(_)) = univ_map(T).
 
@@ -157,11 +155,13 @@
 
 % TODO: make univ hashable and replace this implementation with a hashmap
 
+:- type type_map(T) == map(type_desc, value_map(T)).
+
 :- type univ_map(T) 
-	--->	univ_map(map(type_desc, type_map(T))).
+	--->	univ_map(type_map(T)).
 	
-:- type type_map(T)
-	--->	some [U] type_map(map(U, T)).
+:- type value_map(T)
+	--->	some [U] value_map(map(U, T)).
 		
 init = univ_map(map.init).
 
@@ -169,12 +169,12 @@ init(init).
 
 singleton(K, V) = univ_map(map.singleton(Ktype, TypeMap)) :-
 	Ktype = type_of(K),
-	TypeMap = 'new type_map'(map.singleton(K, V)).
+	TypeMap = 'new value_map'(map.singleton(K, V)).
 	
 singleton_univ(U, V) = univ_map(map.singleton(Ktype, TypeMap)) :-
 	Ktype = univ_type(U),
 	K = univ_value(U),
-	TypeMap = 'new type_map'(map.singleton(K, V)).
+	TypeMap = 'new value_map'(map.singleton(K, V)).
 	
 count(univ_map(Map)) = map.count(Map).
 count(Map, count(Map)).
@@ -188,12 +188,12 @@ is_empty(univ_map(M)) :- map.is_empty(M).
 
 contains(univ_map(VM), K) :-
 	Ktype = type_of(K),
-	map.search(VM, Ktype, type_map(TM)),
+	map.search(VM, Ktype, value_map(TM)),
 	map.contains(TM, det_dynamic_cast(K)).
 	
 contains_univ(univ_map(VM), U) :-
 	Ktype = univ_type(U),
-	map.search(VM, Ktype, type_map(TM)),
+	map.search(VM, Ktype, value_map(TM)),
 	det_univ_to_type(U, K),
 	map.contains(TM, K).
 	
@@ -201,23 +201,23 @@ contains_type(univ_map(M), T) :- map.contains(M, T).
 
 search(univ_map(VM), K, V) :-
 	Ktype = type_of(K),
-	map.search(VM, Ktype, type_map(TM)),
+	map.search(VM, Ktype, value_map(TM)),
 	map.search(TM, det_dynamic_cast(K), V).
 	
 search_univ(univ_map(VM), U, V) :-
 	Ktype = univ_type(U),
-	map.search(VM, Ktype, type_map(TM)),
+	map.search(VM, Ktype, value_map(TM)),
 	det_univ_to_type(U, K),
 	map.search(TM, K, V).
 
 lookup(univ_map(VM), K, V) :-
 	Ktype = type_of(K),
-	map.lookup(VM, Ktype, type_map(TM)),
+	map.lookup(VM, Ktype, value_map(TM)),
 	map.lookup(TM, det_dynamic_cast(K), V).
 	
 lookup_univ(univ_map(VM), U, V) :-
 	Ktype = univ_type(U),
-	map.lookup(VM, Ktype, type_map(TM)),
+	map.lookup(VM, Ktype, value_map(TM)),
 	det_univ_to_type(U, K),
 	map.lookup(TM, K, V).
 
@@ -226,12 +226,12 @@ lookup_univ(univ_map(VM), U, V) :-
 
 insert(K, V, univ_map(!.VM), univ_map(!:VM)) :-
 	Ktype = type_of(K),
-	( if map.search(!.VM, Ktype, type_map(TM0))
+	( if map.search(!.VM, Ktype, value_map(TM0))
 	then
 		map.insert(det_dynamic_cast(K), V, TM0, TM),
-		map.det_update(Ktype, 'new type_map'(TM), !VM)
+		map.det_update(Ktype, 'new value_map'(TM), !VM)
 	else
-		map.det_insert(Ktype, 'new type_map'(map.singleton(K, V)), !VM)
+		map.det_insert(Ktype, 'new value_map'(map.singleton(K, V)), !VM)
 	).
 	
 insert_univ(U, V, !M) :-
@@ -239,21 +239,21 @@ insert_univ(U, V, !M) :-
 	
 update(K, V, univ_map(!.VM), univ_map(!:VM)) :-
 	Ktype = type_of(K),
-	map.search(!.VM, Ktype, type_map(TM0)),
+	map.search(!.VM, Ktype, value_map(TM0)),
 	map.update(det_dynamic_cast(K), V, TM0, TM),
-	map.det_update(Ktype, 'new type_map'(TM), !VM).
+	map.det_update(Ktype, 'new value_map'(TM), !VM).
 	
 update_univ(U, V, !M) :-
 	update(univ_value(U), V, !M).
 	
 set(K, V, univ_map(!.VM), univ_map(!:VM)) :-
 	Ktype = type_of(K),
-	( if map.search(!.VM, Ktype, type_map(TM0))
+	( if map.search(!.VM, Ktype, value_map(TM0))
 	then
 		map.set(det_dynamic_cast(K), V, TM0, TM),
-		map.det_update(Ktype, 'new type_map'(TM), !VM)
+		map.det_update(Ktype, 'new value_map'(TM), !VM)
 	else
-		map.det_insert(Ktype, 'new type_map'(map.singleton(K, V)), !VM)
+		map.det_insert(Ktype, 'new value_map'(map.singleton(K, V)), !VM)
 	).
 	
 set_univ(U, V, !M) :-
@@ -265,12 +265,12 @@ set_univ(U, V, !M) :-
 delete(K, univ_map(!.VM), univ_map(!:VM)) :-
 	Ktype = type_of(K),
 	( if 
-		map.search(!.VM, Ktype, type_map(TM0)), 
+		map.search(!.VM, Ktype, value_map(TM0)), 
 		map.remove(det_dynamic_cast(K), _, TM0, TM)
 	then 
 		( if map.is_empty(TM)
 		then map.delete(Ktype, !VM)
-		else map.det_update(Ktype, 'new type_map'(TM), !VM)
+		else map.det_update(Ktype, 'new value_map'(TM), !VM)
 		)
 	else
 		!:VM = !.VM
@@ -281,11 +281,11 @@ delete_univ(U, !M) :-
 	
 remove(K, V, univ_map(!.VM), univ_map(!:VM)) :-
 	Ktype = type_of(K),
-	map.search(!.VM, Ktype, type_map(TM0)),
+	map.search(!.VM, Ktype, value_map(TM0)),
 	map.remove(det_dynamic_cast(K), V, TM0, TM),
 	( if map.is_empty(TM)
 	then map.delete(Ktype, !VM)
-	else map.det_update(Ktype, 'new type_map'(TM), !VM)
+	else map.det_update(Ktype, 'new value_map'(TM), !VM)
 	).
 	
 remove_univ(U, V, !M) :-
@@ -293,18 +293,18 @@ remove_univ(U, V, !M) :-
 	
 remove_smallest_typed(K, V, univ_map(!.VM), univ_map(!:VM)) :-
 	Ktype = type_of(K),
-	map.search(!.VM, Ktype, type_map(TM0)),
+	map.search(!.VM, Ktype, value_map(TM0)),
 	map.remove_smallest(U, V, TM0, TM),
 	det_dynamic_cast(U, K),
 	( if map.is_empty(TM)
 	then map.delete(Ktype, !VM)
-	else map.det_update(Ktype, 'new type_map'(TM), !VM)
+	else map.det_update(Ktype, 'new value_map'(TM), !VM)
 	).
 	
 remove_smallest(K, V, univ_map(!.VM), univ_map(!:VM)) :-
 	Ktype = min_key(!.VM),
-	map.search(!.VM, Ktype, type_map(TM0)),
-	( if remove_smallest_empty_type_map_check, is_empty(TM0)
+	map.search(!.VM, Ktype, value_map(TM0)),
+	( if remove_smallest_empty_value_map_check, is_empty(TM0)
 	then unexpected($module, $pred, 
 		"Empty type map found in value map when attempting ordered removal.")
 	else true
@@ -312,19 +312,19 @@ remove_smallest(K, V, univ_map(!.VM), univ_map(!:VM)) :-
 	map.remove_smallest(K, V, TM0, TM),	
 	( if map.is_empty(TM)
 	then map.delete(Ktype, !VM)
-	else map.det_update(Ktype, 'new type_map'(TM), !VM)
+	else map.det_update(Ktype, 'new value_map'(TM), !VM)
 	).
 
-:- pred remove_smallest_empty_type_map_check is semidet.
+:- pred remove_smallest_empty_value_map_check is semidet.
 
-:- pragma no_determinism_warning(remove_smallest_empty_type_map_check/0).
+:- pragma no_determinism_warning(remove_smallest_empty_value_map_check/0).
 
-remove_smallest_empty_type_map_check :- true.
+remove_smallest_empty_value_map_check :- true.
 %-----------------------------------------------------------------------------%
 % Nondeterminsitic lookup
 	
 member(univ_map(VM), K, V) :-
-	map.member(VM, _, type_map(TM)),
+	map.member(VM, _, value_map(TM)),
 	map.member(TM, K, V).
 	
 member_univ(VM, U, V) :- member(VM, K,V), type_to_univ(K, U).
@@ -332,15 +332,52 @@ member_univ(VM, U, V) :- member(VM, K,V), type_to_univ(K, U).
 %-----------------------------------------------------------------------------%
 % Set Operations
 
+union(F, Map1, Map2) = fold(union_fold(F), Map2, Map1).
+
+:- func union_fold(func(T, T) = T, univ, T, univ_map(T)) = 
+	univ_map(T).
+	
+union_fold(F, Univ, T2, !.Map1) = !:Map1 :-
+	(if search_univ(Univ, !.Map1, T1) then
+		set(Univ, F(T1, T2), !Map1)
+	else
+		det_insert(Univ, T2, !Map1)
+	).
+	
+union(F, Map1, Map2, union(F, Map1, Map2)).
+
+intersect(F, Map1, Map2) = fold(intersect_fold(F, Map1), Map2, init).
+
+:- func intersect_fold(func(T, T) = T, univ_map(T), univ, T, univ_map(T)) = 
+	univ_map(T).
+	
+intersect_fold(F, Map1, Univ, T2, !.Map3) = !:Map3 :-
+	(if search_univ(Univ, Map1, T1) then
+		det_insert(Univ, F(T1, T2), !Map3)
+	else true
+	).
+	
+intersect(F, Map1, Map2, intersect(F, Map1, Map2)).
+
+difference(Map1, Map2) = fold(difference_fold(F), Map2, Map1).
+
+:- func difference_fold(univ, T, univ_map(T)) = 
+	univ_map(T).
+	
+difference_fold(Univ, _, !.Map1) = !:Map1 :-
+	delete_univ(Univ, !Map1).	
+	
+difference(F, Map1, Map2, difference(F, Map1, Map2)).
+
 	
 %-----------------------------------------------------------------------------%
 % Higher Order
 
-fold(F, univ_map(Map), A) = map.foldl(outer_fold(F)), Map, A).
+fold(F, univ_map(Map), A) = map.foldl(outer_fold(F), Map, A).
 
-:- func outer_fold(func(univ, T, A) = A, type_desc, type_map(T), A)	= A.
+:- func outer_fold(func(univ, T, A) = A, type_desc, value_map(T), A)	= A.
 
-outer_fold(F, _TypeDesc, type_map(TypeMap), A) = 
+outer_fold(F, _TypeDesc, value_map(TypeMap), A) = 
 	map.foldl(inner_fold(F), TypeMap, A).
 
 :- func inner_fold(func(univ, T, A) = A, K, T, A) = A.
@@ -351,13 +388,15 @@ fold(F, Map, A, fold(F, Map, A)).
 
 
 map(F, univ_map(Map)) = 
-	univ_map(map.foldl(map_fold(F), type_map(map.init)).
+	univ_map( map.foldl(map_fold(F), value_map(map.init)) ).
 
-:- func map_fold(func(univ, T) = U, type_desc, type_map(T), univ_map(U))
+:- func map_fold(func(univ, T) = U, type_desc, value_map(T), univ_map(U))
 	= univ_map(U).
 	
 map_fold(F, Type, TypeMap, !.ValMap) = !:ValMap :-
 	map.det_insert(Type, map.map_values(F, TypeMap), !ValMap).
 	
 map(F, Map, map(F, Map)).
+
+
 	
