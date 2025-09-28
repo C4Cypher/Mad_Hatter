@@ -167,9 +167,9 @@
 :- pred var_set_union(mh_var_set::in, mh_var_set::in, mh_var_set::out) is det.
 :- func var_set_union(mh_var_set, mh_var_set) = mh_var_set.
 
-:- pred var_set_intersection(mh_var_set::in, mh_var_set::in, mh_var_set::out) 
+:- pred var_set_intersect(mh_var_set::in, mh_var_set::in, mh_var_set::out) 
 	is det.
-:- func var_set_intersection(mh_var_set, mh_var_set) = mh_var_set.
+:- func var_set_intersect(mh_var_set, mh_var_set) = mh_var_set.
 
 :- pred var_set_difference(mh_var_set::in, mh_var_set::in, mh_var_set::out) 
 	is det.
@@ -596,49 +596,49 @@ var_set_union_pairs(O1, S1, O2, S2) =
 	
 %-----------------------------------------------------------------------------%
 
-var_set_intersection(VS1, VS2, var_set_intersection(VS1, VS2)).
+var_set_intersect(VS1, VS2, var_set_intersect(VS1, VS2)).
 
-var_set_intersection(var_set(O1, S1), var_set(O2, S2)) =
-	var_set_intersection_pairs(O1, S1, O2, S2).
+var_set_intersect(var_set(O1, S1), var_set(O2, S2)) =
+	var_set_intersect_pairs(O1, S1, O2, S2).
 
-var_set_intersection(VS1 @ var_set(O1, S1), var_set(O2, S2, Next)) =
+var_set_intersect(VS1 @ var_set(O1, S1), var_set(O2, S2, Next)) =
 	var_set_union(
-		var_set_intersection_pairs(O1, S1, O2, S2),
-		var_set_intersection(VS1, Next)
+		var_set_intersect_pairs(O1, S1, O2, S2),
+		var_set_intersect(VS1, Next)
 		).
 	
-var_set_intersection(VS1 @ var_set(_, _, _), VS2 @ var_set(_, _)) =
-	var_set_intersection(VS2, VS1).
+var_set_intersect(VS1 @ var_set(_, _, _), VS2 @ var_set(_, _)) =
+	var_set_intersect(VS2, VS1).
 	
-var_set_intersection(VS1 @ var_set(O1, S1, N1), VS2 @ var_set(O2, S2, N2)) =
+var_set_intersect(VS1 @ var_set(O1, S1, N1), VS2 @ var_set(O2, S2, N2)) =
 	(if var_id_ge(first_var_id(O1), var_set_first_id(N2))
-	then var_set_intersection(VS1, N2)
+	then var_set_intersect(VS1, N2)
 	
 	else if var_id_ge(first_var_id(O2), var_set_first_id(N1))
-	then var_set_intersection(VS2, N1)
+	then var_set_intersect(VS2, N1)
 	
 	else if var_id_ge(last_var_id(S1), var_set_first_id(N2) )
 	then
 		var_set_union(VS3, 
-			var_set_union(var_set_intersection(VS1, N2), N3)
+			var_set_union(var_set_intersect(VS1, N2), N3)
 		)
 	else if var_id_ge(last_var_id(S2), var_set_first_id(N1) )
 	then
 		var_set_union(VS3, 
-			var_set_union(var_set_intersection(VS2, N1), N3)
+			var_set_union(var_set_intersect(VS2, N1), N3)
 		)
 	else
 		var_set_union(VS3, N3)
 	)
 :- 
-	var_set_intersection(N1, N2, N3),
-	var_set_intersection_pairs(O1, S1, O2, S2, VS3).
+	var_set_intersect(N1, N2, N3),
+	var_set_intersect_pairs(O1, S1, O2, S2, VS3).
 
-:- func var_set_intersection_pairs(
+:- func var_set_intersect_pairs(
 	var_id_offset, var_id_set,
 	var_id_offset, var_id_set) = mh_var_set.
 	
-var_set_intersection_pairs(O1, S1, O2, S2) = 
+var_set_intersect_pairs(O1, S1, O2, S2) = 
 	(if (SL = empty_var_id_set ; var_id_lt(last_var_id(SL), first_var_id(OG)))
 	then empty_var_set
 	else var_set(OG, SL)
@@ -647,13 +647,13 @@ var_set_intersection_pairs(O1, S1, O2, S2) =
 	offset_order(O1, O2, _, OG),
 	var_id_set_order(S1, S2, SL, _).
 	
-:- pred var_set_intersection_pairs(
+:- pred var_set_intersect_pairs(
 	var_id_offset::in, var_id_set::in,
 	var_id_offset::in, var_id_set::in,
 	mh_var_set::out) is det.
 	
-var_set_intersection_pairs(O1, S1, O2, S2, 
-	var_set_intersection_pairs(O1, S1, O2, S2)).
+var_set_intersect_pairs(O1, S1, O2, S2, 
+	var_set_intersect_pairs(O1, S1, O2, S2)).
 	
 %-----------------------------------------------------------------------------%
 
