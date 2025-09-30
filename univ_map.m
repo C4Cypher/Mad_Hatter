@@ -19,7 +19,7 @@
 :- import_module type_desc.
 
 %-----------------------------------------------------------------------------%
-% Value maps
+% Univ map
 
 :- type univ_map(T).
 
@@ -81,8 +81,8 @@
 	is det.
 
 :- pred remove(K::in, V::out,  univ_map(V)::in, univ_map(V)::out) is semidet.
-:- pred remove_univ(univ::in, V::out, 
-	univ_map(V)::in, univ_map(V)::out) 	is semidet.
+:- pred remove_univ(univ::in, V::out, univ_map(V)::in, univ_map(V)::out)
+	is semidet.
 	
 	% Remove the smallest value of a given type, fail if there are no
 	% values of the given type
@@ -338,10 +338,10 @@ union(F, Map1, Map2) = fold(union_fold(F), Map2, Map1).
 	univ_map(T).
 	
 union_fold(F, Univ, T2, !.Map1) = !:Map1 :-
-	(if search_univ(Univ, !.Map1, T1) then
-		set(Univ, F(T1, T2), !Map1)
+	(if search_univ(!.Map1, Univ, T1) then
+		set_univ(Univ, F(T1, T2), !Map1)
 	else
-		det_insert(Univ, T2, !Map1)
+		set_univ(Univ, T2, !Map1)
 	).
 	
 union(F, Map1, Map2, union(F, Map1, Map2)).
@@ -352,22 +352,22 @@ intersect(F, Map1, Map2) = fold(intersect_fold(F, Map1), Map2, init).
 	univ_map(T).
 	
 intersect_fold(F, Map1, Univ, T2, !.Map3) = !:Map3 :-
-	(if search_univ(Univ, Map1, T1) then
-		det_insert(Univ, F(T1, T2), !Map3)
+	(if search_univ(Map1, Univ, T1) then
+		set_univ(Univ, F(T1, T2), !Map3)
 	else true
 	).
 	
 intersect(F, Map1, Map2, intersect(F, Map1, Map2)).
 
-difference(Map1, Map2) = fold(difference_fold(F), Map2, Map1).
+difference(Map1, Map2) = fold(difference_fold, Map2, Map1).
 
-:- func difference_fold(univ, T, univ_map(T)) = 
+:- func difference_fold(univ, _, univ_map(T)) = 
 	univ_map(T).
 	
 difference_fold(Univ, _, !.Map1) = !:Map1 :-
 	delete_univ(Univ, !Map1).	
 	
-difference(F, Map1, Map2, difference(F, Map1, Map2)).
+difference(Map1, Map2, difference(Map1, Map2)).
 
 	
 %-----------------------------------------------------------------------------%
@@ -388,14 +388,18 @@ fold(F, Map, A, fold(F, Map, A)).
 
 
 map(F, univ_map(Map)) = 
-	univ_map( map.foldl(map_fold(F), value_map(map.init)) ).
+	univ_map( map.foldl(map_fold(F), Map, map.init) ).
 
-:- func map_fold(func(univ, T) = U, type_desc, value_map(T), univ_map(U))
-	= univ_map(U).
+:- func map_fold(func(univ, T) = U, type_desc, value_map(T), type_map(U))
+	= type_map(U).
 	
-map_fold(F, Type, TypeMap, !.ValMap) = !:ValMap :-
-	map.det_insert(Type, map.map_values(F, TypeMap), !ValMap).
-	
+map_fold(F, Type, value_map(ValMap), !.TypeMap) = !:TypeMap :-
+	map.det_insert(Type, 'new value_map'(map.map_values(map_univ(F), ValMap)), !TypeMap).
+
+:- func map_univ(func(univ, T) = U, K, T) = U.
+
+map_univ(F, K, T) = F(univ(K), T).
+
 map(F, Map, map(F, Map)).
 
 
