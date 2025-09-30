@@ -6,17 +6,16 @@
 % Public License as described in the file LICENCE.
 %-----------------------------------------------------------------------------%
 % 
-% File: mh_value_map.m
+% File: mh_value_univ_map.m
 % Main author: C4Cypher.
 % Stability: low.
 %-----------------------------------------------------------------------------%
 
-:- module mh_value_map.
+:- module mh_value_univ_map.
 
 :- interface.
 
-:- import_module univ.
-:- import_module type_desc.
+:- import_module mh_value.
 
 %-----------------------------------------------------------------------------%
 % Value maps
@@ -26,8 +25,7 @@
 :- func init = (mh_value_map(T)::uo) is det.
 :- pred init(mh_value_map(_)::uo) is det.
 
-:- func singleton(K, V) = mh_value_map(V).
-:- func singleton_univ(univ, T) = mh_value_map(T).
+:- func singleton(mh_value, V) = mh_value_map(V).
 
 :- func count(mh_value_map(_)) = int.
 :- pred count(mh_value_map(_)::in, int::out) is det.
@@ -39,85 +37,87 @@
 %-----------------------------------------------------------------------------%
 % Search and lookup
 
-:- pred contains(mh_value_map(_T)::in, K::in) is semidet.
-:- pred contains_univ(mh_value_map(_T)::in, univ::in) is semidet.
-:- pred contains_type(mh_value_map(_T)::in, type_desc::in) is semidet.
+:- pred contains(mh_value_map(_T)::in, mh_value::in) is semidet.
 
-% TODO: Function versions of calls?
-% TODO: Det versions of semidet calls?
+:- pred search(mh_value_map(V)::in, mh_value::in, V::out) is semidet.
 
-:- pred search(mh_value_map(V)::in, K::in, V::out) is semidet.
-:- pred search_univ(mh_value_map(T)::in, univ::in, T::out) is semidet.
-
-:- pred lookup(mh_value_map(V)::in, K::in, V::out) is det.
-:- pred lookup_univ(mh_value_map(T)::in, univ::in, T::out) is det.
-
-%TODO: Bound search and min max keys?
+:- pred lookup(mh_value_map(V)::in, mh_value::in, V::out) is det.
 
 %-----------------------------------------------------------------------------%
 % Insertions
 
-:- pred insert(K::in, V::in, mh_value_map(V)::in, mh_value_map(V)::out) 
+:- pred insert(mh_value::in, V::in, mh_value_map(V)::in, mh_value_map(V)::out) 
 	is semidet.
 
-:- pred insert_univ(univ::in, T::in, mh_value_map(T)::in, mh_value_map(T)::out) 
-	is semidet.
-
-:- pred update(K::in, V::in, mh_value_map(V)::in, mh_value_map(V)::out) 
-	is semidet.
-
-:- pred update_univ(univ::in, T::in, mh_value_map(T)::in, mh_value_map(T)::out) 
+:- pred update(mh_value::in, V::in, mh_value_map(V)::in, mh_value_map(V)::out) 
 	is semidet.
 	
-:- pred set(K::in, V::in, mh_value_map(V)::in, mh_value_map(V)::out) is det.
-:- pred set_univ(univ::in, T::in, mh_value_map(T)::in, mh_value_map(T)::out)
+:- pred set(mh_value::in, V::in, mh_value_map(V)::in, mh_value_map(V)::out) 
 	is det.
 
 %-----------------------------------------------------------------------------%
 % Deletions
 
-:- pred delete(K::in, mh_value_map(_V)::in, mh_value_map(_V)::out) is det.
-:- pred delete_univ(univ::in, mh_value_map(_V)::in, mh_value_map(_V)::out) 
+:- pred delete(mh_value::in, mh_value_map(_V)::in, mh_value_map(_V)::out) 
 	is det.
 
-:- pred remove(K::in, V::out,  mh_value_map(V)::in, mh_value_map(V)::out) is semidet.
-:- pred remove_univ(univ::in, V::out, 
-	mh_value_map(V)::in, mh_value_map(V)::out) 	is semidet.
-	
-	% Remove the smallest value of a given type, fail if there are no
-	% values of the given type
-:- pred remove_smallest_typed(K::out, V::out, 
-	mh_value_map(V)::in, mh_value_map(V)::out) 	is semidet.
+:- pred remove(mh_value::in, V::out,  mh_value_map(V)::in, 
+	mh_value_map(V)::out) is semidet.
 	
 	% Remove values from the map, starting frorm the smallest type in the 
 	% standard ordering, removing the smallest value of that type, fail if
 	% the map is empty, this should align with the standard ordering
-:- some [K] pred remove_smallest(K::out, V::out, 
+:- pred remove_smallest(mh_value::out, V::out, 
 	mh_value_map(V)::in, mh_value_map(V)::out) 	is semidet.
 	
 %-----------------------------------------------------------------------------%
 % Nondeterminsitic lookup
 
-:- some [K] pred member(mh_value_map(V)::in, K::out, V::out) is nondet.
-
-:- pred member_univ(mh_value_map(V)::in, univ::out, V::out) is nondet.
+:- pred member(mh_value_map(V)::in, mh_value::out, V::out) is nondet.
 
 %-----------------------------------------------------------------------------%
 % Set Operations
 
-% TODO
+:- func union(func(T, T) = T, mh_value_map(T), mh_value_map(T)) = 
+	mh_value_map(T).
+
+:- pred union(func(T, T) = T, mh_value_map(T), mh_value_map(T), 
+	mh_value_map(T)).
+:- mode union(in(func(in, in) = out is det), in, in, out) is det.
+
+:- func intersect(func(T, T) = T, mh_value_map(T), mh_value_map(T)) = 
+	mh_value_map(T).
+	
+:- pred intersect(func(T, T) = T, mh_value_map(T), mh_value_map(T),
+	mh_value_map(T)).
+:- mode intersect(in(func(in, in) = out is det), in, in, out) is det.
+
+:- func difference(mh_value_map(T), mh_value_map(_)) = mh_value_map(T).
+
+:- pred difference(mh_value_map(T)::in, mh_value_map(_)::in, 
+	mh_value_map(T)::out) is det.
+	
+	
+%-----------------------------------------------------------------------------%
+% Higher Order
+
+:- func fold(func(mh_value, T, A) = A, mh_value_map(T), A) = A.
+
+:- pred fold(func(mh_value, T, A) = A, mh_value_map(T), A, A).
+:- mode fold(in(func(in, in, in) = out is det), in, in, out) is det.
+
+:- func map(func(mh_value, T) = U, mh_value_map(T)) = mh_value_map(U).
+ 
+:- pred map(func(mh_value, T) = U, mh_value_map(T), mh_value_map(U)).
+:- mode map(in(func(in, in) = out is det), in, out) is det.
+
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
 :- implementation.
 
-:- import_module map.
-:- import_module list.
-:- import_module require.
-:- import_module maybe.
-
-:- import_module mh_util.
+:- import_module univ_map.
 
 %-----------------------------------------------------------------------------%
 % Value maps
@@ -125,175 +125,93 @@
 % TODO: make univ hashable and replace this implementation with a hashmap
 
 :- type mh_value_map(T) 
-	--->	value_map(map(type_desc, type_map(T))).
+	--->	mh_value_map(univ_map(T)).
 	
-:- type type_map(T)
-	--->	some [U] type_map(map(U, T)).
 		
-init = value_map(map.init).
+init = mh_value_map(univ_map.init).
 
 init(init).
 
-singleton(K, V) = value_map(map.singleton(Ktype, TypeMap)) :-
-	Ktype = type_of(K),
-	TypeMap = 'new type_map'(map.singleton(K, V)).
+singleton(mr_value(U), T) = mh_value_map(univ_map.singleton(U, T)).
 	
-singleton_univ(U, V) = value_map(map.singleton(Ktype, TypeMap)) :-
-	Ktype = univ_type(U),
-	K = univ_value(U),
-	TypeMap = 'new type_map'(map.singleton(K, V)).
-	
-count(value_map(Map)) = map.count(Map).
+count(mh_value_map(Map)) = univ_map.count(Map).
 count(Map, count(Map)).
 
-equal(Map1, Map2) :- map.equal(Map1, Map2).
+equal(mh_value_map(Map1), mh_value_map(Map2)) :- univ_map.equal(Map1, Map2).
 	
-is_empty(value_map(M)) :- map.is_empty(M).
+is_empty(mh_value_map(M)) :- univ_map.is_empty(M).
 
 
 
 %-----------------------------------------------------------------------------%
 % Search and lookup
 
-contains(value_map(VM), K) :-
-	Ktype = type_of(K),
-	map.search(VM, Ktype, type_map(TM)),
-	map.contains(TM, det_dynamic_cast(K)).
-	
-contains_univ(value_map(VM), U) :-
-	Ktype = univ_type(U),
-	map.search(VM, Ktype, type_map(TM)),
-	det_univ_to_type(U, K),
-	map.contains(TM, K).
-	
-contains_type(value_map(M), T) :- map.contains(M, T).
+contains(mh_value_map(M), mr_value(U)) :- univ_map.contains_univ(M, U).
 
-search(value_map(VM), K, V) :-
-	Ktype = type_of(K),
-	map.search(VM, Ktype, type_map(TM)),
-	map.search(TM, det_dynamic_cast(K), V).
-	
-search_univ(value_map(VM), U, V) :-
-	Ktype = univ_type(U),
-	map.search(VM, Ktype, type_map(TM)),
-	det_univ_to_type(U, K),
-	map.search(TM, K, V).
+search(mh_value_map(M), mr_value(U), T) :- univ_map.search_univ(M, U, T).
 
-lookup(value_map(VM), K, V) :-
-	Ktype = type_of(K),
-	map.lookup(VM, Ktype, type_map(TM)),
-	map.lookup(TM, det_dynamic_cast(K), V).
-	
-lookup_univ(value_map(VM), U, V) :-
-	Ktype = univ_type(U),
-	map.lookup(VM, Ktype, type_map(TM)),
-	det_univ_to_type(U, K),
-	map.lookup(TM, K, V).
+lookup(mh_value_map(M), mr_value(U), T) :- univ_map.lookup(M, U, T).
 
 %-----------------------------------------------------------------------------%
 % Insertions 
 
-insert(K, V, value_map(!.VM), value_map(!:VM)) :-
-	Ktype = type_of(K),
-	( if map.search(!.VM, Ktype, type_map(TM0))
-	then
-		map.insert(det_dynamic_cast(K), V, TM0, TM),
-		map.det_update(Ktype, 'new type_map'(TM), !VM)
-	else
-		map.det_insert(Ktype, 'new type_map'(map.singleton(K, V)), !VM)
-	).
+insert(mr_value(U), T, mh_value_map(!.M), mh_value_map(!:M)) :- 
+	univ_map.insert_univ(U, T, !M).
 	
-insert_univ(U, V, !M) :-
-	insert(univ_value(U), V, !M).
+update(mr_value(U), T, mh_value_map(!.M), mh_value_map(!:M)) :-
+	univ_map.update_univ(U, T, !M).
 	
-update(K, V, value_map(!.VM), value_map(!:VM)) :-
-	Ktype = type_of(K),
-	map.search(!.VM, Ktype, type_map(TM0)),
-	map.update(det_dynamic_cast(K), V, TM0, TM),
-	map.det_update(Ktype, 'new type_map'(TM), !VM).
-	
-update_univ(U, V, !M) :-
-	update(univ_value(U), V, !M).
-	
-set(K, V, value_map(!.VM), value_map(!:VM)) :-
-	Ktype = type_of(K),
-	( if map.search(!.VM, Ktype, type_map(TM0))
-	then
-		map.set(det_dynamic_cast(K), V, TM0, TM),
-		map.det_update(Ktype, 'new type_map'(TM), !VM)
-	else
-		map.det_insert(Ktype, 'new type_map'(map.singleton(K, V)), !VM)
-	).
-	
-set_univ(U, V, !M) :-
-	set(univ_value(U), V, !M).
+set(mr_value(U), T, mh_value_map(!.M), mh_value_map(!:M)) :-
+	univ_map.set_univ(U, T, !M).
 
 %-----------------------------------------------------------------------------%
 % Deletions
 
-delete(K, value_map(!.VM), value_map(!:VM)) :-
-	Ktype = type_of(K),
-	( if 
-		map.search(!.VM, Ktype, type_map(TM0)), 
-		map.remove(det_dynamic_cast(K), _, TM0, TM)
-	then 
-		( if map.is_empty(TM)
-		then map.delete(Ktype, !VM)
-		else map.det_update(Ktype, 'new type_map'(TM), !VM)
-		)
-	else
-		!:VM = !.VM
-	).
+delete(mr_value(U), mh_value_map(!.M), mh_value_map(!:M)) :-
+	univ_map.delete_univ(U, !M).
 	
-delete_univ(U, !M) :-
-	delete(univ_value(U), !M).
+remove(mr_value(U), T, mh_value_map(!.M), mh_value_map(!:M)) :-
+	univ_map.remove_univ(U, T, !M).
 	
-remove(K, V, value_map(!.VM), value_map(!:VM)) :-
-	Ktype = type_of(K),
-	map.search(!.VM, Ktype, type_map(TM0)),
-	map.remove(det_dynamic_cast(K), V, TM0, TM),
-	( if map.is_empty(TM)
-	then map.delete(Ktype, !VM)
-	else map.det_update(Ktype, 'new type_map'(TM), !VM)
-	).
-	
-remove_univ(U, V, !M) :-
-	remove(univ_value(U), V,  !M).
-	
-remove_smallest_typed(K, V, value_map(!.VM), value_map(!:VM)) :-
-	Ktype = type_of(K),
-	map.search(!.VM, Ktype, type_map(TM0)),
-	map.remove_smallest(U, V, TM0, TM),
-	det_dynamic_cast(U, K),
-	( if map.is_empty(TM)
-	then map.delete(Ktype, !VM)
-	else map.det_update(Ktype, 'new type_map'(TM), !VM)
-	).
-	
-remove_smallest(K, V, value_map(!.VM), value_map(!:VM)) :-
-	Ktype = min_key(!.VM),
-	map.search(!.VM, Ktype, type_map(TM0)),
-	( if remove_smallest_empty_type_map_check, is_empty(TM0)
-	then unexpected($module, $pred, 
-		"Empty type map found in value map when attempting ordered removal.")
-	else true
-	),
-	map.remove_smallest(K, V, TM0, TM),	
-	( if map.is_empty(TM)
-	then map.delete(Ktype, !VM)
-	else map.det_update(Ktype, 'new type_map'(TM), !VM)
-	).
-
-:- pred remove_smallest_empty_type_map_check is semidet.
-
-:- pragma no_determinism_warning(remove_smallest_empty_type_map_check/0).
-
-remove_smallest_empty_type_map_check :- true.
 %-----------------------------------------------------------------------------%
 % Nondeterminsitic lookup
 	
-member(value_map(VM), K, V) :-
-	map.member(VM, _, type_map(TM)),
-	map.member(TM, K, V).
+member(mh_value_map(M), mr_value(U), T) :- univ_map.member_univ(M, U, T).
+
+
+%-----------------------------------------------------------------------------%
+% Set Operations
+
+union(F, mh_value_map(Map1), mh_value_map(Map2)) = 
+	mh_value_map(univ_map.union(F, Map1, Map2)).
 	
-member_univ(VM, U, V) :- member(VM, K,V), type_to_univ(K, U).
+union(F, Map1, Map2, union(F, Map1, Map2)).
+
+intersect(F, mh_value_map(Map1), mh_value_map(Map2)) = 
+	mh_value_map(univ_map.intersect(F, Map1, Map2)).
+	
+intersect(F, Map1, Map2, intersect(F, Map1, Map2)).
+
+difference(mh_value_map(Map1), mh_value_map(Map2)) = 
+	mh_value_map(univ_map.difference(Map1, Map2)).
+	
+difference(Map1, Map2, difference(Map1, Map2)).	
+
+%-----------------------------------------------------------------------------%
+% Higher Order
+
+fold(F, mh_value_map(Map), A) = univ_map.fold(value_fold(F), Map, A).
+
+:- func value_fold(func(mh_value, T, A) = A), univ, T, A) = A.
+
+value_fold(F, Univ, T, A) = F(mr_value(Univ), T, A).
+
+fold(F, Map, A, fold(F, Map, A)).
+
+map(F, mh_value_map(Map)) = mh_value_map(univ_map.map(value_map(F), Map)).
+
+:- func value_map(func(mh_value, T) = U, univ, T) = U.
+
+value_map(F, Univ, T) = F(mr_value(Univ), T).
+
+map(F, Map, map(F, Map)).
