@@ -134,7 +134,6 @@ T::out) is semidet.
 
 :- pred union(func(T, T) = T, mh_term_map(T), mh_term_map(T), mh_term_map(T)).
 :- mode union(in(func(in, in) = out is det), in, in, out) is det.
-:- mode union(in(func(in, in) = out is semidet), in, in, out) is semidet.
 
 :- func set_union(mh_term_set, mh_term_set) = mh_term_set.
 :- pred set_union(mh_term_set::in, mh_term_set::in, mh_term_set::out) is det.
@@ -145,7 +144,6 @@ T::out) is semidet.
 :- pred intersect(func(T, T) = T, mh_term_map(T), mh_term_map(T),
 	mh_term_map(T)).
 :- mode intersect(in(func(in, in) = out is det), in, in, out) is det.
-:- mode intersect(in(func(in, in) = out is semidet), in, in, out) is semidet.
 
 :- func set_intersect(mh_term_set, mh_term_set) = mh_term_set.
 :- pred set_intersect(mh_term_set::in, mh_term_set::in, mh_term_set::out) 
@@ -156,6 +154,22 @@ T::out) is semidet.
 
 :- pred difference(mh_term_map(T)::in, mh_term_map(_)::in, 
 	mh_term_map(T)::out) is det.
+	
+	
+%-----------------------------------------------------------------------------%
+% Higher Order
+
+:- func fold(func(mh_term, T, A) = A, mh_term_map(T), A) = A.
+
+:- pred fold(func(mh_term, T, A) = A, mh_term_map(T), A, A).
+:- mode fold(in(func(in, in, in) = out is det), in, in, out) is det.
+
+:- func map(func(mh_term, T) = U, mh_term_map(T)) = mh_term_map(U).
+ 
+:- pred map(func(mh_term, T) = U, mh_term_map(T), mh_term_map(U)).
+:- mode map(in(func(in, in) = out is det), in, out) is det.
+
+
 
 
 %-----------------------------------------------------------------------------%
@@ -170,6 +184,7 @@ T::out) is semidet.
 :- import_module mh_value_map.
 :- import_module mh_tuple_map.
 :- import_module mh_relation_map.
+:- import_module mh_tuple.
 
 %-----------------------------------------------------------------------------%
 % Term maps
@@ -268,7 +283,7 @@ lookup(Map, Term) = T :- lookup(Map, Term, T).
 :- pred empty_to_prototype(mh_term_map(T)::in, mh_term_map(T)::out) is det.
 
 empty_to_prototype(!Map) :-
-	( if !.Map = empty_map then
+	( if !.Map = empty_term_map then
 		!:Map = prototype_map
 	else true ).
 */	
@@ -277,7 +292,7 @@ empty_to_prototype(!Map) :-
 	mh_var_map(T)::out, mh_value_map(T)::out, mh_tuple_map(T)::out,
 	mh_relation_map::out) is det.
 
-deconstruct_term_map(empty_map, mh_symbol_map.init, mh_var_map.init,
+deconstruct_term_map(empty_term_map, mh_symbol_map.init, mh_var_map.init,
 	mh_value_map.init, mh_tuple_map.init, mh_relation_map.init).
 
 deconstruct_term_map(term_map(Atoms, Vars, Vals, Cons, Rels), Atoms, Vars, 
@@ -300,7 +315,7 @@ insert(mh_value(Value), T, !Map) :-
 
 insert(cons(Functor, Args), T, !Map) :-
 	deconstruct_term_map(!.Map, Atoms, Vars, Vals, Cons0, Rels),
-	mh_symbol_map.insert(tuple_cons(Functor, Args), T, Cons0, Cons),
+	mh_tuple_map.insert(tuple_cons(Functor, Args), T, Cons0, Cons),
 	!:Map = term_map(Atoms, Vars, Vals, Cons, Rels).
 	
 insert(relation(Rel), T, !Map) :-
@@ -477,3 +492,151 @@ det_remove(Term, T, !Map) :-
 %-----------------------------------------------------------------------------%
 % Set operations
 
+union(_, empty_term_map, empty_term_map) = empty_term_map.
+union(_, Map@mh_term_map(_, _, _, _, _), empty_term_map) = Map.
+union(_, empty_term_map, Map@mh_term_map(_, _, _, _, _)) = Map.
+
+union(
+	F,
+	mh_term_map(Symbols1, Vars1, Vals1, Cons1, Rels1),
+	mh_term_map(Symbols2, Vars2, Vals2, Cons2, Rels2)
+) = mh_term_map(
+	mh_symbol_map.union(F, Symbols1, Symbols2),
+	mh_var_map.union(F, Vars1, Vars2),
+	mh_value_map.union(F, Vals1, Vals2),
+	mh_tuple_map.union(F, Cons1, Cons2),
+	mh_relation_map.union(F, Rels1, Rels2)
+).
+
+union(F, M1, M2, union(F, M1, M2)).
+
+set_union(Set1, Set2) = union(merge_units, Set1, Set2).
+
+:- func merge_units(unit, unit) = unit.
+
+merge_units(_, _) = unit.
+
+set_union(Set1, Set2, set_union(Set1, Set2)).
+
+
+
+intersect(_, empty_term_map, empty_term_map) = empty_term_map.
+intersect(_, mh_term_map(_, _, _, _, _), empty_term_map) = empty_term_map.
+intersect(_, empty_term_map, mh_term_map(_, _, _, _, _)) = empty_term_map.
+
+intersect(
+	F,
+	mh_term_map(Symbols1, Vars1, Vals1, Cons1, Rels1),
+	mh_term_map(Symbols2, Vars2, Vals2, Cons2, Rels2)
+) = construct_term_map_term_map(
+	mh_symbol_map.intersect(F, Symbols1, Symbols2),
+	mh_var_map.intersect(F, Vars1, Vars2),
+	mh_value_map.intersect(F, Vals1, Vals2),
+	mh_tuple_map.intersect(F, Cons1, Cons2),
+	mh_relation_map.intersect(F, Rels1, Rels2)
+).
+
+intersect(F, M1, M2, intersect(F, M1, M2)).
+
+set_intersect(Set1, Set2) = intersect(merge_units, Set1, Set2).
+set_intersect(Set1, Set2, set_intersect(Set1, Set2)).
+
+difference(empty_term_map, empty_term_map) = empty_term_map.
+difference(Map@mh_term_map(_, _, _, _, _), empty_term_map) = Map.
+difference(empty_term_map, mh_term_map(_, _, _, _, _)) = empty_term_map.
+
+difference(
+	mh_term_map(Symbols1, Vars1, Vals1, Cons1, Rels1),
+	mh_term_map(Symbols2, Vars2, Vals2, Cons2, Rels2)
+) = construct_term_map(
+	mh_symbol_map.difference(Symbols1, Symbols2),
+	mh_var_map.difference(Vars1, Vars2),
+	mh_value_map.difference(Vals1, Vals2),
+	mh_tuple_map.difference(Cons1, Cons2),
+	mh_relation_map.difference(Rels1, Rels2)
+).
+
+difference(M1, M2, difference(M1, M2)).
+
+%-----------------------------------------------------------------------------%
+% Higher Order
+
+fold(_, empty_term_map, A) = A.
+
+fold(F, mh_term_map(Symbols, Vars, Vals, Cons, Rels), !.A) = !:A :-
+	!:A = mh_symbol_map.foldl(symbol_fold(F), Symbols, !.A),
+	mh_var_map.fold_id(var_id_fold(F), Vars, !A),
+	!:A = mh_value_map.fold(value_fold(F), Vals, !.A),
+	!:A = mh_relation_map.fold(relation_fold(F), Rels, !.A).
+
+:- func symbol_fold(func(mh_term, T, A) = A, mh_symbol, T, A) = A.
+symbol_fold(F, S, T, A) = F(atom(S), T, A).
+
+:- pred var_id_fold(func(mh_term, T, A) = A, var_id, T, A, A).
+:- mode var_id_fold(in, in, in, in, out) is det.
+
+var_id_fold(F, ID, T, A, F(var(ID), T, A)). 
+
+:- func value_fold(func(mh_term, T, A) = A, mh_value, T, A) = A.
+value_fold(F, V, T, A) = F(value(V), T, A).
+
+:- func cons_fold(func(mh_term, T, A) = A, mh_tuple, T, A) = A.
+cons_fold(F, Tuple, T, A) = 
+	(if F(cons(tuple_car(Tuple), tuple_cdr(Tuple)), T, A) = Result then
+		Result
+	else
+		%Introspection for more informative error message
+		(if tuple_size(Tuple) = 0 then
+			unexpected($module, $pred, "Empty cons tuple in term map")
+		else 
+			unexpected($module, $pred, 
+				"Cons tuple with only one element in term map")
+		)
+		% If the tuple has more than one element, then the above test will
+		% never fail.
+	).
+	
+:- func relation_fold(func(mh_term, T, A) = A, mh_relation, T, A) = A.
+relation_fold(F, R, T, A) = F(relation(R), T, A).
+
+
+map(_, empty_term_map) = empty_term_map.
+
+map(F, mh_term_map(Symbols, Vars0, Vals, Cons, Rels)) =
+	mh_term_map(
+		mh_symbol_map.map_values(map_symbol(F), Symbols),
+		Vars1,
+		mh_value_map.map(map_value(F), Vals),
+		mh_tuple_map.map(map_cons(F), Cons),
+		mh_relation_map.map(map_relation(F), Rels)
+	) :- mh_var_map.map_id(map_var_id(F), Vars0, Vars1).
+
+:- func map_symbol(func(mh_term, T) = U, mh_symbol, T) = U.
+map_symbol(F, S, T) = F(atom(S), T).
+
+:- pred map_var_id(func(mh_term, T) = U, var_id, T, U).
+:- mode map_var_id(in, in, in, out) is det.
+
+map_var_id(F, ID, T, F(var(ID), T)). 
+
+:- func map_value(func(mh_term, T) = U, mh_value, T) = U.
+map_value(F, V, T) = F(value(V), T).
+
+:- func map_cons(func(mh_term, T) = U, mh_tuple, T) = U.
+map_cons(F, Tuple, T) = 
+	(if F(cons(tuple_car(Tuple), tuple_cdr(Tuple)), T) = Result then
+		Result
+	else
+		%Introspection for more informative error message
+		(if tuple_size(Tuple) = 0 then
+			unexpected($module, $pred, "Empty cons tuple in term map")
+		else 
+			unexpected($module, $pred, 
+				"Cons tuple with only one element in term map")
+		)
+		% If the tuple has more than one element, then the above test will
+		% never fail.
+	).
+	
+:- func map_relation(func(mh_term, T) = U, mh_relation, T) = U.
+map_relation(F, R, T) = F(relation(R), T).
