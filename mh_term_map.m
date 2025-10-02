@@ -230,8 +230,8 @@ contains(term_map(Map, _, _, _, _), atom(Symbol)) :- contains(Map, Symbol).
 
 contains(term_map(_, Map, _, _, _), var(ID)) :- contains_id(Map, ID).
 
-contains(term_map(_, _, Map, _, _), value(mr_value(Univ)) ) :- 
-	contains_univ(Map, Univ).
+contains(term_map(_, _, Map, _, _), value(Value) ) :- 
+	contains(Map, Value).
 	
 contains(term_map(_, _, _, Map, _), cons(Functor, Args)) :- 
 	contains(Map, tuple_cons(Functor, Args)).
@@ -242,8 +242,8 @@ search(term_map(Map, _, _, _, _), atom(Symbol), T) :- search(Map, Symbol, T).
 
 search(term_map(_, Map, _, _, _), var(ID), T) :- id_search(Map, ID, T).
 
-search(term_map(_, _, Map, _, _), value(mr_value(Univ)), T) :- 
-	search_univ(Map, Univ, T).
+search(term_map(_, _, Map, _, _), value(Value), T) :- 
+	search(Map, Value, T).
 	
 search(term_map(_, _, _, Map, _), cons(Functor, Args), T) :- 
 	search(Map, tuple_cons(Functor, Args), T).
@@ -273,8 +273,9 @@ empty_to_prototype(!Map) :-
 	else true ).
 */	
 	
-:- pred deconstruct_term_map(mh_term_map(T)::in, mh_symbol_map(T)::out,  
-	mh_var_map(T)::out, mh_tuple_map(T)::out, mh_relation_map::out) is det.
+:- pred deconstruct_term_map(mh_term_map(T)::in, mh_symbol_map(T)::out,
+	mh_var_map(T)::out, mh_value_map(T)::out, mh_tuple_map(T)::out,
+	mh_relation_map::out) is det.
 
 deconstruct_term_map(empty_map, mh_symbol_map.init, mh_var_map.init,
 	mh_value_map.init, mh_tuple_map.init, mh_relation_map.init).
@@ -292,9 +293,9 @@ insert(var(ID), T, !Map) :-
 	mh_var_map.id_insert(ID, T, Vars0, Vars),
 	!:Map = term_map(Atoms, Vars, Vals, Cons, Rels).
 
-insert(mh_value(mr_value(Univ)), T, !Map) :-
+insert(mh_value(Value), T, !Map) :-
 	deconstruct_term_map(!.Map, Atoms, Vars, Vals0, Cons, Rels),
-	mh_value_map.insert_univ(Univ, T, Vals0, Vals),
+	mh_value_map.insert(Value, T, Vals0, Vals),
 	!:Map = term_map(Atoms, Vars, Vals, Cons, Rels).
 
 insert(cons(Functor, Args), T, !Map) :-
@@ -340,6 +341,139 @@ det_insert_from_assoc_list([K - V | KVs], !Map) :-
     det_insert_from_assoc_list(KVs, !Map).
 	
 det_insert_from_list([], !Set).
-det_insert_from_list([ Tuple | List]) :-
-	det_insert(Tuple, !Set),
+det_insert_from_list([ Term | List]) :-
+	det_insert(Term, !Set),
 	det_insert_from_list(List, !Set).
+	
+set(atom(Symbol), T, !Map) :-
+	deconstruct_term_map(!.Map, Atoms0, Vars, Vals, Cons, Rels),
+	mh_symbol_map.set(Symbol, T, Atoms0, Atoms),
+	!:Map = term_map(Atoms, Vars, Vals, Cons, Rels).
+	
+set(var(ID), T, !Map) :-
+	deconstruct_term_map(!.Map, Atoms, Vars0, Vals, Cons, Rels),
+	mh_var_map.id_set(ID, T, Vars0, Vars),
+	!:Map = term_map(Atoms, Vars, Vals, Cons, Rels).
+
+set(mh_value(Value), T, !Map) :-
+	deconstruct_term_map(!.Map, Atoms, Vars, Vals0, Cons, Rels),
+	mh_value_map.set(Value, T, Vals0, Vals),
+	!:Map = term_map(Atoms, Vars, Vals, Cons, Rels).
+
+set(cons(Functor, Args), T, !Map) :-
+	deconstruct_term_map(!.Map, Atoms, Vars, Vals, Cons0, Rels),
+	mh_symbol_map.set(tuple_cons(Functor, Args), T, Cons0, Cons),
+	!:Map = term_map(Atoms, Vars, Vals, Cons, Rels).
+	
+set(relation(Rel), T, !Map) :-
+	deconstruct_term_map(!.Map, Atoms, Vars, Vals, Cons, Rels0),
+	mh_relation_map.set(Symbol, T, Rels0, Rels),
+	!:Map = term_map(Atoms, Vars, Vals, Cons, Rels).
+	
+set(Term, !Map) :- set(Term, unit, !Map).
+	
+set_from_corresponding_lists([], [], !Map).
+set_from_corresponding_lists([], [_ | _], _, _) :-
+    unexpected($pred, "list length mismatch").
+set_from_corresponding_lists([_ | _], [], _, _) :-
+    unexpected($pred, "list length mismatch").
+set_from_corresponding_lists([K | Ks], [V | Vs], !Map) 						:-
+    set(K, V, !Map),
+    set_from_corresponding_lists(Ks, Vs, !Map).
+
+set_from_assoc_list([], !Map).
+set_from_assoc_list([K - V | KVs], !Map) :-
+    set(K, V, !Map),
+    set_from_assoc_list(KVs, !Map).
+	
+set_from_list([], !Set).
+set_from_list([Tuple | List]) :-
+	set(Tuple, !Set),
+	set_from_list(List, !Set).
+	
+update(atom(Symbol), T, !Map) :-
+	!.Map = term_map(Atoms0, Vars, Vals, Cons, Rels),
+	mh_symbol_map.update(Symbol, T, Atoms0, Atoms),
+	!:Map = term_map(Atoms, Vars, Vals, Cons, Rels).
+	
+update(var(ID), T, !Map) :-
+	!.Map = term_map(Atoms, Vars0, Vals, Cons, Rels),
+	mh_var_map.id_update(ID, T, Vars0, Vars),
+	!:Map = term_map(Atoms, Vars, Vals, Cons, Rels).
+
+update(mh_value(Value), T, !Map) :-
+	!.Map = term_map(Atoms, Vars, Vals0, Cons, Rels),
+	mh_value_map.update(Value, T, Vals0, Vals),
+	!:Map = term_map(Atoms, Vars, Vals, Cons, Rels).
+
+update(cons(Functor, Args), T, !Map) :-
+	!.Map = term_map(Atoms, Vars, Vals, Cons0, Rels),
+	mh_symbol_map.update(tuple_cons(Functor, Args), T, Cons0, Cons),
+	!:Map = term_map(Atoms, Vars, Vals, Cons, Rels).
+	
+update(relation(Rel), T, !Map) :-
+	!.Map = term_map(Atoms, Vars, Vals, Cons, Rels0),
+	mh_relation_map.update(Symbol, T, Rels0, Rels),
+	!:Map = term_map(Atoms, Vars, Vals, Cons, Rels).
+	
+det_update(Term, T, !M) :-
+	( if update(Term, T, !.M, NewMap) then
+        !:M = NewMap
+    else
+        report_lookup_error("mh_term_map.det_update: term not present in map", 
+		Term, T)s
+    ).
+	
+%-----------------------------------------------------------------------------%
+% Removal
+
+:- func construct_term_map(mh_symbol_map(T), mh_var_map(T),	mh_value_map(T),
+	mh_tuple_map(T), mh_relation_map) = mh_term_map(T).
+	
+construct_term_map(Atoms, Vars, Vals, Cons, Rels, Map) =
+	(if 
+		is_empty(Atoms), is_empty(Vars), is_empty(Vals), is_empty(Cons),
+		is_empty(Rels)
+	then
+		empty_term_map
+	else
+		term_map(Atoms, Vars, Vals, Cons, Rels, Map)
+	).
+
+remove(atom(Symbol), T, !Map) :-
+	!.Map = term_map(Atoms0, Vars, Vals, Cons, Rels),
+	mh_symbol_map.remove(Symbol, T, Atoms0, Atoms),
+	!:Map = construct_term_map(Atoms, Vars, Vals, Cons, Rels).
+	
+remove(var(ID), T, !Map) :-
+	!.Map = term_map(Atoms, Vars0, Vals, Cons, Rels),
+	mh_var_map.id_remove(ID, T, Vars0, Vars),
+	!:Map = construct_term_map(Atoms, Vars, Vals, Cons, Rels).
+
+remove(mh_value(Value), T, !Map) :-
+	!.Map = term_map(Atoms, Vars, Vals0, Cons, Rels),
+	mh_value_map.remove(Value, T, Vals0, Vals),
+	!:Map = construct_term_map(Atoms, Vars, Vals, Cons, Rels).
+
+remove(cons(Functor, Args), T, !Map) :-
+	!.Map = term_map(Atoms, Vars, Vals, Cons0, Rels),
+	mh_symbol_map.remove(tuple_cons(Functor, Args), T, Cons0, Cons),
+	!:Map = construct_term_map(Atoms, Vars, Vals, Cons, Rels).
+	
+remove(relation(Rel), T, !Map) :-
+	!.Map = term_map(Atoms, Vars, Vals, Cons, Rels0),
+	mh_relation_map.remove(Symbol, T, Rels0, Rels),
+	!:Map = construct_term_map(Atoms, Vars, Vals, Cons, Rels).
+	
+det_remove(Term, T, !Map) :-	
+	(if remove(Term, FoundT, !Map)
+	then !:Map = !.Map, T = FoundT
+	else report_lookup_error(
+		"mh_tuple_map.det_remove: term not present in map", Term, 
+		!.Map)
+	).
+
+	
+%-----------------------------------------------------------------------------%
+% Set operations
+
