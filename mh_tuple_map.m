@@ -398,9 +398,7 @@ delete_list([Tuple | Tuples], !Map) :-
 % Set operations
 
 union(F, tuple_map(E1, _), tuple_map(E2, _)) = 
-	tuple_map(E3@map.union(E1, E2), delay_pattern(E3)).
-	
-
+	tuple_map(E3@map.union(F, E1, E2), delay_pattern(E3)).
 	
 union(F, M1, M2, union(F, M1, M2)).
 
