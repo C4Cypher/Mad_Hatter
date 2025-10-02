@@ -193,8 +193,8 @@
 :- func values(mh_symbol_map(T)) = list(T).
 :- pred values(mh_symbol_map(T)::in, list(T)::out) is det.
 
-:- pred keys_and_values(mh_symbol_map(T)::in, list(mh_symbol)::out, list(T)::out)
-	is det.
+:- pred keys_and_values(mh_symbol_map(T)::in, list(mh_symbol)::out, 
+	list(T)::out) is det.
 	
 :- func max_key(mh_symbol_map(_)) = mh_symbol is semidet.
 :- pred max_key(mh_symbol_map(_)::in, mh_symbol::out) is semidet.
@@ -817,8 +817,6 @@ foldl(F, sm(M), A) = hashmap.foldl(F, M, A).
 foldl(P, sm(M), !A) :- hashmap.foldl(P, M, !A).
 foldl2(P, sm(M), !A, !B) :- hashmap.foldl2(P, M, !A, !B).
 foldl3(P, sm(M), !A, !B, !C) :- hashmap.foldl3(P, M, !A, !B, !C).
-
-
 
 map_values(F, sm(M)) = sm(hashmap.map_values(F, M)).
 map_values(P, sm(!.M), sm(!:M)) :- hashmap.map_values(P, !M).
