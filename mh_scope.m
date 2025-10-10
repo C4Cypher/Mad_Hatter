@@ -233,13 +233,6 @@
 
 :- pred semidet_scope_variable_context(mh_scope::in, mh_var::in, 
 	mh_context::out) is semidet.
-	
-%-----------------------------------------------------------------------------%
-% Scope environment
-
-:- func scope_environment(mh_scope) = mh_environment.
-
-:- pred scope_environment(mh_scope::in, mh_environment::out) is det.
 
 %-----------------------------------------------------------------------------%
 % Variable names
@@ -275,7 +268,7 @@
 % Scope
 
 :- type mh_scope 
-	--->	root_scope(mh_environment, mh_context, var_id_set, var_names)
+	--->	root_scope(mh_context, var_id_set, var_names)
 	;		extended_scope(scope_car :: mh_scope, scope_cdr :: mh_scope)
 		%If no child context, default to parent
 	;		child_scope(mh_scope, maybe(mh_context), mh_var_set). 
@@ -311,8 +304,7 @@ scope_is_root(extended_scope(_, _)).
 scope_is_child(child_scope(_, _, _)).
 */
 
-% TODO: validate environment?
-require_valid_scope(root_scope(_environment, _context, IDSet, Names)) :-
+require_valid_scope(root_scope(_context, IDSet, Names)) :-
 	(if first(Names, ID, _, Iterator)
 	then
 		valid_root_names(IDSet, Names, ID, Iterator)
@@ -363,8 +355,6 @@ valid_child_scope(Parent, VarSet) :-
 		"child scope contains variables not in parent scope")
 	).
 	
-% TODO: mh_relation.m Environment compatability?
-% TODO: mh_relation.m Environment equivalence?
 
 equivalent_scopes(S, S).
 equivalent_scopes(S1, S2) :- 
@@ -396,8 +386,8 @@ require_root_scope(Module, Pred, Scope) :-
 		unexpected(Module, Pred, "Child scope where root was required.")
 	else true.
 
-root_scope_from_mr_varset(Env, Ctx, MrVarSet) = 
-	root_scope(Env, Ctx, IDSet, Names) :-
+root_scope_from_mr_varset(Ctx, MrVarSet) = 
+	root_scope(Ctx, IDSet, Names) :-
 	
 	new_scope_vars_from_mr_varset(MrVarSet, vars(MrVarSet), empty_var_set,
 		VarSet,	empty_var_map, Names),
@@ -408,13 +398,13 @@ root_scope_from_mr_varset(Env, Ctx, MrVarSet) =
 		"ids starting at 1")
 	).
 	
-root_scope_from_mr_varset(Env, Ctx, MrVarSet, 
-	root_scope_from_mr_varset(Env, Ctx, MrVarSet)).
+root_scope_from_mr_varset(Ctx, MrVarSet, 
+	root_scope_from_mr_varset(Ctx, MrVarSet)).
 	
-root_scope_from_mr_varset(Env, Ctx, MrVarSet, Scope, Ren) :-
+root_scope_from_mr_varset(Ctx, MrVarSet, Scope, Ren) :-
 	new_scope_vars_from_mr_varset(MrVarSet, vars(MrVarSet), empty_var_set,
 		VarSet,	empty_var_map, Names),
-	root_scope_from_var_set(Env, Ctx, VarSet, Names, Scope, Ren).
+	root_scope_from_var_set(Ctx, VarSet, Names, Scope, Ren).
 	
 	% new_scope_vars_from_mr_varset(VarList, !LastID, !VarSet, !Names)
 :- pred new_scope_vars_from_mr_varset(
@@ -436,13 +426,13 @@ new_scope_vars_from_mr_varset(MrVarset, [MrVar | Vars], !VarSet, !Names) :-
 	),
 	new_scope_vars_from_mr_varset(MrVarset, Vars, !VarSet, !Names).
 	
-root_scope_from_var_set(Env, Context, VarSet, Names, Scope, MaybRenaming) :-
+root_scope_from_var_set(Context, VarSet, Names, Scope, MaybRenaming) :-
 	church_renaming_for_varset(VarSet, MaybRenaming, IDSet),
 	(if MaybRenaming = yes(Renaming)
 	then det_rename_var_map(Renaming, Names, NewNames)
 	else NewNames = Names
 	),
-	Scope = root_scope(Env, Context, IDSet, NewNames).
+	Scope = root_scope(Context, IDSet, NewNames).
 	
 % Does NOT rename variables in varset that are already church encoded
 % (1 .. N)
@@ -682,15 +672,6 @@ semidet_scope_variable_context(S, V) =
 
 semidet_scope_variable_context(S, V, semidet_scope_variable_context(S, V)).
 
-%-----------------------------------------------------------------------------%
-% Scope environment
-
-scope_environment(root_scope(Env, _context, _varset, _names)) = Env.
-scope_environment(extended_scope(Car, _cdr)) = scope_environment(Car).
-scope_environment(child_scope(Parent, _context, _varset)) = 
-	scope_environment(Parent).
-	
-scope_environment(Scope, scope_environment(Scope)).
 	
 %-----------------------------------------------------------------------------%
 % Variable names
