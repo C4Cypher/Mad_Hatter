@@ -110,6 +110,13 @@
 	%		Should evaluate to either a success or failure as defined in 
 	%		mh_proposition.m
 	
+	;		qualify(mh_scope, mh_environment, mh_term)
+	%		qualify(S, Env, Term) == Env.Term.
+	%
+	%		Evaluates to the given term with it, or it's subterms (not including
+	%		those in any nested qualifications) substituted for their
+	%		mapped equivalent in the given environment.
+	
 	;		closure(mh_scope, mh_term, mh_substitution)
 	%		Evaluates to the given term with the applied variable substitution
 	%		Allows for terms from incompatable scope to be grounded into the
