@@ -15,51 +15,40 @@
 
 :- interface.
 
+:- import_module list.
+
 :- import_module mh_relation.
-:- import_module mh_term_map.
+:- import_module mh_symbol_map.
 :- import_module mh_term.
 :- import_module mh_symbol.
 
 %-----------------------------------------------------------------------------%
 % Environment
 
-:- type mh_environment == mh_relation.
-
-/*
-:- func empty_environment = mh_environment.
-
-% Compose envirornment into a single map.
-:- pred compose_environment(mh_environment::in, mh_term_map::out) is det.
-
-:- pred ask(mh_scope, mh_term::in, mh_environment::in, mh_term::out) is det.
-
-:- func ask((mh_scope, mh_term, mh_environment) = mh_term.
-
-:- pred ask(mh_environment::in, mh_term::in, mh_term::out, event_log::out)
-	is det.
-
-:- pred query(mh_term::in, mh_term::out, event_log::in, event_log::out, 
-	mh_environment::in, mh_environment::out) is det.
-
-%-----------------------------------------------------------------------------%
-% Changes
-
-
-% !.E.T := B = !:E
-% Produce a new environment with a new binding from T to B  
-:- pred bind(mh_symbol::in, mh_term::in, 
-	mh_environment::in, mh_environment::out) is det.
+:- type mh_environment 
+	--->	relation_environment(mh_relation)
+	;		map_environment(mh_symbol_map(mh_term)).
+	%		module_environment(mh_module).   A later extention of environments
 	
-% !.E.T := _ = !:E.
-% remove an existing binding for a term, if any.
-:- pred unbind(mh_term::in, mh_environment::in, mh_environment::out) is det.
+%-----------------------------------------------------------------------------%
+% Queries
 
-%:- pred assert(mh_environment::in, mh_term::in, mh_environment::out) is det.
+	% Succeedss if the environment binds a given symbol
+:- pred contains(mh_evnironment::in, mh_symbol::in) is semidet.
 
-%:- func assert(mh_environment, mh_term) = mh_environment.
+	% Return the term bound to a given symbol in an environment
+:- pred lookup(mh_environment::in, mh_symbol::in, mh_term::out) is semidet.
+:- func lookup(mh_environment, mh_symbol) = mh_term is semidet.
+	
+	% Return a list of symbols that the given environment binds, 
+	% contains/2 should succeed iff provided a symbol present in the returned
+	% list.  Order of the list is implementation dependent, but there should
+	% never be duplicates. Ideally the list should already be sorted, but I 
+	% am not making that a requirement as of yet, given the goal is efficency.
 
+:- pred exports(mh_environment::in, list(mh_symbol)::out) is det.
+:- func exports(mh_environment) = list(mh_symbol).
 
-*/
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
