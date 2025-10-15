@@ -85,6 +85,10 @@
 :- pred is_mercury_value(mh_value::is_mercury_value).
 */
 
+:- func to_mr_value(mh_value) = T is semidet.
+
+:- func to_mh_value(T) = mh_value is det.
+
 %-----------------------------------------------------------------------------%
 % Literal Values
 
@@ -108,6 +112,10 @@
 % Mercury values
 
 %is_mercury_value(mr_value(_)).
+
+to_mr_value(mr_value(univ(T))) = T.
+
+to_mh_value(T) = mr_value(univ(T)).
 
 %-----------------------------------------------------------------------------%
 % Literal Values
