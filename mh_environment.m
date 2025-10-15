@@ -15,10 +15,8 @@
 
 :- interface.
 
-:- import_module map.
 :- import_module list.
 
-:- import_module mh_relation.
 :- import_module mh_symbol_map.
 :- import_module mh_term.
 :- import_module mh_symbol.
@@ -28,14 +26,13 @@
 
 :- type mh_environment 
 	--->	%relation_environment(mh_relation)      % later
-	;		symbol_environment(mh_symbol_map(mh_term))
-	;		map_environment(map(mh_symbol, mh_term)).
+	;		environment(mh_symbol_map(mh_term)).
 	%		module_environment(mh_module).   A later extention of environments
 	
 	% If two environments map the same symbols to the same terms, they are
 	% equivalent.
-:- pred equivalent_environments(mh_environment::in, mh_environment::in)
-	is semidet.
+/*:- pred equivalent_environments(mh_environment::in, mh_environment::in)
+	is semidet.*/
 	
 %-----------------------------------------------------------------------------%
 % Queries
@@ -59,7 +56,7 @@
 %-----------------------------------------------------------------------------%
 % Conversion
 
-	% If the term is a relation, wrap it, if it's an mh_value, cast
+	% If the term is an mr_value, cast
 	% it to mh_environment, otherwise fail.
 :- func from_term(mh_term) = mh_environment is semidet.
 
@@ -67,10 +64,18 @@
 	% wrap the entire mh_environment as an mr_value
 :- func to_term(mh_environment) = mh_term.
 
-:- func to_symbol_map(mh_environment) = mh_symbol_map.
+%-----------------------------------------------------------------------------%
+% Calling
 
-	% Convert or pass the environment as a std library map
-:- func to_map(mh_environment) = map(mh_symbol, mh_term).
+% Can't implement this yet, needs actual calling context due to nested
+% invocation
+
+/*
+:- pred environment_apply(mh_environment::in, mh_term::in, mh_term::out)
+	is det.
+*/
+	
+
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
@@ -83,18 +88,23 @@
 %-----------------------------------------------------------------------------%
 % Queries
 
-contains(symbol_environment(Map), S) :- mh_symbol_map.contains(Map, S).
-contains(map_environment(Map), S) :- map.contains(Map, S).
+contains(environment(Map), S) :- mh_symbol_map.contains(Map, S).
 
 search(Env, S, search(Env, S)).
 
-search(symbol_environment(Map), S) = mh_symbol_map.search(Map, S).
-search(map_environment(Map), S) = map.search(Map, S).
+search(environment(Map), S) = mh_symbol_map.search(Map, S).
 
-exports(symbol_environment(Map), S) = mh_symbol_map.keys(Map, S).
-exports(map_environment(Map), S) = map.keys(Map, S).
+exports(environment(Map), S) = mh_symbol_map.keys(Map, S).
 
 %-----------------------------------------------------------------------------%
 % Conversion
 
+from_term(value(Value)) = to_mr_value(Value).
+
+to_term(Env) = value(to_mh_value(Env)). 
+
+
+
+%-----------------------------------------------------------------------------%
+% Calling
 
