@@ -60,7 +60,11 @@
 % TODO: mh_relation_map and mh_relation_set
 % TODO: replace ordered_set/1  with mh_relation_set or mh_ordered_relation_set
 :- type mh_relation
-	--->	conjunction(mh_scope, ordered_set(mh_term))
+	--->	nil		
+	%		The abscense of value, only unifies with nil
+	%		T(nil) = T.
+	
+	;		conjunction(mh_scope, ordered_set(mh_term))
 	%		A relation that contains a set of terms, and succesfully unifies
 	%		with any member of the given set so long as every member of the
 	%		set unifies with each other, otherwise the entire expression fails
@@ -109,14 +113,7 @@
 	% 		Succeed or fail based on evaluation of the embedded proposition;
 	%		Should evaluate to either a success or failure as defined in 
 	%		mh_proposition.m
-	
-	;		qualify(mh_scope, mh_environment, mh_term)
-	%		qualify(S, Env, Term) == Env.Term.
-	%
-	%		Evaluates to the given term with it, or it's subterms (not including
-	%		those in any nested qualifications) substituted for their
-	%		mapped equivalent in the given environment.
-	
+ 
 	;		closure(mh_scope, mh_term, mh_substitution)
 	%		Evaluates to the given term with the applied variable substitution
 	%		Allows for terms from incompatable scope to be grounded into the
