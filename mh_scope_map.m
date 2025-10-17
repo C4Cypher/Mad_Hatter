@@ -19,7 +19,7 @@
 :- import_module mh_scope.
 
 %-----------------------------------------------------------------------------%
-% Term maps
+% Scope map
 
 :- type mh_scope_map(T).
 :- type mh_scope_set == mh_scope_map(unit).
@@ -46,8 +46,7 @@
 :- pred contains(mh_scope_map(T)::in, mh_scope::in) is semidet.
 
 	% Fails if the key is not found
-:- pred search(mh_scope_map(T)::in, mh_scope::in, 
-T::out) is semidet.
+:- pred search(mh_scope_map(T)::in, mh_scope::in, T::out) is semidet.
 :- func search(mh_scope_map(T), mh_scope) = T is semidet.
 
 	% Throws an exception if the key is not found
@@ -174,5 +173,46 @@ T::out) is semidet.
 :- type mh_scope_map(T)
 	--->	empty_scope_map
 	;		scope_map(context_map(T)).
+	
+init = empty_scope_map.
+init(init).
+
+singleton(S, T) = scope_map(
+	map.singleton(root_context(S), 
+		map.singleton(scope_vars(S), T)
+	)
+).
+
+singleton(S) = singleton(S, unit).
+
+is_empty(empty_scope_map).
+
+count(empty_scope_map) = 0.
+count(scope_map(M)) = Count :- map.foldl_values(count_fold, M, 0, Count).
+
+:- pred count_fold(set_map(T)::in, int::in, int::out) is det.
+count_fold(Map, Count, Count + map.count(Map)).
+
+equal(empty_scope_map, empty_scope_map).
+equal(scope_map(Map1), scope_map(Map2)) :- map.equal(Map1, Map2).
+
+
+%-----------------------------------------------------------------------------%
+% Search
+
+contains(scope_map(M), S) :- 
+	map.search(M, root_context(S), SetMap), 
+	map.contains(SetMap, scope_vars(S)).
+
+search(Map, S, search(Map, S)).
+search(scope_map(M), S) = 
+	map.search( map.search(M, root_context(S)) , scope_vars(S)). 
+
+lookup(Map, S, lookup(Map, S)).
+lookup(scope_map(M), S) = 
+	map.lookup(map.lookup(M, root_context(S)), scope_vars(S)). 
+	
+%-----------------------------------------------------------------------------%
+% Insertion
 
 
