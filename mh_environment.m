@@ -34,6 +34,10 @@
 /*:- pred equivalent_environments(mh_environment::in, mh_environment::in)
 	is semidet.*/
 	
+	% True if the given term is an environment. If successful, from_term/1 
+	% will always return a meanaingful value
+:- pred is_environment(mh_term) is semidet.
+	
 %-----------------------------------------------------------------------------%
 % Queries
 
@@ -67,14 +71,14 @@
 %-----------------------------------------------------------------------------%
 % Calling
 
-% Can't implement this yet, needs actual calling context due to nested
-% invocation
-
+	% Apply an environment to a given term, if the term is an atom, search for
+	% and substitute the atom for a conjunction of the atom and it's mapping
+	% in the environment ... I need to include a full calling context with
+	% memo table if I am going to proceed further
 /*
-:- pred environment_apply(mh_environment::in, mh_term::in, mh_term::out)
+:- pred apply_environment(mh_environment::in, mh_term::in, mh_term::out)
 	is det.
 */
-	
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -84,7 +88,7 @@
 %-----------------------------------------------------------------------------%
 % Environment
 
-
+is_environment(Term) :- from_term(Term) = _. 
 %-----------------------------------------------------------------------------%
 % Queries
 
@@ -108,3 +112,4 @@ to_term(Env) = value(to_mh_value(Env)).
 %-----------------------------------------------------------------------------%
 % Calling
 
+% apply_environment(Env, !Term)
