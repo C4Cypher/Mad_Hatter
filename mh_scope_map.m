@@ -15,6 +15,8 @@
 
 :- interface.
 
+:- import_module list.
+:- import_module assoc_list.
 
 :- import_module mh_scope.
 
@@ -56,8 +58,8 @@
 %-----------------------------------------------------------------------------%
 % Insertion
 
-:- pred insert(mh_scope::in, T::in, mh_scope_map(T)::in, 
-	mh_scope_map(T)::out) is semidet.
+:- pred insert(mh_scope::in, T::in, mh_scope_map(T)::in, mh_scope_map(T)::out) 
+	is semidet.
 	
 :- pred insert(mh_scope::in, mh_scope_set::in, mh_scope_set::out) 
 	is semidet.
@@ -158,6 +160,8 @@
 :- implementation.
 
 :- import_module map.
+:- import_module require.
+:- import_module pair.
 
 :- import_module mh_context.
 :- import_module mh_var_set.
@@ -177,18 +181,18 @@
 init = empty_scope_map.
 init(init).
 
-singleton(S, T) = scope_map(
-	map.singleton(root_context(S), 
-		map.singleton(scope_vars(S), T)
+singleton(Scope, T) = scope_map(
+	map.singleton(root_context(Scope), 
+		map.singleton(scope_vars(Scope), T)
 	)
 ).
 
-singleton(S) = singleton(S, unit).
+singleton(Scope) = singleton(Scope, unit).
 
 is_empty(empty_scope_map).
 
 count(empty_scope_map) = 0.
-count(scope_map(M)) = Count :- map.foldl_values(count_fold, M, 0, Count).
+count(scope_map(Map)) = Count :- map.foldl_values(count_fold, Map, 0, Count).
 
 :- pred count_fold(set_map(T)::in, int::in, int::out) is det.
 count_fold(Map, Count, Count + map.count(Map)).
@@ -200,19 +204,123 @@ equal(scope_map(Map1), scope_map(Map2)) :- map.equal(Map1, Map2).
 %-----------------------------------------------------------------------------%
 % Search
 
-contains(scope_map(M), S) :- 
-	map.search(M, root_context(S), SetMap), 
-	map.contains(SetMap, scope_vars(S)).
+contains(scope_map(CtxMap), Scope) :- 
+	map.search(CtxMap, root_context(Scope), SetMap), 
+	map.contains(SetMap, scope_vars(Scope)).
 
-search(Map, S, search(Map, S)).
-search(scope_map(M), S) = 
-	map.search( map.search(M, root_context(S)) , scope_vars(S)). 
+search(Map, Scope, search(Map, Scope)).
+search(scope_map(CtxMap), Scope) = 
+	map.search( map.search(CtxMap, root_context(Scope)) , scope_vars(Scope)). 
 
-lookup(Map, S, lookup(Map, S)).
-lookup(scope_map(M), S) = 
-	map.lookup(map.lookup(M, root_context(S)), scope_vars(S)). 
+lookup(Map, Scope, lookup(Map, Scope)).
+lookup(scope_map(CtxMap), Scope) = 
+	map.lookup(map.lookup(CtxMap, root_context(Scope)), scope_vars(Scope)). 
 	
 %-----------------------------------------------------------------------------%
 % Insertion
 
+insert(Scope, T, emtpy_map, singleton(Scope, T)).
 
+insert(Scope, T, scope_map(!.CtxMap), scope_map(!:CtxMap)) :-
+	Ctx = root_context(Scope),
+	Set = scope_vars(Scope),
+	some [!SetMap] 
+		(if map.search(!.CtxMap, Ctx, !:SetMap)
+		then
+			map.insert(Set, T, !SetMap)
+			map.update(Ctx, !.SetMap, !CtxMap)
+		else
+			map.insert(Ctx, map.singleton(Set, T))
+		).
+	
+insert(Scope, !Map) :- insert(Scope, unit, !Map).
+
+det_insert(Scope, T, !Map) :-
+	(if insert(Scope, T, !.Map, NewMap) 
+	then !:Map = NewMap
+	else report_lookup_error(
+		"mh_scope_map.det_insert: key already present", Scope, T)
+	).
+
+det_insert(Scope, !Map) :- det_insert(Scope, unit, !Map).
+
+% Copied wholesale from mh_term_map ------------------------------------------%
+
+det_insert_from_corresponding_lists([], [], !Map).
+det_insert_from_corresponding_lists([], [_ | _], _, _) :-
+    unexpected($pred, "list length mismatch").
+det_insert_from_corresponding_lists([_ | _], [], _, _) :-
+    unexpected($pred, "list length mismatch").
+det_insert_from_corresponding_lists([K | Ks], [V | Vs], !Map) :-
+    det_insert(K, V, !Map),
+    det_insert_from_corresponding_lists(Ks, Vs, !Map).
+	
+det_insert_from_assoc_list([], !Map).
+det_insert_from_assoc_list([K - V | KVs], !Map) :-
+    det_insert(K, V, !Map),
+    det_insert_from_assoc_list(KVs, !Map).
+	
+det_insert_from_list([], !Set).
+det_insert_from_list([ Scope | List]) :-
+	det_insert(Scope, !Set),
+	det_insert_from_list(List, !Set).
+	
+%-----------------------------------------------------------------------------%
+
+set(Scope, T, emtpy_map, singleton(Scope, T)).
+
+set(Scope, T, scope_map(!.CtxMap), scope_map(!:CtxMap)) :-
+	Ctx = root_context(Scope),
+	Set = scope_vars(Scope),
+	some [!SetMap] 
+		(if map.search(!.CtxMap, Ctx, !:SetMap)
+		then
+			map.set(Set, T, !SetMap)
+			map.update(Ctx, !.SetMap, !CtxMap)
+		else
+			map.set(Ctx, map.singleton(Set, T))
+		).
+	
+set(Scope, !Map) :- set(Scope, unit, !Map).
+
+% Again, copied from mh_term_map ---------------------------------------------%
+set_from_corresponding_lists([], [], !Map).
+set_from_corresponding_lists([], [_ | _], _, _) :-
+    unexpected($pred, "list length mismatch").
+set_from_corresponding_lists([_ | _], [], _, _) :-
+    unexpected($pred, "list length mismatch").
+set_from_corresponding_lists([K | Ks], [V | Vs], !Map) 						:-
+    set(K, V, !Map),
+    set_from_corresponding_lists(Ks, Vs, !Map).
+
+set_from_assoc_list([], !Map).
+set_from_assoc_list([K - V | KVs], !Map) :-
+    set(K, V, !Map),
+    set_from_assoc_list(KVs, !Map).
+	
+set_from_list([], !Set).
+set_from_list([Scope | List]) :-
+	set(Scope, !Set),
+	set_from_list(List, !Set).
+%-----------------------------------------------------------------------------%
+
+
+update(Scope, T, scope_map(!.CtxMap), scope_map(!:CtxMap)) :-
+	Ctx = root_context(Scope),
+	Set = scope_vars(Scope),
+	some [!SetMap] (
+		map.search(!.CtxMap, Ctx, !:SetMap),
+		map.update(Set, T, !SetMap)
+		map.update(Ctx, !.SetMap, !CtxMap)
+	).
+	
+det_update(Scope, T, !Map) :-
+	( if update(Scope, T, !.Map, NewMap) then
+        !:Map = NewMap
+    else
+        report_lookup_error(
+			"mh_scope_map.det_update: scope not present in map", Scope, T)
+    ).
+	
+%-----------------------------------------------------------------------------%
+% Removal
