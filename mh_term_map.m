@@ -402,8 +402,8 @@ set_from_assoc_list([K - V | KVs], !Map) :-
     set_from_assoc_list(KVs, !Map).
 	
 set_from_list([], !Set).
-set_from_list([Tuple | List]) :-
-	set(Tuple, !Set),
+set_from_list([Term | List]) :-
+	set(Term, !Set),
 	set_from_list(List, !Set).
 	
 update(atom(Symbol), T, !Map) :-
@@ -431,12 +431,12 @@ update(relation(Rel), T, !Map) :-
 	mh_relation_map.update(Symbol, T, Rels0, Rels),
 	!:Map = term_map(Atoms, Vars, Vals, Cons, Rels).
 	
-det_update(Term, T, !M) :-
-	( if update(Term, T, !.M, NewMap) then
-        !:M = NewMap
+det_update(Term, T, !Map) :-
+	( if update(Term, T, !.Map, NewMap) then
+        !:Map = NewMap
     else
         report_lookup_error("mh_term_map.det_update: term not present in map", 
-		Term, T)s
+		Term, T)
     ).
 	
 %-----------------------------------------------------------------------------%
