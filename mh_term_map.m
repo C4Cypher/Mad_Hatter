@@ -117,7 +117,7 @@ T::out) is semidet.
 :- pred det_remove(mh_term::in, T::out, mh_term_map(T)::in, 
 	mh_term_map::out) is det.
 	
-:- pred det_remove(mh_term::in,  mh_term_set::in, mh_term_set::out) is det.
+:- pred det_remove(mh_term::in, mh_term_set::in, mh_term_set::out) is det.
 	
 :- pred delete(mh_term::in,  mh_term_map(T)::in, 
 	mh_term_map::out) is det.
