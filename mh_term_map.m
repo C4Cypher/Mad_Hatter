@@ -487,6 +487,36 @@ det_remove(Term, T, !Map) :-
 		"mh_tuple_map.det_remove: term not present in map", Term, 
 		!.Map)
 	).
+	
+delete(atom(Symbol), !Map) :-
+	!.Map = term_map(Atoms0, Vars, Vals, Cons, Rels),
+	mh_symbol_map.delete(Symbol, Atoms0, Atoms),
+	!:Map = construct_term_map(Atoms, Vars, Vals, Cons, Rels).
+	
+delete(var(ID), !Map) :-
+	!.Map = term_map(Atoms, Vars0, Vals, Cons, Rels),
+	mh_var_map.id_delete(ID, Vars0, Vars),
+	!:Map = construct_term_map(Atoms, Vars, Vals, Cons, Rels).
+
+delete(mh_value(Value), !Map) :-
+	!.Map = term_map(Atoms, Vars, Vals0, Cons, Rels),
+	mh_value_map.delete(Value, Vals0, Vals),
+	!:Map = construct_term_map(Atoms, Vars, Vals, Cons, Rels).
+
+delete(cons(Functor, Args), !Map) :-
+	!.Map = term_map(Atoms, Vars, Vals, Cons0, Rels),
+	mh_symbol_map.delete(tuple_cons(Functor, Args), Cons0, Cons),
+	!:Map = construct_term_map(Atoms, Vars, Vals, Cons, Rels).
+	
+delete(relation(Rel), !Map) :-
+	!.Map = term_map(Atoms, Vars, Vals, Cons, Rels0),
+	mh_relation_map.delete(Symbol, Rels0, Rels),
+	!:Map = construct_term_map(Atoms, Vars, Vals, Cons, Rels).
+	
+delete_list([], !Map).
+delete_list([Term | Terms], !Map) :- 
+	delete(Term, !Map),
+	delete_list(Terms, !Map).
 
 	
 %-----------------------------------------------------------------------------%
