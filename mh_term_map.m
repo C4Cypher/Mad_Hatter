@@ -119,8 +119,7 @@ T::out) is semidet.
 	
 :- pred det_remove(mh_term::in, mh_term_set::in, mh_term_set::out) is det.
 	
-:- pred delete(mh_term::in,  mh_term_map(T)::in, 
-	mh_term_map::out) is det.
+:- pred delete(mh_term::in,  mh_term_map(T)::in, mh_term_map::out) is det.
 
 :- pred delete_list(list(mh_term)::in, mh_term_map(T)::in, 
 	mh_term_map::out) is det.
@@ -484,7 +483,7 @@ det_remove(Term, T, !Map) :-
 	(if remove(Term, FoundT, !Map)
 	then !:Map = !.Map, T = FoundT
 	else report_lookup_error(
-		"mh_tuple_map.det_remove: term not present in map", Term, 
+		"mh_term_map.det_remove: term not present in map", Term, 
 		!.Map)
 	).
 	
