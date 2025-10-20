@@ -19,6 +19,8 @@
 :- import_module assoc_list.
 
 :- import_module mh_scope.
+:- import_module mh_context.
+:- import_module mh_var_set.
 
 %-----------------------------------------------------------------------------%
 % Scope map
@@ -110,10 +112,9 @@
 :- pred det_remove(mh_scope::in, T::out, mh_scope_map(T)::in, 
 	mh_scope_map::out) is det.
 	
-:- pred det_remove(mh_scope::in,  mh_scope_set::in, mh_scope_set::out) is det.
+:- pred det_remove(mh_scope::in, mh_scope_set::in, mh_scope_set::out) is det.
 	
-:- pred delete(mh_scope::in,  mh_scope_map(T)::in, 
-	mh_scope_map::out) is det.
+:- pred delete(mh_scope::in,  mh_scope_map(T)::in, mh_scope_map::out) is det.
 
 :- pred delete_list(list(mh_scope)::in, mh_scope_map(T)::in, 
 	mh_scope_map::out) is det.
@@ -153,6 +154,21 @@
 :- pred difference(mh_scope_map(T)::in, mh_scope_map(_)::in, 
 	mh_scope_map(T)::out) is det.
 
+%-----------------------------------------------------------------------------%
+% Higher Order
+
+:- func fold(func(mh_context, mh_var_set, T, A) = A, mh_scope_map(T), A) = A.
+
+:- pred fold(func(mh_context, mh_var_set, T, A) = A, mh_scope_map(T), A, A).
+:- mode fold(in(func(in, in, in, in) = out is det), in, in, out) is det.
+
+:- func map(func(mh_context, mh_var_set, T) = U, mh_scope_map(T)) 
+	= mh_scope_map(U).
+ 
+:- pred map(func(mh_context, mh_var_set, T) = U, mh_scope_map(T), 
+	mh_scope_map(U)).
+:- mode map(in(func(in, in, in) = out is det), in, out) is det.
+
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -163,8 +179,6 @@
 :- import_module require.
 :- import_module pair.
 
-:- import_module mh_context.
-:- import_module mh_var_set.
 
 
 %-----------------------------------------------------------------------------%
@@ -181,9 +195,9 @@
 init = empty_scope_map.
 init(init).
 
-singleton(Scope, T) = scope_map(
+singleton(Scope, Value) = scope_map(
 	map.singleton(root_context(Scope), 
-		map.singleton(scope_vars(Scope), T)
+		map.singleton(scope_vars(Scope), Value)
 	)
 ).
 
@@ -219,27 +233,27 @@ lookup(scope_map(CtxMap), Scope) =
 %-----------------------------------------------------------------------------%
 % Insertion
 
-insert(Scope, T, emtpy_map, singleton(Scope, T)).
+insert(Scope, Value, emtpy_map, singleton(Scope, Value)).
 
-insert(Scope, T, scope_map(!.CtxMap), scope_map(!:CtxMap)) :-
+insert(Scope, Value, scope_map(!.CtxMap), scope_map(!:CtxMap)) :-
 	Ctx = root_context(Scope),
 	Set = scope_vars(Scope),
 	some [!SetMap] 
 		(if map.search(!.CtxMap, Ctx, !:SetMap)
 		then
-			map.insert(Set, T, !SetMap)
+			map.insert(Set, Value, !SetMap)
 			map.update(Ctx, !.SetMap, !CtxMap)
 		else
-			map.insert(Ctx, map.singleton(Set, T))
+			map.insert(Ctx, map.singleton(Set, Value))
 		).
 	
 insert(Scope, !Map) :- insert(Scope, unit, !Map).
 
-det_insert(Scope, T, !Map) :-
-	(if insert(Scope, T, !.Map, NewMap) 
+det_insert(Scope, Value, !Map) :-
+	(if insert(Scope, Value, !.Map, NewMap) 
 	then !:Map = NewMap
 	else report_lookup_error(
-		"mh_scope_map.det_insert: key already present", Scope, T)
+		"mh_scope_map.det_insert: key already present", Scope, Value)
 	).
 
 det_insert(Scope, !Map) :- det_insert(Scope, unit, !Map).
@@ -267,18 +281,18 @@ det_insert_from_list([ Scope | List]) :-
 	
 %-----------------------------------------------------------------------------%
 
-set(Scope, T, emtpy_map, singleton(Scope, T)).
+set(Scope, Value, emtpy_map, singleton(Scope, Value)).
 
-set(Scope, T, scope_map(!.CtxMap), scope_map(!:CtxMap)) :-
+set(Scope, Value, scope_map(!.CtxMap), scope_map(!:CtxMap)) :-
 	Ctx = root_context(Scope),
 	Set = scope_vars(Scope),
 	some [!SetMap] 
 		(if map.search(!.CtxMap, Ctx, !:SetMap)
 		then
-			map.set(Set, T, !SetMap)
+			map.set(Set, Value, !SetMap)
 			map.update(Ctx, !.SetMap, !CtxMap)
 		else
-			map.set(Ctx, map.singleton(Set, T))
+			map.set(Ctx, map.singleton(Set, Value))
 		).
 	
 set(Scope, !Map) :- set(Scope, unit, !Map).
@@ -305,22 +319,112 @@ set_from_list([Scope | List]) :-
 %-----------------------------------------------------------------------------%
 
 
-update(Scope, T, scope_map(!.CtxMap), scope_map(!:CtxMap)) :-
+update(Scope, Value, scope_map(!.CtxMap), scope_map(!:CtxMap)) :-
 	Ctx = root_context(Scope),
 	Set = scope_vars(Scope),
 	some [!SetMap] (
 		map.search(!.CtxMap, Ctx, !:SetMap),
-		map.update(Set, T, !SetMap)
+		map.update(Set, Value, !SetMap)
 		map.update(Ctx, !.SetMap, !CtxMap)
 	).
 	
-det_update(Scope, T, !Map) :-
-	( if update(Scope, T, !.Map, NewMap) then
+det_update(Scope, Value, !Map) :-
+	( if update(Scope, Value, !.Map, NewMap) then
         !:Map = NewMap
     else
         report_lookup_error(
-			"mh_scope_map.det_update: scope not present in map", Scope, T)
+			"mh_scope_map.det_update: scope not present in map", Scope, Value)
     ).
 	
 %-----------------------------------------------------------------------------%
 % Removal
+
+:- func check_empty(scope_map(T)) = scope_map(T).
+
+check_empty(empty_scope_map) = empty_scope_map.
+
+:- pred check_empty(scope_map(T)::in, scope_map(T)::out) is det.
+
+check_empty(Map, check_empty(Map)).
+
+check_empty(scope_map(CtxMap)@ScopeMap) =
+	(if map.is_empty(CtxMap) then empty_scope_map else ScopeMap ).
+	
+remove(Scope, Value, scope_map(!.CtxMap), scope_map(!:CtxMap)) :-
+	Ctx = root_context(Scope), Set = scope_vars(Scope), 
+	some [!SetMap] (
+		map.search(CtxMap, Ctx, !:SetMap),
+		map.remove(Set, Value, !SetMap),
+		(if map.is_empty(!.SetMap)
+		then
+			map.delete(Ctx, !CtxMap),
+			check_empty(!CtxMap)
+		else
+			map.update(Ctx, !.SetMap, !CtxMap)		
+		)
+	).
+	
+remove(Scope, !Set) :- remove(Scope, unit, !Set).
+
+det_remove(Term, Value, !Map) :-	
+	(if remove(Term, FoundV, !Map)
+	then !:Map = !.Map, Value = FoundV
+	else report_lookup_error(
+		"mh_scope_map.det_remove: scope not present in map", Term, 
+		!.Map)
+	).
+
+delete(Scope, scope_map(!.CtxMap), scope_map(!:CtxMap)) :-
+	Ctx = root_context(Scope), Set = scope_vars(Scope), 
+	some [!SetMap] 
+	(if map.search(CtxMap, Ctx, !:SetMap),
+	then
+		map.delete(Set, !SetMap),
+		(if map.is_empty(!.SetMap)
+		then
+			map.delete(Ctx, !CtxMap),
+			check_empty(!CtxMap)
+		else
+			map.update(Ctx, !.SetMap, !CtxMap)		
+		)
+	else
+		!:CtxMap = !.CtxMap
+	).
+	
+delete_list([], !Map).
+delete_list([Scope | Scopes], !Map) :- 
+	delete(Scope, !Map),
+	delete_list(Scopes, !Map).
+	
+%-----------------------------------------------------------------------------%
+% Set operations
+
+
+%-----------------------------------------------------------------------------%
+% Higher Order
+
+fold(_, empty_scope_map, A) = A.
+fold(F, scope_map(CtxMap), A) = map.foldl(fold_ctx(F), CtxMap, A).
+
+:- func fold_ctx(func(mh_context, mh_var_set, T, A) = A), mh_context, 
+	set_map(T), A) = A.
+	
+fold_ctx(F, Ctx, SetMap, A) = map.foldl(fold_set(F, Ctx), SetMap, A). 
+	
+:- func fold_set(func(mh_context, mh_var_set, T, A) = A), mh_context,
+	mh_var_set, T, A) = A.
+	
+fold_set(F, Ctx, Set, Value, A) = F(Ctx, Set, T, A).
+
+fold(F, Map, A, fold(F, Map, A)).
+
+map(_, empty_scope_map, empty_scope_map).
+
+map(F, scope_map(!.CtxMap), scope_map(!:CtxMap)) :-
+
+:- func map_ctx(func(mh_context, mh_var_set, T) = U, set_map(T)) = set_map(U).
+
+:- func map_set(func(mh_context, mh_var_set, T) = U, mh_context, mh_var_set, 
+	T) = U.
+
+map_set(F, Ctx, Set, T) = F(Ctx, Set)
