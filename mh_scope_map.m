@@ -406,10 +406,34 @@ union(_, empty_scope_map, Map) = Map.
 union(F, scope_map(CtxMap1)@Map1, Map2) = 
 	(if Map2 = scope_map(CtxMap2)
 	then
-		scope_map( map.union(map.union(F), CtxMap1, CtxMap2) )
+		scope_map( map.foldl(union_ctx_fold(F), CtxMap1, CtxMap2) )
 	else
 		Map1	
 	).
+	
+:- func union_ctx_fold(func(T, T) = T, mh_context, set_map(T),
+	context_map(T)) = context_map(T).
+	
+union_ctx_fold(F, Ctx, SetMap1, CtxMap2) = CtxUnion :-
+	(if map.insert(Ctx, SetMap1, CtxMap2, NewMap)
+	then
+		CtxUnion = NewMap
+	else
+		map.lookup(CtxMap2, Ctx, SetMap2),
+		CtxUnion = map.foldl(union_set_fold(F), SetMap1, SetMap2)
+	).
+	
+:- func union_set_fold(func(T, T) = T, mh_var_set, T, set_map(T)) = set_map(T).
+
+union_set_fold(F, Set, Value1, SetMap2) = SetUnion
+	(if map.insert(Set, Value1, SetMap2, NewMap)
+	then
+		SetUnion = NewMap
+	else
+		map.lookup(SetMap2, Set, Value2),
+		map.set(Set, F(Value1, Value2), SetMap2, SetUnion)
+	).
+	
 	
 union(F, Map1, Map2, union(F, Map1, Map2)).
 
