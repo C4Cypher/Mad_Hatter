@@ -126,11 +126,9 @@
 :- func union(func(T, T) = T, mh_scope_map(T), mh_scope_map(T)) =
 	mh_scope_map(T).
 
-:- pred union(func(T, T) = T, mh_scope_map(T), mh_scope_map(T), 
+:- pred union(func(T, T) = T, mh_scope_map(T), mh_scope_map(T),
 	mh_scope_map(T)).
-	
 :- mode union(in(func(in, in) = out is det), in, in, out) is det.
-:- mode union(in(func(in, in) = out is semidet), in, in, out) is semidet.
 
 :- func set_union(mh_scope_set, mh_scope_set) = mh_scope_set.
 :- pred set_union(mh_scope_set::in, mh_scope_set::in, mh_scope_set::out)
@@ -244,10 +242,11 @@ insert(Scope, Value, scope_map(!.CtxMap), scope_map(!:CtxMap)) :-
 			map.insert(Set, Value, !SetMap)
 			map.update(Ctx, !.SetMap, !CtxMap)
 		else
-			map.insert(Ctx, map.singleton(Set, Value))
+			map.insert(Ctx, map.singleton(Set, Value), !CtxMap)
 		).
 	
 insert(Scope, !Map) :- insert(Scope, unit, !Map).
+
 
 det_insert(Scope, Value, !Map) :-
 	(if insert(Scope, Value, !.Map, NewMap) 
@@ -399,6 +398,20 @@ delete_list([Scope | Scopes], !Map) :-
 %-----------------------------------------------------------------------------%
 % Set operations
 
+union(_, empty_scope_map, Map) = Map.
+
+%TODO: Rewrite this with folds, compare with map.union. Really don't like the
+% way map.union converts to assoc lists and back.
+
+union(F, scope_map(CtxMap1)@Map1, Map2) = 
+	(if Map2 = scope_map(CtxMap2)
+	then
+		scope_map( map.union(map.union(F), CtxMap1, CtxMap2) )
+	else
+		Map1	
+	).
+	
+union(F, Map1, Map2, union(F, Map1, Map2)).
 
 %-----------------------------------------------------------------------------%
 % Higher Order
@@ -420,11 +433,12 @@ fold(F, Map, A, fold(F, Map, A)).
 
 map(_, empty_scope_map, empty_scope_map).
 
-map(F, scope_map(!.CtxMap), scope_map(!:CtxMap)) :-
+map(F, scope_map(CtxMap)) =  scope_map(map.map_values(map_ctx(F), CtxMap)).
 
-:- func map_ctx(func(mh_context, mh_var_set, T) = U, set_map(T)) = set_map(U).
+:- func map_ctx(func(mh_context, mh_var_set, T) = U, mh_context, set_map(T)) 
+	= set_map(U).
 
-:- func map_set(func(mh_context, mh_var_set, T) = U, mh_context, mh_var_set, 
-	T) = U.
+map_ctx(F, Ctx, SetMap) = map.map_values(F(Ctx), SetMap).
 
-map_set(F, Ctx, Set, T) = F(Ctx, Set)
+map(F, Map, map(F, Map)).
+
