@@ -437,6 +437,14 @@ union_set_fold(F, Set, Value1, SetMap2) = SetUnion
 	
 union(F, Map1, Map2, union(F, Map1, Map2)).
 
+:- func dummy_merge(unit, unit) = unit is det.
+
+dummy_merge(_, _) = unit.
+
+set_union(Set1, Set2) = union(dummy_merge, Set1, Set2).
+
+
+
 %-----------------------------------------------------------------------------%
 % Higher Order
 
