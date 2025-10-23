@@ -140,7 +140,6 @@
 :- pred intersect(func(T, T) = T, mh_scope_map(T), mh_scope_map(T),
 	mh_scope_map(T)).
 :- mode intersect(in(func(in, in) = out is det), in, in, out) is det.
-:- mode intersect(in(func(in, in) = out is semidet), in, in, out) is semidet.
 
 :- func set_intersect(mh_scope_set, mh_scope_set) = mh_scope_set.
 :- pred set_intersect(mh_scope_set::in, mh_scope_set::in, mh_scope_set::out) 
@@ -342,12 +341,12 @@ det_update(Scope, Value, !Map) :-
 
 check_empty(empty_scope_map) = empty_scope_map.
 
+check_empty(scope_map(CtxMap)@ScopeMap) =
+	(if map.is_empty(CtxMap) then empty_scope_map else ScopeMap ).
+
 :- pred check_empty(scope_map(T)::in, scope_map(T)::out) is det.
 
 check_empty(Map, check_empty(Map)).
-
-check_empty(scope_map(CtxMap)@ScopeMap) =
-	(if map.is_empty(CtxMap) then empty_scope_map else ScopeMap ).
 	
 remove(Scope, Value, scope_map(!.CtxMap), scope_map(!:CtxMap)) :-
 	Ctx = root_context(Scope), Set = scope_vars(Scope), 
@@ -400,9 +399,6 @@ delete_list([Scope | Scopes], !Map) :-
 
 union(_, empty_scope_map, Map) = Map.
 
-%TODO: Rewrite this with folds, compare with map.union. Really don't like the
-% way map.union converts to assoc lists and back.
-
 union(F, scope_map(CtxMap1)@Map1, Map2) = 
 	(if Map2 = scope_map(CtxMap2)
 	then
@@ -434,7 +430,6 @@ union_set_fold(F, Set, Value1, SetMap2) = SetUnion
 		map.set(Set, F(Value1, Value2), SetMap2, SetUnion)
 	).
 	
-	
 union(F, Map1, Map2, union(F, Map1, Map2)).
 
 :- func dummy_merge(unit, unit) = unit is det.
@@ -443,7 +438,81 @@ dummy_merge(_, _) = unit.
 
 set_union(Set1, Set2) = union(dummy_merge, Set1, Set2).
 
+intersect(_, empty_scope_map, _) = empty_scope_map.
 
+intersect(F, scope_map(CtxMap1), Map2) = 
+	(if Map2 = scope_map(CtxMap2)
+	then
+		check_empty(
+			scope_map( 
+				map.foldl(intersect_ctx_fold(F, CtxMap2), CtxMap1, map.init)
+			)
+		)
+	else
+		empty_scope_map
+	).
+	
+:- func intersect_ctx_fold(func(T, T) = T, context_map(T), mh_context, 
+	set_map(T),	context_map(T)) = context_map(T).
+	
+intersect_ctx_fold(F, CtxMap2, Ctx, SetMap1, !.IntCtx) = !:IntCtx :-
+	(if map.search(CtxMap2, Ctx, SetMap2)
+	then
+		IntSet = map.foldl(interset_set_fold(F, SetMap2), SetMap1, map.init),
+		(if is_empty(IntSet)
+		then true
+		else
+			map.det_insert(Ctx, IntSet, !IntCtx)
+		)
+	else true
+	).
+	
+:- func intersect_ctx_fold(func(T, T) = T, set_map(T), mh_var_set, T,
+	set_map(T)) = set_map(T).
+	
+interset_set_fold(F, SetMap2, Set, Value1, !.IntSet) = !:IntSet :-
+	(if map.search(SetMap2, Set, Value2)
+	then
+		map.det_insert(Set, F(Value1, Value2), !IntSet)
+	else true
+	).
+	
+intersect(F, Map1, Map2, intersect(F, Map1, Map2)).
+
+set_intersect(Map1, Map2) = intersect(dummy_merge, Map1, Map2).
+set_insersect(Map1, Map2, set_intersect(Map1, Map2)).
+
+difference(empty_scope_map, _) = empty_scope_map.
+
+difference(scope_map(CtxMap1), Map2) = 
+	(if Map2 = scope_map(CtxMap2)
+		check_empty(
+			scope_map(
+				map.foldl(difference_ctx_fold, CtxMap2, CtxMap1)
+			)
+		)
+	else 
+		empty_scope_map
+	).
+	
+:- func difference_ctx_fold(mh_context, set_map(T), context_map(T)) = 
+	context_map(T).
+	
+difference_ctx_fold(Ctx, SetMap2, CtxMap1) = 
+	(if 
+		map.search(CtxMap1, Ctx, SetMap1),
+		SetDiff = map.foldl(difference_set_fold, SetMap2, SetMap1),
+		map.set(Ctx, SetDiff, CtxMap1, CtxDiff)
+	then
+		CtxDiff
+	else
+		CtxMap1
+	).
+	
+:- func difference_set_fold(mh_var_set, T, set_map(T)) = set_map(T).
+
+difference_set_fold(Set, _Value, SetMap1) = map.delete(SetMap1, Set).
+	
 
 %-----------------------------------------------------------------------------%
 % Higher Order
