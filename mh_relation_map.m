@@ -15,9 +15,11 @@
 
 :- interface.
 
+:- import_module unit.
+:- import_module list.
+:- import_module assoc_list.
 
 :- import_module mh_relation.
-:- import_module mh_var_id.
 
 %-----------------------------------------------------------------------------%
 % Term maps
@@ -156,43 +158,62 @@ T::out) is semidet.
 
 :- implementation.
 
+:- import_module set.
 :- import_module maybe.
-:- import_module array.
-:- import_module hash_table.
 :- import_module map.
-:- import_module type_desc.
-:- import_module univ.
+:- import_module pair.
 
-:- import_module hashmap.
-
-:- import_module mh_environment.
-:- import_module mh_term.
-:- import_module mh_symbol.
-:- import_module mh_value_map.
-:- import_module mh_var_map.
+:- import_module mh_scope_map.
+:- import_module mh_scope.
 :- import_module mh_tuple_map.
+:- import_module mh_term_map.
+:- import_module mh_substutition.
 
-%-----------------------------------------------------------------------------%
-% Environment map
-
-:- type scope_map(T) == map(mh_scope, T).
 
 %-----------------------------------------------------------------------------%
 % Relation Map
 
 :- type mh_relation_map(T)
 	--->	empty_relation_map
-	;		relation_map(maybe(T), scope_map(relation_tree(T)).
+	;		relation_map(maybe(T), mh_scope_map(relation_tree(T)).
+	
+:- type relation_pair(T) == pair(mh_relation, T).
 				
 
 :- type relation_tree(T)
 	--->	relation_tree(
-				conjunction_map :: mh_tuple_map(T),
-				disjunction_map :: mh_tuple_map(T),
-				negation_map :: mh_relation_map(T),
-				lambda_equivalence_map :: 
+				tree_conjunction_map :: mh_tuple_map(relation_pair(T)),
+				tree_disjunction_map :: mh_tuple_map(relation_pair(T)),
+				tree_negation_map :: mh_term_map(relation_pair(T)),
+				tree_lambda_equivalence_map :: mh_tuple_map(relation_pair(T)),
+				tree_lambda_application_map :: mh_tuple_map(relation_pair(T)),
+				tree_lambda_unification_map :: mh_tuple_map(relation_pair(T)),
+				tree_lazy_map :: mh_term_map(relation_pair(T)),
+				tree_proposition_map ::	mh_proposition_map(relation_pair(T)),
+				tree_closure_map :: mh_term_map(map(mh_substituiton,
+					relation_pair(T)))
 			).
+			
+:- func init_tree = relation_Tree(_).
 
-)
+init_tree = relation_tree(
+		mh_tuple_map.init,
+		mh_tuple_map.init,
+		mh_term_map.init,
+		mh_tuple_map.init,
+		mh_tuple_map.init,
+		mh_tuple_map.init,
+		mh_term_map.init,
+		mh_proposition_map.init,
+		mh_term_map.init
+		
+	).
+
+init = empty_relation_map.
+init(init).
+
+singleton(Rel, Value) = Map :- det_insert(Rel, Value, init_tree, Map).
+singleton(Rel) = singleton(Rel, unit).
+
 
 
