@@ -16,10 +16,10 @@
 :- interface.
 
 :- import_module unit.
-:- import_module map.
+:- import_module list.
+:- import_module assoc_list.
 
 :- import_module mh_term.
-%:- import_module mh_var_id.
 
 
 %-----------------------------------------------------------------------------%
@@ -28,8 +28,6 @@
 :- type mh_term_map(T).
 
 :- type mh_term_set == mh_term_map(unit).
-
-% :- type key_term_func(T) == (func(T) = mh_term).
 
 :- func init = mh_term_map(T).
 :- pred init(mh_term_map(_)::out) is det.
@@ -173,6 +171,7 @@ T::out) is semidet.
 
 :- implementation.
 
+:- import_module pair.
 :- import_module require.
 
 :- import_module mh_symbol_map.
@@ -183,7 +182,7 @@ T::out) is semidet.
 :- import_module mh_tuple.
 
 %-----------------------------------------------------------------------------%
-% Term maps
+% Term map
 
 
 :- type mh_term_map(T)
