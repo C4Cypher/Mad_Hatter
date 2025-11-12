@@ -169,9 +169,14 @@ T::out) is semidet.
 :- import_module mh_term_map.
 :- import_module mh_substutition.
 
+:- use_module mh_relation_map.
 
 %-----------------------------------------------------------------------------%
 % Relation Map
+
+:- type exact_map(T) == map.map(mh_relation, T).
+:- type pattern_map(T) == mh_relation_pattern_map.relation_pattern_map(T).
+:- type lazy_pattern_map(T) == l
 
 :- type mh_relation_map(T)
 	--->	empty_relation_map
@@ -180,21 +185,8 @@ T::out) is semidet.
 :- type relation_pair(T) == pair(mh_relation, T).
 				
 
-:- type relation_tree(T)
-	--->	relation_tree(
-				tree_conjunction_map :: mh_tuple_map(relation_pair(T)),
-				tree_disjunction_map :: mh_tuple_map(relation_pair(T)),
-				tree_negation_map :: mh_term_map(relation_pair(T)),
-				tree_lambda_equivalence_map :: mh_tuple_map(relation_pair(T)),
-				tree_lambda_application_map :: mh_tuple_map(relation_pair(T)),
-				tree_lambda_unification_map :: mh_tuple_map(relation_pair(T)),
-				tree_lazy_map :: mh_term_map(relation_pair(T)),
-				tree_proposition_map ::	mh_proposition_map(relation_pair(T)),
-				tree_closure_map :: mh_term_map(map(mh_substituiton,
-					relation_pair(T)))
-			).
 			
-:- func init_tree = relation_Tree(_).
+:- func init_tree = relation_tree(_).
 
 init_tree = relation_tree(
 		mh_tuple_map.init,
@@ -215,5 +207,14 @@ init(init).
 singleton(Rel, Value) = Map :- det_insert(Rel, Value, init_tree, Map).
 singleton(Rel) = singleton(Rel, unit).
 
+is_empty(empty_relation_map).
 
+count(empty_relation_map) = 0.
+
+count(relation_map(MaybNil, ScopeMap)) =
+	(if MaybNil = no then 0 else 1) + fold(count_fold, ScopeMap, 0).
+	
+:- func count_fold(mh_context, mh_var_set, relation_tree(T), int) = int.
+
+count_fold(_, _, Tree, !.Count) = !:Count :- %sum of the members of relation_tree
 
