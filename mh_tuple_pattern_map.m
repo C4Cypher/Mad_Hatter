@@ -25,7 +25,7 @@
 :- import_module mh_tuple.
 
 %-----------------------------------------------------------------------------%
-% Pattern Tuple map
+% Tuple Pattern map
 
 :- type tuple_pattern_map(T) == map.map(int, pattern_array(T)).
 
@@ -189,7 +189,7 @@
 :- import_module mh_term_map.
 
 %-----------------------------------------------------------------------------%
-% Pattern Tuple map
+% Tuple Pattern map
 
 init = map.init.
 init(init).
