@@ -265,15 +265,17 @@
 %-----------------------------------------------------------------------------%
 % Ordered set
 
+:- type term_map == mh_term_map(set(int)).
+
 :- type mh_ordered_term_set 
 	--->	ordered_term_set(
 			order::array(mh_term), 
-			map::mh_term_map(set(int))
+			map::term_map
 		)
 		where comparison is compare_ordered_term_sets.
 
 % Deterministic constructor
-:- func os(array(T), array(T)) = mh_ordered_term_set.
+:- func os(array(mh_term), term_map) = mh_ordered_term_set.
 :- mode os(in, in) = out is det.
 :- mode os(out, out) = in is det.
 
