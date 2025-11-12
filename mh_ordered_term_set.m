@@ -289,15 +289,6 @@ os(O::out, S::out) = (OS::in) :-
 
 :- pragma inline(os/2).
 	
-/* TODO: Make the sorted array lazy when benchmarking to see if there is any
- appriciable benefit to performance. 
-
-Efficient set operations (union, intersect, difference) or 
-comparison (ord ops >,=,<) would force evaluation of the lazy set. The only 
-advantage to delaying the sorting of the array would be if the ordered array 
-were indexed (or converted to a non-set type) without performing any set or 
-comparison operations. 
-*/
 
 %-----------------------------------------------------------------------------%
 % Basic operations
