@@ -627,6 +627,9 @@
 % Perform a traversal by key of the map, applying an accumulator
 % predicate for value. Order is arbitrary and cannot be garunteed.
 :- func foldl(func(K, V, A) = A, hashmap(K, V), A) = A.
+:- mode foldl(in(func(in, in, in, out) is det), in, in) = out is det.
+:- mode foldl(in(func(in, in, in, out) is semidet), in, in) = out is semidet.
+
 :- pred foldl(pred(K, V, A, A), hashmap(K, V), A, A).
 :- mode foldl(in(pred(in, in, in, out) is det), in, in, out) is det.
 :- mode foldl(in(pred(in, in, mdi, muo) is det), in, mdi, muo) is det.
@@ -3228,9 +3231,15 @@ unsafe_ctz32(!.X) = !:X :-
 %-----------------------------------------------------------------------------%
 % Standard higher order functions on collections.
 
-foldl(F, T, A) = B :-
-    P = (pred(W::in, X::in, Y::in, Z::out) is det :- Z = F(W, X, Y) ),
-    foldl(P, T, A, B).
+:- pred apply_func(func(K, V, A) = A, K, V, A, A).
+:- mode apply_func((in(func(in, in, in) = out is det), in, in, in, out) is det.
+:- mode apply_func((in(func(in, in, in) = out is semidet), in, in, in, out)
+	is semidet.
+	
+apply_func(F, K, V, A, F(K, V, A)).
+
+foldl(F, T, !.A) = !:A :- 
+    foldl(apply_func(F), T, !A).
 	
 foldl(_P, empty_tree, !A).
 foldl(P, leaf(_H, K, V), !A) :- P(K, V, !A).
