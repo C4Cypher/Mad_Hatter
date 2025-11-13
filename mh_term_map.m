@@ -154,9 +154,13 @@ T::out) is semidet.
 % Higher Order
 
 :- func fold(func(mh_term, T, A) = A, mh_term_map(T), A) = A.
+:- mode fold(in(func(in, in, in) = out is det), in, in) = out is det.
+:- mode fold(in(func(in, in, in) = out is semidet), in, in) = out 
+	is semidet.
 
 :- pred fold(func(mh_term, T, A) = A, mh_term_map(T), A, A).
 :- mode fold(in(func(in, in, in) = out is det), in, in, out) is det.
+:- mode fold(in(func(in, in, in) = out is semidet), in, in, out) is semidet.
 
 :- func map(func(mh_term, T) = U, mh_term_map(T)) = mh_term_map(U).
  
@@ -595,20 +599,34 @@ fold(F, mh_term_map(Symbols, Vars, Vals, Cons, Rels), !.A) = !:A :-
 	!:A = mh_relation_map.fold(relation_fold(F), Rels, !.A).
 
 :- func symbol_fold(func(mh_term, T, A) = A, mh_symbol, T, A) = A.
+:- mode symbol_fold(in(func(in, in, in) = out is det), in, in) = out is det.
+:- mode symbol_fold(in(func(in, in, in) = out is semidet), in, in) = out 
+	is semidet.
+
 symbol_fold(F, S, T, A) = F(atom(S), T, A).
 
 :- pred var_id_fold(func(mh_term, T, A) = A, var_id, T, A, A).
-:- mode var_id_fold(in, in, in, in, out) is det.
+:- mode var_id_fold(in(func(in, in, in) = out is det), in, in, out) is det.
+:- mode symbol_fold(in(func(in, in, in) = out is semidet), in, in, out) 
+	is semidet.
 
 var_id_fold(F, ID, T, A, F(var(ID), T, A)). 
 
 :- func value_fold(func(mh_term, T, A) = A, mh_value, T, A) = A.
+:- mode value_fold(in(func(in, in, in) = out is det), in, in) = out is det.
+:- mode value_fold(in(func(in, in, in) = out is semidet), in, in) = out 
+	is semidet.
+	
 value_fold(F, V, T, A) = F(value(V), T, A).
 
 :- func cons_fold(func(mh_term, T, A) = A, mh_tuple, T, A) = A.
+:- mode cons_fold(in(func(in, in, in) = out is det), in, in) = out is det.
+:- mode cons_fold(in(func(in, in, in) = out is semidet), in, in) = out 
+	is semidet.
+	
 cons_fold(F, Tuple, T, A) = 
-	(if F(cons(tuple_car(Tuple), tuple_cdr(Tuple)), T, A) = Result then
-		Result
+	(if Cons = cons(tuple_car(Tuple), tuple_cdr(Tuple)) then
+		F(Cons, T, A)
 	else
 		%Introspection for more informative error message
 		(if tuple_size(Tuple) = 0 then
@@ -622,6 +640,10 @@ cons_fold(F, Tuple, T, A) =
 	).
 	
 :- func relation_fold(func(mh_term, T, A) = A, mh_relation, T, A) = A.
+:- mode relation_fold(in(func(in, in, in) = out is det), in, in) = out is det.
+:- mode relation_fold(in(func(in, in, in) = out is semidet), in, in) = out 
+	is semidet.
+	
 relation_fold(F, R, T, A) = F(relation(R), T, A).
 
 
