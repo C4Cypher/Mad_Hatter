@@ -379,6 +379,10 @@
 % Perform a traversal by key of the map, applying an accumulator
 % predicate for value. Order is arbitrary and cannot be garunteed.
 :- func foldl(func(mh_symbol, T, A) = A, mh_symbol_map(T), A) = A.
+:- mode foldl(in(func(in, in, in) = out is det), in, in) = out is det.
+:- mode foldl(in(func(in, in, in) = out is semidet), in, in) = out 
+	is semidet.
+
 :- pred foldl(pred(mh_symbol, T, A, A), mh_symbol_map(T), A, A).
 :- mode foldl(in(pred(in, in, in, out) is det), in, in, out) is det.
 :- mode foldl(in(pred(in, in, mdi, muo) is det), in, mdi, muo) is det.
