@@ -110,8 +110,11 @@
 :- pred sort_and_remove_dups(array(T)::in, array(T)::array_uo) is det.
 :- func sort_and_remove_dups(array(T)::in) = (array(T)::array_uo) is det.
 
-% Perform a linear search of an array, returning the index if found.
+% Succeed if the given array is sorted in ascending standard ordering
+:- pred is_sorted(array(T)::in) is semidet.
 
+
+% Perform a linear search of an array, returning the index if found.
 :- pred array_search(array(T)::in, T::in, int::out) is semidet.
 :- func array_search(array(T), T) = int is semidet.
 
@@ -125,7 +128,20 @@
 :- func mergesort(comparison_func(T)::in(comparison_func), 
 	array(T)::array_di) = (array(T)::array_uo) is det.
 
+% Left fold over items in an array, providing the array index
 
+:- func index_fold(func(int, T, A) = A, array(T), A) = A.
+:- mode index_fold(in(func(in, in, in) = out is det), in, in) = out is det.
+:- mode index_fold(in(func(in, in, in) = out is semidet), in, in) = out 
+	is semidet.
+	
+:- pred index_fold(func(int, T, A) = A, array(T), A, A).
+:- mode index_fold(in(func(in, in, in) = out is det), in, in, out) is det.
+:- mode index_fold(in(func(in, in, in) = out is semidet), in, in, out) 
+	is semidet.
+	
+:- pred index_all_true((pred(int::in, T::in) is semidet)::in, array(T)::in)
+	is semidet.
 
 %-----------------------------------------------------------------------------%
 % Map Manipulation
@@ -449,6 +465,26 @@ sort_and_remove_dups(!A) :- array.copy(!A), !:A = array.sort(!.A),
 
 sort_and_remove_dups(!.A) = !:A :- sort_and_remove_dups(!A).
 
+
+:- pred is_sorted(array(T)::in, T::in, int::in, int::in) is semidet.
+
+is_sorted(A, Current, Index, Last) :-
+	(if Index > Last
+	then true
+	else
+		unsafe_lookup(A, Index, Next),
+		Current @=< Next,
+		is_sorted(A, Next, Index + 1, Last)
+	).
+	
+is_sorted(A) :- 
+	(if size(A, 0) 
+	then true
+	else
+		unsafe_lookup(A, 0, First),
+		is_sorted(A, First, 1, max(A))
+	).
+
 array_search(A, T, I) :- array_search(A, T, 0, I).
 
 array_search(A, T) = I :- array_search(A, T, I).
@@ -716,14 +752,46 @@ search_until(CMP, R, A, Lo, Hi) =
 		Lo + 1
 	).
 
+%---------------------%
+
+:- func for_fold(int, int, func(int, T, A) = A, array(T), A) = A.
+:- mode for_fold(in, in, in(func(in, in, in) = out is det), in, in) = out 
+	is det.
+:- mode for_fold(in, in, in(func(in, in, in) = out is semidet), in, in) = out 
+	is semidet.
+
+for_fold(Current, Last, F, Array, Acc) = 
+	(if Current > Last 
+	then Acc
+	else for_fold(Current + 1, Last, F, Array, NextAcc)
+	)
+:-
+	NextAcc = F(Current, unsafe_elem(Current, Array), Acc).
+	
+index_fold(F, Array, Acc) = for_fold(min(Array), max(Array), F, Array, Acc).
+
+index_fold(F, Array, Acc, index_fold(F, Array, Acc)).
+
+:- pred for_all_true(int::in, int::in, (pred(int::in, T::in) is semidet)::in,
+	array::in) is semidet.
+	
+for_all_true(Current, Last, P, Array) :-
+	(if Current > Last then true
+	else
+		P(Current, unsafe_elem(Current, Array)),
+		for_all_true(Current + 1, Last, P, Array)
+	).
+	
+index_all_true(P, Array) :- for_all_true(min(Array), max(Array), P, Array).
+
 %-----------------------------------------------------------------------------%
 % Map Manipulation
 
 is_singleton(Map) :- keys(Map, [_]).
 
 :- pred apply_func(func(K, V, A) = A, K, V, A, A).
-:- mode apply_func((in(func(in, in, in) = out is det), in, in, in, out) is det.
-:- mode apply_func((in(func(in, in, in) = out is semidet), in, in, in, out)
+:- mode apply_func(in(func(in, in, in) = out is det), in, in, in, out) is det.
+:- mode apply_func(in(func(in, in, in) = out is semidet), in, in, in, out)
 	is semidet.
 	
 apply_func(F, K, V, A, F(K, V, A)).
