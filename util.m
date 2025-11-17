@@ -16,6 +16,7 @@
 :- interface.
 
 :- import_module array.
+:- import_module set.
 :- import_module list.
 :- import_module string.
 :- import_module map.
@@ -69,6 +70,18 @@
 :- pred unsafe_array_delete(int::in, array(T)::in, array(T)::array_uo) is det.
 :- func unsafe_array_delete(array(T)::in, int::in) = (array(T)::array_uo) 
 	is det.
+	
+% array_delete_set(Set, Source, Result)
+% Remove a set of elements from an array, shifting elements left
+:- pred array_delete_set(set(int)::in, array(T)::in, array(T)::array_uo)
+	is det.
+:- func array_delete_set(array(T)::in, set(int)::in) = (array(T)::array_uo)
+	is det.
+
+:- pred unsafe_array_delete_set(set(int)::in, array(T)::in, array(T)::array_uo)
+ is det.
+:- func unsafe_array_delete_set(array(T)::in, set(int)::in) = 
+	(array(T)::array_uo) is det.
 
 % array_[cons|snoc](T, Source, Result)
 % Insert T as the [first|last] element of Source 
@@ -140,8 +153,8 @@
 :- mode index_fold(in(func(in, in, in) = out is semidet), in, in, out) 
 	is semidet.
 	
-:- pred index_all_true((pred(int::in, T::in) is semidet)::in, array(T)::in)
-	is semidet.
+:- pred index_all_true(pred(int, T)::in(pred(in, in) is semidet), 
+	array(T)::in) is semidet.
 
 %-----------------------------------------------------------------------------%
 % Map Manipulation
@@ -188,6 +201,7 @@
 
 
 :- import_module int.
+:- import_module unit.
 :- import_module solutions.
 :- import_module require.
 :- import_module exception.
@@ -310,7 +324,7 @@ unsafe_array_delete(Src, I) = Result :-
 	else if NewSize = 1
 	then
 		Remaining = (I = 0 -> 1 ; 0),
-		init(NewSize, Src ^ elem(Remaining), Result)
+		init(1, Src ^ elem(Remaining), Result)
 	else if I = Last
 	then
 		init(NewSize, Src ^ elem(0), Result0),
@@ -338,6 +352,64 @@ unsafe_array_delete(Src, I) = Result :-
 		%unsafe_array_copy_range(Src, I + 1, Last, CpyStart, Result1, Result)
 		array_copy_range(Src, First, Last, CpyStart, Result1, Result)
 	).
+	
+	
+array_delete_set(Set, Src, array_delete_set(Src, Set)).
+
+:- pred bounds_check(array(T)::in, int::in, unit::in, unit::out) is det.
+
+bounds_check(A, I, _, unit) :-
+	(if in_bounds(A, I) then true
+	else
+		bounds(A, Min, Max),
+		format_bounds_error($pred, "index %d not in range [%d, %d]",
+		[i(I), i(Min), i(Max)])
+	).
+
+array_delete_set(Src, Set) = Result :-
+	fold(bounds_check(Src), Set, unit, _),
+	unsafe_array_delete_set(Set, Src, Result).
+	
+unsafe_array_delete_set(Set, Src, unsafe_array_delete_set(Src, Set)).
+
+:- func first_kept_index(int, set(int)) = int.
+
+first_kept_index(I, Set) =
+	(if contains(Set, I)
+	then first_kept_index(I + 1, Set)
+	else I
+	).
+	
+%- pred add_rest(Current, Last, SrcIndex, RemovedIndexes, Src, !Result).
+:- pred add_rest(int::in, int::in, int::in, set(int)::in, array(T)::in, 
+	array(T)::array_di, array(T)::array_uo) is det.
+	
+add_rest(Current, Last, SrcIndex, Set, Src, !Result) :-
+	(if Current > Last then true
+	else
+		NextSrcIndex = first_kept_index(SrcIndex, Set),
+		unsafe_lookup(Src, NextSrcIndex, Element),
+		unsafe_set(Current, Element, !Result),
+		add_rest(Current + 1, Last, NextSrcIndex + 1, Set, Src, !Result)
+	).
+
+unsafe_array_delete_set(Src, Set) = Result :-
+	Size = size(Src),
+	NewSize = Size - count(Set),
+	(if NewSize = 0
+	then 
+		Result = make_empty_array
+	else 
+		FirstNew = first_kept_index(0, Set),
+		(if NewSize = 1
+		then
+			init(1, Src ^ unsafe_elem(FirstNew), Result)
+		else 
+			init(NewSize, Src ^ unsafe_elem(FirstNew), Result0),
+			add_rest(1, max(Result0), FirstNew + 1, Set, Src, Result0, Result)
+		)
+	).
+		
 	
 array_cons(T, Src, array_cons(Src, T)).
 
@@ -772,8 +844,8 @@ index_fold(F, Array, Acc) = for_fold(min(Array), max(Array), F, Array, Acc).
 
 index_fold(F, Array, Acc, index_fold(F, Array, Acc)).
 
-:- pred for_all_true(int::in, int::in, (pred(int::in, T::in) is semidet)::in,
-	array::in) is semidet.
+:- pred for_all_true(int::in, int::in, 
+	pred(int, T)::in(pred(in, in) is semidet), array(T)::in) is semidet.
 	
 for_all_true(Current, Last, P, Array) :-
 	(if Current > Last then true
