@@ -11,7 +11,7 @@
 % Stability: low.
 %-----------------------------------------------------------------------------%
 
-:- module ordered_term_set.
+:- module mh_ordered_term_set.
 
 :- interface.
 
@@ -19,6 +19,7 @@
 :- import_module set.
 
 :- import_module mh_tuple.
+:- import_module ordered_set.
 
 %-----------------------------------------------------------------------------%
 % Ordered set
@@ -28,9 +29,12 @@
 %-----------------------------------------------------------------------------%
 % Basic operations
 
-% Sanity check, ensure the sorted array is actually congruent with the ordered
-% Array
+	% Sanity check, ensure the set map is actually congruent with the ordered
+	% Array
 :- pred is_valid(mh_ordered_term_set::in) is semidet.
+
+% TODO? More detailed diagnostics for validity checks. We'll see if that's even
+% needed.
 
 :- func empty_set = mh_ordered_term_set.
 
@@ -55,6 +59,10 @@
 :- func sort_and_remove_dups(mh_ordered_term_set) = mh_ordered_term_set.
 :- pred sort_and_remove_dups(mh_ordered_term_set::in, mh_ordered_term_set::out)
 	is det.
+	
+:- func remove_dups(mh_ordered_term_set) = mh_ordered_term_set.
+:- pred remove_dups(mh_ordered_term_set::in, mh_ordered_term_set::out)
+	is det.
 
 % Return the number of elements in the ordered portion of the set
 :- func size(mh_ordered_term_set) = int.
@@ -69,14 +77,10 @@
 % the set contains the same values in the same order. 
 :- pred equal(mh_ordered_term_set::in, mh_ordered_term_set::in) is semidet.
 
-
-
 % Succeeds if the sets have the same values, with duplicates removed
 % Equivalent to compare_ordered_term_sets((=)).
 :- pred equivalent(mh_ordered_term_set::in, mh_ordered_term_set::in) 
 	is semidet.
-	
-
 
 % Sorts and removes duplicates from the sets and compares them according to
 % the standard ordering. Used to implement mercury equality and comparison.
@@ -85,9 +89,6 @@
 % the set by ordering, convert the set to an ordered list or array first.
 :- pred compare_ordered_term_sets(comparison_result::uo, 
 	mh_ordered_term_set::in, mh_ordered_term_set::in) is det.
-	
-
-
 
 %-----------------------------------------------------------------------------%
 % Conversion
@@ -109,6 +110,11 @@
 
 :- func to_sorted_list(mh_ordered_term_set) = list(mh_term).
 :- func to_sorted_array(mh_ordered_term_set) = array(mh_term).
+
+:- func to_term_set(mh_ordered_term_set) = mh_term_set.
+
+% More efficient than to_term_set/1
+:- some [T] to_term_map(mh_ordered_term_set) = mh_term_map(T).
 
 	
 %-----------------------------------------------------------------------------%
@@ -242,6 +248,7 @@
 
 :- import_module array.
 :- import_module int.
+:- import_module unit.
 :- import_module bool.
 :- import_module require.
 
@@ -253,7 +260,7 @@
 % Variable naming
 % A == Array
 % O == Ordered Array
-% S == Sorted Set Array
+% S == Set
 % OS == Ordered Set (not deconstructed)
 % CMP == Comparison Function
 % R == Comparison Result
@@ -265,13 +272,15 @@
 %-----------------------------------------------------------------------------%
 % Ordered set
 
+:- type term_array == array(mh_term).
+
 :- type term_map == mh_term_map(set(int)).
 
 :- type mh_ordered_term_set 
 	--->	ordered_term_set(
-			order::array(mh_term), 
-			map::term_map
-		)
+				order::term_array, 
+				map::term_map
+			)
 		where comparison is compare_ordered_term_sets.
 
 % Deterministic constructor
@@ -293,58 +302,73 @@ os(O::out, S::out) = (OS::in) :-
 %-----------------------------------------------------------------------------%
 % Basic operations
 
+:- pred add_mapping(int::in, mh_term::in, term_map::in, term_map::out) is det.
 
-is_valid(os(A, M)) :- %sort A and remove dups, compare size with M, ensure membership in M
+add_mapping(Index, Term, !Map) :-
+	(if search(!.Map, Term, Indexes)
+	then set(Term, insert(Indexes, Index), !Map)
+	else det_insert(Term, make_singleton(Index), !Map)
+	).
 
-empty_set = OS :- empty_set(OS).
+:- func add_mapping(int, mh_term, term_map) = term_map.
+	
+add_mapping(Index, Term, !.Map) = !:Map :- add_mapping(Index, Term, !Map).
 
-empty_set(os(A, init)) :- make_empty_array(A).
+:- func new_term_map(term_array) = term_map.
+
+new_term_map(A) = index_fold(add_mapping, A, init).
+
+:- pred valid_element(term_map::in, mh_term:in) is semidet.
+
+valid_element(Map, Term) :- search(Map, Term, _).
+
+:- func valid_mapping(term_array, mh_term, set(int), unit) = unit is semidet.
+
+valid_mapping(O, Term, Indexes, _) = unit :- 
+	all_true(valid_mapping_index(O, Term), Indexes).
+	
+:- pred valid_mapping_index(term_array::in, mh_term::in, int::in) is semidet.
+
+valid_mapping_index(Array, Term, Index) :- semidet_lookup(Array, Index, Term).
+
+is_valid(os(O, S)) :- 
+	all_true(valid_element(S), O), 
+	fold(valid_mapping(O), S, unit, _).
+	
+
+empty_set = os(A, init) :- make_empty_array(A).
+
+empty_set(empty_set).
 
 
 is_empty(os(A, _)) :- size(A, 0).
 
-singleton(T) = os(A, singleton(T)) :- init(1, T, A).
+singleton(T) = os(A, singleton(T, make_singleton_set(min(A)))) :- 
+	init(1, T, A).
 
 singleton(T, singleton(T)).
 
 is_singleton(os(A, _)) :- size(A, 1).
 
-is_sorted(os(A, _)) :- 
-	(if size(A, 0) 
-	then true
-	else
-		unsafe_lookup(A, 0, First),
-		is_sorted(A, First, 1)
-	).
-
-:- pred is_sorted(array(T)::in, T::in, int::in) is semidet.
-
-is_sorted(A, Last, Index) :-
-	(if Index > max(A)
-	then true
-	else
-		unsafe_lookup(A, Index, Next),
-		Last @=< Next,
-		is_sorted(A, Next, Index + 1)
-	).
+is_sorted(os(A, _)) :- is_sorted(A).
 	
-sort(os(O, M)) = os(sort(copy(O)), M).
+sort(os(O, M)) = os(sort(copy(O))@Sorted, new_term_map(Sorted)).
 
-is_sorted_set(os(A, A)).
-
-is_merged_set(os(O, S)) :- private_builtin.pointer_equal(O, S).
+sort_and_remove_dups(os(O, M)) = 
+	os(sort_and_remove_dups(O)@Sorted, new_term_map(Sorted)).
 
 size(os(A, _)) = size(A).
 size(OS, size(OS)).
 	
-unique_elements(os(_, A)) = size(A).
+unique_elements(os(_, M)) = count(M).
 unique_elements(OS, unique_elements(OS)).
 
 equal(os(A, _), os(A, _)).
 
-equivalent(os(_, A), os(_, A)).
+equivalent(os(_, M1), os(_, M2)) :- to_term_set(M1) = to_term_set(M2). 
 
-compare_ordered_term_sets(array_compare(A1, A2), os(_, A1), 	os(_, A2)).
+compare_ordered_term_sets(compare(to_term_set(M1), to_term_set(M2)), 
+	os(_, M1), 	os(_, M2)). 
 
 
 %-----------------------------------------------------------------------------%
@@ -352,15 +376,28 @@ compare_ordered_term_sets(array_compare(A1, A2), os(_, A1), 	os(_, A2)).
 
 from_list(L) = from_array(array.from_list(L)).
 
-to_list(os(O, _)) = array.to_list(O). % CC multi?
+to_list(os(O, _)) = array.to_list(O). 
 
-from_array(A) = os(A, sort_and_remove_dups(A)).
+from_array(A) = os(A, new_term_map(A)).
 
 to_array(os(O, _)) = O.
 
-to_sorted_list(os(_, S)) = array.to_list(S).
+:- func set_insert_fold(mh_term, T, set(mh_term)) = set(mh_term).
+set_insert_fold(T, _, S) = insert(S, T).
 
-to_sorted_array(os(_, S)) = S.
+:- func to_set(mh_ordered_term_set) = set(mh_term).
+to_set(os(_, M)) = fold(set_insert_fold, M, init).
+
+to_sorted_list(os(_, M)) = to_sorted_list(to_set(M)).
+
+to_sorted_array(OT) = to_array(to_sorted_list(OT)).
+
+:- func to_unit(T, U) = unit.
+to_unit(_, _) = unit.
+
+to_term_set(os(_, M)) = map(to_unit, M).
+
+
 
 %-----------------------------------------------------------------------------%
 % Lookup
