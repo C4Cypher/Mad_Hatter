@@ -149,72 +149,24 @@
 
 :- pred contains(mh_ordered_term_set::in, mh_term::in) is semidet.
 
-
 % Lookup the ordered value at the given index (starting at 1), throws an
-% exception if index is out of bound
+% exception if index is out of bounds
 :- func lookup(mh_ordered_term_set, int) = mh_term is det.
 :- pred lookup(mh_ordered_term_set::in, int::in, mh_term::out) is det.
 
-% Search for the value and return the index in the ordered array (linear)
+% Search for the value and return the lowest index in the ordered array 
 :- func search(mh_ordered_term_set, mh_term) = int is semidet.
 :- pred search(mh_ordered_term_set::in, mh_term::in, int::out) is semidet.
-.
 
-
-
-%-----------------------------------------------------------------------------%
-% Ordering
-
-% Creates a new  ordered set by sorting the members of the sorted set using the
-% provided comparison function. The original ordering is discarded, and
-% duplicates according to the standard ordering are removed.  
-% Stable/predictable ordering where the comparison func returns equality is not
-% garunteed.
-:- pred order_by(comparison_func(mh_term)::in(comparison_func), 
-	mh_ordered_term_set::in, mh_ordered_term_set::out) is det.
-	
-:- func order_by(comparison_func(mh_term)::in(comparison_func), 
-	mh_ordered_term_set::in) = (mh_ordered_term_set::out) is det.
-
-% Create a new orddered set using the
-% provided comparison function that preserves the original order when the
-% comparison function returns equality. Does not remove duplicates.
-:- pred reorder_by(comparison_func(mh_term)::in(comparison_func),
-	mh_ordered_term_set::in,	mh_ordered_term_set::out) is det.
-	
-:- func reorder_by(comparison_func(mh_term)::in(comparison_func), 
-	mh_ordered_term_set::in)	= (mh_ordered_term_set::out) is det.
-
-% TODO: Move ordering into it's own module?
-
-% in order for an ordering to be valid for a given set, it must contain at
-% least one index for every unique member of it's sorted set, and no indexes
-% that are out of the bounds of the sorted set.
-
-:- pred valid_ordering_for(ordering::in, mh_ordered_term_set::in) is semidet.
-
-% Return the current ordering of the given set, returns an empty array if
-% The input set is empty.
-
-:- func current_ordering(mh_ordered_term_set) = ordering.
-:- pred current_ordering(mh_ordered_term_set::in, ordering::out) is det.
-
-% Attempt to create a new ordered set from the sorted set of the provided set
-% The original ordering of the input set will be ignored, fails if the ordering
-% is not valid for the given set. 
-% (Should be) More efficient than calling valid_ordering_for/2 first.
-
-:- func apply_ordering(mh_ordered_term_set, ordering) = mh_ordered_term_set
+% Search for the value and return a set of indexes in the ordered array 
+:- func search_all(mh_ordered_term_set, mh_term) = set(int) is semidet.
+:- pred search_all(mh_ordered_term_set::in, mh_term::in, set(int)::out) 
 	is semidet.
-:- pred apply_ordering(ordering::in, mh_ordered_term_set::in, 
-	mh_ordered_term_set::out) is semidet.
 	
-% As above, but throws an exception if the ordering is not valid.
-
-:- func det_apply_ordering(mh_ordered_term_set, ordering) = mh_ordered_term_set.
-:- pred det_apply_ordering(ordering::in, mh_ordered_term_set::in,  
-	mh_ordered_term_set::out) is  det. 
-
+% As above, but return an empty set if the value is not present. 
+:- func det_search_all(mh_ordered_term_set, mh_term) = set(int) is det.
+:- pred det_search_all(mh_ordered_term_set::in, mh_term::in, set(int)::out) 
+	is det.
 
 %-----------------------------------------------------------------------------%
 % Set operations
@@ -411,21 +363,7 @@ bounds(os(A, _), Min, Max) :-
 		Max = array.max(A) + 1
 	).
 	
-set_bounds(os(_, A), Min, Max) :-
-	(if size(A) = 0
-	then
-		Min@Max = -1
-	else
-		Min = array.min(A) + 1,
-		Max = array.max(A) + 1
-	).
-	
 semidet_bounds(os(A, _), Min, Max) :-
-	size(A) > 0,
-	Min = array.min(A) + 1,
-	Max = array.max(A) + 1.
-	
-semidet_set_bounds(os(_, A), Min, Max) :-
 	size(A) > 0,
 	Min = array.min(A) + 1,
 	Max = array.max(A) + 1.
@@ -447,20 +385,6 @@ min(OS, min(OS)).
 semidet_min(os(A, _)) = array.min(A) :- size(A) > 0.
 
 semidet_min(OS, semidet_min(OS)).
-
-set_min(os(_, A)) = 
-	(if size(A) = 0
-	then
-		-1
-	else
-		array.min(A) + 1
-	).
-	
-set_min(OS, min(OS)).
-
-semidet_set_min(os(_, A)) = array.min(A) :- size(A) > 0.
-
-semidet_set_min(OS, semidet_min(OS)).
 	
 max(os(A, _)) = 
 	(if size(A) = 0
@@ -476,153 +400,33 @@ semidet_max(os(A, _)) = array.max(A) :- size(A) > 0.
 
 semidet_max(OS, semidet_max(OS)).
 
-set_max(os(_, A)) = 
-	(if size(A) = 0
-	then
-		-1
-	else
-		array.max(A) + 1
-	).
-	
-set_max(OS, max(OS)).
-
-semidet_set_max(os(_, A)) = array.max(A) :- size(A) > 0.
-
-semidet_set_max(OS, semidet_max(OS)).
-
 contains(OS, T) :- search(OS, T, _).
 
 % index and set_index implementations here
 
 lookup(os(A, _), Index) = array.lookup(A, Index - 1).
 lookup(OS, Index, lookup(OS, Index)).
-set_lookup(os(_, A), Index) = array.lookup(A, Index - 1).
-set_lookup(OS, Index, set_lookup(OS, Index)).
 
-search(os(O, _), T) = array_search(O, T) + 1.
-search(OS, T, search(OS, T)).
-
-set_search(os(_, S), T) = I + 1 :- binary_search(S, T, I). 
-set_search(OS, T, set_search(OS, T)).
-
-%-----------------------------------------------------------------------------%
-% Ordering
-
-order_by(CMP, OS, order_by(CMP, OS)).
-
-order_by(CMP, os(_, S)) = os(O@samsort(CMP, copy(S)), sort_and_remove_dups(O)).
-
-
-reorder_by(CMP, OS, reorder_by(CMP, OS)).
-
-reorder_by(CMP, os(O0, _)) = 
-	os(O@mergesort(CMP, copy(O0)), sort_and_remove_dups(O)). 
+:- func shift_indexes(set(int), int) = set(int).
+shift_indexes(Indexes, Shift) = map('+'(Shift), Indexes).
 	
-ordering_to_list(Or) = array.to_list(Or).
-ordering_from_list(L) = array.array(L).
+search(os(_, M), Value) = Index + 1 :- 
+	search(M, Value, Set),  
+	to_sorted_list(Set) = [ Index | _ ].
 
-valid_ordering_for(Or, os(_, S)) :-
-	array.size(S, SetSize),
-	array.init(SetSize, no, UniqueFound),
-	valid_ordering_check(0, array.max(Or), Or, 0, UniqueCount, UniqueFound, _),
-	UniqueCount = SetSize. % Ordering is only valid if all are found
-		
-%valid_ordering_check(Index, Last, Or, !UniqueCount, !UniqueFound)
-% Count every element in the Ordered array that has not yet been found to be
-% in bounds of the Sorted array
-:- pred valid_ordering_check(int::in, int::in, array(int)::in, int::in, 
-	int::out, array(bool)::array_di, array(bool)::array_uo) is semidet.
-	
-valid_ordering_check(Index, Last, Or, !UniqueCount, !UniqueFound) :-
-	(if Index > Last then 
-		true
-	else
-		array.lookup(Or, Index, Is),
-		%fails if out of bounds of the Sorted array
-		array.semidet_lookup(!.UniqueFound, Is, Counted), 
-		(if Counted = no then
-			array.set(Is, yes, !UniqueFound),
-			!:UniqueCount = !.UniqueCount + 1
-		else
-			true
-		),
-		valid_ordering_check(Index + 1, Last, Or, !UniqueCount, !UniqueFound)
+search(OS, Value, search(OS, Value)).
+
+search_all(os(_, M), Value) = shift_indexes(search(M, Value), 1).
+
+search_all(OS, Value, search_all(OS, Value)).
+
+det_search_all(OS, Value) = (if search_all(OS, Value, Found)
+	then Found
+	else init.
 	).
 	
-current_ordering(os(O, S)) = array.generate(size(O), generate_ordering(O, S)).
+det_search_all(OS, Value, det_search_all(OS, Value)).
 
-:- func generate_ordering(array(T), array(T), int) = int.
-
-generate_ordering(O, S, Io) = Is :-
-	array.lookup(O, Io, T),
-	(if binary_search(S, T, Found) then
-		Is = Found + 1
-	else
-		unexpected($module, $pred,
-"ordered_term_set.current_ordering: Value in ordered set not found in sorted set")
-	).
-
-current_ordering(OS, current_ordering(OS)).
-
-apply_ordering(os(_, S), Or) = OS :-
-	size(S, SortedSize),
-	size(Or, OrderedSize),
-	(if SortedSize = 0	then
-		 OrderedSize = 0,
-		OS = empty_set
-	else 
-		% Find first element
-		semidet_lookup(Or, 0, For),
-		semidet_lookup(S, Fs@For - 1, First),
-		array.init(SortedSize, no, UniqueFound0),
-		array.set(Fs, yes, UniqueFound0, UniqueFound), 
-		(if OrderedSize = 1 then
-			SortedSize = 1,
-			singleton(First, OS)
-		else
-			array.init(OrderedSize, First, NewOrder),
-			generate_order_from_ordering(Or, S, 1, max(Or), 1, SortedSize,
-				UniqueFound, _, NewOrder, O),
-			OS = os(O, S)
-		
-		)
-	).
-	
-apply_ordering(Or, OS, apply_ordering(OS, Or)).
-	
-	
-:- pred generate_order_from_ordering(array(int)::in, array(T)::in, int::in, 
-	int::in, int::in, int::out,  array(bool)::array_di, array(bool)::array_uo,
-	array(T)::array_di, array(T)::array_uo) is semidet.
-
-generate_order_from_ordering(Or, S, I, Last, !UniqueCount, !UniqueFound, !O) :-
-	(if I > Last then
-		true
-	else
-		array.lookup(Or, I, Ior),
-		array.semidet_lookup(S, Is@(Ior - 1), T),
-		array.set(I, T, !O),
-		array.semidet_lookup(!.UniqueFound, Is, Counted), 
-		(if Counted = no then
-			array.set(Is, yes, !UniqueFound),
-			!:UniqueCount = !.UniqueCount + 1
-		else
-			true
-		),
-		generate_order_from_ordering(Or, S, I + 1, Last, !UniqueCount, 
-			!UniqueFound, !O)
-	).
-	
-det_apply_ordering(OS0, Or) =  
-	(if apply_ordering(OS0, Or) = OS
-	then
-		OS
-	else
-		unexpected($module, $pred, "Invalid ordering.")
-	).
-	
-det_apply_ordering(Or, OS, det_apply_ordering(OS, Or)).
-	
 %-----------------------------------------------------------------------------%
 % Set operations
 
