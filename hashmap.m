@@ -441,8 +441,8 @@
 	% by applying the supplied function to the values associated with
 	% the key in MapA and MapB.
 	% on the values associated with some common key.
-:- func intersect(func(V, V) = V, hashmap(K, V), hashmap(K, V)) = 
-	hashmap(K, V).
+:- func intersect(func(V1, V2) = V3, hashmap(K, V1), hashmap(K, V2)) = 
+	hashmap(K, V3).
 
 	% Given two maps MapA and MapB, create a third map, IntersectMap,
 	% that has only the keys that occur in both MapA and MapB. For keys
@@ -450,21 +450,22 @@
 	% by applying the supplied predicate to the values associated with
 	% the key in MapA and MapB. Fail if and only if this predicate fails
 	% on the values associated with some common key.
-:- pred intersect(pred(V, V, V), hashmap(K, V), hashmap(K, V), hashmap(K, V)).
+:- pred intersect(pred(V1, V2, V3), hashmap(K, V1), hashmap(K, V2), 
+	hashmap(K, V3)).
 :- mode intersect(in(pred(in, in, out) is det), in, in, out) is det.
 :- mode intersect(in(pred(in, in, out) is semidet), in, in, out) is semidet.
 
 	% Calls intersect. Throws an exception if intersect fails.
-:- func det_intersect((func(V, V) = V)::in(func(in, in) = out is semidet),
-    hashmap(K, V)::in, hashmap(K, V)::in) = (hashmap(K, V)::out) is det.
-:- pred det_intersect((pred(V, V, V))::in(pred(in, in, out) is semidet),
-    hashmap(K, V)::in, hashmap(K, V)::in, hashmap(K, V)::out) is det.
+:- func det_intersect((func(V1, V2) = V3)::in(func(in, in) = out is semidet),
+    hashmap(K, V1)::in, hashmap(K, V2)::in) = (hashmap(K, V3)::out) is det.
+:- pred det_intersect((pred(V1, V2, V3))::in(pred(in, in, out) is semidet),
+    hashmap(K, V1)::in, hashmap(K, V2)::in, hashmap(K, V3)::out) is det.
 	
 	% intersect_list(Pred, HM, [M | Ms ], Result):
 	% Recursively insersect HM with M and then recursively call the result with
 	% Ms, folding over the entire list. If the list is empty, return HM. 
-:- pred intersect_list(pred(V, V, V), hashmap(K, V), list(hashmap(K, V)), 
-	hashmap(K, V)).
+:- pred intersect_list(pred(V1, V2, V3), hashmap(K, V1), list(hashmap(K, V2)), 
+	hashmap(K, V3)).
 :- mode intersect_list(in(pred(in, in, out) is det), in, in, out) is det.
 :- mode intersect_list(in(pred(in, in, out) is semidet), in, in, out) 
 	is semidet.
@@ -473,7 +474,7 @@
 	% If List is empty, return an empty map, otherwise call the above 
 	% intersect predicate with the first element and the rest of the list
 	% and then recursively intersect the result with the rest of the list.
-:- pred intersect_list(pred(V, V, V), list(hashmap(K, V)),	hashmap(K, V)).
+:- pred intersect_list(pred(V, V, V), list(hashmap(K, V)),hashmap(K, V)).
 :- mode intersect_list(in(pred(in, in, out) is det), in, out) is det.
 :- mode intersect_list(in(pred(in, in, out) is semidet), in, out) is semidet.
 
@@ -483,7 +484,8 @@
     % by applying the supplied function to the values associated with the key
     % in MapA and MapB.
     %
-:- func union(func(V, V) = V, hashmap(K, V), hashmap(K, V)) = hashmap(K, V).
+:- func union(func(V1, V2) = V3, hashmap(K, V1), hashmap(K, V2)) 
+	= hashmap(K, V3).
 
     % Given two maps MapA and MapB, create a third map, UnionMap, that
     % contains all the keys that occur in either MapA and MapB. For keys
@@ -492,15 +494,16 @@
     % in MapA and MapB. Fail if and only if this predicate fails on
     % the values associated with some common key.
     %
-:- pred union(pred(V, V, V), hashmap(K, V), hashmap(K, V), hashmap(K, V)).
+:- pred union(pred(V1, V2, V3), hashmap(K, V1), hashmap(K, V2), 
+	hashmap(K, V3)).
 :- mode union(in(pred(in, in, out) is det), in, in, out) is det.
 :- mode union(in(pred(in, in, out) is semidet), in, in, out) is semidet.
 
 	% Calls union. Throws an exception if union fails.
-:- func det_union((func(V, V) = V)::in(func(in, in) = out is semidet),
-    hashmap(K, V)::in, hashmap(K, V)::in) = (hashmap(K, V)::out) is det.
-:- pred det_union(pred(V, V, V)::in(pred(in, in, out) is semidet),
-    hashmap(K, V)::in, hashmap(K, V)::in, hashmap(K, V)::out) is det.
+:- func det_union((func(V1, V2) = V3)::in(func(in, in) = out is semidet),
+    hashmap(K, V1)::in, hashmap(K, V2)::in) = (hashmap(K, V3)::out) is det.
+:- pred det_union(pred(V1, V2, V3)::in(pred(in, in, out) is semidet),
+    hashmap(K, V1)::in, hashmap(K, V2)::in, hashmap(K, V3)::out) is det.
 	
 	% union_list(Pred, HM, [M | Ms ], Result):
 	% Recursively union HM with M and then recursively call the result with

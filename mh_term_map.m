@@ -123,20 +123,21 @@ T::out) is semidet.
 % Set operations
 
 
-:- func union(func(T, T) = T, mh_term_map(T), mh_term_map(T)) =
-	mh_term_map(T).
+:- func union(func(T1, T2) = T3, mh_term_map(T1), mh_term_map(T2)) =
+	mh_term_map(T3).
 
-:- pred union(func(T, T) = T, mh_term_map(T), mh_term_map(T), mh_term_map(T)).
+:- pred union(func(T1, T2) = T3, mh_term_map(T1), mh_term_map(T2), 
+	mh_term_map(T3)).
 :- mode union(in(func(in, in) = out is det), in, in, out) is det.
 
 :- func set_union(mh_term_set, mh_term_set) = mh_term_set.
 :- pred set_union(mh_term_set::in, mh_term_set::in, mh_term_set::out) is det.
 
-:- func intersect(func(T, T) = T, mh_term_map(T), mh_term_map(T))
-	= mh_term_map(T).
+:- func intersect(func(T1, T2) = T3, mh_term_map(T1), mh_term_map(T2))
+	= mh_term_map(T3).
 	
-:- pred intersect(func(T, T) = T, mh_term_map(T), mh_term_map(T),
-	mh_term_map(T)).
+:- pred intersect(func(T1, T2) = T3, mh_term_map(T1), mh_term_map(T2),
+	mh_term_map(T3)).
 :- mode intersect(in(func(in, in) = out is det), in, in, out) is det.
 
 :- func set_intersect(mh_term_set, mh_term_set) = mh_term_set.

@@ -216,16 +216,19 @@
 %-----------------------------------------------------------------------------%
 % Set operations
 
-:- func union(func(T, T) = T, mh_var_map(T), mh_var_map(T)) = mh_var_map(T).
+:- func union(func(T1, T2) = T3, mh_var_map(T1), mh_var_map(T2)) 
+	= mh_var_map(T3).
 
-:- pred union(func(T, T) = T, mh_var_map(T), mh_var_map(T), mh_var_map(T)).
+:- pred union(func(T1, T2) = T3, mh_var_map(T1), mh_var_map(T2),
+	mh_var_map(T3)).
 :- mode union(in(func(in, in) = out is det), in, in, out) is det.
 :- mode union(in(func(in, in) = out is semidet), in, in, out) is semidet.
 
-:- func intersect(func(T, T) = T, mh_var_map(T), mh_var_map(T)) = 
-	mh_var_map(T).
+:- func intersect(func(T1, T2) = T3, mh_var_map(T1), mh_var_map(T2)) = 
+	mh_var_map(T3).
 	
-:- pred intersect(func(T, T) = T, mh_var_map(T), mh_var_map(T), mh_var_map(T)).
+:- pred intersect(func(T1, T2) = T3, mh_var_map(T1), mh_var_map(T2), 
+	mh_var_map(T3)).
 :- mode intersect(in(func(in, in) = out is det), in, in, out) is det.
 :- mode intersect(in(func(in, in) = out is semidet), in, in, out) is semidet.
 

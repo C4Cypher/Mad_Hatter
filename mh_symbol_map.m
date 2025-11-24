@@ -280,8 +280,8 @@
 	% by applying the supplied function to the values associated with
 	% the key in MapA and MapB.
 	% on the values associated with some common key.
-:- func intersect(func(T, T) = T, mh_symbol_map(T), mh_symbol_map(T)) = 
-	mh_symbol_map(T).
+:- func intersect(func(T1, T2) = T3, mh_symbol_map(T1), mh_symbol_map(T2)) = 
+	mh_symbol_map(T3).
 
 	% Given two maps MapA and MapB, create a third map, IntersectMap,
 	% that has only the keys that occur in both MapA and MapB. For keys
@@ -289,22 +289,23 @@
 	% by applying the supplied predicate to the values associated with
 	% the key in MapA and MapB. Fail if and only if this predicate fails
 	% on the values associated with some common key.
-:- pred intersect(pred(T, T, T), mh_symbol_map(T), mh_symbol_map(T),
-	mh_symbol_map(T)).
+:- pred intersect(pred(T1, T2, T3), mh_symbol_map(T1), mh_symbol_map(T2),
+	mh_symbol_map(T3)).
 :- mode intersect(in(pred(in, in, out) is det), in, in, out) is det.
 :- mode intersect(in(pred(in, in, out) is semidet), in, in, out) is semidet.
 
 	% Calls intersect. Throws an exception if intersect fails.
-:- func det_intersect((func(T, T) = T)::in(func(in, in) = out is semidet),
-    mh_symbol_map(T)::in, mh_symbol_map(T)::in) = (mh_symbol_map(T)::out)
+:- func det_intersect((func(T1, T2) = T3)::in(func(in, in) = out is semidet),
+    mh_symbol_map(T1)::in, mh_symbol_map(T2)::in) = (mh_symbol_map(T3)::out)
 	is det.
-:- pred det_intersect((pred(T, T, T))::in(pred(in, in, out) is semidet),
-    mh_symbol_map(T)::in, mh_symbol_map(T)::in, mh_symbol_map(T)::out) is det.
+:- pred det_intersect((pred(T1, T2, T3))::in(pred(in, in, out) is semidet),
+    mh_symbol_map(T1)::in, mh_symbol_map(T2)::in, mh_symbol_map(T3)::out) 
+	is det.
 	
 	% intersect_list(Pred, M, [M | Ms ], Result):
 	% Recursively insersect M with M and then recursively call the result with
 	% Ms, folding over the entire list. If the list is empty, return M. 
-:- pred intersect_list(pred(T, T, T), mh_symbol_map(T), list(mh_symbol_map(T)), 
+:- pred intersect_list(pred(T, T, T), mh_symbol_map(T), list(mh_symbol_map(T)),
 	mh_symbol_map(T)).
 :- mode intersect_list(in(pred(in, in, out) is det), in, in, out) is det.
 :- mode intersect_list(in(pred(in, in, out) is semidet), in, in, out) 
@@ -325,8 +326,8 @@
     % by applying the supplied function to the values associated with the key
     % in MapA and MapB.
     %
-:- func union(func(T, T) = T, mh_symbol_map(T), mh_symbol_map(T))
-	= mh_symbol_map(T).
+:- func union(func(T1, T2) = T3, mh_symbol_map(T1), mh_symbol_map(T2))
+	= mh_symbol_map(T3).
 
     % Given two maps MapA and MapB, create a third map, UnionMap, that
     % contains all the keys that occur in either MapA and MapB. For keys
@@ -335,17 +336,18 @@
     % in MapA and MapB. Fail if and only if this predicate fails on
     % the values associated with some common key.
     %
-:- pred union(pred(T, T, T), mh_symbol_map(T), mh_symbol_map(T),
-	mh_symbol_map(T)).
+:- pred union(pred(T1, T2, T3), mh_symbol_map(T1), mh_symbol_map(T2),
+	mh_symbol_map(T3)).
 :- mode union(in(pred(in, in, out) is det), in, in, out) is det.
 :- mode union(in(pred(in, in, out) is semidet), in, in, out) is semidet.
 
 	% Calls union. Throws an exception if union fails.
-:- func det_union((func(T, T) = T)::in(func(in, in) = out is semidet),
-    mh_symbol_map(T)::in, mh_symbol_map(T)::in) = (mh_symbol_map(T)::out)
+:- func det_union((func(T1, T2) = T3)::in(func(in, in) = out is semidet),
+    mh_symbol_map(T1)::in, mh_symbol_map(T2)::in) = (mh_symbol_map(T3)::out)
 	is det.
-:- pred det_union(pred(T, T, T)::in(pred(in, in, out) is semidet),
-    mh_symbol_map(T)::in, mh_symbol_map(T)::in, mh_symbol_map(T)::out) is det.
+:- pred det_union(pred(T1, T2, T3)::in(pred(in, in, out) is semidet),
+    mh_symbol_map(T1)::in, mh_symbol_map(T2)::in, mh_symbol_map(T3)::out) 
+	is det.
 	
 	% union_list(Pred, M, [M | Ms ], Result):
 	% Recursively union M with M and then recursively call the result with
