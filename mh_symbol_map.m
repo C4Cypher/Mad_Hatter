@@ -326,8 +326,8 @@
     % by applying the supplied function to the values associated with the key
     % in MapA and MapB.
     %
-:- func union(func(T1, T2) = T3, mh_symbol_map(T1), mh_symbol_map(T2))
-	= mh_symbol_map(T3).
+:- func union(func(T, T) = T, mh_symbol_map(T), mh_symbol_map(T))
+	= mh_symbol_map(T).
 
     % Given two maps MapA and MapB, create a third map, UnionMap, that
     % contains all the keys that occur in either MapA and MapB. For keys
@@ -336,17 +336,17 @@
     % in MapA and MapB. Fail if and only if this predicate fails on
     % the values associated with some common key.
     %
-:- pred union(pred(T1, T2, T3), mh_symbol_map(T1), mh_symbol_map(T2),
-	mh_symbol_map(T3)).
+:- pred union(pred(T, T, T), mh_symbol_map(T), mh_symbol_map(T),
+	mh_symbol_map(T)).
 :- mode union(in(pred(in, in, out) is det), in, in, out) is det.
 :- mode union(in(pred(in, in, out) is semidet), in, in, out) is semidet.
 
 	% Calls union. Throws an exception if union fails.
-:- func det_union((func(T1, T2) = T3)::in(func(in, in) = out is semidet),
-    mh_symbol_map(T1)::in, mh_symbol_map(T2)::in) = (mh_symbol_map(T3)::out)
+:- func det_union((func(T, T) = T)::in(func(in, in) = out is semidet),
+    mh_symbol_map(T)::in, mh_symbol_map(T)::in) = (mh_symbol_map(T)::out)
 	is det.
-:- pred det_union(pred(T1, T2, T3)::in(pred(in, in, out) is semidet),
-    mh_symbol_map(T1)::in, mh_symbol_map(T2)::in, mh_symbol_map(T3)::out) 
+:- pred det_union(pred(T, T, T)::in(pred(in, in, out) is semidet),
+    mh_symbol_map(T)::in, mh_symbol_map(T)::in, mh_symbol_map(T)::out) 
 	is det.
 	
 	% union_list(Pred, M, [M | Ms ], Result):

@@ -123,11 +123,9 @@ T::out) is semidet.
 % Set operations
 
 
-:- func union(func(T1, T2) = T3, mh_term_map(T1), mh_term_map(T2)) =
-	mh_term_map(T3).
+:- func union(func(T, T) = T, mh_term_map(T), mh_term_map(T)) = mh_term_map(T).
 
-:- pred union(func(T1, T2) = T3, mh_term_map(T1), mh_term_map(T2), 
-	mh_term_map(T3)).
+:- pred union(func(T, T) = T, mh_term_map(T), mh_term_map(T), mh_term_map(T)).
 :- mode union(in(func(in, in) = out is det), in, in, out) is det.
 
 :- func set_union(mh_term_set, mh_term_set) = mh_term_set.

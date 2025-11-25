@@ -484,8 +484,7 @@
     % by applying the supplied function to the values associated with the key
     % in MapA and MapB.
     %
-:- func union(func(V1, V2) = V3, hashmap(K, V1), hashmap(K, V2)) 
-	= hashmap(K, V3).
+:- func union(func(V, V) = V, hashmap(K, V), hashmap(K, V)) = hashmap(K, V).
 
     % Given two maps MapA and MapB, create a third map, UnionMap, that
     % contains all the keys that occur in either MapA and MapB. For keys
@@ -494,16 +493,15 @@
     % in MapA and MapB. Fail if and only if this predicate fails on
     % the values associated with some common key.
     %
-:- pred union(pred(V1, V2, V3), hashmap(K, V1), hashmap(K, V2), 
-	hashmap(K, V3)).
+:- pred union(pred(V, V, V), hashmap(K, V), hashmap(K, V), hashmap(K, V)).
 :- mode union(in(pred(in, in, out) is det), in, in, out) is det.
 :- mode union(in(pred(in, in, out) is semidet), in, in, out) is semidet.
 
 	% Calls union. Throws an exception if union fails.
-:- func det_union((func(V1, V2) = V3)::in(func(in, in) = out is semidet),
-    hashmap(K, V1)::in, hashmap(K, V2)::in) = (hashmap(K, V3)::out) is det.
-:- pred det_union(pred(V1, V2, V3)::in(pred(in, in, out) is semidet),
-    hashmap(K, V1)::in, hashmap(K, V2)::in, hashmap(K, V3)::out) is det.
+:- func det_union((func(V, V) = V)::in(func(in, in) = out is semidet),
+    hashmap(K, V)::in, hashmap(K, V)::in) = (hashmap(K, V)::out) is det.
+:- pred det_union(pred(V, V, V)::in(pred(in, in, out) is semidet),
+    hashmap(K, V)::in, hashmap(K, V)::in, hashmap(K, V)::out) is det.
 	
 	% union_list(Pred, HM, [M | Ms ], Result):
 	% Recursively union HM with M and then recursively call the result with
@@ -630,8 +628,8 @@
 % Perform a traversal by key of the map, applying an accumulator
 % predicate for value. Order is arbitrary and cannot be garunteed.
 :- func foldl(func(K, V, A) = A, hashmap(K, V), A) = A.
-:- mode foldl(in(func(in, in, in, out) is det), in, in) = out is det.
-:- mode foldl(in(func(in, in, in, out) is semidet), in, in) = out is semidet.
+:- mode foldl(in(func(in, in, in) = out is det), in, in) = out is det.
+:- mode foldl(in(func(in, in, in) = out is semidet), in, in) = out is semidet.
 
 :- pred foldl(pred(K, V, A, A), hashmap(K, V), A, A).
 :- mode foldl(in(pred(in, in, in, out) is det), in, in, out) is det.
@@ -2078,7 +2076,7 @@ intersect(P, HM1, HM2, Int) :-
 	intersect_tree(0, P, PR, HM1, HM2, Int).
 	
 	
-:- pred reverse(pred(T, T, T), pred(T, T, T)).
+:- pred reverse(pred(T1, T2, T3), pred(T2, T1, T3)).
 :- mode reverse(in(pred(in, in, out) is det), out(pred(in, in, out) is det))
 	is det.
 :- mode reverse(in(pred(in, in, out) is semidet), out(pred(in, in, out) 
@@ -2099,8 +2097,8 @@ reverse(P::in(pred(in, in, out) is semidet), PR::out(pred(in, in, out)
 :- pragma inline(reverse/2).
 	
 % intersect_tree(Shift, Pred, PredReversed, Hashmap1, Hashmap2, Intersection)	
-:- pred intersect_tree(shift, pred(V, V, V), pred(V, V, V), hashmap(K, V), 
-	hashmap(K, V), hashmap(K, V)).
+:- pred intersect_tree(shift, pred(V1, V2, V3), pred(V2, V1, V3), 
+	hashmap(K, V1), hashmap(K, V2), hashmap(K, V3)).
 :- mode intersect_tree(in, in(pred(in, in, out) is det), in(pred(in, in, out) 
 	is det), in, in, out) is det.
 :- mode intersect_tree(in, in(pred(in, in, out) is semidet), 
@@ -2120,19 +2118,11 @@ intersect_tree(_S, _P, _PR, full_branch(_), empty_tree, empty_tree).
 intersect_tree(_S, _P, _PR, empty_tree, collision(_, _), empty_tree).
 intersect_tree(_S, _P, _PR, collision(_, _), empty_tree, empty_tree).
 
-intersect_tree(_S, P, _PR, L1@leaf(H1, K1, V1), L2@leaf(H2, K2, V2), Int) :- 
+intersect_tree(_S, P, _PR, leaf(H1, K1, V1), leaf(H2, K2, V2), Int) :- 
 	(if H1 = H2, K1 = K2
 	then
 		P(V1, V2, V),
-		(if private_builtin.pointer_equal(V, V1)
-		then
-			Int = L1
-		else if private_builtin.pointer_equal(V, V2)
-		then
-			Int = L2		
-		else
-			Int = leaf(H1, K1, V)
-		)
+		Int = leaf(H1, K1, V)
 	else
 		Int = empty_tree
 	).
@@ -2154,16 +2144,11 @@ intersect_tree(S, P, PR, L@leaf(H, _K, _V), full_branch(Array), Int) :-
 	array.unsafe_lookup(Array, I, HMnext),
 	intersect_tree(next_shift(S), P, PR, L, HMnext, Int).
 	
-intersect_tree(_S, P, _PR, L@leaf(H1, K, V1), collision(H2, Bucket), Int) :-
+intersect_tree(_S, P, _PR, leaf(H1, K, V1), collision(H2, Bucket), Int) :-
 	(if H1 = H2, map.search(Bucket, K, V2)
 	then
 		P(V1, V2, V),
-		(if private_builtin.pointer_equal(V, V1)
-		then
-			Int = L
-		else 
-			Int = leaf(H1, K, V)
-		)
+		Int = leaf(H1, K, V)
 	else
 		Int = empty_tree
 	).	
@@ -2191,8 +2176,8 @@ intersect_tree(S, P, PR, full_branch(A1), full_branch(A2), Int) :-
 
 % intersect_branches(Shift, Pred, PReversed, Bitmap1, Array1, Bitmap2, Array2,
 %	Intersect).
-:- pred intersect_branches(shift, pred(V, V, V), pred(V, V, V), bitmap, 
-	hash_array(K, V),	bitmap, hash_array(K, V), hashmap(K, V)).
+:- pred intersect_branches(shift, pred(V1, V2, V3), pred(V2, V1, V3), bitmap, 
+	hash_array(K, V1), bitmap, hash_array(K, V2), hashmap(K, V3)).
 :- mode intersect_branches(in, in(pred(in, in, out) is det), 
 	in(pred(in, in, out) is det), in, in, in, in, out) is det.
 :- mode intersect_branches(in, in(pred(in, in, out) is semidet),
@@ -2236,10 +2221,10 @@ intersect_branches(S, P, PR, B1, A1, B2, A2, Int) :-
 %	IndexBitmap1, Array1, 
 %	IndexBitmap2, Array2, 
 %	!IntersectingBitmap, !RevList).
-:- pred intersect_loop(shift, pred(V, V, V), pred(V, V, V), bitmap, 
-	bitmap,	hash_array(K, V), 
-	bitmap, hash_array(K, V),
-	bitmap, bitmap, hash_list(K, V), hash_list(K, V)).
+:- pred intersect_loop(shift, pred(V1, V2, V3), pred(V2, V1, V3), bitmap, 
+	bitmap,	hash_array(K, V1), 
+	bitmap, hash_array(K, V2),
+	bitmap, bitmap, hash_list(K, V3), hash_list(K, V3)).
 :- mode intersect_loop(in, in(pred(in, in, out) is det), 
 	in(pred(in, in, out) is det), in, in, in, in, in, in, out, in, out) 
 	is det.
@@ -3235,8 +3220,8 @@ unsafe_ctz32(!.X) = !:X :-
 % Standard higher order functions on collections.
 
 :- pred apply_func(func(K, V, A) = A, K, V, A, A).
-:- mode apply_func((in(func(in, in, in) = out is det), in, in, in, out) is det.
-:- mode apply_func((in(func(in, in, in) = out is semidet), in, in, in, out)
+:- mode apply_func(in(func(in, in, in) = out is det), in, in, in, out) is det.
+:- mode apply_func(in(func(in, in, in) = out is semidet), in, in, in, out)
 	is semidet.
 	
 apply_func(F, K, V, A, F(K, V, A)).

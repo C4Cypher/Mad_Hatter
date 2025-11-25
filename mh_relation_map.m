@@ -134,11 +134,11 @@ T::out) is semidet.
 :- func set_union(mh_relation_set, mh_relation_set) = mh_relation_set.
 :- pred set_union(mh_relation_set::in, mh_relation_set::in, mh_relation_set::out) is det.
 
-:- func intersect(func(T, T) = T, mh_relation_map(T), mh_relation_map(T))
-	= mh_relation_map(T).
+:- func intersect(func(T1, T2) = T3, mh_relation_map(T1), mh_relation_map(T2))
+	= mh_relation_map(T3).
 	
-:- pred intersect(func(T, T) = T, mh_relation_map(T), mh_relation_map(T),
-	mh_relation_map(T)).
+:- pred intersect(func(T1, T2) = T3, mh_relation_map(T1), mh_relation_map(T2),
+	mh_relation_map(T3)).
 :- mode intersect(in(func(in, in) = out is det), in, in, out) is det.
 :- mode intersect(in(func(in, in) = out is semidet), in, in, out) is semidet.
 

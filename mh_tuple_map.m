@@ -141,11 +141,11 @@
 :- pred set_union(mh_tuple_set::in, mh_tuple_set::in, mh_tuple_set::out)
 	is det.
 
-:- func intersect(func(T, T) = T, mh_tuple_map(T), mh_tuple_map(T))
-	= mh_tuple_map(T).
+:- func intersect(func(T1, T2) = T3, mh_tuple_map(T1), mh_tuple_map(T2))
+	= mh_tuple_map(T3).
 	
-:- pred intersect(func(T, T) = T, mh_tuple_map(T), mh_tuple_map(T),
-	mh_tuple_map(T)).
+:- pred intersect(func(T1, T2) = T3, mh_tuple_map(T1), mh_tuple_map(T2),
+	mh_tuple_map(T3)).
 :- mode intersect(in(func(in, in) = out is det), in, in, out) is det.
 
 :- func set_intersect(mh_tuple_set, mh_tuple_set) = mh_tuple_set.

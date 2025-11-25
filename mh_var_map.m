@@ -216,11 +216,9 @@
 %-----------------------------------------------------------------------------%
 % Set operations
 
-:- func union(func(T1, T2) = T3, mh_var_map(T1), mh_var_map(T2)) 
-	= mh_var_map(T3).
+:- func union(func(T, T) = T, mh_var_map(T), mh_var_map(T)) = mh_var_map(T3).
 
-:- pred union(func(T1, T2) = T3, mh_var_map(T1), mh_var_map(T2),
-	mh_var_map(T3)).
+:- pred union(func(T, T) = T, mh_var_map(T), mh_var_map(T), mh_var_map(T)).
 :- mode union(in(func(in, in) = out is det), in, in, out) is det.
 :- mode union(in(func(in, in) = out is semidet), in, in, out) is semidet.
 
