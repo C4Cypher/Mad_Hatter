@@ -464,8 +464,8 @@
 	% intersect_list(Pred, HM, [M | Ms ], Result):
 	% Recursively insersect HM with M and then recursively call the result with
 	% Ms, folding over the entire list. If the list is empty, return HM. 
-:- pred intersect_list(pred(V1, V2, V3), hashmap(K, V1), list(hashmap(K, V2)), 
-	hashmap(K, V3)).
+:- pred intersect_list(pred(V, V, V), hashmap(K, V), list(hashmap(K, V)), 
+	hashmap(K, V)).
 :- mode intersect_list(in(pred(in, in, out) is det), in, in, out) is det.
 :- mode intersect_list(in(pred(in, in, out) is semidet), in, in, out) 
 	is semidet.
@@ -716,6 +716,8 @@
 :- import_module pair.
 
 :- import_module util.
+:- import_module array_util.
+:- import_module map_util.
 
 %-----------------------------------------------------------------------------%
 % Hash Array Mapped Table
@@ -935,7 +937,7 @@ insert_tree(H, K, V, S, R, !.HM@indexed_branch(B, !.Array), !:HM) :-
 	sparse_index(B, M, I),
 	( if B /\ M = 0u
 	then
-		unsafe_array_insert(I, leaf(H, K, V), !Array), 
+		unsafe_insert(I, leaf(H, K, V), !Array), 
 		!:HM = indexed_or_full_branch(B \/ M, !.Array)
 	else 
 		array.unsafe_lookup(!.Array, I, Branch0),
@@ -1087,7 +1089,7 @@ search_insert_tree(H, K, V, S, Old, !.HM@indexed_branch(B, !.Array), !:HM) :-
 	( if B /\ M = 0u
 	then
 		Old = no,
-		unsafe_array_insert(I, leaf(H, K, V), !Array), 
+		unsafe_insert(I, leaf(H, K, V), !Array), 
 		!:HM = indexed_or_full_branch(B \/ M, !.Array)
 	else 
 		array.unsafe_lookup(!.Array, I, Branch0),
@@ -1374,7 +1376,7 @@ remove_indexed_child(Mask, Index, Bitmap, Array, Length) = HM :-
 		then
 			HM = Leaf
 		else 
-			unsafe_array_delete(Index, Array, NewArray),
+			unsafe_delete(Index, Array, NewArray),
 			HM = indexed_branch(xor(Bitmap, Mask), NewArray)
 		)
 	).
@@ -1388,7 +1390,7 @@ remove(H, K, S, V, full_branch(Array), HM) :-
 	(if Branch1 = empty_tree
 	then
 		B = full_bitmap /\ (\ unchecked_left_shift(1u, I)),
-		HM = indexed_branch(B, unsafe_array_delete(Array, I))
+		HM = indexed_branch(B, unsafe_delete(Array, I))
 	else
 		HM = full_branch(slow_set(Array, I, Branch1))
 	).
@@ -1468,7 +1470,7 @@ delete(!.HM@full_branch(Array), H, K, S) = !:HM :-
 	else if Branch1 = empty_tree
 	then
 		B = xor(full_bitmap, unchecked_left_shift(1u, I)),
-		!:HM = indexed_branch(B, unsafe_array_delete(Array, I))
+		!:HM = indexed_branch(B, unsafe_delete(Array, I))
 	else
 		!:HM = full_branch(slow_set(Array, I, Branch1))
 	).
@@ -2268,7 +2270,7 @@ intersect_loop(S, P, PR, CB, B1, Array1, B2, Array2, !B, !L) :-
 intersect_tree(_S, P, _PR, collision(H1, B1), collision(H2, B2), Int) :-
 	(if H1 = H2
 	then
-		map.intersect(P, B1, B2, IntB),
+		pred_intersect(P, B1, B2, IntB),
 		(if map.is_empty(IntB)
 		then
 			Int = empty_tree
@@ -2387,7 +2389,7 @@ union_tree(S, P, PR, L@leaf(H, _K, _V), !.HM@indexed_branch(B, BArray), !:HM)
 	sparse_index(B, M, I),
 	(if M /\ B = 0u
 	then
-		unsafe_array_insert(I, L, !Array), 
+		unsafe_insert(I, L, !Array), 
 		!:HM = indexed_or_full_branch(B \/ M, !.Array)
 	else
 		array.unsafe_lookup(!.Array, I, Branch0),
@@ -2685,7 +2687,7 @@ union_tree(S, P, PR, C@collision(H, _Bucket), !.HM@indexed_branch(B, BArray),
 	sparse_index(B, M, I),
 	(if M /\ B = 0u
 	then
-		unsafe_array_insert(I, C, !Array), 
+		unsafe_insert(I, C, !Array), 
 		!:HM = indexed_or_full_branch(B \/ M, !.Array)
 	else
 		array.unsafe_lookup(!.Array, I, Branch0),
@@ -3014,7 +3016,7 @@ difference_tree(S, F@full_branch(A), C@collision(H, _), Diff) :-
 		Diff = F
 	else if Child = empty_tree
 	then
-		unsafe_array_delete(I, A, NewArray),
+		unsafe_delete(I, A, NewArray),
 		Mask = unchecked_left_shift(1u, I),
 		Diff = indexed_branch(xor(full_bitmap, Mask), NewArray)
 	else
