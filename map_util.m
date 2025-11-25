@@ -54,7 +54,7 @@
 :- mode func_intersect(in(func(in, in) = out is det), in, in) = out is det.
 :- mode func_intersect(in(func(in, in) = out is semidet), in, in) = out is semidet.
 
-:- pred func_intersect(func(V1, V2) = V3, map(K, V1), map(K, V2)), map(K, V3)).
+:- pred func_intersect(func(V1, V2) = V3, map(K, V1), map(K, V2), map(K, V3)).
 :- mode func_intersect(in(func(in, in) = out is det), in, in, out) is det.
 :- mode func_intersect(in(func(in, in) = out is semidet), in, in, out)
 	is semidet.
@@ -72,7 +72,7 @@
 :- mode func_union(in(func(in, in) = out is det), in, in) = out is det.
 :- mode func_union(in(func(in, in) = out is semidet), in, in) = out is semidet.
 
-:- pred func_union(func(V, V) = V, map(K, V), map(K, V)), map(K, V)).
+:- pred func_union(func(V, V) = V, map(K, V), map(K, V), map(K, V)).
 :- mode func_union(in(func(in, in) = out is det), in, in, out) is det.
 :- mode func_union(in(func(in, in) = out is semidet), in, in, out) is semidet.
 
@@ -86,6 +86,7 @@
 
 :- implementation.
 
+:- import_module list.
 :- import_module maybe.
 
 % :- import_module require.
@@ -118,7 +119,7 @@ func_fold(F, M, A, semidet_fold(F, M, A)).
 	
 intersect_fold(F, M2, K, V1, !.M3) = !:M3 :-
 	(if search(M2, K, V2)
-	then insert(K, F(V1, V2), !M3)
+	then det_insert(K, F(V1, V2), !M3)
 	else true
 	).
 	
@@ -134,8 +135,7 @@ curry_pred(P, V1, V2) = V3 :- P(V1, V2, V3).
 
 pred_intersect(P, M1, M2, func_intersect(curry_pred(P), M1, M2)).
 
-:- func union_fold(func(V, V) = V, K, V, map(K, V)) = 
-	map(K, V3).
+:- func union_fold(func(V, V) = V, K, V, map(K, V)) = map(K, V).
 :- mode union_fold(in(func(in, in) = out is det), in, in, in) = out is det.
 :- mode union_fold(in(func(in, in) = out is semidet), in, in, in) = out
 	is semidet.
