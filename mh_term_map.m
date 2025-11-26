@@ -49,8 +49,7 @@
 :- pred contains(mh_term_map(_)::in, mh_term::in) is semidet.
 
 	% Fails if the key is not found
-:- pred search(mh_term_map(T)::in, mh_term::in, 
-T::out) is semidet.
+:- pred search(mh_term_map(T)::in, mh_term::in, T::out) is semidet.
 :- func search(mh_term_map(T), mh_term) = T is semidet.
 
 	% Throws an exception if the key is not found
