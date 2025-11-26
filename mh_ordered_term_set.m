@@ -48,14 +48,14 @@
 
 :- pred is_singleton(mh_ordered_term_set::in) is semidet.
 
-% True if the order of the elements are sorted, even with duplicates.
+	% True if the order of the elements are sorted, even with duplicates.
 :- pred is_sorted(mh_ordered_term_set::in) is semidet.
 
-% Sort a given set using the standard ordering without removing elements.
+	% Sort a given set using the standard ordering without removing elements.
 :- func sort(mh_ordered_term_set) = mh_ordered_term_set.
 :- pred sort(mh_ordered_term_set::in, mh_ordered_term_set::out) is det.
 
-% Sort using the standard ordering and remove duplicaates
+	% Sort using the standard ordering and remove duplicaates
 :- func sort_and_remove_dups(mh_ordered_term_set) = mh_ordered_term_set.
 :- pred sort_and_remove_dups(mh_ordered_term_set::in, mh_ordered_term_set::out)
 	is det.
@@ -64,29 +64,29 @@
 :- pred remove_dups(mh_ordered_term_set::in, mh_ordered_term_set::out)
 	is det.
 
-% Return the number of elements in the ordered portion of the set
+	% Return the number of elements in the ordered portion of the set
 :- func size(mh_ordered_term_set) = int.
 :- pred size(mh_ordered_term_set::in, int::out) is det.
 
 
-% Return the number of unique elements in the set
+	% Return the number of unique elements in the set
 :- func unique_elements(mh_ordered_term_set) = int.
 :- pred unique_elements(mh_ordered_term_set::in, int::out) is det.
 
-% Compares the ordered values in the set, including duplicates, succeeds if
-% the set contains the same values in the same order. 
+	% Compares the ordered values in the set, including duplicates, succeeds if
+	% the set contains the same values in the same order. 
 :- pred equal(mh_ordered_term_set::in, mh_ordered_term_set::in) is semidet.
 
-% Succeeds if the sets have the same values, with duplicates removed
-% Equivalent to compare_ordered_term_sets((=)).
+	% Succeeds if the sets have the same values, with duplicates removed
+	% Equivalent to compare_ordered_term_sets((=)).
 :- pred equivalent(mh_ordered_term_set::in, mh_ordered_term_set::in) 
 	is semidet.
 
-% Sorts and removes duplicates from the sets and compares them according to
-% the standard ordering. Used to implement mercury equality and comparison.
-% This is neccecary in order to efficiently implement maps and other data
-% structures for this type as *sets* ... if you need to map the values in
-% the set by ordering, convert the set to an ordered list or array first.
+	% Sorts and removes duplicates from the sets and compares them according to
+	% the standard ordering. Used to implement mercury equality and comparison.
+	% This is neccecary in order to efficiently implement maps and other data
+	% structures for this type as *sets* ... if you need to map the values in
+	% the set by ordering, convert the set to an ordered list or array first.
 :- pred compare_ordered_term_sets(comparison_result::uo, 
 	mh_ordered_term_set::in, mh_ordered_term_set::in) is det.
 
@@ -105,42 +105,43 @@
 :- func from_array(array(mh_term)) = mh_ordered_term_set.
 :- func to_array(mh_ordered_term_set) = array(mh_term).
 
-% Sorts and removes duplicates (if any) from the set, the assigned ordering
-% is ignored
+	% Sorts and removes duplicates (if any) from the set, the assigned ordering
+	% is ignored
 
 :- func to_sorted_list(mh_ordered_term_set) = list(mh_term).
 :- func to_sorted_array(mh_ordered_term_set) = array(mh_term).
 
 :- func to_term_set(mh_ordered_term_set) = mh_term_set.
 
-% More efficient than to_term_set/1
+	% More efficient than to_term_set/1
 :- some [T] to_term_map(mh_ordered_term_set) = mh_term_map(T).
 
 	
 %-----------------------------------------------------------------------------%
 % Lookup
 
-% Unlike arrays, these operations are 1 indexed, the 'set_' variants of each
-% call are equivalent, but operate on the sorted set version, not the ordered
+	% Unlike arrays, these operations are 1 indexed
+	%TODO: unsafe versions that skip bounds checks?
 
-% Return the maximum and minimum valid indexes for the order, return -1 for 
-% both values if empty set
+	% Return the maximum and minimum valid indexes for the order, return -1 for 
+	% both values if empty set
 :- pred bounds(mh_ordered_term_set::in, int::out, int::out) is det.
 
-% As above, but fail on emtpy set
+	% As above, but fail on emtpy set
 :- pred semidet_bounds(mh_ordered_term_set::in, int::out, int::out) is semidet.
 
-% Succeed if the given index is in bounds for the given ordered_term_set
+	% Succeed if the given index is in bounds for the given ordered_term_set
 :- pred in_bounds(mh_ordered_term_set::in, int::in) is semidet.
 
-% Return the first index (should always be 1) unless the set is empty then -1
+	% Return the first index (should always be 1) unless the set is empty 
+	% If empty return -1
 :- func min(mh_ordered_term_set) = int is det.
 :- pred min(mh_ordered_term_set::in, int::out) is det.
 
 :- func semidet_min(mh_ordered_term_set) = int is semidet.
 :- pred semidet_min(mh_ordered_term_set::in, int::out) is semidet.
 
-% Return the last index
+	% Return the last index
 :- func max(ordered_term_set) = int is det.
 :- pred max(ordered_term_set::in, int::out) is det.
 
@@ -149,44 +150,95 @@
 
 :- pred contains(mh_ordered_term_set::in, mh_term::in) is semidet.
 
-% Lookup the ordered value at the given index (starting at 1), throws an
-% exception if index is out of bounds
+	% Lookup the ordered value at the given index (starting at 1), throws an	% exception if index is out of bounds
 :- func lookup(mh_ordered_term_set, int) = mh_term is det.
 :- pred lookup(mh_ordered_term_set::in, int::in, mh_term::out) is det.
 
-% Search for the value and return the lowest index in the ordered array 
+	% Search for the value and return the lowest index in the ordered array 
 :- func search(mh_ordered_term_set, mh_term) = int is semidet.
 :- pred search(mh_ordered_term_set::in, mh_term::in, int::out) is semidet.
 
-% Search for the value and return a set of indexes in the ordered array 
+	% Search for the value and return a set of indexes in the ordered array 
 :- func search_all(mh_ordered_term_set, mh_term) = set(int) is semidet.
 :- pred search_all(mh_ordered_term_set::in, mh_term::in, set(int)::out) 
 	is semidet.
 	
-% As above, but return an empty set if the value is not present. 
+	% As above, but return an empty set if the value is not present. 
 :- func det_search_all(mh_ordered_term_set, mh_term) = set(int) is det.
 :- pred det_search_all(mh_ordered_term_set::in, mh_term::in, set(int)::out) 
 	is det.
+	
+	% return the lowest (leftmost) element, fails if the set is empty
+:- func first(mh_ordered_term_set) = mh_term is semidet.
+:- pred first(mh_ordered_term_set::in, mh_term::out) is semidet.
+
+	% return the highest (rightmost) element, fails if the set is empty
+:- func last(mh_ordered_term_set) = mh_term is semidet.
+:- pred last(mh_ordered_term_set::in, mh_term::out) is semidet.
+	
+
+%-----------------------------------------------------------------------------%
+% Insertion
+
+	% Insert the element at the given index (starting at 1)
+	% Throws an exception if the index to be inserted is invalid
+:- pred insert(int::in, mh_term::in, mh_ordered_term_set::in, 
+	mh_ordered_term_set::out) is det.
+	
+	% Inserts at the front of the list (element 1)
+:- pred insert(mh_term::in, mh_ordered_term_set::in, mh_ordered_term_set::out) 
+	is det.
+
+	% Inserts at the end of the list (max + 1)
+:- pred push(mh_term::in, mh_ordered_term_set::in, mh_ordered_term_set::out) 
+	is det.
+	
+	% Change the element at the given index to the provided term
+:- pred set(int::in, mh_term::in, mh_term_map::in, mh_term_map::out)
+	is det.
+
+	
+%-----------------------------------------------------------------------------%
+% Removal
+
+	% Remove the element at the given index (starting from 1), shift elements
+	% to the left. Throw an exception if the index is invalid.
+:- pred remove(int::in, mh_term::out, mh_ordered_term_set::in,
+	mh_ordered_term_set::out) is det.
+
+	% Remove all instances of the given term from the set
+:- pred remove(mh_term::in, mh_ordered_term_set::in, mh_ordered_term_set::out) is semidet.
+	
+:- pred det_remove(mh_term::in, T::out, mh_ordered_term_set::in, 
+	mh_term_map::out) is det.
+	
+:- pred det_remove(mh_term::in, mh_ordered_term_set::in, mh_ordered_term_set::out) is det.
+	
+:- pred delete(mh_term::in,  mh_ordered_term_set::in, mh_term_map::out) is det.
+
+:- pred delete_list(list(mh_term)::in, mh_ordered_term_set::in, 
+	mh_term_map::out) is det.
 
 %-----------------------------------------------------------------------------%
 % Set operations
 
 
-% The union of two sets sorted and without duplicates, order is not preserved
+	% The union of two sets sorted and without duplicates, 
+	% order is not preserved
 :- pred union(mh_ordered_term_set::in, mh_ordered_term_set::in,
 	mh_ordered_term_set::out) is det.
 :- func union(mh_ordered_term_set, mh_ordered_term_set) = mh_ordered_term_set.
 
 
-% The intersection of two sets sorted and without duplicates, order is not 
-% preserved
+	% The intersection of two sets sorted and without duplicates, order is not 
+	% preserved
 :- pred intersect(mh_ordered_term_set::in, mh_ordered_term_set::in,
 	mh_ordered_term_set::out) is det.
 :- func intersect(mh_ordered_term_set, mh_ordered_term_set)
 	= mh_ordered_term_set.
 
-% The difference of two sets sorted and without duplicates, 
-% order is not preserved
+	% The difference of two sets sorted and without duplicates, 
+	% order is not preserved
 :- pred difference(mh_ordered_term_set::in, mh_ordered_term_set::in, 
 	mh_ordered_term_set::out) is det.
 :- func difference(mh_ordered_term_set, mh_ordered_term_set)
