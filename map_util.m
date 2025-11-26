@@ -15,30 +15,13 @@
 
 :- interface.
 
-
 :- import_module map.
-
+:- import_module array.
 
 %-----------------------------------------------------------------------------%
 % Basic map operations
 
 :- pred is_singleton(map(_, _)::in) is semidet.
-
-	% Perform a left fold over the map, failing early if the applied function
-	% fails. The standard library implementatin was det only.
-
-:- func semidet_fold(func(K, V, A) = A, map(K, V), A) = A.
-:- mode semidet_fold(in(func(in, in, in) = out is det), in, in) = out is det.
-:- mode semidet_fold(in(func(in, in, in) = out is semidet), in, in) = out 
-	is semidet.
-	
-	% Predicate form of semidet_fold, given that the standard libary versions
-	% pass a predicate
-	
-:- pred func_fold(func(K, V, A) = A, map(K, V), A, A).
-:- mode func_fold(in(func(in, in, in) = out is det), in, in, out) is det.
-:- mode func_fold(in(func(in, in, in) = out is semidet), in, in, out) 
-	is semidet.
 
 %-----------------------------------------------------------------------------%
 % Set operations
@@ -80,6 +63,34 @@
 :- mode pred_union(in(pred(in, in, out) is det), in, in, out) is det.	
 :- mode pred_union(in(pred(in, in, out) is semidet), in, in, out) is semidet.
 
+%-----------------------------------------------------------------------------%
+% Higher Order
+
+	% Perform a left fold over the map, failing early if the applied function
+	% fails. The standard library implementatin was det only.
+:- func fold(func(K, V, A) = A, map(K, V), A) = A.
+:- mode fold(in(func(in, in, in) = out is det), in, in) = out is det.
+:- mode fold(in(func(in, in, in) = out is semidet), in, in) = out 
+	is semidet.
+:- mode fold(in(func(in, in, di) = uo is det), in, di) = uo is det.
+	
+	% Predicate form of fold, given that the standard libary versions
+	% pass a predicate
+:- pred fold(func(K, V, A) = A, map(K, V), A, A).
+:- mode fold(in(func(in, in, in) = out is det), in, in, out) is det.
+:- mode fold(in(func(in, in, in) = out is semidet), in, in, out) 
+	is semidet.
+:- mode fold(in(func(in, in, di) = uo is det), in, di, uo) is det.
+
+	% Fold over the map, passing a mutable array as the accumulator
+:- func array_fold(func(K, V, A) = A, map(K, V), A) = A.
+:- mode array_fold(in(func(in, in, array_di) = array_uo is det), in, array_di)
+	= array_uo is det.
+	
+:- pred array_fold(func(K, V, A) = A, map(K, V), A, A).
+:- mode array_fold(in(func(in, in, array_di) = array_uo is det), in, array_di,
+	array_uo) is det.
+
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -96,16 +107,6 @@
 
 is_singleton(Map) :- keys(Map, [_]).
 
-:- pred apply_func(func(K, V, A) = A, K, V, A, A).
-:- mode apply_func(in(func(in, in, in) = out is det), in, in, in, out) is det.
-:- mode apply_func(in(func(in, in, in) = out is semidet), in, in, in, out)
-	is semidet.
-	
-apply_func(F, K, V, A, F(K, V, A)).
-
-semidet_fold(F, Map, !.A) = !:A :- map.foldl(apply_func(F), Map, !A).
-
-func_fold(F, M, A, semidet_fold(F, M, A)).
 
 %-----------------------------------------------------------------------------%
 % Set operations
@@ -123,7 +124,7 @@ intersect_fold(F, M2, K, V1, !.M3) = !:M3 :-
 	else true
 	).
 	
-func_intersect(F, M1, M2) = semidet_fold(intersect_fold(F, M2), M1, init).
+func_intersect(F, M1, M2) = fold(intersect_fold(F, M2), M1, init).
 
 func_intersect(F, M1, M2, func_intersect(F, M1, M2)).
 
@@ -147,10 +148,47 @@ union_fold(F, K, V1, !.M2) = !:M2 :-
 	else true
 	).
 	
-func_union(F, M1, M2) = semidet_fold(union_fold(F), M1, M2).
+func_union(F, M1, M2) = fold(union_fold(F), M1, M2).
 
 func_union(F, M1, M2, func_union(F, M1, M2)).
 
 pred_union(P, M1, M2, func_union(curry_pred(P), M1, M2)).
 	
+%-----------------------------------------------------------------------------%
+% Higher Order
+
+:- pred apply_func(func(K, V, A) = A, K, V, A, A).
+:- mode apply_func(in(func(in, in, in) = out is det), in, in, in, out) is det.
+:- mode apply_func(in(func(in, in, in) = out is semidet), in, in, in, out)
+	is semidet.
+:- mode apply_func(in(func(in, in, di) = uo is det), in, in, di, uo) is det.
+	
+apply_func(F, K, V, A, F(K, V, A)).
+
+fold(F, Map, !.A) = !:A :- map.foldl(apply_func(F), Map, !A).
+
+fold(F, M, A, fold(F, M, A)).
+
+	% Mercury cheats uniqueness for arrays, so can we.
+	%
+	% The compiler would *not* allow us to pull something like this for
+	% actually unique insted variables, but the array library's unqiue modes
+	% are a work around, aliased to the 'ground' inst, allowing us to
+	% pass 'ground' insted arrays as unique without complaint from the mmc
+	% ... just don't do this with any array you want to treat as immutable.
+	% see also:  array.m line 58
+:- func coerce_uniq_array(T::in) = (T::array_uo).
+
+coerce_uniq_array(T) = T.
+
+:- func wrap_array_acc(func(K, V, A) = A, K, V, A) = A.
+:- mode wrap_array_acc(in(func(in, in, array_di) = array_uo is det), in, in, 
+	in) = out is det.
+
+wrap_array_acc(F, K, V, A) = F(K, V, coerce_uniq_array(A)).
+
+array_fold(F, M, A) = coerce_uniq_array(fold(wrap_array_acc(F), M, A)).
+
+array_fold(F, M, A, array_fold(F, M, A)).
+
 	
