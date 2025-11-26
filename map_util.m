@@ -103,7 +103,7 @@
 % :- import_module require.
 
 %-----------------------------------------------------------------------------%
-% Map Manipulation
+% Basic map operations
 
 is_singleton(Map) :- keys(Map, [_]).
 
