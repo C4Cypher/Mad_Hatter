@@ -82,12 +82,22 @@
 	is semidet.
 :- mode fold(in(func(in, in, di) = uo is det), in, di, uo) is det.
 
+	% As above, but single moded, for higher order calls
+:- func det_fold(func(K, V, A) = A, map(K, V), A) = A.
+:- mode det_fold(in(func(in, in, in) = out is det), in, in) = out is det.
+
+:- func semidet_fold(func(K, V, A) = A, map(K, V), A) = A.
+:- mode semidet_fold(in(func(in, in, in) = out is semidet), in, in) = out 
+	is semidet.
+
 	% Fold over the map, passing a mutable array as the accumulator
-:- func array_fold(func(K, V, A) = A, map(K, V), A) = A.
+:- func array_fold(func(K, V, array(T)) = array(T), map(K, V), array(T)) 
+	= array(T).
 :- mode array_fold(in(func(in, in, array_di) = array_uo is det), in, array_di)
 	= array_uo is det.
 	
-:- pred array_fold(func(K, V, A) = A, map(K, V), A, A).
+:- pred array_fold(func(K, V, array(T)) = array(T), map(K, V), array(T), 
+	array(T)).
 :- mode array_fold(in(func(in, in, array_di) = array_uo is det), in, array_di,
 	array_uo) is det.
 
@@ -99,6 +109,8 @@
 
 :- import_module list.
 :- import_module maybe.
+
+:- import_module array_util.
 
 % :- import_module require.
 
@@ -132,6 +144,8 @@ func_intersect(F, M1, M2, func_intersect(F, M1, M2)).
 :- mode curry_pred(in(pred(in, in, out) is semidet), in, in) = out is semidet.
 
 curry_pred(P, V1, V2) = V3 :- P(V1, V2, V3).
+
+:- pragma inline(curry_pred/3).
 
 pred_intersect(P, M1, M2, func_intersect(curry_pred(P), M1, M2)).
 
@@ -168,26 +182,10 @@ fold(F, Map, !.A) = !:A :- map.foldl(apply_func(F), Map, !A).
 
 fold(F, M, A, fold(F, M, A)).
 
-	% Mercury cheats uniqueness for arrays, so can we.
-	%
-	% The compiler would *not* allow us to pull something like this for
-	% actually unique insted variables, but the array library's unqiue modes
-	% are a work around, aliased to the 'ground' inst, allowing us to
-	% pass 'ground' insted arrays as unique without complaint from the mmc
-	% ... just don't do this with any array you want to treat as immutable.
-	% see also:  array.m line 58
-:- func coerce_uniq_array(T::in) = (T::array_uo).
+det_fold(F, M, A) = fold(F, M, A).
+semidet_fold(F, M, A) = fold(F, M, A).
 
-coerce_uniq_array(T) = T.
-
-:- func wrap_array_acc(func(K, V, A) = A, K, V, A) = A.
-:- mode wrap_array_acc(in(func(in, in, array_di) = array_uo is det), in, in, 
-	in) = out is det.
-
-wrap_array_acc(F, K, V, A) = F(K, V, coerce_uniq_array(A)).
-
-array_fold(F, M, A) = coerce_uniq_array(fold(wrap_array_acc(F), M, A)).
-
+array_fold(F, M, A) = kvfold_array(F, det_fold, M, A).
 array_fold(F, M, A, array_fold(F, M, A)).
 
 	
