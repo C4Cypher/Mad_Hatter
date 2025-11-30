@@ -140,6 +140,9 @@
 :- pred index_all_true(pred(int, T)::in(pred(in, in) is semidet), 
 	array(T)::in) is semidet.
 
+:- type vfold_call(C, V, A) == (func(func(V, A) = A, C, A) = A).
+:- inst vfold_call == (func(in(func(in, in) = out is det), in, in) = out 
+	is det).
 
 	% vfold_array(FoldFunction, FoldCall, Container, !.Array) = !:Array.
 	% Pass Foldfunction through FoldCall as if it were a standard accumulator
@@ -156,13 +159,13 @@
 
 :- mode vfold_array(in(func(in, array_di) = array_uo is det), 
 	in(vfold_call), in, array_di, array_uo) is det.
-
-:- type vfold_call(C, V, A) == (func(func(V, A) = A, C, A) = A).
-:- inst vfold_call == (func(in(func(in, in) = out is det), in, in) = out 
-	is det).
-
+	
 	% kvfold_array(FoldFunction, FoldCall, Container, !.Array) = !:Array.
 	% As above, but passing key value pairs
+:- type kvfold_call(C, K, V, A) == (func(func(K, V, A) = A, C, A) = A).
+:- inst kvfold_call == (func(in(func(in, in, in) = out is det), in, in) = out 
+	is det).
+	
 :- func kvfold_array(func(K, V, array(T)) = array(T), 
 	kvfold_call(C, K, V, array(T)), C, array(T)) = array(T).
 	
@@ -174,10 +177,6 @@
 
 :- mode kvfold_array(in(func(in, in, array_di) = array_uo is det), 
 	in(kvfold_call), in, array_di, array_uo) is det.
-
-:- type kvfold_call(C, K, V, A) == (func(func(K, V, A) = A, C, A) = A).
-:- inst kvfold_call == (func(in(func(in, in, in) = out is det), in, in) = out 
-	is det).
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
@@ -844,7 +843,7 @@ index_all_true(P, Array) :- for_all_true(min(Array), max(Array), P, Array).
 	% The compiler would *not* allow us to pull something like this for
 	% actually unique insted variables, but the array library's unqiue modes
 	% are a work around, aliased to the 'ground' inst, allowing us to
-	% pass 'ground' insted arrays as unique without complaint from the mmc
+	% pass 'ground' insted arrays as array_uniq without complaint from the mmc
 	% ... just don't do this with any array you want to treat as immutable.
 	% see also:  array.m line 58
 :- func coerce_uniq_array(T::in) = (T::array_uo).
