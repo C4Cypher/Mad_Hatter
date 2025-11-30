@@ -103,8 +103,8 @@
 %-----------------------------------------------------------------------------%
 % Removal
 
-:- pred remove(mh_term::in, T::out, mh_term_map(T)::in, 
-	mh_term_map::out) is semidet.
+:- pred remove(mh_term::in, T::out, mh_term_map(T)::in, mh_term_map::out)
+	is semidet.
 	
 :- pred remove(mh_term::in, mh_term_set::in, mh_term_set::out) is semidet.
 	
