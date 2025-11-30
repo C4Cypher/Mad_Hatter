@@ -16,6 +16,7 @@
 :- interface.
 
 :- import_module list.
+:- import_module array.
 :- import_module set.
 
 :- import_module mh_tuple.
@@ -141,7 +142,7 @@
 :- func semidet_min(mh_ordered_term_set) = int is semidet.
 :- pred semidet_min(mh_ordered_term_set::in, int::out) is semidet.
 
-	% Return the last index
+	% Return the last index, -1 if empty
 :- func max(ordered_term_set) = int is det.
 :- pred max(ordered_term_set::in, int::out) is det.
 
@@ -172,18 +173,30 @@
 :- func first(mh_ordered_term_set) = mh_term is semidet.
 :- pred first(mh_ordered_term_set::in, mh_term::out) is semidet.
 
+	% throw an exception if the set is empty
+:- func det_first(mh_ordered_term_set) = mh_term is semidet.
+:- pred det_first(mh_ordered_term_set::in, mh_term::out) is semidet.
+
 	% return the highest (rightmost) element, fails if the set is empty
 :- func last(mh_ordered_term_set) = mh_term is semidet.
 :- pred last(mh_ordered_term_set::in, mh_term::out) is semidet.
 	
+:- func det_last(mh_ordered_term_set) = mh_term is semidet.
+:- pred det_last(mh_ordered_term_set::in, mh_term::out) is semidet.
 
 %-----------------------------------------------------------------------------%
-% Insertion
+% Transformation
 
-	% Insert the element at the given index (starting at 1)
-	% Throws an exception if the index to be inserted is invalid
-:- pred insert(int::in, mh_term::in, mh_ordered_term_set::in, 
-	mh_ordered_term_set::out) is det.
+:- func transform(func(array(mh_term)) = array(mh_term), mh_ordered_term_set)
+	= mh_ordered_term_set.
+:- mode transform(in(func(in) = array_uo is det), in) = out is det.
+:- mode transform(in(func(in) = array_uo is semidet), in) = out is semidet.
+
+:- pred transform(pred(array(mh_term), array(mh_term)), mh_ordered_term_set,
+	mh_ordered_term_set).
+:- mode transform(in(pred(in, array_uo) is det), in, out) is det.
+:- mode transform(in(pred(in, array_uo) is semidet), in, out) is semidet.
+
 	
 	% Inserts at the front of the list (element 1)
 :- pred insert(mh_term::in, mh_ordered_term_set::in, mh_ordered_term_set::out) 
@@ -192,25 +205,11 @@
 	% Inserts at the end of the list (max + 1)
 :- pred push(mh_term::in, mh_ordered_term_set::in, mh_ordered_term_set::out) 
 	is det.
-	
-	% Change the element at the given index to the provided term
-:- pred set(int::in, mh_term::in, mh_term_map::in, mh_term_map::out)
-	is det.
 
-	
-%-----------------------------------------------------------------------------%
-% Removal
-
-	% Remove the element at the given index (starting from 1), shift elements
-	% to the left. Throw an exception if the index is invalid.
-:- pred remove(int::in, mh_term::out, mh_ordered_term_set::in,
-	mh_ordered_term_set::out) is det.
-
-	% Remove all instances of the given term from the set
-:- pred remove(mh_term::in, mh_ordered_term_set::in, mh_ordered_term_set::out) is semidet.
-	
-:- pred det_remove(mh_term::in, T::out, mh_ordered_term_set::in, 
-	mh_term_map::out) is det.
+	% Remove all instances of the given term from the set, fails if the given
+	% term is not a member of the set
+:- pred remove(mh_term::in, mh_ordered_term_set::in, mh_ordered_term_set::out) 
+	is semidet.
 	
 :- pred det_remove(mh_term::in, mh_ordered_term_set::in, mh_ordered_term_set::out) is det.
 	
@@ -218,6 +217,29 @@
 
 :- pred delete_list(list(mh_term)::in, mh_ordered_term_set::in, 
 	mh_term_map::out) is det.
+	
+%-----------------------------------------------------------------------------%
+% Ordering
+
+% Creates a new  ordered set by sorting the members of the sorted set using the
+% provided comparison function. The original ordering is discarded, and
+% duplicates according to the standard ordering are removed.  
+% Stable/predictable ordering where the comparison func returns equality is not
+% garunteed.
+:- pred order_by(comparison_func(T)::in(comparison_func), 
+	mh_ordered_term_set::in, mh_ordered_term_set::out) is det.
+	
+:- func order_by(comparison_func(T)::in(comparison_func), 
+	mh_ordered_term_set::in) = (mh_ordered_term_set::out) is det.
+
+% Create a new ordered set using the
+% provided comparison function that preserves the original order when the
+% comparison function returns equality. Does not remove duplicates.
+:- pred reorder_by(comparison_func(T)::in(comparison_func),
+	mh_ordered_term_set::in,	mh_ordered_term_set::out) is det.
+	
+:- func reorder_by(comparison_func(T)::in(comparison_func), 
+	mh_ordered_term_set::in)	= (mh_ordered_term_set::out) is det.
 
 %-----------------------------------------------------------------------------%
 % Set operations
@@ -250,13 +272,13 @@
 
 :- implementation.
 
-:- import_module array.
 :- import_module int.
 :- import_module unit.
 :- import_module bool.
 :- import_module require.
 
 :- import_module util.
+:- import_module array_util.
 
 :- import_module mh_term_map.
 
@@ -358,8 +380,30 @@ is_sorted(os(A, _)) :- is_sorted(A).
 	
 sort(os(O, M)) = os(sort(copy(O))@Sorted, new_term_map(Sorted)).
 
-sort_and_remove_dups(os(O, M)) = 
+sort_and_remove_dups(os(O, _)) = 
 	os(sort_and_remove_dups(O)@Sorted, new_term_map(Sorted)).
+	
+remove_dups(os(Order, Map)@Set) = NewSet :-
+	RemoveSet = fold(compose_dup_indexes, Map, init),
+	(if is_empty(RemoveSet)
+	then
+		NewSet = Set
+	else
+		delete_set(RemoveSet, O, NewOrder), %TODO: switch to unsafe version after testing
+		NewSet = from_array(NewOrder)
+	).
+
+:- func compose_dup_indexes(_, set(int), list(int)) = list(int).
+
+compose_dup_indexes(_, Indexes, Remove, append(Remove, RemoveList)) :-
+	IndexList = to_sorted_list(Indexes),
+	( 	IndexList = [], 
+		unexpected($module, $pred, 
+		"Invalid term set found. Map contained empty index set.")
+	;
+		IndexList = [ _ | RemoveList] 
+	).
+	
 
 size(os(A, _)) = size(A).
 size(OS, size(OS)).
@@ -369,7 +413,11 @@ unique_elements(OS, unique_elements(OS)).
 
 equal(os(A, _), os(A, _)).
 
-equivalent(os(_, M1), os(_, M2)) :- to_term_set(M1) = to_term_set(M2). 
+equivalent(os(_, M1), os(_, M2)) :- is_empty(fold(eq_remove, M1, M2)). 
+
+:- func eq_remove(mh_term, _, mh_term_map(T)) = mh_term_map(T).
+
+eq_remove(Key, _, !.Map) = !:Map :- remove(Key, _, !Map).
 
 compare_ordered_term_sets(compare(to_term_set(M1), to_term_set(M2)), 
 	os(_, M1), 	os(_, M2)). 
@@ -400,8 +448,6 @@ to_sorted_array(OT) = to_array(to_sorted_list(OT)).
 to_unit(_, _) = unit.
 
 to_term_set(os(_, M)) = map(to_unit, M).
-
-
 
 %-----------------------------------------------------------------------------%
 % Lookup
@@ -439,11 +485,11 @@ semidet_min(os(A, _)) = array.min(A) :- size(A) > 0.
 semidet_min(OS, semidet_min(OS)).
 	
 max(os(A, _)) = 
-	(if size(A) = 0
+	(if array.max(A)@Amax < 0
 	then
 		-1
 	else
-		array.max(A) + 1
+		Amax + 1
 	).
 	
 max(OS, max(OS)).
@@ -478,6 +524,34 @@ det_search_all(OS, Value) = (if search_all(OS, Value, Found)
 	).
 	
 det_search_all(OS, Value, det_search_all(OS, Value)).
+
+first(OS) = lookup(OS, 1) :- size(OS) > 0.
+
+det_first(OS) = (if First = first(OS) then First 
+	else error($pred, "Empty ordered set has no first element.")).
+	
+last(OS) = lookup(OS, max(Os)@Max) :- Max > 0.
+
+det_last(OS) = (if Last = last(OS) then Last 
+	else error($pred, "Empty ordered set has no last element.")).
+	
+%-----------------------------------------------------------------------------%
+% Transformation
+
+transform(F, os(O, _)) = from_array(F(O)). 
+
+transform(P, os(!.O, _), from_array(!:O)) :- P(!O).
+
+insert(Term, !OS) :- transform(unsafe_insert(1, Term), !OS).
+	
+push(Term, !OS) :- transform(unsafe_insert(max(!.OS), Term), !OS).
+
+
+
+ 
+
+	
+	
 
 %-----------------------------------------------------------------------------%
 % Set operations
