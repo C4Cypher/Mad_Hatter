@@ -140,6 +140,8 @@
 :- pred index_all_true(pred(int, T)::in(pred(in, in) is semidet), 
 	array(T)::in) is semidet.
 
+%---------------------%
+
 :- type vfold_call(C, V, A) == (func(func(V, A) = A, C, A) = A).
 :- inst vfold_call == (func(in(func(in, in) = out is det), in, in) = out 
 	is det).
@@ -160,12 +162,36 @@
 :- mode vfold_array(in(func(in, array_di) = array_uo is det), 
 	in(vfold_call), in, array_di, array_uo) is det.
 	
-	% kvfold_array(FoldFunction, FoldCall, Container, !.Array) = !:Array.
-	% As above, but passing key value pairs
+%---------------------%
+
+:- type vfold2_call(C, V, A, B) == 
+	(func(func(V, A, A, B) = B, C, A, A, B)	= B).
+:- inst vfold2_call == 
+	(func(in(func(in, in, out, in) = out is det), in, in, out, in) = out 
+	is det).
+
+	% vfold2_array(FoldFunction, FoldCall, Container, !Acc, !.Array) = !:Array.
+	% as above, but passing an additional accumulator 
+:- func vfold2_array(func(V, A, A, array(T)) = array(T), 
+	vfold2_call(C, V, A, array(T)), C, A, A, array(T)) = array(T).
+	
+:- mode vfold2_array(in(func(in, in, out, array_di) = array_uo is det), 
+	in(vfold2_call), in, in, out, array_di) = array_uo is det.
+	
+:- pred vfold2_array(func(V, A, A, array(T)) = array(T), 
+	vfold2_call(C, V, A, array(T)), C, A, A, array(T), array(T)).
+
+:- mode vfold2_array(in(func(in, in, out, array_di) = array_uo is det), 
+	in(vfold2_call), in, in, out, array_di, array_uo) is det.
+
+%---------------------%
+	
 :- type kvfold_call(C, K, V, A) == (func(func(K, V, A) = A, C, A) = A).
 :- inst kvfold_call == (func(in(func(in, in, in) = out is det), in, in) = out 
 	is det).
-	
+
+	% kvfold_array(FoldFunction, FoldCall, Container, !.Array) = !:Array.
+	% As above, but passing key value pairs	
 :- func kvfold_array(func(K, V, array(T)) = array(T), 
 	kvfold_call(C, K, V, array(T)), C, array(T)) = array(T).
 	
@@ -177,6 +203,29 @@
 
 :- mode kvfold_array(in(func(in, in, array_di) = array_uo is det), 
 	in(kvfold_call), in, array_di, array_uo) is det.
+
+%---------------------%
+	
+	% kvfold_array(FoldFunction, FoldCall, Container, !.Array) = !:Array.
+	% As above, but passing an additional accumulator
+:- type kvfold2_call(C, K, V, A, B) == 
+	(func(func(K, V, A, A, B) = B, C, A, A, B) = B).
+:- inst kvfold2_call == 
+	(func(in(func(in, in, in, out, in) = out is det), in, in, out, in) = out 
+	is det).
+	
+:- func kvfold2_array(func(K, V, A, A, array(T)) = array(T), 
+	kvfold2_call(C, K, V, A, array(T)), C, A, A, array(T)) = array(T).
+	
+:- mode kvfold2_array(in(func(in, in, in, out, array_di) = array_uo is det), 
+	in(kvfold2_call), in, in, out, array_di) = array_uo is det.
+	
+:- pred kvfold2_array(func(K, V, A, A, array(T)) = array(T), 
+	kvfold2_call(C, K, V, A, array(T)), C, A, A, array(T), array(T)).
+
+:- mode kvfold2_array(in(func(in, in, in, out, array_di) = array_uo is det), 
+	in(kvfold2_call), in, in, out, array_di, array_uo) is det.
+	
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
@@ -850,6 +899,8 @@ index_all_true(P, Array) :- for_all_true(min(Array), max(Array), P, Array).
 
 coerce_uniq_array(T) = T.
 
+%---------------------%
+
 :- func wrap_array_acc(func(V, A) = A, V, A) = A.
 :- mode wrap_array_acc(in(func(in, array_di) = array_uo is det), in, in) = out
 	is det.
@@ -860,6 +911,21 @@ vfold_array(F, Call, M, A) = coerce_uniq_array(Call(wrap_array_acc(F), M, A)).
 
 vfold_array(F, Call, M, A, vfold_array(F, Call, M, A)).
 
+%---------------------%
+
+:- func wrap_array_acc(func(V, A, A, B) = B, V, A, A, B) = B.
+:- mode wrap_array_acc(in(func(in, in, out, array_di) = array_uo is det), 
+	in, in, out, in) = out is det.
+
+wrap_array_acc(F, V, Acc0, Acc, A) = F(V, Acc0, Acc, coerce_uniq_array(A)).
+
+vfold2_array(F, Call, M, Acc0, Acc, A) = 
+	coerce_uniq_array(Call(wrap_array_acc(F), M, Acc0, Acc, A)).
+
+vfold2_array(F, Call, M, Acc0, Acc, A, vfold2_array(F, Call, M, Acc0, Acc, A)).
+
+%---------------------%
+
 :- func wrap_array_acc(func(K, V, A) = A, K, V, A) = A.
 :- mode wrap_array_acc(in(func(in, in, array_di) = array_uo is det), in, in, 
 	in) = out is det.
@@ -869,3 +935,18 @@ wrap_array_acc(F, K, V, A) = F(K, V, coerce_uniq_array(A)).
 kvfold_array(F, Call, M, A) = coerce_uniq_array(Call(wrap_array_acc(F), M, A)).
 
 kvfold_array(F, Call, M, A, kvfold_array(F, Call, M, A)).
+
+%---------------------%
+
+:- func wrap_array_acc(func(K, V, A, A, B) = B, K, V, A, A, B) = B.
+:- mode wrap_array_acc(in(func(in, in, in, out, array_di) = array_uo is det), 
+	in, in, in, out, in) = out is det.
+
+wrap_array_acc(F, K, V, Acc0, Acc, A) = 
+	F(K, V, Acc0, Acc, coerce_uniq_array(A)).
+
+kvfold2_array(F, Call, M, Acc0, Acc, A) = 
+	coerce_uniq_array(Call(wrap_array_acc(F), M, Acc0, Acc, A)).
+
+kvfold2_array(F, Call, M, Acc0, Acc, A, 
+	kvfold2_array(F, Call, M, Acc0, Acc, A)).
