@@ -16,28 +16,34 @@
 :- interface.
 
 :- import_module array.
-:- import_module set.
+:- import_module list.
 
 
 
 %-----------------------------------------------------------------------------%
 % Array Manipulation
 
-% insert(Index, T, Source, Result) 
-% Copy an array and insert an element T at Index, shifting elements right
-% Throws an exception if Index is out of bounds
+	% insert(Index, T, Source, Result) 
+	% Copy an array and insert an element T at Index, shifting elements right
+	% Throws an exception if Index is out of bounds
 :- pred insert(int::in, T::in, array(T)::in, array(T)::array_uo) is det.
 :- func insert(array(T)::in, int::in, T::in) = (array(T)::array_uo)
 	is det.
 
-% Does not check bounds 	
+	% Fails if index is out of bounds
+:- pred semidet_insert(int::in, T::in, array(T)::in, array(T)::array_uo)
+	is semidet.
+:- func semidet_insert(array(T)::in, int::in, T::in) = (array(T)::array_uo)
+	is semidet.
+
+	% Does not check bounds 	
 :- pred unsafe_insert(int::in, T::in, array(T)::in, array(T)::array_uo) 
 	is det.
 :- func unsafe_insert(array(T)::in, int::in, T::in) = 
 	(array(T)::array_uo) is det.
 	
-% delete(Index, Source, Result)
-% Remove an element from an array, shifting elements left
+	% delete(Index, Source, Result)
+	% Remove an element from an array, shifting elements left
 :- pred delete(int::in, array(T)::in, array(T)::array_uo) is det.
 :- func delete(array(T)::in, int::in) = (array(T)::array_uo) is det.
 
@@ -45,20 +51,22 @@
 :- func unsafe_delete(array(T)::in, int::in) = (array(T)::array_uo) 
 	is det.
 	
-% delete_set(Set, Source, Result)
-% Remove a set of elements from an array, shifting elements left
-:- pred delete_set(set(int)::in, array(T)::in, array(T)::array_uo)
+	% delete_list(List, Source, Result)
+	% Remove a list of elements from an array, shifting elements left
+:- pred delete_list(list(int)::in, array(T)::in, array(T)::array_uo)
 	is det.
-:- func delete_set(array(T)::in, set(int)::in) = (array(T)::array_uo)
+:- func delete_list(array(T)::in, list(int)::in) = (array(T)::array_uo)
 	is det.
 
-:- pred unsafe_delete_set(set(int)::in, array(T)::in, array(T)::array_uo)
- is det.
-:- func unsafe_delete_set(array(T)::in, set(int)::in) = 
+	% Does not check the bounds of indexes to be deleted, must not contain
+	% duplicates
+:- pred unsafe_delete_list(list(int)::in, array(T)::in, array(T)::array_uo)
+	is det.
+:- func unsafe_delete_list(array(T)::in, list(int)::in) = 
 	(array(T)::array_uo) is det.
 
-% array_[cons|snoc](T, Source, Result)
-% Insert T as the [first|last] element of Source 
+	% array_[cons|snoc](T, Source, Result)
+	% Insert T as the [first|last] element of Source 
 :- pred array_cons(T::in, array(T)::in, array(T)::array_uo) is det.
 :- func array_cons(array(T)::in, T::in) = (array(T)::array_uo) is det.
 
@@ -66,61 +74,59 @@
 :- func array_snoc(array(T)::in, T::in) = (array(T)::array_uo) is det.
 
 
-% copy_range(Source, SrcFirst, SrcLast, TgtFirst, !Array)
-% Copy elements from a Source array ranging from indexes SrcFirst to SrcLast
-% to a target Array, starting at index TgtFirst
-% Throws an exception if any of the indexes are out of bounds.
+	% copy_range(Source, SrcFirst, SrcLast, TgtFirst, !Array)
+	% Copy elements from a Source array ranging from indexes SrcFirst to SrcLast
+	% to a target Array, starting at index TgtFirst
+	% Throws an exception if any of the indexes are out of bounds.
 :- pred copy_range(array(T)::in, int::in, int::in, int::in,
 	array(T)::array_di, array(T)::array_uo) is det.
 
-% Unsafe version skips the bounds checks, may result in underfined behavior
+	% Unsafe version skips the bounds checks, may result in underfined behavior
 :- pred unsafe_copy_range(array(T)::in, int::in, int::in, int::in,
 	array(T)::array_di, array(T)::array_uo) is det.
 	
-% copy_range_rev(Source, SrcFirst, SrcL, TgtFirst, !Array)
-% As above, but copy the elements in reverse ordeer.
+	% copy_range_rev(Source, SrcFirst, SrcL, TgtFirst, !Array)
+	% As above, but copy the elements in reverse ordeer.
 :- pred copy_range_rev(array(T)::in, int::in, int::in, int::in,
 	array(T)::array_di, array(T)::array_uo) is det.
 
-% Unsafe version skips the bounds checks, may result in underfined behavior
+	% Unsafe version skips the bounds checks, may result in underfined behavior
 :- pred unsafe_copy_range_rev(array(T)::in, int::in, int::in, int::in,
 	array(T)::array_di, array(T)::array_uo) is det.
 
 %-----------------------------------------------------------------------------%
 % Sorting
 	
-% remove_dups(Source, Result).
-% Take a sorted array and remove duplicates, the array MUST be sorted by the
-% standard ordering
+	% remove_dups(Source, Result).
+	% Take a sorted array and remove duplicates, the array MUST be sorted by 
+	% the standard ordering
 :- pred remove_dups(array(T)::array_di, array(T)::array_uo) is det.
 :- func remove_dups(array(T)::array_di) = (array(T)::array_uo) is det.
 
-% Make a copy of the input array, sort and remove duplicates
+	% Make a copy of the input array, sort and remove duplicates
 :- pred sort_and_remove_dups(array(T)::in, array(T)::array_uo) is det.
 :- func sort_and_remove_dups(array(T)::in) = (array(T)::array_uo) is det.
 
-% Succeed if the given array is sorted in ascending standard ordering
+	% Succeed if the given array is sorted in ascending standard ordering
 :- pred is_sorted(array(T)::in) is semidet.
 
-% Perform a linear search of an array, returning the index if found.
+	% Perform a linear search of an array, returning the index if found.
 :- pred search(array(T)::in, T::in, int::out) is semidet.
 :- func search(array(T), T) = int is semidet.
 
-% Perform a sort of the input array in a manner identical to the library 
-% standard sort/1 call, but provide a higher order comparison function
-
+	% Perform a sort of the input array in a manner identical to the library 
+	% standard sort/1 call, but provide a higher order comparison function
 :- func samsort(comparison_func(T)::in(comparison_func), array(T)::array_di) = 
 	(array(T)::array_uo) is det.
 	
-% A traditional top down merge sort, should be stable to the original order	
+	% A traditional top down merge sort, should be stable to the original order	
 :- func mergesort(comparison_func(T)::in(comparison_func), 
 	array(T)::array_di) = (array(T)::array_uo) is det.
 	
 %-----------------------------------------------------------------------------%
 % Higher order 
 
-% Left fold over items in an array, providing the array index
-
+	% Left fold over items in an array, providing the array index
 :- func index_fold(func(int, T, A) = A, array(T), A) = A.
 :- mode index_fold(in(func(in, in, in) = out is det), in, in) = out is det.
 :- mode index_fold(in(func(in, in, in) = out is semidet), in, in) = out 
@@ -139,7 +145,6 @@
 	% Pass Foldfunction through FoldCall as if it were a standard accumulator
 	% function, workaround for the fact that arrays can not be passed via
 	% modes, 
-	
 :- func vfold_array(func(V, array(T)) = array(T), vfold_call(C, V, array(T)),
 	C, array(T)) = array(T).
 	
@@ -182,7 +187,6 @@
 :- import_module int.
 :- import_module unit.
 :- import_module string.
-:- import_module list.
 % :- import_module solutions.
 :- import_module require.
 :- import_module exception.
@@ -203,8 +207,17 @@ insert(Src, I, T) = Result :-
 		unsafe_insert(I, T, Src, Result)
 	else
 		format_bounds_error($pred, "index %d not in range [%d, %d]",
-		[i(I), i(Min), i(Max)])
+		[i(I), i(Min), i(Max + 1)])
 	).
+
+
+semidet_insert(I, T, Src, semidet_insert(Src, I, T)).
+
+semidet_insert(Src, I, T) = Result :-
+	bounds(Src, Min, Max),
+	I >= Min, 
+	I =< Max + 1,
+	unsafe_insert(I, T, Src, Result).
 
 unsafe_insert(I, T, Src, unsafe_insert(Src, I, T)).
 
@@ -308,12 +321,18 @@ unsafe_delete(Src, I) = Result :-
 		copy_range(Src, First, Last, CpyStart, Result1, Result)
 	).
 	
-	
-delete_set(Set, Src, delete_set(Src, Set)).
+delete_list(List, Src, delete_list(Src, List)).
 
-:- pred bounds_check(array(T)::in, int::in, unit::in, unit::out) is det.
+:- pred dups_bounds_check(array(T)::in, int::in, list(int)::in, list(int)::out) 
+	is det.
 
-bounds_check(A, I, _, unit) :-
+dups_bounds_check(A, I, !Found) :-
+	(if member(I, !.Found) then
+		unexpected($module, $pred, 
+			"duplicate index found in list to be deleted")
+	else
+		!:Found = [I | !.Found ]
+	),
 	(if in_bounds(A, I) then true
 	else
 		bounds(A, Min, Max),
@@ -321,47 +340,47 @@ bounds_check(A, I, _, unit) :-
 		[i(I), i(Min), i(Max)])
 	).
 
-delete_set(Src, Set) = Result :-
-	fold(bounds_check(Src), Set, unit, _),
-	unsafe_delete_set(Set, Src, Result).
+delete_list(Src, List) = Result :-
+	foldl(dups_bounds_check(Src), List, [], _),
+	unsafe_delete_list(List, Src, Result).
 	
-unsafe_delete_set(Set, Src, unsafe_delete_set(Src, Set)).
+unsafe_delete_list(List, Src, unsafe_delete_list(Src, List)).
 
-:- func first_kept_index(int, set(int)) = int.
+:- func first_kept_index(int, list(int)) = int.
 
-first_kept_index(I, Set) =
-	(if contains(Set, I)
-	then first_kept_index(I + 1, Set)
+first_kept_index(I, List) =
+	(if member(I, List)
+	then first_kept_index(I + 1, List)
 	else I
 	).
 	
 %- pred add_rest(Current, Last, SrcIndex, RemovedIndexes, Src, !Result).
-:- pred add_rest(int::in, int::in, int::in, set(int)::in, array(T)::in, 
+:- pred add_rest(int::in, int::in, int::in, list(int)::in, array(T)::in, 
 	array(T)::array_di, array(T)::array_uo) is det.
 	
-add_rest(Current, Last, SrcIndex, Set, Src, !Result) :-
+add_rest(Current, Last, SrcIndex, List, Src, !Result) :-
 	(if Current > Last then true
 	else
-		NextSrcIndex = first_kept_index(SrcIndex, Set),
+		NextSrcIndex = first_kept_index(SrcIndex, List),
 		unsafe_lookup(Src, NextSrcIndex, Element),
 		unsafe_set(Current, Element, !Result),
-		add_rest(Current + 1, Last, NextSrcIndex + 1, Set, Src, !Result)
+		add_rest(Current + 1, Last, NextSrcIndex + 1, List, Src, !Result)
 	).
 
-unsafe_delete_set(Src, Set) = Result :-
+unsafe_delete_list(Src, List) = Result :-
 	Size = size(Src),
-	NewSize = Size - count(Set),
+	NewSize = Size - length(List),
 	(if NewSize = 0
 	then 
 		Result = make_empty_array
 	else 
-		FirstNew = first_kept_index(0, Set),
+		FirstNew = first_kept_index(0, List),
 		(if NewSize = 1
 		then
 			init(1, Src ^ unsafe_elem(FirstNew), Result)
 		else 
 			init(NewSize, Src ^ unsafe_elem(FirstNew), Result0),
-			add_rest(1, max(Result0), FirstNew + 1, Set, Src, Result0, Result)
+			add_rest(1, max(Result0), FirstNew + 1, List, Src, Result0, Result)
 		)
 	).
 		
