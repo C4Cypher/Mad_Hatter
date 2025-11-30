@@ -180,7 +180,7 @@
 :- func order_by(comparison_func(T)::in(comparison_func), ordered_set(T)::in)
 	= (ordered_set(T)::out) is det.
 
-% Create a new orddered set using the
+% Create a new ordered set using the
 % provided comparison function that preserves the original order when the
 % comparison function returns equality. Does not remove duplicates.
 :- pred reorder_by(comparison_func(T)::in(comparison_func),
