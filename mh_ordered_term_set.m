@@ -462,6 +462,21 @@ det_last(OS) = (if Last = last(OS) then Last
 
 order_by(CMP, os(O, S)) = os(O@samsort(CMP, copy(O)), S).
 
+:- type unsorted_accumulator ---> usacc(int, term_array).
+:- inst unsorted_accumulator = usacc(ground, array_uniq).
+
+:- func to_unsorted_array(mh_term_set::in) = (term_array::array_uo) is det.
+
+:- func unsorted_insert(mh_term, unsorted_accumulator) = 
+	un_sorted_accumulator.
+
+unsorted_insert(Term, usacc(Index, !.Array)) = usacc(Index + 1, !:Array) :-
+	unsafe_set(Index, !Array).
+	
+to_unsorted_array(Set) = Array :- %probably get a mode error,  
+	fold(unsorted_insert, Set, usacc(0, init(count(Set), nil_term))) =
+		usacc(_, Array).
+ 
 
 	
 	
