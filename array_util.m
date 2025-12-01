@@ -16,7 +16,7 @@
 :- interface.
 
 :- import_module array.
-:- import_module list.
+:- import_module map.
 
 
 
@@ -51,18 +51,18 @@
 :- func unsafe_delete(array(T)::in, int::in) = (array(T)::array_uo) 
 	is det.
 	
-	% delete_list(List, Source, Result)
-	% Remove a list of elements from an array, shifting elements left
-:- pred delete_list(list(int)::in, array(T)::in, array(T)::array_uo)
+	% delete_map(map, Source, Result)
+	% Remove the key values of a map from an array, shifting elements left
+:- pred delete_map(map(int, _)::in, array(T)::in, array(T)::array_uo)
 	is det.
-:- func delete_list(array(T)::in, list(int)::in) = (array(T)::array_uo)
+:- func delete_map(array(T)::in, map(int, _)::in) = (array(T)::array_uo)
 	is det.
 
 	% Does not check the bounds of indexes to be deleted, must not contain
 	% duplicates
-:- pred unsafe_delete_list(list(int)::in, array(T)::in, array(T)::array_uo)
+:- pred unsafe_delete_map(map(int, _)::in, array(T)::in, array(T)::array_uo)
 	is det.
-:- func unsafe_delete_list(array(T)::in, list(int)::in) = 
+:- func unsafe_delete_map(array(T)::in, map(int, _)::in) = 
 	(array(T)::array_uo) is det.
 
 	% array_[cons|snoc](T, Source, Result)
@@ -233,6 +233,7 @@
 
 
 :- import_module int.
+:- import_module list.
 :- import_module unit.
 :- import_module string.
 % :- import_module solutions.
@@ -369,69 +370,60 @@ unsafe_delete(Src, I) = Result :-
 		copy_range(Src, First, Last, CpyStart, Result1, Result)
 	).
 	
-delete_list(List, Src, delete_list(Src, List)).
+delete_map(Map, Src, delete_map(Src, Map)).	
 
-:- pred dups_bounds_check(array(T)::in, int::in, list(int)::in, list(int)::out) 
-	is det.
-
-dups_bounds_check(A, I, !Found) :-
-	(if member(I, !.Found) then
-		unexpected($module, $pred, 
-			"duplicate index found in list to be deleted")
-	else
-		!:Found = [I | !.Found ]
-	),
-	(if in_bounds(A, I) then true
-	else
-		bounds(A, Min, Max),
+delete_map(Src, Map) = 
+	(if is_empty(Map) then
+		copy(Src)
+	else if 
+		promise_equivalent_solutions [Ob] 
+			(det_min_key(Map)@Ob < Min ; det_max_key(Map)@Ob > Max)
+	then
 		format_bounds_error($pred, "index %d not in range [%d, %d]",
-		[i(I), i(Min), i(Max)])
-	).
-
-delete_list(Src, List) = Result :-
-	foldl(dups_bounds_check(Src), List, [], _),
-	unsafe_delete_list(List, Src, Result).
+		[i(Ob), i(Min), i(Max)])
+	else unsafe_delete_map(Src, Map) 
+	) :- Min = min(Src), Max = max(Src).
 	
-unsafe_delete_list(List, Src, unsafe_delete_list(Src, List)).
+unsafe_delete_map(Map, Src, unsafe_delete_map(Src, Map)).	
+	
+:- func first_kept_index(int, map(int, _)) = int.
 
-:- func first_kept_index(int, list(int)) = int.
-
-first_kept_index(I, List) =
-	(if member(I, List)
-	then first_kept_index(I + 1, List)
+first_kept_index(I, Map) =
+	(if contains(Map, I)
+	then first_kept_index(I + 1, Map)
 	else I
 	).
 	
+	
 %- pred add_rest(Current, Last, SrcIndex, RemovedIndexes, Src, !Result).
-:- pred add_rest(int::in, int::in, int::in, list(int)::in, array(T)::in, 
+:- pred add_rest(int::in, int::in, int::in, map(int, _)::in, array(T)::in, 
 	array(T)::array_di, array(T)::array_uo) is det.
 	
-add_rest(Current, Last, SrcIndex, List, Src, !Result) :-
+add_rest(Current, Last, SrcIndex, Map, Src, !Result) :-
 	(if Current > Last then true
 	else
-		NextSrcIndex = first_kept_index(SrcIndex, List),
+		NextSrcIndex = first_kept_index(SrcIndex, Map),
 		unsafe_lookup(Src, NextSrcIndex, Element),
 		unsafe_set(Current, Element, !Result),
-		add_rest(Current + 1, Last, NextSrcIndex + 1, List, Src, !Result)
+		add_rest(Current + 1, Last, NextSrcIndex + 1, Map, Src, !Result)
 	).
-
-unsafe_delete_list(Src, List) = Result :-
+	
+unsafe_delete_map(Src, Map) = Result :-
 	Size = size(Src),
-	NewSize = Size - length(List),
+	NewSize = Size - count(Map),
 	(if NewSize = 0
 	then 
 		Result = make_empty_array
 	else 
-		FirstNew = first_kept_index(0, List),
+		FirstNew = first_kept_index(0, Map),
 		(if NewSize = 1
 		then
 			init(1, Src ^ unsafe_elem(FirstNew), Result)
 		else 
 			init(NewSize, Src ^ unsafe_elem(FirstNew), Result0),
-			add_rest(1, max(Result0), FirstNew + 1, List, Src, Result0, Result)
+			add_rest(1, max(Result0), FirstNew + 1, Map, Src, Result0, Result)
 		)
 	).
-		
 	
 array_cons(T, Src, array_cons(Src, T)).
 
