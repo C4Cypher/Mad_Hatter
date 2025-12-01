@@ -59,6 +59,8 @@
 :- pred format_bounds_error(string::in, string::in, 
 	list(poly_type)::in) is erroneous.
 	
+:- func format_bounds_error(string, string, list(poly_type)) = _ is erroneous.
+	
 % Call report_lookup_error/2 as an erroneous function.
 :- func report_lookup_error(string, K) = _ is erroneous.
 
@@ -121,6 +123,9 @@ format_error(Pred, Msg, Vars) :-
 format_bounds_error(Pred, Msg, Vars) :-
 	string.format(Msg, Vars, Err),
 	bounds_error(Pred, Err).
+	
+format_bounds_error(Pred, Msg, Vars) = _ :- 
+	format_bounds_error(Pred, Msg, Vars).
 	
 report_lookup_error(Msg, K) = _ :-
 	report_lookup_error(Msg, K).
