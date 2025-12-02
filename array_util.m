@@ -75,13 +75,14 @@
 
 
 	% copy_range(Source, SrcFirst, SrcLast, TgtFirst, !Array)
-	% Copy elements from a Source array ranging from indexes SrcFirst to SrcLast
-	% to a target Array, starting at index TgtFirst
+	% Copy elements from a Source array ranging from indexes SrcFirst to 
+	% SrcLast to a target Array, starting at index TgtFirst
 	% Throws an exception if any of the indexes are out of bounds.
 :- pred copy_range(array(T)::in, int::in, int::in, int::in,
 	array(T)::array_di, array(T)::array_uo) is det.
 
-	% Unsafe version skips the bounds checks, may result in underfined behavior
+	% Unsafe version skips the bounds checks, will result in underfined 
+	% behavior if any of the indexes are out of bounds
 :- pred unsafe_copy_range(array(T)::in, int::in, int::in, int::in,
 	array(T)::array_di, array(T)::array_uo) is det.
 	
@@ -386,42 +387,90 @@ delete_map(Src, Map) =
 	
 unsafe_delete_map(Map, Src, unsafe_delete_map(Src, Map)).	
 	
-:- func first_kept_index(int, map(int, _)) = int.
+:- func first_kept_index(int, map(int, _), int) = int. 
 
-first_kept_index(I, Map) =
-	(if contains(Map, I)
-	then first_kept_index(I + 1, Map)
-	else I
-	).
-	
+first_kept_index(I, Map, FirstRemoval) = 
+	(if Cmp = (<) ; Cmp = (>), not contains(Map, I)
+	then I
+	else first_kept_index(I + 1, Map, FirstRemoval)
+	) 
+:-
+	compare(Cmp, I, FirstRemoval).
+
+:- func last_kept_index(int, int) = int is semidet.
+
+last_kept_index(I, FirstRemoval) = FirstRemoval - 1 :- I < FirstRemoval.
 	
 %- pred add_rest(Current, Last, SrcIndex, RemovedIndexes, Src, !Result).
-:- pred add_rest(int::in, int::in, int::in, map(int, _)::in, array(T)::in, 
-	array(T)::array_di, array(T)::array_uo) is det.
+:- pred add_rest(int::in, int::in, int::in, map(int, U)::in, map(int, U)::out,
+	array(T)::in, array(T)::array_di, array(T)::array_uo) is det.
 	
-add_rest(Current, Last, SrcIndex, Map, Src, !Result) :-
+add_rest(Current, Last, SrcIndex, !Map, Src, !Result) :-
+	FirstRemoval = det_min_key(!.Map),
 	(if Current > Last then true
-	else
-		NextSrcIndex = first_kept_index(SrcIndex, Map),
-		unsafe_lookup(Src, NextSrcIndex, Element),
-		unsafe_set(Current, Element, !Result),
-		add_rest(Current + 1, Last, NextSrcIndex + 1, Map, Src, !Result)
+	else 
+		(if RangeLast = last_kept_index(SrcIndex, FirstRemoval)
+		then
+			RangeFirst = first_kept_index(SrcIndex, !.Map, FirstRemoval),
+			(if RangeFirst = RangeLast
+			then
+				unsafe_lookup(Src, RangeFirst, Element),
+				unsafe_set(Current, Element, !Result),
+				Width = 1
+			else
+				unsafe_copy_range(Src, RangeFirst, RangeLast, Current, 
+					!Result),
+				Width = RangeLast - RangeFirst + 1 %num elements in range
+			),
+			% We know for a fact that the next SrcIndex is at or past the next
+			% element to be removed, we can skip to removing it from the map
+			% we just need to properly index past the elements we copied in 
+			% both the source and result arrays
+			Next = Current + Width,
+			%skip past elements we copied, plus the next source element, 
+			% because we know it will be removed
+			NextSrcIndex = SrcIndex + Width + 1 
+		else
+			% The SrcIndex is past the next element to be remvoved, we need to
+			% remove the lowest element from the map until this is no longer the 
+			% case
+			Next = Current,
+			NextSrcIndex = SrcIndex
+		),
+		% We've either copied all of the elements up to FirstRemoval, or we are
+		% past it, in either cast we need to remove it from the map, and if 
+		% there are no more elements in the map, yet empty elements in the Result
+		% array, we can copy the rest of the source array, otherwise loop
+		delete(FirstRemoval, !Map),
+		(if is_empty(!.Map)
+		then
+			(if Next > Last then true %Stop here if we've already at the end
+			else
+				FinalWidth = Last - Next + 1, % number of target elements left
+				FinalFirst = FirstRemoval + 1, % element after the last removed
+				FinalLast = FinalFirst + FinalWidth,
+				unsafe_copy_range(Src, FinalFirst, FinalLast, Next, !Result)
+			)
+		else
+			add_rest(Next, Last, NextSrcIndex, !Map, Src, !Result)	
+		)
 	).
-	
-unsafe_delete_map(Src, Map) = Result :-
+
+unsafe_delete_map(Src, Map) = Result :- 
 	Size = size(Src),
 	NewSize = Size - count(Map),
 	(if NewSize = 0
 	then 
 		Result = make_empty_array
 	else 
-		FirstNew = first_kept_index(0, Map),
+		FirstNew = first_kept_index(0, Map, det_min_key(Map)),
 		(if NewSize = 1
 		then
-			init(1, Src ^ unsafe_elem(FirstNew), Result)
+			array.init(1, unsafe_elem(FirstNew, Src), Result)
 		else 
-			init(NewSize, Src ^ unsafe_elem(FirstNew), Result0),
-			add_rest(1, max(Result0), FirstNew + 1, Map, Src, Result0, Result)
+			array.init(NewSize, unsafe_elem(FirstNew, Src), Result0),
+			add_rest(1, max(Result0), FirstNew + 1, Map, _, Src, 
+				Result0, Result)
 		)
 	).
 	
