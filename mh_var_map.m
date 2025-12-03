@@ -258,6 +258,30 @@
 :- mode fold(in(pred(in, in, mdi, muo) is semidet), in, mdi, muo) 
 	is semidet.
 	
+:- pred fold2_id(pred(var_id, T, A, A, B, B), mh_var_map(T), A, A, B, B).
+:- mode fold2_id(in(pred(in, in, in, out, in, out) is det), in, in, out, in, 
+	out) is det.
+:- mode fold2_id(in(pred(in, in, in, out, mdi, muo) is det), in, in, out, 
+	mdi, muo) is det.
+:- mode fold2_id(in(pred(in, in, in, out, di, uo) is det), in, in, out,
+	di, uo) is det.
+:- mode fold2_id(in(pred(in, in, in, out, in, out) is semidet), in, in, out, 
+	in, out) is semidet.
+:- mode fold2_id(in(pred(in, in, mdi, muo) is semidet), in, in, out, mdi, muo) 
+	is semidet.
+
+:- pred fold2(pred(mh_var, T, A, A, B, B), mh_var_map(T), A, A, B, B).
+:- mode fold2(in(pred(in, in, in, out, in, out) is det), in, in, out, in, out)
+	is det.
+:- mode fold2(in(pred(in, in, in, out, mdi, muo) is det), in, in, out,
+	mdi, muo) is det.
+:- mode fold2(in(pred(in, in, in, out, di, uo) is det), in, in, out, di, uo) 
+	is det.
+:- mode fold2(in(pred(in, in, in, out, in, out) is semidet), in, in, out,
+	in, out) is semidet.
+:- mode fold2(in(pred(in, in, mdi, muo) is semidet), in, in, out, mdi, muo) 
+	is semidet.
+	
 :- pred map_id(pred(var_id, T, U), mh_var_map(T), mh_var_map(U)).
 :- mode map_id(in(pred(in, in, out) is det), in, out) is det.
 :- mode map_id(in(pred(in, in, out) is semidet), in, out) is semidet.
@@ -779,6 +803,49 @@ fold_id(P, Map, !A, Iterator0) :-
 	is semidet.
 	
 curry_fold(P, ID, T, !A) :- P(var(ID), T, !A).
+	
+%---------------------%
+
+fold2_id(P, Map, !A, !B) :-
+	if first(Map, ID, T, Iterator) then
+		P(ID, T, !A, !B),
+		fold2_id(P, Map, !A, !B, Iterator)
+	else true.
+	
+	
+:- pred fold2_id(pred(var_id, T, A, A), mh_var_map(T), A, A, var_map_iterator).
+:- mode fold2_id(in(pred(in, in, in, out) is det), in, in, out, in) is det.
+:- mode fold2_id(in(pred(in, in, mdi, muo) is det), in, mdi, muo, in) is det.
+:- mode fold2_id(in(pred(in, in, di, uo) is det), in, di, uo, in) is det.
+:- mode fold2_id(in(pred(in, in, array_di, array_uo) is det), in, 
+	array_di, array_uo, in) is det.
+:- mode fold2_id(in(pred(in, in, in, out) is semidet), in, in, out, in) is semidet.
+:- mode fold2_id(in(pred(in, in, mdi, muo) is semidet), in, mdi, muo, in) 
+	is semidet.
+	
+fold2_id(P, Map, !A, !B, Iterator0) :-
+	if next(Map, ID, T, Iterator0, Iterator) then
+		P(ID, T, !A, !B),
+		fold2_id(P, Map, !A, !B, Iterator)
+	else true.
+	
+:- pred curry_fold2(pred(mh_var, T, A, A), var_id, T, A, A).
+:- mode curry_fold2(in(pred(in, in, in, out, in, out) is det), in, in, in, out,
+	in, out) is det.
+:- mode curry_fold2(in(pred(in, in, mdi, muo) is det), in, in, in, out,
+	mdi, muo) is det.
+:- mode curry_fold2(in(pred(in, in, di, uo) is det), in, in, in, out,
+	di, uo) is det.
+:- mode curry_fold2(in(pred(in, in, in, out) is semidet), in, in, in, out,
+	in, out) is semidet.
+:- mode curry_fold2(in(pred(in, in, mdi, muo) is semidet), in, in, in, out,
+	mdi, muo) is semidet.
+	
+curry_fold2(P, ID, T, !A, !B) :- P(var(ID), T, !A, !B).
+
+%---------------------%
+	
+
 
 fold(P, Map, !A) :-
 	CurriedP = curry_fold(P),

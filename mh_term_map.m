@@ -675,7 +675,7 @@ fold2(_, empty_term_map, A, A, B, B).
 
 fold2(P, mh_term_map(Symbols, Vars, Vals, Cons, Rels), !A, !B) :-
 	mh_symbol_map.foldl2(symbol_fold2(P), Symbols, !A, !B),
-	mh_var_map.fold_id2(var_id_fold2(P), Vars, !A, !B),
+	mh_var_map.fold2_id(var_id_fold2(P), Vars, !A, !B),
 	mh_value_map.fold2(value_fold2(P), Vals, !A, !B),
 	mh_relation_map.fold2(relation_fold2(P), Rels, !A, !B).
 
