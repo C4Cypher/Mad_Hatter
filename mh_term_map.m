@@ -15,6 +15,7 @@
 
 :- interface.
 
+:- import_module map.
 :- import_module unit.
 :- import_module list.
 :- import_module assoc_list.
@@ -41,6 +42,13 @@
 :- pred count(mh_term_map(_)::in, int::out) is det.
 
 :- pred equal(mh_term_map(T)::in, mh_term_map(T)::in) is semidet.
+
+%-----------------------------------------------------------------------------%
+% Conversion
+
+:- func to_map(mh_term_map(T)) = map(mh_term, T).
+
+:- func from_map(map(mh_term, T)) = mh_term_map(T).
 
 %-----------------------------------------------------------------------------%
 % Search
@@ -234,6 +242,17 @@ equal(
 	mh_value_map.equal(Vals1, Vals2),
 	mh_tuple_map.equal(Cons1, Cons2),
 	mh_relation_map.equal(Rels1, Rels2).
+	
+%-----------------------------------------------------------------------------%
+% Conversion
+
+to_map(TM) = fold(map_insert, TM, map.init).
+
+:- func map_insert(mh_term, T, map(mh_term)) = mh_term_map.
+map_insert(K, V, !.M) = !:M :- det_insert(K, V, !M).
+
+
+from_map(M) = foldl(det_insert, M, init).
 	
 %-----------------------------------------------------------------------------%
 % Search
