@@ -186,23 +186,26 @@
 %-----------------------------------------------------------------------------%
 % Ordering
 
-% Create a new ordered set using the
-% provided comparison function that preserves the original order when the
-% comparison function returns equality. Does not remove duplicates.
-:- pred order_by(comparison_func(T)::in(comparison_func), 
+	% Create a new ordered set using the provided comparison function that
+	% preserves the original order when the comparison function returns
+	% equality. Does not remove duplicates.
+:- pred order_by(comparison_func(mh_term)::in(comparison_func), 
 	mh_ordered_term_set::in, mh_ordered_term_set::out) is det.
 	
-:- func order_by(comparison_func(T)::in(comparison_func), 
+:- func order_by(comparison_func(mh_term)::in(comparison_func), 
 	mh_ordered_term_set::in) = (mh_ordered_term_set::out) is det.
-
+	
+	% Given any term map (including mh_term_set), create an ordering
+:- func to_ordered_term_set(comparison_func(T)::in(comparison_func),
+	mh_term_map(_)::in) = (mh_ordered_term_set::out) is det.
 
 
 %-----------------------------------------------------------------------------%
 % Set operations
 
-
 	% The union of two sets sorted and without duplicates, 
-	% order is not preserved
+	% appends terms in the second set not present in the first set to the end 
+	% of the order in in the first set, does *not* remove duplicates
 :- pred union(mh_ordered_term_set::in, mh_ordered_term_set::in,
 	mh_ordered_term_set::out) is det.
 :- func union(mh_ordered_term_set, mh_ordered_term_set) = mh_ordered_term_set.
@@ -230,7 +233,7 @@
 
 :- import_module int.
 :- import_module unit.
-:- import_module bool.
+:- import_module map.
 :- import_module require.
 
 :- import_module util.
@@ -323,7 +326,7 @@ remove_dups(os(Order, Set)@OS) = NewOS :-
 		NewOS = os(NewOrder, Set)
 	).
 	
-:- func compose_dup_index_lists(int, mh_term, mh_term_map(list(int))) = 
+:- func compose_dup_index_map(int, mh_term, map(int, unit)) = 
 	mh_term_map(list(int)).
 	
 compose_dup_index_lists(Index, Term, !.Map) = !:Map :-
@@ -476,6 +479,22 @@ unsorted_insert(Term, usacc(Index, !.Array)) = usacc(Index + 1, !:Array) :-
 to_unsorted_array(Set) = Array :- %probably get a mode error,  
 	fold(unsorted_insert, Set, usacc(0, init(count(Set), nil_term))) =
 		usacc(_, Array).
+		
+:- func to_unit_map(mh_term_map(_)) = mh_term_set.
+
+:- func unit_map(mh_term, _) = unit.
+unit_map(_, _) = unit.
+
+
+to_unit_map(M) = S :-
+	(if dynamic_cast(M, S0)
+	then S0 = S
+	else map(unit_map, M, S)
+	).
+		
+to_ordered_term_set(CMP, Map) = 
+	os(samsort(CMP, to_unsorted_array(Map))), to_unit_map(Map)).
+ 
  
 
 	
@@ -486,15 +505,21 @@ to_unsorted_array(Set) = Array :- %probably get a mode error,
 
 union(OS1, OS2, union(OS1, OS2)).
 
-union(os(_, S1), os(_, S2)) = os(S3, S3) :-
-	Unsorted = array.append(S1, array(difference_list(S1, S2))),
-	S3 = array.sort(Unsorted).
+union(os(O1, S1), os(O2, S2)) = os(O3, set_union(S1, S2)) :-
+	NewItemList = foldl(union_fold(S1), O2, []),
+	O3 = append(O1, from_reverse_list(NewItemList)).
+	
+:- func union_fold(mh_term_set, mh_term, T, list(mh_term)) = list(mh_term).
+union_fold(S1, Term, _, L) =
+	(if contains(S1, Term) then L else [ Term | L ]).
+
 
 intersect(OS1, OS2, intersect(OS1, OS2)).
 	
-intersect(os(_, S1), os(_, S2)) = os(S3, S3) :- 
-	S3 = array(intersect_list(S1, S2)).
-
+intersect(os(O1, S1), os(O2, S2)) = os(O3, S3) :- 
+	S3 = set_intersect(S1, S2),
+	
+:- func intersect_fold(mh_term_set, )
 
 difference(OS1, OS2, difference(OS1, OS2)).
 	
