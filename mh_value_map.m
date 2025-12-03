@@ -102,9 +102,14 @@
 % Higher Order
 
 :- func fold(func(mh_value, T, A) = A, mh_value_map(T), A) = A.
+:- mode fold(in(func(in, in, in) = out is det), in, in) = out is det.
+:- mode fold(in(func(in, in, in) = out is semidet), in, in) = out 
+	is semidet.
 
 :- pred fold(func(mh_value, T, A) = A, mh_value_map(T), A, A).
 :- mode fold(in(func(in, in, in) = out is det), in, in, out) is det.
+:- mode fold(in(func(in, in, in) = out is semidet), in, in, out) 
+	is semidet.
 
 :- func map(func(mh_value, T) = U, mh_value_map(T)) = mh_value_map(U).
  

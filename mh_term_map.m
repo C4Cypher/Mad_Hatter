@@ -169,8 +169,8 @@
 :- mode fold(in(func(in, in, in) = out is semidet), in, in, out) is semidet.
 
 :- pred fold2(pred(mh_term, T, A, A, B, B), mh_term_map(T), A, A, B, B).
-:- mode fold2(in(pred(in, in, in, out, in, out) is semidet), in, in, out, in, 
-	out) is semidet.
+:- mode fold2(in(pred(in, in, in, out, in, out) is semidet), in, in, out, 
+	in,	out) is semidet.
 :- mode fold2(in(pred(in, in, in, out, in, out) is det), in, in, out, in, out)
 	is det.
 

@@ -129,9 +129,22 @@
 % Higher Order
 
 :- func fold(func(univ, T, A) = A, univ_map(T), A) = A.
+:- mode fold(in(func(in, in, in) = out is det), in, in) = out is det.
+:- mode fold(in(func(in, in, in) = out is semidet), in, in) = out 
+	is semidet.
 
 :- pred fold(func(univ, T, A) = A, univ_map(T), A, A).
 :- mode fold(in(func(in, in, in) = out is det), in, in, out) is det.
+:- mode fold(in(func(in, in, in) = out is semidet), in, in, out) 
+	is semidet.
+
+:- pred fold2(pred(univ, T, A, A, B, B), univ_map(T), A, A, B, B).
+:- mode fold2(in(pred(in, in, in, out, in, out) is det), in, in, out, in, out)
+	is det.
+:- mode fold2(in(pred(in, in, in, out, in, out) is semidet), in, in, out,
+	in, out) is semidet.
+:- mode fold2(in(pred(in, in, in, out, di, uo) is det), in, in, out,
+	di, uo) is det.
 
 :- func map(func(univ, T) = U, univ_map(T)) = univ_map(U).
  
@@ -149,6 +162,7 @@
 :- import_module maybe.
 
 :- import_module util.
+:- import_module map_util.
 
 %-----------------------------------------------------------------------------%
 % Value maps
@@ -373,18 +387,53 @@ difference(Map1, Map2, difference(Map1, Map2)).
 %-----------------------------------------------------------------------------%
 % Higher Order
 
-fold(F, univ_map(Map), A) = map.foldl(outer_fold(F), Map, A).
+fold(F, univ_map(Map), A) = map_util.fold(outer_fold(F), Map, A).
 
-:- func outer_fold(func(univ, T, A) = A, type_desc, value_map(T), A)	= A.
+:- func outer_fold(func(univ, T, A) = A, type_desc, value_map(T), A) = A.
+:- mode outer_fold(in(func(in, in, in) = out is det), in, in, in) = out is det.
+:- mode outer_fold(in(func(in, in, in) = out is semidet), in, in, in) = out 
+	is semidet.
 
 outer_fold(F, _TypeDesc, value_map(TypeMap), A) = 
-	map.foldl(inner_fold(F), TypeMap, A).
+	map_util.fold(inner_fold(F), TypeMap, A).
 
 :- func inner_fold(func(univ, T, A) = A, K, T, A) = A.
+:- mode inner_fold(in(func(in, in, in) = out is det), in, in, in) = out is det.
+:- mode inner_fold(in(func(in, in, in) = out is semidet), in, in, in) = out
+	is semidet.
 
 inner_fold(F, K, T, A) = F(univ(K), T, A).
 
 fold(F, Map, A, fold(F, Map, A)).
+
+%---------------------%
+
+fold2(P, univ_map(Map), !A, !B) :- map.foldl2(outer_fold2(P), Map, !A, !B).
+
+:- pred outer_fold2(pred(univ, T, A, A, B, B), type_desc, value_map(T), A, A, 
+	B, B).
+:- mode outer_fold2(in(pred(in, in, in, out, in, out)  is det), in, in, 
+	in, out, in, out)  is det.
+:- mode outer_fold2(in(pred(in, in, in, out, in, out)  is semidet), in, in, 
+	in, out, in, out) is semidet.
+:- mode outer_fold2(in(pred(in, in, in, out, di, uo) is det), in, in, in, out,
+	di, uo) is det.
+
+outer_fold2(P, _TypeDesc, value_map(TypeMap), !A, !B) :- 
+	map.foldl2(inner_fold2(P), TypeMap, !A, !B).
+
+:- pred inner_fold2(pred(univ, T, A, A, B, B), K, T, A, A, B, B).
+:- mode inner_fold2(in(pred(in, in, in, out, in, out)  is det), in, in, 
+	in, out, in, out)  is det.
+:- mode inner_fold2(in(pred(in, in, in, out, in, out)  is semidet), in, in, in, out, in, out) 
+	is semidet.
+:- mode inner_fold2(in(pred(in, in, in, out, di, uo) is det), in, in, in, out,
+	di, uo) is det.
+
+inner_fold2(P, K, T,  !A, !B) :- P(univ(K), T, !A, !B).
+
+%---------------------%
+
 
 
 map(F, univ_map(Map)) = 
