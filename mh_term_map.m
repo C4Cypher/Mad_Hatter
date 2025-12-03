@@ -168,6 +168,12 @@
 :- mode fold(in(func(in, in, in) = out is det), in, in, out) is det.
 :- mode fold(in(func(in, in, in) = out is semidet), in, in, out) is semidet.
 
+:- pred fold2(pred(mh_term, T, A, A, B, B), mh_term_map(T), A, A, B, B).
+:- mode fold2(in(pred(in, in, in, out, in, out) is semidet), in, in, out, in, 
+	out) is semidet.
+:- mode fold2(in(pred(in, in, in, out, in, out) is det), in, in, out, in, out)
+	is det.
+
 :- func map(func(mh_term, T) = U, mh_term_map(T)) = mh_term_map(U).
  
 :- pred map(func(mh_term, T) = U, mh_term_map(T), mh_term_map(U)).
@@ -574,7 +580,7 @@ intersect(
 	F,
 	mh_term_map(Symbols1, Vars1, Vals1, Cons1, Rels1),
 	mh_term_map(Symbols2, Vars2, Vals2, Cons2, Rels2)
-) = construct_term_map_term_map(
+) = construct_term_map(
 	mh_symbol_map.intersect(F, Symbols1, Symbols2),
 	mh_var_map.intersect(F, Vars1, Vars2),
 	mh_value_map.intersect(F, Vals1, Vals2),
@@ -662,7 +668,71 @@ cons_fold(F, Tuple, T, A) =
 	is semidet.
 	
 relation_fold(F, R, T, A) = F(relation(R), T, A).
+	
+%---------------------%
 
+fold2(_, empty_term_map, A, A, B, B).
+
+fold2(P, mh_term_map(Symbols, Vars, Vals, Cons, Rels), !A, !B) :-
+	mh_symbol_map.foldl2(symbol_fold2(P), Symbols, !A, !B),
+	mh_var_map.fold_id2(var_id_fold2(P), Vars, !A, !B),
+	mh_value_map.fold2(value_fold2(P), Vals, !A, !B),
+	mh_relation_map.fold2(relation_fold2(P), Rels, !A, !B).
+
+:- pred symbol_fold2(pred(mh_term, T, !A, !B), mh_symbol, T, !A, !B).
+:- mode symbol_fold2(in(pred(in, in, out, in, out) is det), in, out, in, out)
+	is det.
+:- mode symbol_fold2(in(pred(in, in, out, in, out) is semidet), in, out, in,
+	out) is semidet.
+
+symbol_fold2(P, S, T, !A, !B) :-  P(atom(S), T, A).
+
+:- pred var_id_fold2(pred(mh_term, T, !A, !B), var_id, T, A, A, B, B).
+:- mode var_id_fold2(in(pred(in, in, in, out, in, out) is det), in, in, out,
+	in, out) is det.
+:- mode symbol_fold2(in(pred(in, in, in, out, in, out) is semidet), in, in, 
+	out) is semidet.
+
+var_id_fold2(P, ID, T, !A, !B) :- P(var(ID), T, !A, !B). 
+
+:- pred value_fold2(pred(mh_term, T, !A, !B), mh_value, T, !A, !B).
+:- mode value_fold2(in(pred(in, in, in, out, in, out) is det), in, in, out, 
+	in,	out) is det.
+:- mode value_fold2(in(pred(in, in, in, out, in, out) is semidet), in, in,
+	out, in, out) is semidet.
+	
+value_fold2(P, V, T, !A, !B) :-  P(value(V), T, !A, !B).
+
+:- pred cons_fold2(pred(mh_term, T, !A, !B), mh_tuple, T, !A, !B).
+:- mode cons_fold2(in(pred(in, in, in, out, in, out) is det), in, in, out, in, 
+	out) is det.
+:- mode cons_fold2(in(pred(in, in, in, out, in, out) is semidet), in, in, out,
+	in,	out) is semidet.
+	
+cons_fold2(P, Tuple, T, !A, !B) :-  
+	(if Cons = cons(tuple_car(Tuple), tuple_cdr(Tuple)) then
+		P(Cons, T, !A, !B)
+	else
+		%Introspection for more informative error message
+		(if tuple_size(Tuple) = 0 then
+			unexpected($module, $pred, "Empty cons tuple in term map")
+		else 
+			unexpected($module, $pred, 
+				"Cons tuple with only one element in term map")
+		)
+		% If the tuple has more than one element, then the above test will
+		% never fail.
+	).
+	
+:- pred relation_fold2(pred(mh_term, T, !A, !B), mh_relation, T, !A, !B).
+:- mode relation_fold2(in(pred(in, in, in, out, in, out) is det), in, out, in,
+	out) is det.
+:- mode relation_fold2(in(pred(in, in, in, out, in, out) is semidet), in, out,
+	in, out) is semidet.
+	
+relation_fold(P, R, T, !A, !B) :- P(relation(R), T, !A, !B).
+
+%---------------------%
 
 map(_, empty_term_map) = empty_term_map.
 
