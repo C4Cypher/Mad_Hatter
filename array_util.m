@@ -64,6 +64,13 @@
 	is det.
 :- func unsafe_delete_map(array(T)::in, map(int, _)::in) = 
 	(array(T)::array_uo) is det.
+	
+	% remove_dups_stable(Source, Result).
+	% Take an unsorted array and remove duplicates, keeping the first 
+	% (leftmost) instanace of an element and shifting to the right, the
+	% order of unique elements is preserved
+:- pred remove_dups_stable(array(T)::in, array(T)::array_uo) is det.
+:- func remove_dups_stable(array(T)::in) = (array(T)::array_uo) is det.
 
 	% array_[cons|snoc](T, Source, Result)
 	% Insert T as the [first|last] element of Source 
@@ -374,9 +381,7 @@ unsafe_delete(Src, I) = Result :-
 delete_map(Map, Src, delete_map(Src, Map)).	
 
 delete_map(Src, Map) = 
-	(if is_empty(Map) then
-		copy(Src)
-	else if 
+	(if 
 		promise_equivalent_solutions [Ob] 
 			(det_min_key(Map)@Ob < Min ; det_max_key(Map)@Ob > Max)
 	then
@@ -457,22 +462,48 @@ add_rest(Current, Last, SrcIndex, !Map, Src, !Result) :-
 	).
 
 unsafe_delete_map(Src, Map) = Result :- 
-	Size = size(Src),
-	NewSize = Size - count(Map),
-	(if NewSize = 0
-	then 
-		Result = make_empty_array
-	else 
-		FirstNew = first_kept_index(0, Map, det_min_key(Map)),
-		(if NewSize = 1
-		then
-			array.init(1, unsafe_elem(FirstNew, Src), Result)
+	( if is_empty(Map)
+	then Result = copy(Src)
+	else
+		Size = size(Src),
+		NewSize = Size - count(Map),
+		(if NewSize = 0
+		then 
+			Result = make_empty_array
 		else 
-			array.init(NewSize, unsafe_elem(FirstNew, Src), Result0),
-			add_rest(1, max(Result0), FirstNew + 1, Map, _, Src, 
-				Result0, Result)
+			FirstNew = first_kept_index(0, Map, det_min_key(Map)),
+			(if NewSize = 1
+			then
+				array.init(1, unsafe_elem(FirstNew, Src), Result)
+			else 
+				array.init(NewSize, unsafe_elem(FirstNew, Src), Result0),
+				add_rest(1, max(Result0), FirstNew + 1, Map, _, Src, 
+					Result0, Result)
+			)
 		)
 	).
+
+%- pred find_duplicates(Current, Last, Source, !UniqueElems, !DupMap)
+:- pred find_duplicates(int::in, int::in, array(T)::in, 
+	map(T, unit)::in, map(T, unit)::out, 
+	map(int, unit)::in, map(int, unit)::out) is det.
+	
+find_duplicates(Current, Last, Src, !Unique, !DupIdx) :-
+	(if Current > Last then true
+	else
+		unsafe_lookup(Src, Current, Elem),
+		(if contains(!.Unique, Elem)
+		then det_insert(Current, unit, !DupIdx)
+		else det_insert(Elem, unit, !Unique)
+		),
+		find_duplicates(Current + 1, Last, Src, !Unique, !DupIdx)
+	).
+	
+remove_dups_stable(Src, remove_dups_stable(Src)).
+
+remove_dups_stable(Src) = Result :-
+	find_duplicates(min(Src), max(Src), Src, map.init, _, map.init, Dups),
+	unsafe_delete_map(Dups, Src, Result).
 	
 array_cons(T, Src, array_cons(Src, T)).
 
