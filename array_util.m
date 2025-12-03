@@ -98,15 +98,15 @@
 %-----------------------------------------------------------------------------%
 % Sorting
 	
-	% remove_dups(Source, Result).
+	% remove_dups_sorted(Source, Result).
 	% Take a sorted array and remove duplicates, the array MUST be sorted by 
 	% the standard ordering
-:- pred remove_dups(array(T)::array_di, array(T)::array_uo) is det.
-:- func remove_dups(array(T)::array_di) = (array(T)::array_uo) is det.
+:- pred remove_dups_sorted(array(T)::array_di, array(T)::array_uo) is det.
+:- func remove_dups_sorted(array(T)::array_di) = (array(T)::array_uo) is det.
 
 	% Make a copy of the input array, sort and remove duplicates
-:- pred sort_and_remove_dups(array(T)::in, array(T)::array_uo) is det.
-:- func sort_and_remove_dups(array(T)::in) = (array(T)::array_uo) is det.
+:- pred sort_and_remove_dups_sorted(array(T)::in, array(T)::array_uo) is det.
+:- func sort_and_remove_dups_sorted(array(T)::in) = (array(T)::array_uo) is det.
 
 	% Succeed if the given array is sorted in ascending standard ordering
 :- pred is_sorted(array(T)::in) is semidet.
@@ -570,38 +570,38 @@ unsafe_copy_range_rev(Src, SrcF, SrcL, TgtF, !Array) :-
 %-----------------------------------------------------------------------------%
 % Sorting
 	
-remove_dups(!A) :- 
+remove_dups_sorted(!A) :- 
 	(if size(!.A, 0)
 	then true
 	else
 		unsafe_lookup(!.A, 0, First),
-		remove_dups(1, First, 1, NewSize, !A),
+		remove_dups_sorted(1, First, 1, NewSize, !A),
 		shrink(NewSize, !A)
 	).
 
-:- pred remove_dups(int::in, T::in, int::in, int::out, array(T)::array_di, 
+:- pred remove_dups_sorted(int::in, T::in, int::in, int::out, array(T)::array_di, 
 	array(T)::array_uo) is det.
 	
-remove_dups(Index, Current, !Unique, !A) :-
+remove_dups_sorted(Index, Current, !Unique, !A) :-
 	(if Index > max(!.A)
 	then true
 	else
 		unsafe_lookup(!.A, Index, Next),
 		(if Current = Next
-		then remove_dups(Index + 1, Current, !Unique, !A)
+		then remove_dups_sorted(Index + 1, Current, !Unique, !A)
 		else
 			unsafe_set(!.Unique, Next, !A),
 			!:Unique = !.Unique + 1,
-			remove_dups(Index + 1, Next, !Unique, !A)
+			remove_dups_sorted(Index + 1, Next, !Unique, !A)
 		)
 	).
 
-remove_dups(!.A) = !:A :- remove_dups(!A).
+remove_dups_sorted(!.A) = !:A :- remove_dups_sorted(!A).
 
-sort_and_remove_dups(!A) :- array.copy(!A), !:A = array.sort(!.A), 
-	remove_dups(!A).
+sort_and_remove_dups_sorted(!A) :- array.copy(!A), !:A = array.sort(!.A), 
+	remove_dups_sorted(!A).
 
-sort_and_remove_dups(!.A) = !:A :- sort_and_remove_dups(!A).
+sort_and_remove_dups_sorted(!.A) = !:A :- sort_and_remove_dups_sorted(!A).
 
 
 :- pred is_sorted(array(T)::in, T::in, int::in, int::in) is semidet.
