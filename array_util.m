@@ -504,7 +504,7 @@ unsafe_delete_map(Src, Map) = Result :-
 	map(T, unit)::out, array(T)::array_di, array(T)::array_uo) is det.
 	
 remove_dups_fold(Element, !Next, !Unique, !Array) :-
-	(if insert(Element, !Unique)
+	(if insert(Element, unit, !Unique)
 	then
 		unsafe_set(!.Next, Element, !Array),
 		!:Next = !.Next + 1
@@ -519,14 +519,17 @@ remove_dups_stable(Src) = Result :-
 	then Result = copy(Src)
 	else
 		unsafe_lookup(Src, min(Src), FirstElem),
-		some [!NewArray] (
-			!.NewArray = init(Size, FirstElem),
-			vfold3_array(foldl3, remove_dups_fold, Src, 1, NewSize, 
-				singleton(FirstElem, unit), _, !NewArray),
-			shrink(NewSize, !NewArray),
-			Result = !:NewArray
-		)
+		Array0 = init(Size, FirstElem),
+		vfold3_array(remove_dups_fold, det_fold3, Src, 1, NewSize, 
+			singleton(FirstElem, unit), _, Array0, Array),
+		shrink(NewSize, Array, Result)
 	).
+	
+:- pred det_fold3(pred(T, A, A, B, B, C, C), array(T), A, A, B, B, C, C).
+:- mode det_fold3(in(pred(in, in, out, in, out, in, out) is det), in,
+	in, out, in, out, in, out) is det.
+	
+det_fold3(P, Array, !A, !B, !C) :- foldl3(P, Array, !A, !B, !C).
 	
 array_cons(T, Src, array_cons(Src, T)).
 
