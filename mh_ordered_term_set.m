@@ -188,7 +188,8 @@
 
 	% Create a new ordered set using the provided comparison function that
 	% preserves the original order when the comparison function returns
-	% equality. Does not remove duplicates.
+	% equality. Stability is not garunteed when comparisons are equal.
+	% Does not remove duplicates.
 :- pred order_by(comparison_func(mh_term)::in(comparison_func), 
 	mh_ordered_term_set::in, mh_ordered_term_set::out) is det.
 	
@@ -203,16 +204,31 @@
 %-----------------------------------------------------------------------------%
 % Set operations
 
-	% The union of two sets sorted and without duplicates, 
+% These operations are less efficient than first converting them to 
+% mh_term_set before performing them, however, they should preserve the
+% leftmost unique ordering of the terms in the sets, both in the case of union
+% the ordering of the left operand is preserved in the case of intersection
+% and difference
+
+	% The union of two sets
 	% appends terms in the second set not present in the first set to the end 
-	% of the order in in the first set, does *not* remove duplicates
+	% of the order in in the first set, does *not* remove duplicates already
+	% present in the first set's order, but *does* remove duplicates from the 
+	% second
 :- pred union(mh_ordered_term_set::in, mh_ordered_term_set::in,
 	mh_ordered_term_set::out) is det.
 :- func union(mh_ordered_term_set, mh_ordered_term_set) = mh_ordered_term_set.
 
+	% As above, but removes duplicates from both operands while preserving
+	% leftmost ordering of the unique elements
+:- pred remove_dups_union(mh_ordered_term_set::in, mh_ordered_term_set::in,
+	mh_ordered_term_set::out) is det.
+:- func remove_dups_union(mh_ordered_term_set, mh_ordered_term_set) 
+	= mh_ordered_term_set.
 
-	% The intersection of two sets sorted and without duplicates, order is not 
-	% preserved
+
+	% The intersection of two sets, preserves the leftmost order of the first
+	% set, removes duplicates
 :- pred intersect(mh_ordered_term_set::in, mh_ordered_term_set::in,
 	mh_ordered_term_set::out) is det.
 :- func intersect(mh_ordered_term_set, mh_ordered_term_set)
@@ -315,32 +331,11 @@ sort(os(O, S)) = os(sort(copy(O)), S).
 
 sort_and_remove_dups(os(O, S)) = os(sort_and_remove_dups(O), S).
 	
-remove_dups(os(Order, Set)@OS) = NewOS :-
-	RemoveMap = index_fold(compose_dup_index_lists, Order, init),
-	RemoveList = fold(compose_dup_indexes, RemoveMap, [])
-	(if is_empty(RemoveList)
-	then
-		NewOS = OS
-	else
-		delete_set(RemoveSet, O, NewOrder), %TODO: switch to unsafe version after testing
-		NewOS = os(NewOrder, Set)
-	).
-	
-:- func compose_dup_index_map(int, mh_term, map(int, unit)) = 
-	mh_term_map(list(int)).
-	
-compose_dup_index_lists(Index, Term, !.Map) = !:Map :-
-	(if search(!.Map, Term, Found)
-	then List = [ Index | Found ]
-	else List = []
-	),
-	set(Term, List, !Map)
-
-:- func compose_dup_indexes(_, list(int), list(int)) = list(int).
-
-compose_dup_indexes(_, List, Remove) = append(List, Remove).
-	
-	
+remove_dups(os(Order, Set)@OS) =  
+	(if Order = NewOrder
+	then OS
+	else os(NewOrder, Set)
+	) :- remove_dups_stable(Order, NewOrder).
 
 length(os(A, _)) = size(A).
 length(OS, length(OS)).
@@ -495,35 +490,69 @@ to_unit_map(M) = S :-
 to_ordered_term_set(CMP, Map) = 
 	os(samsort(CMP, to_unsorted_array(Map))), to_unit_map(Map)).
  
- 
-
-	
-	
-
 %-----------------------------------------------------------------------------%
 % Set operations
 
+%- pred union_and_contains(Element, !Union, !RevList).		
+:- pred union_and_contains(mh_term::in, mh_term_set::in, mh_term_set::out,
+	list(mh_term)::in, list(mh_term)::out) is det.
+	
+union_and_contains(Term, !Union, !Rev) :-
+	(if insert(Term, !Union) % fails if already present 
+	then 
+		!:Rev = [ Term | !.Rev], 
+		!:Union = !.Union % Jank if semantics requires then clause to bind var
+	else true
+	).
+	
 union(OS1, OS2, union(OS1, OS2)).
 
-union(os(O1, S1), os(O2, S2)) = os(O3, set_union(S1, S2)) :-
-	NewItemList = foldl(union_fold(S1), O2, []),
-	O3 = append(O1, from_reverse_list(NewItemList)).
+union(os(O1, S1), os(O2, _)) = os(O3, S3) :-
+	fold2(union_and_contains, O2, S1, S3, [], RevAppend),
+	O3 = append(O1, from_reverse_list(RevAppend)).
 	
-:- func union_fold(mh_term_set, mh_term, T, list(mh_term)) = list(mh_term).
-union_fold(S1, Term, _, L) =
-	(if contains(S1, Term) then L else [ Term | L ]).
+remove_dups_union(OS1, OS2, remove_dups_union(OS1, OS2)).
 
+remove_dups_union(OS1, OS2) = union(remove_dups(OS1), OS2).
+
+%- pred intersect_loop(Current, Last, O1, S2, !S3, !O3, !Size). 
+:- pred intersect_loop(int::in, int::in, term_array::in, mh_term_set::in, 
+	mh_term_set::in, mh_term_set::out, 
+	term_array::array_di, term_array::array_uo, int::in, int::out) is det.
+	
+intersect_loop(Current, Last, O1, S2, !S3, !O3, !Size) :-
+	(if Current > Last
+	then true
+	else
+		unsafe_lookup(O1, Current, Element),
+		(if contains(Element, S2), insert(Element, !S3)
+		then
+			unsafe_set(!.Size, Element, !O3),
+			!:Size = !.Size + 1
+		else true
+		),
+		intersect_loop(Current + 1, Last, O1, S2, !S3, !O3, !Size)
+	).
 
 intersect(OS1, OS2, intersect(OS1, OS2)).
 	
-intersect(os(O1, S1), os(O2, S2)) = os(O3, S3) :- 
-	S3 = set_intersect(S1, S2),
-	
-:- func intersect_fold(mh_term_set, )
+intersect(os(O1, S1)@OS1, os(O2, S2)@OS2) = OS3 :- 
+	Size = size(O1),
+	(if Size =< 1  
+	then OS3 = OS1
+	else if size(O2) = 0
+	then OS3 = OS2
+	else 
+		unsafe_lookup(O1, 0, First),
+		A0 = init(Size, First),
+		intersect_loop(1, max(O1), O1, S2, init, S3, A0, A1, 1, NewSize),
+		shrink(NewSize, A1, O3),
+		OS3 = os(O3, S3)
+	).
 
 difference(OS1, OS2, difference(OS1, OS2)).
 	
-difference(os(_, S1), os(_, S2)) = os(S3, S3) :- 
+difference(os(O1, S1), os(_, S2)) = os(O3, S3) :- 
 	S3 = array(difference_list(S1, S2)).
 
 % Compose a list of elements not present in the first array. 
