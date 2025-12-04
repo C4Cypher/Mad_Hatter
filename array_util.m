@@ -150,7 +150,7 @@
 
 %---------------------%
 
-:- type vfold_call(C, V, A) == (func(func(V, A) = A, C, A) = A).
+:- type vfold_call(U, V, A) == (func(func(V, A) = A, U, A) = A).
 :- inst vfold_call == (func(in(func(in, in) = out is det), in, in) = out 
 	is det).
 
@@ -158,81 +158,98 @@
 	% Pass Foldfunction through FoldCall as if it were a standard accumulator
 	% function, workaround for the fact that arrays can not be passed via
 	% modes, 
-:- func vfold_array(func(V, array(T)) = array(T), vfold_call(C, V, array(T)),
-	C, array(T)) = array(T).
+:- func vfold_array(func(V, array(T)) = array(T), vfold_call(U, V, array(T)),
+	U, array(T)) = array(T).
 	
 :- mode vfold_array(in(func(in, array_di) = array_uo is det), 
 	in(vfold_call),	in, array_di) = array_uo is det.
 	
 :- pred vfold_array(func(V, array(T)) = array(T), 
-	vfold_call(C, V, array(T)), C, array(T), array(T)).
+	vfold_call(U, V, array(T)), U, array(T), array(T)).
 
 :- mode vfold_array(in(func(in, array_di) = array_uo is det), 
 	in(vfold_call), in, array_di, array_uo) is det.
 	
 %---------------------%
 
-:- type vfold2_call(C, V, A, B) == 
-	(func(func(V, A, A, B) = B, C, A, A, B)	= B).
-:- inst vfold2_call == 
-	(func(in(func(in, in, out, in) = out is det), in, in, out, in) = out 
-	is det).
+:- type vfold2_call(U, V, A, B) == (pred(pred(V, A, A, B, B), U, A, A, B, B)).
+:- inst vfold2_call == (pred(in(pred(in, in, out, in, out) is det), in, 
+	in, out, in, out) is det).
 
-	% vfold2_array(FoldFunction, FoldCall, Container, !Acc, !.Array) = !:Array.
+	% vfold2_array(FoldFunction, FoldCall, Container, !Acc, !Array).
 	% as above, but passing an additional accumulator 
-:- func vfold2_array(func(V, A, A, array(T)) = array(T), 
-	vfold2_call(C, V, A, array(T)), C, A, A, array(T)) = array(T).
+:- pred vfold2_array(pred(V, A, A, array(T), array(T)), 
+	vfold2_call(U, V, A, array(T)), U, A, A, array(T), array(T)).
 	
-:- mode vfold2_array(in(func(in, in, out, array_di) = array_uo is det), 
-	in(vfold2_call), in, in, out, array_di) = array_uo is det.
-	
-:- pred vfold2_array(func(V, A, A, array(T)) = array(T), 
-	vfold2_call(C, V, A, array(T)), C, A, A, array(T), array(T)).
-
-:- mode vfold2_array(in(func(in, in, out, array_di) = array_uo is det), 
+:- mode vfold2_array(in(pred(in, in, out, array_di, array_uo) is det), 
 	in(vfold2_call), in, in, out, array_di, array_uo) is det.
 
 %---------------------%
+
+:- type vfold3_call(U, V, A, B, C) == (pred(pred(V, A, A, B, B, C, C), U, 
+	A, A, B, B, C, C)).
+:- inst vfold3_call == 
+	(pred(in(pred(in, in, out, in, out, in, out) is det), in, in, out, 
+	in, out, in, out) is det).
+
+	% vfold3_array(FoldFunction, FoldCall, Container, !Acc, !Array).
+:- pred vfold3_array(pred(V, A, A, B, B, array(T), array(T)), 
+	vfold3_call(U, V, A, B, array(T)), U, A, A, B, B, array(T), array(T)).
 	
-:- type kvfold_call(C, K, V, A) == (func(func(K, V, A) = A, C, A) = A).
+:- mode vfold3_array(in(pred(in, in, out, in, out, array_di, array_uo) is det), 
+	in(vfold3_call), in, in, out, in, out, array_di, array_uo) is det.
+
+%---------------------%
+	
+:- type kvfold_call(U, K, V, A) == (func(func(K, V, A) = A, U, A) = A).
 :- inst kvfold_call == (func(in(func(in, in, in) = out is det), in, in) = out 
 	is det).
 
 	% kvfold_array(FoldFunction, FoldCall, Container, !.Array) = !:Array.
 	% As above, but passing key value pairs	
 :- func kvfold_array(func(K, V, array(T)) = array(T), 
-	kvfold_call(C, K, V, array(T)), C, array(T)) = array(T).
+	kvfold_call(U, K, V, array(T)), U, array(T)) = array(T).
 	
 :- mode kvfold_array(in(func(in, in, array_di) = array_uo is det), 
 	in(kvfold_call), in, array_di) = array_uo is det.
 	
 :- pred kvfold_array(func(K, V, array(T)) = array(T), 
-	kvfold_call(C, K, V, array(T)), C, array(T), array(T)).
+	kvfold_call(U, K, V, array(T)), U, array(T), array(T)).
 
 :- mode kvfold_array(in(func(in, in, array_di) = array_uo is det), 
 	in(kvfold_call), in, array_di, array_uo) is det.
 
 %---------------------%
 	
-	% kvfold_array(FoldFunction, FoldCall, Container, !.Array) = !:Array.
+	% kvfold2_array(FoldFunction, FoldCall, Container, !.Array) = !:Array.
 	% As above, but passing an additional accumulator
-:- type kvfold2_call(C, K, V, A, B) == 
-	(func(func(K, V, A, A, B) = B, C, A, A, B) = B).
+:- type kvfold2_call(U, K, V, A, B) == 
+	(pred(pred(K, V, A, A, B, B), U, A, A, B, B)).
 :- inst kvfold2_call == 
-	(func(in(func(in, in, in, out, in) = out is det), in, in, out, in) = out 
+	(pred(in(pred(in, in, in, out, in, out) is det), in, in, out, in, out) 
 	is det).
 	
-:- func kvfold2_array(func(K, V, A, A, array(T)) = array(T), 
-	kvfold2_call(C, K, V, A, array(T)), C, A, A, array(T)) = array(T).
-	
-:- mode kvfold2_array(in(func(in, in, in, out, array_di) = array_uo is det), 
-	in(kvfold2_call), in, in, out, array_di) = array_uo is det.
-	
-:- pred kvfold2_array(func(K, V, A, A, array(T)) = array(T), 
-	kvfold2_call(C, K, V, A, array(T)), C, A, A, array(T), array(T)).
+:- pred kvfold2_array(pred(K, V, A, A, array(T), array(T)), 
+	kvfold2_call(U, K, V, A, array(T)), U, A, A, array(T), array(T)).
 
-:- mode kvfold2_array(in(func(in, in, in, out, array_di) = array_uo is det), 
+:- mode kvfold2_array(in(pred(in, in, in, out, array_di, array_uo) is det), 
 	in(kvfold2_call), in, in, out, array_di, array_uo) is det.
+
+%---------------------%
+	
+	% kvfold3_array(FoldFunction, FoldCall, Container, !.Array) = !:Array.
+:- type kvfold3_call(U, K, V, A, B, C) == 
+	(pred(pred(K, V, A, A, B, B, C, C), U, A, A, B, B, C, C)).
+:- inst kvfold3_call == 
+	(pred(in(pred(in, in, in, out, in, out, in, out) is det), in, in, out, 
+	in, out, in, out) is det).
+	
+:- pred kvfold3_array(pred(K, V, A, A, B, B, array(T), array(T)), 
+	kvfold3_call(U, K, V, A, B, array(T)), U, A, A, B, B, array(T), array(T)).
+
+:- mode kvfold3_array(in(pred(in, in, in, out, in, out, array_di, array_uo) 
+	is det), in(kvfold3_call), in, in, out, in, out, array_di, array_uo)
+	is det.
 	
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -498,6 +515,8 @@ find_duplicates(Current, Last, Src, !Unique, !DupIdx) :-
 		),
 		find_duplicates(Current + 1, Last, Src, !Unique, !DupIdx)
 	).
+	
+% :- pred remove_dups_fold(T::in, map(T, unit)::in, map(T, unit)::out)
 	
 remove_dups_stable(Src, remove_dups_stable(Src)).
 
@@ -979,22 +998,33 @@ coerce_uniq_array(T) = T.
 
 wrap_array_acc(F, V, A) = F(V, coerce_uniq_array(A)).
 
-vfold_array(F, Call, M, A) = coerce_uniq_array(Call(wrap_array_acc(F), M, A)).
+vfold_array(F, Call, U, A) = coerce_uniq_array(Call(wrap_array_acc(F), U, A)).
 
-vfold_array(F, Call, M, A, vfold_array(F, Call, M, A)).
+vfold_array(F, Call, U, A, vfold_array(F, Call, U, A)).
 
 %---------------------%
 
-:- func wrap_array_acc(func(V, A, A, B) = B, V, A, A, B) = B.
-:- mode wrap_array_acc(in(func(in, in, out, array_di) = array_uo is det), 
-	in, in, out, in) = out is det.
+:- pred wrap_array_acc(pred(V, A, A, B, B), V, A, A, B, B).
+:- mode wrap_array_acc(in(pred(in, in, out, array_di, array_uo) is det), 
+	in, in, out, in, out) is det.
 
-wrap_array_acc(F, V, Acc0, Acc, A) = F(V, Acc0, Acc, coerce_uniq_array(A)).
+wrap_array_acc(P, V, !Acc, !A) :- 
+	P(V, !Acc, coerce_uniq_array(!.A), !:A).
 
-vfold2_array(F, Call, M, Acc0, Acc, A) = 
-	coerce_uniq_array(Call(wrap_array_acc(F), M, Acc0, Acc, A)).
+vfold2_array(P, Call, U, !Acc, !.A, coerce_uniq_array(!:A)) :- 
+	Call(wrap_array_acc(P), U, !Acc, !A).
 
-vfold2_array(F, Call, M, Acc0, Acc, A, vfold2_array(F, Call, M, Acc0, Acc, A)).
+%---------------------%
+
+:- pred wrap_array_acc(pred(V, A, A, B, B, C, C), V, A, A, B, B, C, C).
+:- mode wrap_array_acc(in(pred(in, in, out, in, out, array_di, array_uo)
+	is det), in, in, out, in, out, in, out) is det.
+
+wrap_array_acc(P, V, !Acc, !Acc2, !A) :- 
+	P(V, !Acc, !Acc2, coerce_uniq_array(!.A), !:A).
+
+vfold3_array(P, Call, U, !Acc, !Acc2, !.A, coerce_uniq_array(!:A)) :- 
+	Call(wrap_array_acc(P), U, !Acc, !Acc2, !A).
 
 %---------------------%
 
@@ -1004,21 +1034,30 @@ vfold2_array(F, Call, M, Acc0, Acc, A, vfold2_array(F, Call, M, Acc0, Acc, A)).
 
 wrap_array_acc(F, K, V, A) = F(K, V, coerce_uniq_array(A)).
 
-kvfold_array(F, Call, M, A) = coerce_uniq_array(Call(wrap_array_acc(F), M, A)).
+kvfold_array(F, Call, U, A) = coerce_uniq_array(Call(wrap_array_acc(F), U, A)).
 
-kvfold_array(F, Call, M, A, kvfold_array(F, Call, M, A)).
+kvfold_array(F, Call, U, A, kvfold_array(F, Call, U, A)).
 
 %---------------------%
 
-:- func wrap_array_acc(func(K, V, A, A, B) = B, K, V, A, A, B) = B.
-:- mode wrap_array_acc(in(func(in, in, in, out, array_di) = array_uo is det), 
-	in, in, in, out, in) = out is det.
+:- pred wrap_array_acc(pred(K, V, A, A, B, B), K, V, A, A, B, B).
+:- mode wrap_array_acc(in(pred(in, in, in, out, array_di, array_uo) is det), 
+	in, in, in, out, in, out) is det.
 
-wrap_array_acc(F, K, V, Acc0, Acc, A) = 
-	F(K, V, Acc0, Acc, coerce_uniq_array(A)).
+wrap_array_acc(P, K, V, !Acc, !A) :- 
+	P(K, V, !Acc, coerce_uniq_array(!.A), !:A).
 
-kvfold2_array(F, Call, M, Acc0, Acc, A) = 
-	coerce_uniq_array(Call(wrap_array_acc(F), M, Acc0, Acc, A)).
+kvfold2_array(P, Call, U, !Acc, !.A, coerce_uniq_array(!:A)) :- 
+	Call(wrap_array_acc(P), U, !Acc, !A).
 
-kvfold2_array(F, Call, M, Acc0, Acc, A, 
-	kvfold2_array(F, Call, M, Acc0, Acc, A)).
+%---------------------%
+
+:- pred wrap_array_acc(pred(K, V, A, A, B, B, C, C), K, V, A, A, B, B, C, C).
+:- mode wrap_array_acc(in(pred(in, in, in, out, in, out, array_di, array_uo) 
+	is det), in, in, in, out, in, out, in, out) is det.
+
+wrap_array_acc(P, K, V, !Acc, !Acc2, !A) :- 
+	P(K, V, !Acc, !Acc2, coerce_uniq_array(!.A), !:A).
+
+kvfold3_array(P, Call, U, !Acc, !Acc2, !.A, coerce_uniq_array(!:A)) :- 
+	Call(wrap_array_acc(P), U, !Acc, !Acc2, !A).
