@@ -499,30 +499,34 @@ unsafe_delete_map(Src, Map) = Result :-
 			)
 		)
 	).
-
-%- pred find_duplicates(Current, Last, Source, !UniqueElems, !DupMap)
-:- pred find_duplicates(int::in, int::in, array(T)::in, 
-	map(T, unit)::in, map(T, unit)::out, 
-	map(int, unit)::in, map(int, unit)::out) is det.
 	
-find_duplicates(Current, Last, Src, !Unique, !DupIdx) :-
-	(if Current > Last then true
-	else
-		unsafe_lookup(Src, Current, Elem),
-		(if contains(!.Unique, Elem)
-		then det_insert(Current, unit, !DupIdx)
-		else det_insert(Elem, unit, !Unique)
-		),
-		find_duplicates(Current + 1, Last, Src, !Unique, !DupIdx)
+ :- pred remove_dups_fold(T::in, int::in, int::out, map(T, unit)::in, 
+	map(T, unit)::out, array(T)::array_di, array(T)::array_uo) is det.
+	
+remove_dups_fold(Element, !Next, !Unique, !Array) :-
+	(if insert(Element, !Unique)
+	then
+		unsafe_set(!.Next, Element, !Array),
+		!:Next = !.Next + 1
+	else true
 	).
-	
-% :- pred remove_dups_fold(T::in, map(T, unit)::in, map(T, unit)::out)
 	
 remove_dups_stable(Src, remove_dups_stable(Src)).
 
 remove_dups_stable(Src) = Result :-
-	find_duplicates(min(Src), max(Src), Src, map.init, _, map.init, Dups),
-	unsafe_delete_map(Dups, Src, Result).
+	Size = size(Src),
+	(if Size =< 1
+	then Result = copy(Src)
+	else
+		unsafe_lookup(Src, min(Src), FirstElem),
+		some [!NewArray] (
+			!.NewArray = init(Size, FirstElem),
+			vfold3_array(foldl3, remove_dups_fold, Src, 1, NewSize, 
+				singleton(FirstElem, unit), _, !NewArray),
+			shrink(NewSize, !NewArray),
+			Result = !:NewArray
+		)
+	).
 	
 array_cons(T, Src, array_cons(Src, T)).
 
