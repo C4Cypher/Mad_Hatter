@@ -17,8 +17,7 @@
 
 :- import_module univ.
 
-:- import_module ordered_set.
-
+:- import_module mh_ordered_term_set.
 :- import_module mh_scope.
 :- import_module mh_term.
 :- import_module mh_proposition.
@@ -64,14 +63,14 @@
 	%		The abscense of value, only unifies with nil
 	%		T(nil) = T.
 	
-	;		conjunction(mh_scope, ordered_set(mh_term))
+	;		conjunction(mh_scope, mh_ordered_term_set)
 	%		A relation that contains a set of terms, and succesfully unifies
 	%		with any member of the given set so long as every member of the
 	%		set unifies with each other, otherwise the entire expression fails
 	%		(a , b)(X) -> a(X) , b(X),  a = b, a(X) = b(X).
 	%		conjunction(_, []) == true. 
 
-	;		disjunction(mh_scope, ordered_set(mh_term))
+	;		disjunction(mh_scope, mh_ordered_term_set)
 	%		A relation that contains a set of terms, and succesfully unifies
 	%		with any member of the given set, however the expression is not
 	%		considered deterministic, representing the possibility that the
