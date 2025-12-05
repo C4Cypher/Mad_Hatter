@@ -234,12 +234,32 @@
 :- func intersect(mh_ordered_term_set, mh_ordered_term_set)
 	= mh_ordered_term_set.
 
-	% The difference of two sets sorted and without duplicates, 
-	% order is not preserved
+	% The difference of two sets, preserves the leftmost order of the first
+	% set, removes duplicates
 :- pred difference(mh_ordered_term_set::in, mh_ordered_term_set::in, 
 	mh_ordered_term_set::out) is det.
 :- func difference(mh_ordered_term_set, mh_ordered_term_set)
 	= mh_ordered_term_set.
+	
+%-----------------------------------------------------------------------------%
+% Set operations
+
+%-----------------------------------------------------------------------------%
+% Higher order 
+
+	% Left fold over items in an array, providing the lookup index
+:- func index_fold(func(int, T, A) = A, array(T), A) = A.
+:- mode index_fold(in(func(in, in, in) = out is det), in, in) = out is det.
+:- mode index_fold(in(func(in, in, in) = out is semidet), in, in) = out 
+	is semidet.
+	
+:- pred index_fold(func(int, T, A) = A, array(T), A, A).
+:- mode index_fold(in(func(in, in, in) = out is det), in, in, out) is det.
+:- mode index_fold(in(func(in, in, in) = out is semidet), in, in, out) 
+	is semidet.
+	
+:- pred index_all_true(pred(int, T)::in(pred(in, in) is semidet), 
+	array(T)::in) is semidet.
 
 
 %-----------------------------------------------------------------------------%
@@ -538,10 +558,10 @@ intersect(OS1, OS2, intersect(OS1, OS2)).
 	
 intersect(os(O1, S1)@OS1, os(O2, S2)@OS2) = OS3 :- 
 	Size = size(O1),
-	(if Size =< 1  
-	then OS3 = OS1
-	else if size(O2) = 0
-	then OS3 = OS2
+	(if Size = 1, unsafe_lookup(O1, 0, E), contains(S2, E) 
+	then OS3 = OS1 
+	else if Size = 0 ; size(O2) = 0
+	then OS3 = empty_set
 	else 
 		unsafe_lookup(O1, 0, First),
 		A0 = init(Size, First),
@@ -550,46 +570,47 @@ intersect(os(O1, S1)@OS1, os(O2, S2)@OS2) = OS3 :-
 		OS3 = os(O3, S3)
 	).
 
+%- pred difference_loop(Current, Last, O1, S2, !S3, !O3, !Size). 
+:- pred difference_loop(int::in, int::in, term_array::in, mh_term_set::in, 
+	mh_term_set::in, mh_term_set::out, 
+	term_array::array_di, term_array::array_uo, int::in, int::out) is det.
+	
+difference_loop(Current, Last, O1, S2, !S3, !O3, !Size) :-
+	(if Current > Last
+	then true
+	else
+		unsafe_lookup(O1, Current, Element),
+		(if contains(Element, S2) 
+		then true
+		else if insert(Element, !S3)
+		then
+			unsafe_set(!.Size, Element, !O3),
+			!:Size = !.Size + 1
+		else true		
+		),
+		difference_loop(Current + 1, Last, O1, S2, !S3, !O3, !Size)
+	).
+
 difference(OS1, OS2, difference(OS1, OS2)).
 	
-difference(os(O1, S1), os(_, S2)) = os(O3, S3) :- 
-	S3 = array(difference_list(S1, S2)).
-
-% Compose a list of elements not present in the first array. 
-% Arrays must be sorted.
-:- func difference_list(array(T), array(T)) = list(T).
-
-difference_list(A1, A2) = difference_list(0, max(A2), A1, A2).
-
-:- func difference_list(int, int, array(T), array(T)) = list(T).
-
-difference_list(I, Last, A1, A2) = 
-	(if I > Last then
-		[]
-	else
-		(if lookup(A2, I, T), not binary_search(A1, T, _) then
-			[ T | difference_list(I + 1, Last, A1, A2)]
-		else
-			difference_list(I + 1, Last, A1, A2)
+difference(os(O1, S1)@OS1, os(O2, S2)@OS2) = OS3 :- 
+	Size = size(O1),
+	(if Size = 0
+	then OS3 = empty_set
+	else 
+		unsafe_lookup(O1, 0, First),
+		(if Size = 1
+		then
+			(if contains(S2, First)
+			then OS3 = empty_set
+			else OS3 = OS1
+			)
+		else 
+			A0 = init(Size, First),
+			difference_loop(1, max(O1), O1, S2, init, S3, A0, A1, 1, NewSize),
+			shrink(NewSize, A1, O3),
+			OS3 = os(O3, S3)
 		)
 	).
-	
-:- pragma inline(difference_list/4).
+		
 
-% Compose a list of elements found in both sorted arrays.
-:- func intersect_list(array(T), array(T)) = list(T).
-
-intersect_list(A1, A2) = difference_list(0, max(A2), A1, A2).
-
-:- func intersect_list(int, int, array(T), array(T)) = list(T).
-
-intersect_list(I, Last, A1, A2) = 
-	(if I > Last then
-		[]
-	else
-		(if lookup(A2, I, T), binary_search(A1, T, _) then
-			[ T | intersect_list(I + 1, Last, A1, A2)]
-		else
-			intersect_list(I + 1, Last, A1, A2)
-		)
-	).
