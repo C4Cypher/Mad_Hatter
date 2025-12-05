@@ -240,26 +240,6 @@
 	mh_ordered_term_set::out) is det.
 :- func difference(mh_ordered_term_set, mh_ordered_term_set)
 	= mh_ordered_term_set.
-	
-%-----------------------------------------------------------------------------%
-% Set operations
-
-%-----------------------------------------------------------------------------%
-% Higher order 
-
-	% Left fold over items in an array, providing the lookup index
-:- func index_fold(func(int, T, A) = A, array(T), A) = A.
-:- mode index_fold(in(func(in, in, in) = out is det), in, in) = out is det.
-:- mode index_fold(in(func(in, in, in) = out is semidet), in, in) = out 
-	is semidet.
-	
-:- pred index_fold(func(int, T, A) = A, array(T), A, A).
-:- mode index_fold(in(func(in, in, in) = out is det), in, in, out) is det.
-:- mode index_fold(in(func(in, in, in) = out is semidet), in, in, out) 
-	is semidet.
-	
-:- pred index_all_true(pred(int, T)::in(pred(in, in) is semidet), 
-	array(T)::in) is semidet.
 
 
 %-----------------------------------------------------------------------------%
