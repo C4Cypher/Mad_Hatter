@@ -176,35 +176,19 @@ T::out) is semidet.
 
 :- type exact_map(T) == map.map(mh_relation, T).
 :- type pattern_map(T) == mh_relation_pattern_map.relation_pattern_map(T).
-:- type lazy_pattern_map(T) == l
+:- type lazy_pattern_map(T) == lazy(pattern_map(T)).
 
 :- type mh_relation_map(T)
 	--->	empty_relation_map
-	;		relation_map(maybe(T), mh_scope_map(relation_tree(T)).
+	;		relation_map(exact_map(T), lazy_pattern_map(T)).
 	
 :- type relation_pair(T) == pair(mh_relation, T).
 				
 
-			
-:- func init_tree = relation_tree(_).
-
-init_tree = relation_tree(
-		mh_tuple_map.init,
-		mh_tuple_map.init,
-		mh_term_map.init,
-		mh_tuple_map.init,
-		mh_tuple_map.init,
-		mh_tuple_map.init,
-		mh_term_map.init,
-		mh_proposition_map.init,
-		mh_term_map.init
-		
-	).
-
 init = empty_relation_map.
 init(init).
 
-singleton(Rel, Value) = Map :- det_insert(Rel, Value, init_tree, Map).
+singleton(Rel, Value) = Map :- det_insert(Rel, Value, init, Map).
 singleton(Rel) = singleton(Rel, unit).
 
 is_empty(empty_relation_map).
