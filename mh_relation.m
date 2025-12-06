@@ -57,7 +57,6 @@
 */
 
 % TODO: mh_relation_map and mh_relation_set
-% TODO: replace ordered_set/1  with mh_relation_set or mh_ordered_relation_set
 :- type mh_relation
 	--->	nil		
 	%		The abscense of value, only unifies with nil
