@@ -105,7 +105,7 @@ singleton(Relation, T) = Map :- insert(Relation, T, init, Map).
 
 is_empty(init). % All descendants have empty constructors
 
-from_exact_map(Exact) = mh_relation_map.fold(insert, Exact, map.init).
+from_exact_map(Exact) = map.foldl(insert, Exact, map.init).
 
 %-----------------------------------------------------------------------------%
 % Insertion
