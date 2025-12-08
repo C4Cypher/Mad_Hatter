@@ -17,6 +17,8 @@
 
 :- import_module unit.
 :- import_module array.
+:- import_module list.
+:- import_module assoc_list.
 
 :- import_module mh_term.
 :- import_module mh_tuple.
@@ -198,7 +200,7 @@
 
 :- import_module lazy.
 :- import_module array.
-:- import_module list.
+:- import_module pair.
 :- import_module require.
 :- use_module map.
 
@@ -317,7 +319,7 @@ det_insert_from_assoc_list([K - V | KVs], !Map) :-
     det_insert_from_assoc_list(KVs, !Map).
 	
 det_insert_from_list([], !Set).
-det_insert_from_list([ Tuple | List]) :-
+det_insert_from_list([Tuple | List]) :-
 	det_insert(Tuple, !Set),
 	det_insert_from_list(List, !Set).
 	
