@@ -380,7 +380,6 @@ det_update(Tuple, Value, !Map) :-
 %-----------------------------------------------------------------------------%
 % Removal
 
-
 remove(Tuple, Value, tuple_map(!.E, !.L), tuple_map(!:E, !:L)) :-
 	Array = to_array(Tuple),
 	map.remove(Array, Value, !E)
@@ -392,7 +391,6 @@ remove(Tuple, Value, tuple_map(!.E, !.L), tuple_map(!:E, !:L)) :-
 		else
 			!:L = delay_pattern(!.E)
 		).
-		
 
 det_remove(Tuple, Value, !Map) :-	
 	(if remove(Tuple, FoundVal, !Map)
@@ -418,10 +416,10 @@ delete_list([], !Map).
 delete_list([Tuple | Tuples], !Map) :- 
 	delete(Tuple, !Map),
 	delete_list(Tuples, !Map).
-	
+
 %-----------------------------------------------------------------------------%
 % Set operations
-	
+
 :- func merge_units(unit, unit) = unit.
 merge_units(_, _) = unit.
 
