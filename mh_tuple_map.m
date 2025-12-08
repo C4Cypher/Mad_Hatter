@@ -199,6 +199,7 @@
 :- import_module lazy.
 :- import_module array.
 :- import_module list.
+:- import_module require.
 :- use_module map.
 
 :- import_module map_util.
@@ -270,13 +271,13 @@ lookup(tuple_map(Map, _), Tuple) = map.lookup(Map, to_array(Tuple)).
 %-----------------------------------------------------------------------------%
 % Insertion
 
-insert(Tuple, T, tuple_map(!.E, !.L), tuple_map(!:E, !:L)) :-
+insert(Tuple, Value, tuple_map(!.E, !.L), tuple_map(!:E, !:L)) :-
 	Array = to_array(Tuple),
-	map.unsafe_array_insert(Array, T, !E),
+	map.unsafe_array_insert(Array, Value, !E),
 	promise_pure 
 		(if impure read_if_val(!.L, P0)
 		then
-			mh_tuple_pattern_map.array_insert(Array, T, P0, P),
+			mh_tuple_pattern_map.array_insert(Array, Value, P0, P),
 			!:L = val(P)
 		else
 			!:L = delay_pattern(!.E)
@@ -284,8 +285,8 @@ insert(Tuple, T, tuple_map(!.E, !.L), tuple_map(!:E, !:L)) :-
 		
 insert(Tuple, !Set) :- insert(Tuple, unit, !Set).
 		
-det_insert(Tuple, T, !Map) :-
-	(if insert(Tuple, T, !Map)
+det_insert(Tuple, Value, !Map) :-
+	(if insert(Tuple, Value, !Map)
 	then !:Map = !.Map
 	else report_lookup_error(
 		"mh_tuple_map.det_insert: tuple aleady present in map", 
@@ -321,13 +322,13 @@ det_insert_from_list([ Tuple | List]) :-
 	det_insert_from_list(List, !Set).
 	
 
-set(Tuple, T, tuple_map(!.E, !.L), tuple_map(!:E, !:L)) :-
+set(Tuple, Value, tuple_map(!.E, !.L), tuple_map(!:E, !:L)) :-
 	Array = to_array(Tuple),
-	map.set(Array, T, !E),
+	map.set(Array, Value, !E),
 	promise_pure 
 		(if impure read_if_val(!.L, P0)
 		then
-			mh_tuple_pattern_map.array_set(Tuple, Array, T, P0, P),
+			mh_tuple_pattern_map.array_set(Tuple, Array, Value, P0, P),
 			!:L = val(P)
 		else
 			!:L = delay_pattern(!.E)
@@ -355,32 +356,32 @@ set_from_list([Tuple | List]) :-
 	set_from_list(List, !Set).
 	
 	
-update(Tuple, T, tuple_map(!.E, !.L), tuple_map(!:E, !:L)) :-
+update(Tuple, Value, tuple_map(!.E, !.L), tuple_map(!:E, !:L)) :-
 	Array = to_array(Tuple),
-	map.update(Array, T, !E),
+	map.update(Array, Value, !E),
 	promise_pure 
 		(if impure read_if_val(!.L, P0)
 		then
-			mh_tuple_pattern_map.array_set(Tuple, Array, T, P0, P),
+			mh_tuple_pattern_map.array_set(Tuple, Array, Value, P0, P),
 			!:L = val(P)
 		else
 			!:L = delay_pattern(!.E)
 		).
 
-det_update(Var, T, !Map) :-	
-	(if update(Var, T, !Map)
+det_update(Tuple, Value, !Map) :-	
+	(if update(Tuple, Value, !Map)
 	then !:Map = !.Map
 	else report_lookup_error(
-		"mh_tuple_map.det_update: tuple not present in map", Var, !.Map)
+		"mh_tuple_map.det_update: tuple not present in map", Tuple, !.Map)
 	).
 	
 %-----------------------------------------------------------------------------%
 % Removal
 
 
-remove(Tuple, T, tuple_map(!.E, !.L), tuple_map(!:E, !:L)) :-
+remove(Tuple, Value, tuple_map(!.E, !.L), tuple_map(!:E, !:L)) :-
 	Array = to_array(Tuple),
-	map.remove(Array, T, !E)
+	map.remove(Array, Value, !E)
 	promise_pure 
 		(if impure read_if_val(!.L, P0)
 		then
@@ -391,9 +392,9 @@ remove(Tuple, T, tuple_map(!.E, !.L), tuple_map(!:E, !:L)) :-
 		).
 		
 
-det_remove(Tuple, T, !Map) :-	
-	(if remove(Tuple, FoundT, !Map)
-	then !:Map = !.Map, T = FoundT
+det_remove(Tuple, Value, !Map) :-	
+	(if remove(Tuple, FoundVal, !Map)
+	then !:Map = !.Map, Value = FoundVal
 	else report_lookup_error(
 		"mh_tuple_map.det_remove: tuple not present in map", Tuple, 
 		!.Map)
