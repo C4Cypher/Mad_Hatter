@@ -57,7 +57,7 @@
 
 :- pred is_empty(relation_pattern_map(_)::in) is semidet.
 
-:- func from_exact_map(map(mh_relation,  T)) = relation_pattern_map(T).
+:- func from_exact_map(map(mh_relation, T)) = relation_pattern_map(T).
 
 %-----------------------------------------------------------------------------%
 % Insertion
@@ -99,7 +99,7 @@ singleton(Relation, T) = Map :- insert(Relation, T, init, Map).
 
 is_empty(init). % All descendants have empty constructors
 
-from_exact_map(Exact) = map.foldl(insert, Exact, map.init).
+from_exact_map(Exact) = map.foldl(insert, Exact, init).
 
 %-----------------------------------------------------------------------------%
 % Insertion
