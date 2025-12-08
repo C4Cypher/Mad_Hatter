@@ -27,17 +27,17 @@
 :- type mh_tuple_map(T).
 :- type mh_tuple_set == mh_tuple_map(unit).
 
-:- func init = (mh_tuple_map(T)::uo) is det.
+:- func init = (mh_tuple_map(_)::uo) is det.
 :- pred init(mh_tuple_set::uo) is det.
 
-:- func lazy_init = (mh_tuple_map(T)::uo) is det.
-:- pred lazy_init(mh_tuple_set::uo) is det.
+:- func eager_init = (mh_tuple_map(_)::uo) is det.
+:- pred eager_init(mh_tuple_set::uo) is det.
 
 :- func singleton(mh_tuple, T) = mh_tuple_map(T).
 :- func singleton(mh_tuple) = mh_tuple_set.
 
-:- func lazy_singleton(mh_tuple, T) = mh_tuple_map(T).
-:- func lazy_singleton(mh_tuple) = mh_tuple_set.
+:- func eager_singleton(mh_tuple, T) = mh_tuple_map(T).
+:- func eager_singleton(mh_tuple) = mh_tuple_set.
 
 :- pred is_empty(mh_tuple_map(_)::in) is semidet.
 
@@ -191,23 +191,26 @@
 
 :- type mh_tuple_map(T)
 	--->	tuple_map(exact_map(T), lazy_pattern_map(T)).
-	
-init = tuple_map(map.init, val(mh_tuple_pattern_map.init)).
+
+
+init = tuple_map(map.init@Map, delay(from_exact_map(Map))).
 
 init(init).
-
-lazy_init = tuple_map(map.init@Map, delay(from_exact_map(Map))).
-
-singleton(Tuple, T) = tuple_map(map.singleton(to_array(Tuple), T),
-	val(mh_tuple_pattern_map.singleton(Tuple, T))).
 	
-singleton(Tuple) = singleton(Tuple, unit).
+eager_init = tuple_map(map.init, val(mh_tuple_pattern_map.init)).
+
+eager_init(eager_init).
 	
-lazy_singleton(Tuple, T) = 
+singleton(Tuple, T) = 
 	tuple_map(map.singleton(to_array(Tuple), T)@Map, 
 		delay(from_exact_map(Map))).
 		
-lazy_singleton(Tuple) = lazy_singleton(Tuple, unit).
+singleton(Tuple) = singleton(Tuple, unit).
+
+eager_singleton(Tuple, T) = tuple_map(map.singleton(to_array(Tuple), T),
+	val(mh_tuple_pattern_map.singleton(Tuple, T))).
+	
+eager_singleton(Tuple) = eager_singleton(Tuple, unit).
 	
 is_empty(tuple_map(Map, _)) :- map.is_empty(Map).
 
