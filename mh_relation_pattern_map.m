@@ -46,7 +46,7 @@
 				function_map :: mh_relation_map(T)
 			).
 
-:- func init = (relation_pattern_map(T)::out) is det.
+:- func init = (relation_pattern_map(_)::out) is det.
 :- pred init(relation_pattern_map(_)::out) is det.
 
 :- func singleton(mh_relation, T) = relation_pattern_map(T).
