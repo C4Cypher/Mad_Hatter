@@ -22,7 +22,7 @@
 :- import_module mh_relation.
 
 %-----------------------------------------------------------------------------%
-% Term maps
+% Relation Map
 
 :- type mh_relation_map(T).
 :- type mh_relation_set == mh_relation_map(unit).
@@ -202,12 +202,6 @@ T::out) is semidet.
 :- import_module lazy.
 :- import_module pair.
 :- import_module require.
-
-:- import_module mh_scope_map.
-:- import_module mh_scope.
-:- import_module mh_relation_map.
-:- import_module mh_term_map.
-:- import_module mh_substutition.
 
 :- use_module mh_relation_pattern_map.
 
@@ -434,7 +428,7 @@ semidet_fold(F, M, A) = fold(F, M, A).
 
 fold(F, M A, fold(F, M, A)).
 
-map(F, tuple_map(E0, _)) = 
-	tuple_map(E@map.map_values(F, E0)), delay_pattern(E)).
+map(F, relation_map(E0, _)) = 
+	relation_map(E@map.map_values(F, E0)), delay_pattern(E)).
 
 map(F, M, map(F, M)).
