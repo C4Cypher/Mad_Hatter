@@ -421,7 +421,7 @@ difference(M1, M2, difference(M1, M2)).
 %-----------------------------------------------------------------------------%
 % Higher Order
 
-fold(F, tuple_map(E, _), A) = fold(F, E, A).
+fold(F, relation_map(E, _), A) = fold(F, E, A).
 
 det_fold(F, M, A) = fold(F, M, A).
 semidet_fold(F, M, A) = fold(F, M, A).
