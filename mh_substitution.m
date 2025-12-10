@@ -70,6 +70,14 @@
 	mh_substitution::out(term_substitution)) is det.
 :- func ren_to_sub(mh_substitution::in) = 
 	(mh_substitution::out(term_substitution)) is det.
+	
+	% streamlined construction and deconstruction calls
+:- func to_var_map(mh_substitution) = mh_var_map(mh_term).
+
+	% Note that from_var_map implicitly calls ren_to_sub ... directly
+	% constucting the substiution will be much cheaper if efficient coercion
+	% to renamings is not anticipatied
+:- func from_var_map(mh_var_map(mh_term)) = mh_substitution.
 
 %-----------------------------------------------------------------------------%
 % Bounds
@@ -160,7 +168,6 @@
 	mh_renaming::out) is det.
 	
 :- func ren_from_offset_array(array(var_id), var_id_offset) = mh_renaming.
-
 
 %-----------------------------------------------------------------------------%
 % Bounds
@@ -270,13 +277,20 @@ var_to_id(_, var(ID), ID).
 
 ren_to_sub(ren_map(!.Map), sub_map(!:Map)) :- 
 	map_id(id_to_var, !Map).
-ren_to_sub(sub_map(Map), sub_map(Map)).
+ren_to_sub(Sub@sub_map(_), Sub).
 
 ren_to_sub(!.Sub) = !:Sub :- ren_to_sub(!Sub).
 
 :- pred id_to_var(_::in, var_id::in, mh_term::out) is det.
 
 id_to_var(_, ID, var(ID)).
+
+to_var_map(Sub) = Map :- ren_to_sub(Sub, sub_map(Map)).
+
+from_var_map(Map) = 
+	(if sub_to_ren(sub_map(Map)@NewSub, NewRen)
+	then NewRen
+	else NewSub).
 
 %-----------------------------------------------------------------------------%
 % Bounds
