@@ -28,8 +28,6 @@
 % Pattern Tuple map
 
 :- type term_relation_map(T) == mh_term_map(mh_relation_map(T)).
-:- type substitution_relation_map(T) == 
-	map(mh_substituiton, mh_relation_map(T))). 
 
 :- type relation_pattern_map(T) 
 	--->	pattern_map(
