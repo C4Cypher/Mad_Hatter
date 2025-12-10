@@ -25,7 +25,7 @@
 :- import_module mh_relation.
 
 %-----------------------------------------------------------------------------%
-% Pattern Tuple map
+% Relation Pattern map
 
 :- type term_relation_map(T) == mh_term_map(mh_relation_map(T)).
 
