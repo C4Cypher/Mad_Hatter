@@ -31,7 +31,7 @@
 :- pred init(mh_relation_map(_)::out) is det.
 
 :- func eager_init = (mh_relation_map(_)::uo) is det.
-:- pred eager_init(mh_tuple_set::uo) is det.
+:- pred eager_init(mh_relation_set::uo) is det.
 
 :- func singleton(mh_relation, T) = mh_relation_map(T).
 :- func singleton(mh_relation) = mh_relation_set.
