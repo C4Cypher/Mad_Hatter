@@ -18,8 +18,11 @@
 :- import_module list.
 :- import_module array.
 
-:- import_module mh_tuple.
 :- import_module ordered_set.
+
+:- import_module mh_term.
+:- import_module mh_tuple.
+:- import_module mh_term_map.
 
 %-----------------------------------------------------------------------------%
 % Ordered set
@@ -255,8 +258,6 @@
 :- import_module util.
 :- import_module array_util.
 
-:- import_module mh_term_map.
-
 
 % Variable naming
 % A == Array
@@ -352,6 +353,12 @@ compare_ordered_term_sets(compare(M1, M2)),	os(_, M1), 	os(_, M2)).
 
 %-----------------------------------------------------------------------------%
 % Conversion
+
+from_tuple(Tup) = from_array(to_array(Tup)).
+to_tuple(os(O, _)) = from_array(O).
+
+from_ordered_set(OS) = from_array(to_array(OS)).
+to_ordered_set(os(O, _)) = from_array(O).
 
 from_list(L) = from_array(array.from_list(L)).
 
