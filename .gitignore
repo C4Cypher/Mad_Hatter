@@ -11,9 +11,4 @@ Mercury.modules
 *.beams
 *.d
 *.c_date
-test.m
-hashmap_test2.m
-hashmap_test.m
-hashmap_test.m
-mh_var_set_old.m
 quantified_set_description_from_discord.txt
