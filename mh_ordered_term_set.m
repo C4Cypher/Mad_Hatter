@@ -188,14 +188,21 @@
 %-----------------------------------------------------------------------------%
 % Ordering
 
-	% Create a new ordered set using the provided comparison function that
-	% preserves the original order when the comparison function returns
-	% equality. Stability is not garunteed when comparisons are equal.
+	% Create a new ordered set using the provided comparison function to sort
+	% the elements. Stability is not garunteed when comparisons are equal.
 	% Does not remove duplicates.
 :- pred order_by(comparison_func(mh_term)::in(comparison_func), 
 	mh_ordered_term_set::in, mh_ordered_term_set::out) is det.
 	
 :- func order_by(comparison_func(mh_term)::in(comparison_func), 
+	mh_ordered_term_set::in) = (mh_ordered_term_set::out) is det.
+	
+	% Same as above, but garuntees stability in the order when comparisons
+	% are equal, slower sorting algorithm (mergesort rather than samsort)
+:- pred reorder(comparison_func(mh_term)::in(comparison_func), 
+	mh_ordered_term_set::in, mh_ordered_term_set::out) is det.
+	
+:- func reorder(comparison_func(mh_term)::in(comparison_func), 
 	mh_ordered_term_set::in) = (mh_ordered_term_set::out) is det.
 	
 	% Given any term map (including mh_term_set), create an ordering
@@ -462,9 +469,13 @@ det_last(OS) = (if Last = last(OS) then Last
 %-----------------------------------------------------------------------------%
 % Ordering
 
- order_by(CMP, OS, order_by(CMP, OS)).
+order_by(CMP, OS, order_by(CMP, OS)).
 
 order_by(CMP, os(O, S)) = os(O@samsort(CMP, copy(O)), S).
+
+reorder(CMP, OS, order_by(CMP, OS)).
+
+reorder(CMP, os(O, S)) = os(O@mergesort(CMP, copy(O)), S).
 
 :- type unsorted_accumulator ---> usacc(int, term_array).
 :- inst unsorted_accumulator = usacc(ground, array_uniq).
