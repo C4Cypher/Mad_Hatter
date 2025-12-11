@@ -205,7 +205,8 @@
 :- func reorder(comparison_func(mh_term)::in(comparison_func), 
 	mh_ordered_term_set::in) = (mh_ordered_term_set::out) is det.
 	
-	% Given any term map (including mh_term_set), create an ordering
+	% Given any term map (including mh_term_set), 
+	% create an ordering using the given comparison function
 :- func to_ordered_term_set(comparison_func(T)::in(comparison_func),
 	mh_term_map(_)::in) = (mh_ordered_term_set::out) is det.
 
