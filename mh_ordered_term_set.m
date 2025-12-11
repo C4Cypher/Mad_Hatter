@@ -116,7 +116,6 @@
 % Lookup
 
 	% Unlike arrays, these operations are 1 indexed
-	%TODO: unsafe versions that skip bounds checks?
 
 	% Return the maximum and minimum valid indexes for the order, return -1 for 
 	% both values if empty set
