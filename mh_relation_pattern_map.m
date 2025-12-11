@@ -124,9 +124,9 @@ insert(Rel@conjunction(_, OS), Value, !Map) :-
 	!:Map = !.Map ^ conjunction_map := NewCM.
 	
 insert(Rel@disjunction(_, OS), Value, !Map) :-
-	CM = !.Map ^ disjunction_map,
-	NewCM = foldl(trm_insert(Rel, Value), to_array(OS), CM),
-	!:Map = !.Map ^ disjunction_map := NewCM.
+	DM = !.Map ^ disjunction_map,
+	NewDM = foldl(trm_insert(Rel, Value), to_array(OS), DM),
+	!:Map = !.Map ^ disjunction_map := NewDM.
 	
 insert(Rel@not(_, Term), Value, !Map) :-
 	NegMap = !.Map ^ negation_map,
