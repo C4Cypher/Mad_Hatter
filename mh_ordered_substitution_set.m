@@ -229,9 +229,9 @@
 
 % These operations are less efficient than first converting them to 
 % mh_substitution_set before performing them, however, they should preserve the
-% leftmost unique ordering of the substitutions in the sets, both in the case of union
-% the ordering of the left operand is preserved in the case of intersection
-% and difference
+% leftmost unique ordering of the substitutions in the sets, both in the case
+% of union the ordering of the left operand is preserved in the case of
+% intersection and difference
 
 	% The union of two sets
 	% appends substitutions in the second set not present in the first set to the end 
@@ -247,8 +247,8 @@
 	% leftmost ordering of the unique elements
 :- pred remove_dups_union(mh_ordered_substitution_set::in, mh_ordered_substitution_set::in,
 	mh_ordered_substitution_set::out) is det.
-:- func remove_dups_union(mh_ordered_substitution_set, mh_ordered_substitution_set) 
-	= mh_ordered_substitution_set.
+:- func remove_dups_union(mh_ordered_substitution_set,
+	mh_ordered_substitution_set) = mh_ordered_substitution_set.
 
 
 	% The intersection of two sets, preserves the leftmost order of the first
@@ -495,10 +495,11 @@ reorder(CMP, os(O, S)) = os(O@mergesort(CMP, copy(O)), S).
 :- type unsorted_accumulator ---> usacc(int, substitution_array).
 :- inst unsorted_accumulator = usacc(ground, array_uniq).
 
-:- func to_unsorted_array(mh_substitution_set::in) = (substitution_array::array_uo) is det.
+:- func to_unsorted_array(mh_substitution_set::in) 
+	= (substitution_array::array_uo) is det.
 
-:- func unsorted_insert(mh_substitution, unsorted_accumulator) = 
-	un_sorted_accumulator.
+:- func unsorted_insert(mh_substitution, unsorted_accumulator) 
+	= un_sorted_accumulator.
 
 unsorted_insert(Term, usacc(Index, !.Array)) = usacc(Index + 1, !:Array) :-
 	unsafe_set(Index, !Array).
