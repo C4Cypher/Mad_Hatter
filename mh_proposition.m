@@ -16,13 +16,15 @@
 :- interface.
 
 :- import_module list.
+:- import_module string.
 
 :- import_module ordered_set.
 
 :- import_module mh_term.
-:- import_module mh_ordered_term_set. % TODO: ordered proposition sets and sub sets
+:- import_module mh_ordered_term_set. 
 :- import_module mh_substitution.
 :- import_module mh_foreign_function.
+:- import_module mh_tuple.
 
 
 %-----------------------------------------------------------------------------%
@@ -32,37 +34,36 @@
 % hell, do it with failures.  Prerequesite for this is evaluation.
 
 :- type mh_proposition 
-			% Boolean truth value
-	--->	proposition_false 	
-	;		proposition_true
+			% Exception, propogates like failure, but through negation
+	--->	proposition_error(reason)
 	
-			% Propositional reason for failure, equivalent to proposition_false
+			% Atomic false
+	;		proposition_false 	
+	
+			% Propositional reason for failure, evaluates to proposition_false
 	;		proposition_fail(reason)
 	
+			% Atomic true
+	;		proposition_true
+	
+			% X := Y
+	;		proposition_successs(mh_substitution)
+	
 			% A ; B ; C
-	;		proposition_disj(ordered_set(mh_proposition))
+	;		proposition_disj(mh_proposition_set)
 	
 			% A , B , C
-	;		proposition_conj(ordered_set(mh_proposition))
+	;		proposition_conj(mh_proposition_set)
 	
 			% not A
 	;		proposition_neg(mh_proposition)
 	
-			% X := Y
-	;		proposition_bound(mh_var, mh_term)
-	
 			% X = Y = Z
-	;		proposition_unification(ordered_set(mh_term))
+	;		proposition_unification(mh_ordered_term_set)
 	
 			% if C then T else E 
 			% C , T ; not C , E
-	;		proposition_branch(mh_proposition, mh_proposition, mh_proposition)
-	
-			% p(X, Y) :- f(X) -> Y.
-	;		proposition_call(mh_foreign_function, mh_term, mh_term)
-	
-			% { X -> Y, Y -> Z, Z -> foo } ; { X -> ...}
-	;		proposition_success(ordered_set(mh_substitution)).  
+	;		proposition_branch(mh_proposition, mh_proposition, mh_proposition).  
 
 
 	
@@ -76,10 +77,14 @@
 % Failure reason
 
 :- type reason
-	---> 	disj_failure(list(reason))
+	---> 	boolean_failure %no reason given
+	;		disj_failure(list(reason))
 	;		conj_failure(reason)
 	;		neg_failure(mh_proposition)
-	;		unification_failure(mh_term, mh_term).
+	;		unification_failure(mh_term, mh_term) 
+	;		constraint_failure(mh_term, mh_term)
+	;		message(string)
+	;		message(string, mh_tuple).
 	
  
 %-----------------------------------------------------------------------------%
