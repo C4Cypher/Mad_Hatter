@@ -112,8 +112,8 @@
 :- func remove_dups_sorted(array(T)::array_di) = (array(T)::array_uo) is det.
 
 	% Make a copy of the input array, sort and remove duplicates
-:- pred sort_and_remove_dups_sorted(array(T)::in, array(T)::array_uo) is det.
-:- func sort_and_remove_dups_sorted(array(T)::in) = (array(T)::array_uo) is det.
+:- pred sort_and_remove_dups(array(T)::in, array(T)::array_uo) is det.
+:- func sort_and_remove_dups(array(T)::in) = (array(T)::array_uo) is det.
 
 	% Succeed if the given array is sorted in ascending standard ordering
 :- pred is_sorted(array(T)::in) is semidet.
@@ -655,10 +655,10 @@ remove_dups_sorted(Index, Current, !Unique, !A) :-
 
 remove_dups_sorted(!.A) = !:A :- remove_dups_sorted(!A).
 
-sort_and_remove_dups_sorted(!A) :- array.copy(!A), !:A = array.sort(!.A), 
+sort_and_remove_dups(!A) :- array.copy(!A), !:A = array.sort(!.A), 
 	remove_dups_sorted(!A).
 
-sort_and_remove_dups_sorted(!.A) = !:A :- sort_and_remove_dups_sorted(!A).
+sort_and_remove_dups(!.A) = !:A :- sort_and_remove_dups(!A).
 
 
 :- pred is_sorted(array(T)::in, T::in, int::in, int::in) is semidet.
