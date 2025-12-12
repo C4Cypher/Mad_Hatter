@@ -91,18 +91,12 @@ convert_mr_term(M) =
 					Atom:mh_term = atom(symbol(Symbol)),
 					Term = Atom
 				;
-					SubTerms = [ Arg | Args ],
+					SubTerms = [ _ | _ ],
 					Atom:mh_term = atom(symbol(Symbol)),
-					( if Args = []
-					then 
-						Term = cons(Atom, convert_mr_term(Arg) )
-					else
-						Tuple = 
-							tuple(
-								map(convert_mr_term, SubTerms):list(mh_term)
-								),
-						Term = cons(Atom,  tuple_term(Tuple))
-					)
+					Tuple = tuple(
+						map(convert_mr_term, SubTerms):list(mh_term)
+					),
+					Term = cons(Atom,  Tuple)
 				)
 			)
 		;
@@ -134,18 +128,12 @@ convert_mr_term(M, Term, !ContextMap) :-
 					Atom:mh_term = atom(symbol(Symbol)),
 					T = Atom
 				;
-					SubTerms = [ Arg | Args ],
+					SubTerms = [ _ | _ ],
 					Atom:mh_term = atom(symbol(Symbol)),
-					( if Args = []
-					then 
-						T = cons(Atom, convert_mr_term(Arg) )
-					else
-						Tuple = 
-							tuple(
-								map(convert_mr_term, SubTerms):list(mh_term)
-								),
-						T = cons(Atom,  tuple_term(Tuple))
-					)
+					Tuple = tuple(
+						map(convert_mr_term, SubTerms):list(mh_term)
+					),
+					T = cons(Atom,  Tuple)
 				)
 			)
 		;
