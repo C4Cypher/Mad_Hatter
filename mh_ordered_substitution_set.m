@@ -17,8 +17,10 @@
 
 :- import_module list.
 :- import_module array.
+:- import_module set.
 
 :- import_module mh_substitution.
+:- import_module mh_substitution_map.
 :- import_module ordered_set.
 
 %-----------------------------------------------------------------------------%
@@ -38,7 +40,7 @@
 
 :- pred empty_set(mh_ordered_substitution_set::out) is det.
 
-:- pred is_empty(ordered_substitution_set::in) is semidet.
+:- pred is_empty(mh_ordered_substitution_set::in) is semidet.
 
 :- func singleton(T) = mh_ordered_substitution_set.
 
@@ -138,11 +140,11 @@
 :- pred semidet_min(mh_ordered_substitution_set::in, int::out) is semidet.
 
 	% Return the last index, -1 if empty
-:- func max(ordered_substitution_set) = int is det.
-:- pred max(ordered_substitution_set::in, int::out) is det.
+:- func max(mh_ordered_substitution_set) = int is det.
+:- pred max(mh_ordered_substitution_set::in, int::out) is det.
 
-:- func semidet_max(ordered_substitution_set) = int is semidet.
-:- pred semidet_max(ordered_substitution_set::in, int::out) is semidet.
+:- func semidet_max(mh_ordered_substitution_set) = int is semidet.
+:- pred semidet_max(mh_ordered_substitution_set::in, int::out) is semidet.
 
 :- pred contains(mh_ordered_substitution_set::in, mh_substitution::in)
 	is semidet.
@@ -330,7 +332,7 @@ os(O::out, S::out) = (OS::in) :-
 
 new_substitution_set(A) = foldl(set, A, init).
 
-:- pred valid_element(mh_substitution_set::in, mh_substitution:in) is semidet.
+:- pred valid_element(mh_substitution_set::in, mh_substitution::in) is semidet.
 
 valid_element(Set, Term) :- contains(Set, Term).
 
@@ -371,7 +373,7 @@ equal(os(A, _), os(A, _)).
 
 equivalent(os(_, M), os(_, M)).
 
-compare_ordered_substitution_sets(compare(M1, M2)),	os(_, M1), 	os(_, M2)). 
+compare_ordered_substitution_sets(compare(M1, M2),	os(_, M1), 	os(_, M2)). 
 
 
 %-----------------------------------------------------------------------------%
@@ -493,7 +495,7 @@ reorder(CMP, OS, order_by(CMP, OS)).
 reorder(CMP, os(O, S)) = os(O@mergesort(CMP, copy(O)), S).
 
 :- type unsorted_accumulator ---> usacc(int, substitution_array).
-:- inst unsorted_accumulator = usacc(ground, array_uniq).
+:- inst unsorted_accumulator == usacc(ground, array_uniq).
 
 :- func to_unsorted_array(mh_substitution_set::in) 
 	= (substitution_array::array_uo) is det.
@@ -521,7 +523,7 @@ to_unit_map(M) = S :-
 	).
 		
 to_ordered_substitution_set(CMP, Map) = 
-	os(samsort(CMP, to_unsorted_array(Map))), to_unit_map(Map)).
+	os(samsort(CMP, to_unsorted_array(Map)), to_unit_map(Map)).
  
 %-----------------------------------------------------------------------------%
 % Set operations

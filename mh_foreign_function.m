@@ -16,7 +16,6 @@
 :- interface.
 
 :- import_module mh_term.
-:- import_module mh_relation.
 
 :- type function_call == (func(mh_term) = mh_term).
 

@@ -23,6 +23,7 @@
 :- import_module mh_term.
 :- import_module mh_ordered_term_set. 
 :- import_module mh_substitution.
+:- import_module mh_ordered_proposition_set.
 :- import_module mh_foreign_function.
 :- import_module mh_tuple.
 
@@ -50,10 +51,10 @@
 	;		proposition_successs(mh_substitution)
 	
 			% A ; B ; C
-	;		proposition_disj(mh_proposition_set)
+	;		proposition_disj(mh_ordered_proposition_set)
 	
 			% A , B , C
-	;		proposition_conj(mh_proposition_set)
+	;		proposition_conj(mh_ordered_proposition_set)
 	
 			% not A
 	;		proposition_neg(mh_proposition)

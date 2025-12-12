@@ -36,8 +36,8 @@
 :- func singleton(mh_relation, T) = mh_relation_map(T).
 :- func singleton(mh_relation) = mh_relation_set.
 
-:- func eager_singleton(mh_tuple, T) = mh_relation_map(T).
-:- func eager_singleton(mh_tuple) = mh_relation_set.
+:- func eager_singleton(mh_relation, T) = mh_relation_map(T).
+:- func eager_singleton(mh_relation) = mh_relation_set.
 
 :- pred is_empty(mh_relation_map(_)::in) is semidet.
 
@@ -91,8 +91,8 @@ T::out) is semidet.
 :- pred det_insert_from_list(list(mh_relation)::in, mh_relation_set::in, 
 	mh_relation_set::out) is det.
 
-:- pred set(mh_relation::in, T::in, mh_relation_map::in, mh_relation_map::out)
-	is det.
+:- pred set(mh_relation::in, T::in, mh_relation_map(T)::in, 
+	mh_relation_map(T)::out) is det.
 	
 :- pred set(mh_relation::in, mh_relation_set::in, mh_relation_set::out) is det.
 	
@@ -106,29 +106,29 @@ T::out) is semidet.
 	mh_relation_set::out) is det.
 
 :- pred update(mh_relation::in, T::in, mh_relation_map(T)::in, 
-	mh_relation_map::out) is semidet.
+	mh_relation_map(T)::out) is semidet.
 	
 :- pred det_update(mh_relation::in, T::in, mh_relation_map(T)::in, 
-	mh_relation_map::out) is det.
+	mh_relation_map(T)::out) is det.
 	
 %-----------------------------------------------------------------------------%
 % Removal
 
 :- pred remove(mh_relation::in, T::out, mh_relation_map(T)::in, 
-	mh_relation_map::out) is semidet.
+	mh_relation_map(T)::out) is semidet.
 	
 :- pred remove(mh_relation::in, mh_relation_set::in, mh_relation_set::out) is semidet.
 	
 :- pred det_remove(mh_relation::in, T::out, mh_relation_map(T)::in, 
-	mh_relation_map::out) is det.
+	mh_relation_map(T)::out) is det.
 	
 :- pred det_remove(mh_relation::in,  mh_relation_set::in, mh_relation_set::out) is det.
 	
 :- pred delete(mh_relation::in,  mh_relation_map(T)::in, 
-	mh_relation_map::out) is det.
+	mh_relation_map(T)::out) is det.
 
 :- pred delete_list(list(mh_relation)::in, mh_relation_map(T)::in, 
-	mh_relation_map::out) is det.
+	mh_relation_map(T)::out) is det.
 	
 %-----------------------------------------------------------------------------%
 % Set operations
@@ -212,8 +212,8 @@ T::out) is semidet.
 :- type pattern_map(T) == mh_relation_pattern_map.relation_pattern_map(T).
 :- type lazy_pattern_map(T) == lazy(pattern_map(T)).
 
-:- type mh_relation_map(T)
-	;		relation_map(exact_map(T), lazy_pattern_map(T)).
+:- type mh_relation_map(T) 
+	--->	relation_map(exact_map(T), lazy_pattern_map(T)).
 	
 :- func delay_pattern(exact_map(T)) = lazy_pattern_map(T).
 delay_pattern(Exact) = delay(mh_relation_pattern_map.from_exact_map(!.E)).
@@ -247,8 +247,6 @@ count(Map, count(Map)).
 equal(relation_map(M1, _), relation_map(M2, _)) :- map.equal(M1, M2).
 
 force_pattern_map(relation_map(_, Lazy)) :- _ = force(Lazy).
-
-:- pragma promise_impure(force_pattern_map/1).
 
 force_pattern_map(!Map) :-
 	impure force_pattern_map(!.Map).
@@ -426,9 +424,9 @@ fold(F, relation_map(E, _), A) = fold(F, E, A).
 det_fold(F, M, A) = fold(F, M, A).
 semidet_fold(F, M, A) = fold(F, M, A).
 
-fold(F, M A, fold(F, M, A)).
+fold(F, M, A, fold(F, M, A)).
 
 map(F, relation_map(E0, _)) = 
-	relation_map(E@map.map_values(F, E0)), delay_pattern(E)).
+	relation_map(E@map.map_values(F, E0), delay_pattern(E)).
 
 map(F, M, map(F, M)).

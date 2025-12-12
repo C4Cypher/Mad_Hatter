@@ -21,6 +21,7 @@
 
 :- import_module mh_relation_map.
 :- import_module mh_term_map.
+:- import_module mh_proposition_map.
 :- import_module mh_term.
 :- import_module mh_relation.
 
@@ -50,19 +51,17 @@
 :- pred init(relation_pattern_map(_)::out) is det.
 
 :- func singleton(mh_relation, T) = relation_pattern_map(T).
-:- func array_singleton(mh_relation, array(mh_term), T) = 
-	relation_pattern_map(T).
 
 :- pred is_empty(relation_pattern_map(_)::in) is semidet.
 
-:- func from_exact_map(map(mh_relation, T)) = relation_pattern_map(T).
+:- func from_exact_map(map.map(mh_relation, T)) = relation_pattern_map(T).
 
 %-----------------------------------------------------------------------------%
 % Insertion
 
 % does not modify map if relation is already present
-:- pred insert(mh_relation::in, T::in, relation_pattern_map::in,
-	relation_pattern_map::out)	is det.
+:- pred insert(mh_relation::in, T::in, relation_pattern_map(T)::in,
+	relation_pattern_map(T)::out)	is det.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -71,7 +70,6 @@
 :- import_module int.
 :- import_module require.
 
-:- import_module mh_term_map.
 
 %-----------------------------------------------------------------------------%
 % Relation Pattern map

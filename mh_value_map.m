@@ -11,7 +11,7 @@
 % Stability: low.
 %-----------------------------------------------------------------------------%
 
-:- module mh_value_univ_map.
+:- module mh_value_map.
 
 :- interface.
 
@@ -207,7 +207,7 @@ difference(Map1, Map2, difference(Map1, Map2)).
 
 fold(F, mh_value_map(Map), A) = univ_map.fold(value_fold(F), Map, A).
 
-:- func value_fold(func(mh_value, T, A) = A), univ, T, A) = A.
+:- func value_fold(func(mh_value, T, A) = A, univ, T, A) = A.
 
 value_fold(F, Univ, T, A) = F(mr_value(Univ), T, A).
 

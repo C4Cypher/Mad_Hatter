@@ -46,7 +46,7 @@
 :- func count(mh_tuple_map(_)) = int.
 :- pred count(mh_tuple_map(_)::in, int::out) is det.
 
-:- pred equal(mh_term_map(T)::in, mh_term_map(T)::in) is semidet.
+:- pred equal(mh_tuple_map(T)::in, mh_tuple_map(T)::in) is semidet.
 
 :- impure pred force_pattern_map(mh_tuple_map(_)::in) is det.
 
@@ -92,7 +92,7 @@
 :- pred det_insert_from_assoc_list(assoc_list(mh_tuple, T)::in,
 	mh_tuple_map(T)::in, mh_tuple_map(T)::out) is det.
 
-:- pred set(mh_tuple::in, T::in, mh_tuple_map::in, mh_tuple_map::out)
+:- pred set(mh_tuple::in, T::in, mh_tuple_map(T)::in, mh_tuple_map(T)::out)
 	is det.
 	
 :- pred set(mh_tuple::in, mh_tuple_set::in, mh_tuple_set::out) is det.
@@ -107,25 +107,25 @@
 	mh_tuple_set::out) is det.
 
 :- pred update(mh_tuple::in, T::in, mh_tuple_map(T)::in, 
-	mh_tuple_map::out) is semidet.
+	mh_tuple_map(T)::out) is semidet.
 	
 :- pred det_update(mh_tuple::in, T::in, mh_tuple_map(T)::in, 
-	mh_tuple_map::out) is det.
+	mh_tuple_map(T)::out) is det.
 	
 %-----------------------------------------------------------------------------%
 % Removal
 
 :- pred remove(mh_tuple::in, T::out, mh_tuple_map(T)::in, 
-	mh_tuple_map::out) is semidet.
+	mh_tuple_map(T)::out) is semidet.
 	
 :- pred det_remove(mh_tuple::in, T::out, mh_tuple_map(T)::in, 
-	mh_tuple_map::out) is det.
+	mh_tuple_map(T)::out) is det.
 	
 :- pred delete(mh_tuple::in,  mh_tuple_map(T)::in, 
-	mh_tuple_map::out) is det.
+	mh_tuple_map(T)::out) is det.
 
 :- pred delete_list(list(mh_tuple)::in, mh_tuple_map(T)::in, 
-	mh_tuple_map::out) is det.
+	mh_tuple_map(T)::out) is det.
 	
 %-----------------------------------------------------------------------------%
 % Set operations
@@ -199,7 +199,6 @@
 :- implementation.
 
 :- import_module lazy.
-:- import_module array.
 :- import_module pair.
 :- import_module require.
 :- use_module map.
@@ -248,8 +247,6 @@ count(Map, count(Map)).
 equal(tuple_map(M1, _), tuple_map(M2, _)) :- map.equal(M1, M2).
 
 force_pattern_map(tuple_map(_, Lazy)) :- _ = force(Lazy).
-
-:- pragma promise_impure(force_pattern_map/1).
 
 force_pattern_map(!Map) :-
 	impure force_pattern_map(!.Map).
@@ -382,7 +379,7 @@ det_update(Tuple, Value, !Map) :-
 
 remove(Tuple, Value, tuple_map(!.E, !.L), tuple_map(!:E, !:L)) :-
 	Array = to_array(Tuple),
-	map.remove(Array, Value, !E)
+	map.remove(Array, Value, !E),
 	promise_pure 
 		(if impure read_if_val(!.L, P0)
 		then
@@ -402,7 +399,7 @@ det_remove(Tuple, Value, !Map) :-
 	
 delete(Tuple, !Map) :- array_delete(to_array(Tuple), !Map).
 	Array = to_array(Tuple),
-	map.delete(Array, !E)
+	map.delete(Array, !E),
 	promise_pure 
 		(if impure read_if_val(!.L, P0)
 		then
@@ -464,10 +461,10 @@ fold_exact(F, K, V, A) = F(from_array(K), V).
 det_fold(F, M, A) = fold(F, M, A).
 semidet_fold(F, M, A) = fold(F, M, A).
 
-fold(F, M A, fold(F, M, A)).
+fold(F, M, A, fold(F, M, A)).
 
 map(F, tuple_map(E0, _)) = 
-	tuple_map(E@map.map_values(map_exact(F), E0)), delay_pattern(E)).
+	tuple_map(E@map.map_values(map_exact(F), E0), delay_pattern(E)).
 
 :- func map_exact(func(mh_tuple, T) = U, array(mh_term), T) = U.
 	

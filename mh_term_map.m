@@ -88,7 +88,7 @@
 :- pred det_insert_from_list(list(mh_term)::in, mh_term_set::in, 
 	mh_term_set::out) is det.
 
-:- pred set(mh_term::in, T::in, mh_term_map::in, mh_term_map::out)
+:- pred set(mh_term::in, T::in, mh_term_map(T)::in, mh_term_map(T)::out)
 	is det.
 	
 :- pred set(mh_term::in, mh_term_set::in, mh_term_set::out) is det.
@@ -103,7 +103,7 @@
 	mh_term_set::out) is det.
 
 :- pred update(mh_term::in, T::in, mh_term_map(T)::in, 
-	mh_term_map::out) is semidet.
+	mh_term_map(T)::out) is semidet.
 	
 :- pred det_update(mh_term::in, T::in, mh_term_map(T)::in, 
 	mh_term_map(T)::out) is det.
@@ -111,20 +111,20 @@
 %-----------------------------------------------------------------------------%
 % Removal
 
-:- pred remove(mh_term::in, T::out, mh_term_map(T)::in, mh_term_map::out)
+:- pred remove(mh_term::in, T::out, mh_term_map(T)::in, mh_term_map(T)::out)
 	is semidet.
 	
 :- pred remove(mh_term::in, mh_term_set::in, mh_term_set::out) is semidet.
 	
 :- pred det_remove(mh_term::in, T::out, mh_term_map(T)::in, 
-	mh_term_map::out) is det.
+	mh_term_map(T)::out) is det.
 	
 :- pred det_remove(mh_term::in, mh_term_set::in, mh_term_set::out) is det.
 	
-:- pred delete(mh_term::in,  mh_term_map(T)::in, mh_term_map::out) is det.
+:- pred delete(mh_term::in,  mh_term_map(T)::in, mh_term_map(T)::out) is det.
 
 :- pred delete_list(list(mh_term)::in, mh_term_map(T)::in, 
-	mh_term_map::out) is det.
+	mh_term_map(T)::out) is det.
 	
 %-----------------------------------------------------------------------------%
 % Set operations

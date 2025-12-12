@@ -62,7 +62,7 @@
 	;		value(mh_value)
 	
 	% compound terms (cons stands for 'constructor')
-	;		cons(mh_term, mh_tuple) % F(A1, A2, A3).
+	;		cons(mh_term, mh_tuple). % F(A1, A2, A3).
 	
 :- inst concrete
 	--->	atom(ground)

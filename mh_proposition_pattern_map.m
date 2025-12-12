@@ -30,7 +30,7 @@
 
 :- type substitution_proposition_map(T) 
 	== mh_substitution_map(mh_proposition_map(T)).
-:- type member_proposition_map(T) = mh_proposition_map(mh_proposition_map(T)).
+:- type member_proposition_map(T) == mh_proposition_map(mh_proposition_map(T)).
 :- type term_proposition_map(T) == mh_term_map(mh_proposition_map(T)).
 
 
@@ -52,19 +52,17 @@
 :- pred init(proposition_pattern_map(_)::out) is det.
 
 :- func singleton(mh_proposition, T) = proposition_pattern_map(T).
-:- func array_singleton(mh_proposition, array(mh_term), T) = 
-	proposition_pattern_map(T).
 
 :- pred is_empty(proposition_pattern_map(_)::in) is semidet.
 
-:- func from_exact_map(map(mh_proposition, T)) = proposition_pattern_map(T).
+:- func from_exact_map(map.map(mh_proposition, T)) = proposition_pattern_map(T).
 
 %-----------------------------------------------------------------------------%
 % Insertion
 
 % does not modify map if proposition is already present
-:- pred insert(mh_proposition::in, T::in, proposition_pattern_map::in,
-	proposition_pattern_map::out)	is det.
+:- pred insert(mh_proposition::in, T::in, proposition_pattern_map(T)::in,
+	proposition_pattern_map(T)::out)	is det.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -72,8 +70,6 @@
 
 :- import_module int.
 :- import_module require.
-
-:- import_module mh_term_map.
 
 %-----------------------------------------------------------------------------%
 % Proposition Pattern map

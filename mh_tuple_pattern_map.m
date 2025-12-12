@@ -17,8 +17,8 @@
 
 :- use_module map.
 :- import_module array.
-:- import_module pair.
 :- import_module list.
+:- import_module assoc_list.
 
 :- import_module mh_term_map.
 :- import_module mh_term.
@@ -64,11 +64,11 @@
 	tuple_pattern_map(T)::in, tuple_pattern_map(T)::out) is det.
 
 :- pred array_insert_from_corresponding_lists(list(mh_tuple)::in, 
-	list(array(mh_term))::in, list(array(mh_term)), list(T)::in, 
-	tuple_exact_map(T)::in, tuple_exact_map(T)::out) is det.
+	list(array(mh_term))::in, list(array(mh_term))::in, list(T)::in, 
+	tuple_pattern_map(T)::in, tuple_pattern_map(T)::out) is det.
 
-:- pred set(mh_tuple::in, T::in, tuple_pattern_map::in, tuple_pattern_map::out)
-	is det.
+:- pred set(mh_tuple::in, T::in, tuple_pattern_map(T)::in, 
+	tuple_pattern_map(T)::out) is det.
 	
 :- pred set_from_corresponding_lists(list(mh_tuple)::in, list(T)::in,
 	tuple_pattern_map(T)::in, tuple_pattern_map(T)::out) is det.
@@ -80,24 +80,24 @@
 	tuple_pattern_map(T)::in, tuple_pattern_map(T)::out) is det.
 	
 :- pred array_set_from_corresponding_lists(list(mh_tuple)::in, 
-	list(array(mh_term))::in, list(array(mh_term)), list(T)::in, 
-	tuple_exact_map(T)::in, tuple_exact_map(T)::out) is det.	
+	list(array(mh_term))::in, list(array(mh_term))::in, list(T)::in, 
+	tuple_pattern_map(T)::in, tuple_pattern_map(T)::out) is det.	
 	
 %-----------------------------------------------------------------------------%
 % Removal
 
 	
-:- pred delete(mh_tuple::in,  tuple_exact_map(T)::in, 
-	tuple_exact_map::out) is det.
+:- pred delete(mh_tuple::in,  tuple_pattern_map(T)::in, 
+	tuple_pattern_map(T)::out) is det.
 
-:- pred delete_list(list(mh_tuple)::in, tuple_exact_map(T)::in, 
-	tuple_exact_map::out) is det.
+:- pred delete_list(list(mh_tuple)::in, tuple_pattern_map(T)::in, 
+	tuple_pattern_map(T)::out) is det.
 	
-:- pred array_delete(array(mh_term)::in,  tuple_exact_map(T)::in, 
-	tuple_exact_map::out) is det.
+:- pred array_delete(array(mh_term)::in,  tuple_pattern_map(T)::in, 
+	tuple_pattern_map(T)::out) is det.
 
-:- pred array_delete_list(list(array(mh_term))::in, tuple_exact_map(T)::in, 
-	tuple_exact_map::out) is det.
+:- pred array_delete_list(list(array(mh_term))::in, tuple_pattern_map(T)::in, 
+	tuple_pattern_map(T)::out) is det.
 	
 
 %-----------------------------------------------------------------------------%
@@ -106,18 +106,18 @@
 	% Retreive the array of term maps associated with the tuple's arity
 	% If none is found, create one.
 
-:- func get_pattern_array(tuple_pattern_map(T), int) = pattern_array(T)).
+:- func get_pattern_array(tuple_pattern_map(T), int) = pattern_array(T).
 
 :- pred get_pattern_array(tuple_pattern_map(T)::in, int::in, 
 	pattern_array(T)::out) is det.
 	
-:- func find_pattern_array(tuple_pattern_map(T), int) = pattern_array(T))
+:- func find_pattern_array(tuple_pattern_map(T), int) = pattern_array(T)
 	is semidet.
 	
 :- pred find_pattern_array(tuple_pattern_map(T)::in, int::in, 
 	pattern_array(T)::out) is semidet.
 	
-:- pred set_pattern_array(int::in, pattern_array::in, 
+:- pred set_pattern_array(int::in, pattern_array(T)::in, 
 	tuple_pattern_map(T)::in, tuple_pattern_map(T)::out) is det.
 
 
@@ -185,8 +185,7 @@
 :- implementation.
 
 :- import_module int.
-
-:- import_module mh_term_map.
+:- import_module pair.
 
 %-----------------------------------------------------------------------------%
 % Tuple Pattern map
@@ -239,7 +238,7 @@ array_insert(TupleArray, T, !Map) :-
 	= element_map(T).
 
 pattern_array_map_insert(TupleArray, T, !.Map, Index) = !:Map :-
-	array.unsafe_lookup(TupleArray, Index, Term)
+	array.unsafe_lookup(TupleArray, Index, Term),
 	get_exact_map(!.Map, Term, OldExactMap),
 	(if map.insert(TupleArray, T, OldExactMap, NewExactMap)
 	then 
@@ -302,7 +301,7 @@ array_set(TupleArray, T, !Map) :-
 	= element_map(T).
 
 pattern_array_set(TupleArray, T, !.Map, Index) = !:Map :-
-	array.unsafe_lookup(TupleArray, Index, Term)
+	array.unsafe_lookup(TupleArray, Index, Term),
 	get_exact_map(!.Map, Term, OldExactMap),
 	mh_tuple_exact_map.array_set(TupleArray, T, OldExactMap,
 		NewExactMap),
@@ -354,7 +353,7 @@ array_delete(TupleArray, !Map) :-
 	= element_map(T).
 
 pattern_array_delete(TupleArray, !.Map, Index) = !:Map :-
-	array.unsafe_lookup(TupleArray, Index, Term)
+	array.unsafe_lookup(TupleArray, Index, Term),
 	get_exact_map(!.Map, Term, OldExactMap),
 	mh_tuple_exact_map.array_delete(TupleArray, T, OldExactMap,	NewExactMap),
 	(if mh_tuple_exact_map.is_empty(NewExactMap)
@@ -458,8 +457,8 @@ pattern_array_fold(F, Array, !A) :-
 	in, in) is det.
 :- mode pattern_array_fold(in(func(in, in, array_di) = array_uo is det), in, 
 	array_di, array_uo, in, in) is det.
-:- mode pattern_array_fold(in(func(in in,, in) = array_uo is det), in, in, 
-	array_uo, in, in) is det.
+:- mode pattern_array_fold(in(func(in, in, array_di) = array_uo is det), in, 
+	in,	array_uo, in, in) is det.
 	
 do_pattern_array_fold(F, Array, !A, I, Max) :-
 	(if I > Max 

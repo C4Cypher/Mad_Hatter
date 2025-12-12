@@ -33,33 +33,30 @@
 
 :- type substitution_pattern_map(T) 
 	--->	pattern_map(
-				var_map :: var_substitution_map(T)
-				term_map :: term_substitution_map(T),
+				var_map :: var_substitution_map(T),
+				term_map :: term_substitution_map(T)
 			).
 
 :- func init = (substitution_pattern_map(_)::out) is det.
 :- pred init(substitution_pattern_map(_)::out) is det.
 
 :- func singleton(mh_substitution, T) = substitution_pattern_map(T).
-:- func array_singleton(mh_substitution, array(mh_term), T) = 
-	substitution_pattern_map(T).
 
 :- pred is_empty(substitution_pattern_map(_)::in) is semidet.
 
-:- func from_exact_map(map(mh_substitution, T)) = substitution_pattern_map(T).
+:- func from_exact_map(map.map(mh_substitution, T)) 
+	= substitution_pattern_map(T).
 
 %-----------------------------------------------------------------------------%
 % Insertion
 
 % does not modify map if substitution is already present
-:- pred insert(mh_substitution::in, T::in, substitution_pattern_map::in,
-	substitution_pattern_map::out)	is det.
+:- pred insert(mh_substitution::in, T::in, substitution_pattern_map(T)::in,
+	substitution_pattern_map(T)::out)	is det.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 :- implementation.
-
-:- import_module mh_term_map.
 
 %-----------------------------------------------------------------------------%
 % Substitution Pattern map
