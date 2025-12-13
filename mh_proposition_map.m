@@ -22,16 +22,16 @@
 :- import_module mh_proposition.
 
 %-----------------------------------------------------------------------------%
-% Relation Map
+% Proposition Map
 
 :- type mh_proposition_map(T).
 :- type mh_proposition_set == mh_proposition_map(unit).
 
-:- func init = (mh_proposition_map(_)::uo) is det.
+:- func init = mh_proposition_map(_).
 :- pred init(mh_proposition_map(_)::out) is det.
 
-:- func eager_init = (mh_proposition_map(_)::uo) is det.
-:- pred eager_init(mh_proposition_set::uo) is det.
+:- func eager_init = mh_proposition_map(_).
+:- pred eager_init(mh_proposition_map(_)::out) is det.
 
 :- func singleton(mh_proposition, T) = mh_proposition_map(T).
 :- func singleton(mh_proposition) = mh_proposition_set.
@@ -50,7 +50,6 @@
 
 :- pred force_pattern_map(mh_proposition_map(T), mh_proposition_map(T)).
 :- mode force_pattern_map(in, out) is det.
-:- mode force_pattern_map(di, uo) is det.
 
 %-----------------------------------------------------------------------------%
 % Search
@@ -73,8 +72,8 @@ T::out) is semidet.
 :- pred insert(mh_proposition::in, T::in, mh_proposition_map(T)::in, 
 	mh_proposition_map(T)::out) is semidet.
 	
-:- pred insert(mh_proposition::in, mh_proposition_set::in, mh_proposition_set::out) 
-	is semidet.
+:- pred insert(mh_proposition::in, mh_proposition_set::in, 
+	mh_proposition_set::out) is semidet.
 	
 :- pred det_insert(mh_proposition::in, T::in, mh_proposition_map(T)::in, 
 	mh_proposition_map(T)::out) is det.
@@ -82,8 +81,8 @@ T::out) is semidet.
 :- pred det_insert(mh_proposition::in, mh_proposition_set::in, mh_proposition_set::out)
 	is det.
 	
-:- pred det_insert_from_corresponding_lists(list(mh_proposition)::in, list(T)::in,
-	mh_proposition_map(T)::in, mh_proposition_map(T)::out) is det.
+:- pred det_insert_from_corresponding_lists(list(mh_proposition)::in, 
+	list(T)::in, mh_proposition_map(T)::in, mh_proposition_map(T)::out) is det.
 	
 :- pred det_insert_from_assoc_list(assoc_list(mh_proposition, T)::in,
 	mh_proposition_map(T)::in, mh_proposition_map(T)::out) is det.
@@ -139,6 +138,8 @@ T::out) is semidet.
 
 :- func union(func(T, T) = T, mh_proposition_map(T), mh_proposition_map(T)) =
 	mh_proposition_map(T).
+:- mode union(in(func(in, in) = out is det), in, in) = out is det.
+:- mode union(in(func(in, in) = out is semidet), in, in) = out is semidet.
 
 :- pred union(func(T, T) = T, mh_proposition_map(T), mh_proposition_map(T),
 	mh_proposition_map(T)).
@@ -149,16 +150,20 @@ T::out) is semidet.
 :- pred set_union(mh_proposition_set::in, mh_proposition_set::in,
 	mh_proposition_set::out) is det.
 
-:- func intersect(func(T1, T2) = T3, mh_proposition_map(T1), mh_proposition_map(T2))
-	= mh_proposition_map(T3).
+:- func intersect(func(T1, T2) = T3, mh_proposition_map(T1), 
+	mh_proposition_map(T2)) = mh_proposition_map(T3).
+:- mode intersect(in(func(in, in) = out is det), in, in) = out is det.
+:- mode intersect(in(func(in, in) = out is semidet), in, in) = out is semidet.
 	
-:- pred intersect(func(T1, T2) = T3, mh_proposition_map(T1), mh_proposition_map(T2),
-	mh_proposition_map(T3)).
+:- pred intersect(func(T1, T2) = T3, mh_proposition_map(T1), 
+	mh_proposition_map(T2), mh_proposition_map(T3)).
 :- mode intersect(in(func(in, in) = out is det), in, in, out) is det.
 :- mode intersect(in(func(in, in) = out is semidet), in, in, out) is semidet.
 
-:- func set_intersect(mh_proposition_set, mh_proposition_set) = mh_proposition_set.
-:- pred set_intersect(mh_proposition_set::in, mh_proposition_set::in, mh_proposition_set::out) 
+:- func set_intersect(mh_proposition_set, mh_proposition_set)
+	= mh_proposition_set.
+:- pred set_intersect(mh_proposition_set::in, mh_proposition_set::in,
+	mh_proposition_set::out) 
 	is det.
 
 :- func difference(mh_proposition_map(T), mh_proposition_map(_)) =
@@ -179,7 +184,8 @@ T::out) is semidet.
 :- func det_fold(func(mh_proposition, T, A) = A, mh_proposition_map(T), A) = A.
 :- mode det_fold(in(func(in, in, in) = out is det), in, in) = out is det.
 
-:- func semidet_fold(func(mh_proposition, T, A) = A, mh_proposition_map(T), A) = A.
+:- func semidet_fold(func(mh_proposition, T, A) = A, mh_proposition_map(T), A) 
+	= A.
 :- mode semidet_fold(in(func(in, in, in) = out is semidet), in, in) = out 
 	is semidet.
 
@@ -189,9 +195,18 @@ T::out) is semidet.
 	is semidet.
 :- mode fold(in(func(in, in, di) = uo is det), in, di, uo) is det.
 
-:- func map(func(mh_proposition, T) = U, mh_proposition_map(T)) = mh_proposition_map(U).
+:- pred fold2(pred(mh_proposition, T, A, A, B, B), mh_proposition_map(T), 
+	A, A, B, B).
+:- mode fold2(in(pred(in, in, in, out, in, out) is semidet), in, in, out, 
+	in,	out) is semidet.
+:- mode fold2(in(pred(in, in, in, out, in, out) is det), in, in, out, in, out)
+	is det.
+
+:- func map(func(mh_proposition, T) = U, mh_proposition_map(T))
+	= mh_proposition_map(U).
  
-:- pred map(func(mh_proposition, T) = U, mh_proposition_map(T), mh_proposition_map(U)).
+:- pred map(func(mh_proposition, T) = U, mh_proposition_map(T),
+	mh_proposition_map(U)).
 :- mode map(in(func(in, in) = out is det), in, out) is det.
 
 
@@ -206,10 +221,12 @@ T::out) is semidet.
 :- import_module pair.
 :- import_module require.
 
-:- use_module mh_proposition_pattern_map.
+:- import_module map_util.
+
+:- import_module mh_proposition_pattern_map.
 
 %-----------------------------------------------------------------------------%
-% Relation Map
+% Proposition Map
 
 :- type exact_map(T) == map.map(mh_proposition, T).
 :- type pattern_map(T) == mh_proposition_pattern_map.proposition_pattern_map(T).
@@ -219,7 +236,8 @@ T::out) is semidet.
 	---> 	proposition_map(exact_map(T), lazy_pattern_map(T)).
 	
 :- func delay_pattern(exact_map(T)) = lazy_pattern_map(T).
-delay_pattern(Exact) = delay(mh_proposition_pattern_map.from_exact_map(!.E)).
+delay_pattern(Exact) = delay(Closure) :-
+	Closure = ((func) = mh_proposition_pattern_map.from_exact_map(Exact)).
 :- pragma inline(delay_pattern/1).
 				
 init = proposition_map(map.init@Map, delay_pattern(Map)).
@@ -228,28 +246,27 @@ init(init).
 eager_init = proposition_map(map.init, val(mh_proposition_pattern_map.init)).
 eager_init(eager_init).
 
-singleton(Rel, Value) = 
-	proposition_map(map.singleton(Rel, Value)@Map, 
-		delay(from_exact_map(Map))).
+singleton(Prop, Value) = 
+	proposition_map(map.singleton(Prop, Value)@Map, delay_pattern(Map)).
 		
-singleton(Relation) = singleton(Relation, unit).
+singleton(Prop) = singleton(Prop, unit).
 
-eager_singleton(Relation, Value) = 
-	proposition_map(map.singleton(Rel, Value),
-		val(mh_proposition_pattern_map.singleton(Relation, Value))).
+eager_singleton(Prop, Value) = 
+	proposition_map(map.singleton(Prop, Value),
+		val(mh_proposition_pattern_map.singleton(Prop, Value))).
 	
-eager_singleton(Relation) = eager_singleton(Relation, unit).
+eager_singleton(Prop) = eager_singleton(Prop, unit).
 
 is_empty(proposition_map(Map, _)) :- map.is_empty(Map).
-
-count(empty_proposition_map) = 0.
 
 count(proposition_map(Map, _)) = map.count(Map).
 count(Map, count(Map)).
 
 equal(proposition_map(M1, _), proposition_map(M2, _)) :- map.equal(M1, M2).
 
-force_pattern_map(proposition_map(_, Lazy)) :- _ = force(Lazy).
+force_pattern_map(proposition_map(_, Lazy)) :-  
+	_ = force(Lazy), 
+	impure private_builtin.imp.
 
 force_pattern_map(!Map) :-
 	impure force_pattern_map(!.Map).
@@ -260,47 +277,47 @@ force_pattern_map(!Map) :-
 %-----------------------------------------------------------------------------%
 % Search
 
-contains(proposition_map(Map, _), Relation) :- map.contains(Map, Relation).
+contains(proposition_map(Map, _), Prop) :- map.contains(Map, Prop).
 
-search(Map, Relation, search(Map, Relation)).
+search(Map, Prop, search(Map, Prop)).
 
-search(proposition_map(Map, _), Relation) = map.search(Map, Relation).
+search(proposition_map(Map, _), Prop) = map.search(Map, Prop).
 
-lookup(Map, Relation, lookup(Map, Relation)).
+lookup(Map, Prop, lookup(Map, Prop)).
 
-lookup(proposition_map(Map, _), Relation) = map.lookup(Map, Relation).
+lookup(proposition_map(Map, _), Prop) = map.lookup(Map, Prop).
 
 
 %-----------------------------------------------------------------------------%
 % Insertion
 
-insert(Relation, Value, proposition_map(!.E, !.L), proposition_map(!:E, !:L)) :-
-	map.insert(Relation, Value, !E),
+insert(Prop, Value, proposition_map(!.E, !.L), proposition_map(!:E, !:L)) :-
+	map.insert(Prop, Value, !E),
 	promise_pure 
 		(if impure read_if_val(!.L, P0)
 		then
-			mh_proposition_pattern_map.insert(Relation, Value, P0, P),
+			mh_proposition_pattern_map.insert(Prop, Value, P0, P),
 			!:L = val(P)
 		else
 			!:L = delay_pattern(!.E)
 		).
 		
-insert(Relation, !Set) :- insert(Relation, unit, !Set).	
+insert(Prop, !Set) :- insert(Prop, unit, !Set).	
 	
-det_insert(Relation, Value, !Map) :-
-	(if insert(Relation, Value, !Map)
+det_insert(Prop, Value, !Map) :-
+	(if insert(Prop, Value, !Map)
 	then !:Map = !.Map
 	else report_lookup_error(
 		"mh_proposition_map.det_insert: proposition aleady present in map", 
-		Relation, !.Map)
+		Prop, !.Map)
 	).
 
-det_insert(Relation, !Map) :-
-	(if insert(Relation, !Map)
+det_insert(Prop, !Map) :-
+	(if insert(Prop, !Map)
 	then !:Map = !.Map
 	else report_lookup_error(
 		"mh_proposition_map.det_insert: proposition aleady present in map", 
-		Relation, !.Map)
+		Prop, !.Map)
 	).	
 	
 det_insert_from_corresponding_lists([], [], !Map).
@@ -318,15 +335,14 @@ det_insert_from_assoc_list([K - V | KVs], !Map) :-
     det_insert_from_assoc_list(KVs, !Map).
 	
 det_insert_from_list([], !Set).
-det_insert_from_list([Relation | List]) :-
-	det_insert(Relation, !Set),
+det_insert_from_list([Prop | List], !Set) :-
+	det_insert(Prop, !Set),
 	det_insert_from_list(List, !Set).
 	
-set(Relation, Value, proposition_map(!.E, !.L), proposition_map(!:E, !:L)) :-
-	map.set(Relation, Value, !E),
-	!:L = delay_pattern(!.E).
+set(Prop, Value, proposition_map(!.E, _), proposition_map(!:E, L)) :-
+	map.set(Prop, Value, !E), L = delay_pattern(!.E).
 
-set(Relation, !Set) :- set(Relation, unit, !Set).
+set(Prop, !Set) :- set(Prop, unit, !Set).
 
 set_from_corresponding_lists([], [], !Map).
 set_from_corresponding_lists([], [_ | _], _, _) :-
@@ -343,45 +359,46 @@ set_from_assoc_list([K - V | KVs], !Map) :-
     set_from_assoc_list(KVs, !Map).
 	
 set_from_list([], !Set).
-set_from_list([Relation | List]) :-
-	set(Relation, !Set),
+set_from_list([Prop | List], !Set) :-
+	set(Prop, !Set),
 	set_from_list(List, !Set).	
 
-update(Relation, Value, proposition_map(!.E, !.L), proposition_map(!:E, !:L)) :-
-	map.update(Relation, Value, !E),
-	!:L = delay_pattern(!.E).
+update(Prop, Value, proposition_map(!.E, _), proposition_map(!:E, L)) :-
+	map.update(Prop, Value, !E), L = delay_pattern(!.E).
 
-det_update(Relation, Value, !Map) :-	
-	(if update(Relation, Value, !Map)
+det_update(Prop, Value, !Map) :-	
+	(if update(Prop, Value, !Map)
 	then !:Map = !.Map
 	else report_lookup_error(
 		"mh_proposition_map.det_update: proposition not present in map", 
-			Relation, !.Map)
+			Prop, !.Map)
 	).
 	
 %-----------------------------------------------------------------------------%
 % Removal
 
-remove(Relation, Value, proposition_map(!.E, !.L), proposition_map(!:E, !:L)) :-
-	map.remove(Relation, Value, !E),
-	!:L = delay_pattern(!.E).
+remove(Prop, Value, proposition_map(!.E, _), proposition_map(!:E, L)) :-
+	map.remove(Prop, Value, !E), L = delay_pattern(!.E).
+	
+remove(E, !Map) :- remove(E, _, !Map).
 
-det_remove(Relation, Value, !Map) :-	
-	(if remove(Relation, FoundVal, !Map)
+det_remove(Prop, Value, !Map) :-	
+	(if remove(Prop, FoundVal, !Map)
 	then !:Map = !.Map, Value = FoundVal
 	else report_lookup_error(
-		"mh_proposition_map.det_remove: proposition not present in map", Relation, 
+		"mh_proposition_map.det_remove: proposition not present in map", Prop, 
 		!.Map)
 	).
+	
+det_remove(E, !Map) :- det_remove(E, _, !Map).
 
-delete(Relation, proposition_map(!.E, !.L), proposition_map(!:E, !:L)) :-
-	map.delete(Relation, !E),
-	!:L = delay_pattern(!.E).
+delete(Prop, proposition_map(!.E, _), proposition_map(!:E, L)) :-
+	map.delete(Prop, !E), L = delay_pattern(!.E).
 		
 delete_list([], !Map).
-delete_list([Relation | Relations], !Map) :- 
-	delete(Relation, !Map),
-	delete_list(Relations, !Map).
+delete_list([Prop | Props], !Map) :- 
+	delete(Prop, !Map),
+	delete_list(Props, !Map).
 
 %-----------------------------------------------------------------------------%
 % Set operations
@@ -408,7 +425,7 @@ set_intersect(M1, M2) = intersect(merge_units, M1, M2).
 set_intersect(M1, M2, set_intersect(M1, M2)).
 	
 difference(proposition_map(E1, _), proposition_map(E2, _)) = 
-	proposition_map(E3@fold(difference_fold, M2, M1), delay_pattern(E3)).
+	proposition_map(E3@fold(difference_fold, E2, E1), delay_pattern(E3)).
 	
 :- func difference_fold(mh_proposition, _,	exact_map(T)) = 
 	exact_map(T).
@@ -428,6 +445,8 @@ det_fold(F, M, A) = fold(F, M, A).
 semidet_fold(F, M, A) = fold(F, M, A).
 
 fold(F, M, A, fold(F, M, A)).
+
+fold2(P, proposition_map(E, _), !A, !B) :- foldl2(P, E, !A, !B).
 
 map(F, proposition_map(E0, _)) = 
 	proposition_map(E@map.map_values(F, E0), delay_pattern(E)).

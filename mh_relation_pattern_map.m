@@ -16,19 +16,17 @@
 :- interface.
 
 :- use_module map.
-:- import_module list.
-:- import_module assoc_list.
 
 :- import_module mh_relation_map.
 :- import_module mh_term_map.
 :- import_module mh_proposition_map.
-:- import_module mh_term.
 :- import_module mh_relation.
 
 %-----------------------------------------------------------------------------%
 % Relation Pattern map
 
 :- type term_relation_map(T) == mh_term_map(mh_relation_map(T)).
+:- type prop_relation_map(T) == mh_proposition_map(mh_relation_map(T)).
 
 :- type relation_pattern_map(T) 
 	--->	pattern_map(
@@ -42,7 +40,7 @@
 				lambda_unification_lhs_map :: term_relation_map(T),
 				lambda_unification_rhs_map :: term_relation_map(T),
 				lazy_map :: term_relation_map(T),
-				proposition_map ::	mh_proposition_map(mh_relation_map(T)),
+				proposition_map ::	prop_relation_map(T),
 				closure_map :: mh_relation_map(T),
 				function_map :: mh_relation_map(T)
 			).
@@ -67,9 +65,15 @@
 %-----------------------------------------------------------------------------%
 :- implementation.
 
+% :- import_module list.
+% :- import_module assoc_list.
+:- import_module array.
 :- import_module int.
 :- import_module require.
 
+:- import_module mh_term.
+:- import_module mh_ordered_term_set.
+:- import_module mh_proposition.
 
 %-----------------------------------------------------------------------------%
 % Relation Pattern map
@@ -95,7 +99,11 @@ singleton(Relation, T) = Map :- insert(Relation, T, init, Map).
 
 is_empty(init). % All descendants have empty constructors
 
-from_exact_map(Exact) = map.foldl(insert, Exact, init).
+:- func insert_pattern(mh_relation, T, relation_pattern_map(T)) 
+	= relation_pattern_map(T).
+insert_pattern(P, V, !.Map) = !:Map :- insert(P, V, !Map).
+
+from_exact_map(Exact) = map.foldl(insert_pattern, Exact, init).
 
 %-----------------------------------------------------------------------------%
 % Insertion
@@ -115,15 +123,17 @@ trm_insert(Rel, Val, Term, !TM) :-
 		else
 			det_insert(Term, singleton(Rel, Val), !TM)
 		).
+		
+insert(nil, _, Map, Map).
 	
 insert(Rel@conjunction(_, OS), Value, !Map) :-
-	CM = !.Map ^ conjuction_map,
-	NewCM = foldl(trm_insert(Rel, Value), to_array(OS), CM),
+	CM = !.Map ^ conjunction_map,
+	foldl(trm_insert(Rel, Value), to_array(OS), CM, NewCM),
 	!:Map = !.Map ^ conjunction_map := NewCM.
 	
 insert(Rel@disjunction(_, OS), Value, !Map) :-
 	DM = !.Map ^ disjunction_map,
-	NewDM = foldl(trm_insert(Rel, Value), to_array(OS), DM),
+	foldl(trm_insert(Rel, Value), to_array(OS), DM, NewDM),
 	!:Map = !.Map ^ disjunction_map := NewDM.
 	
 insert(Rel@not(_, Term), Value, !Map) :-
@@ -160,9 +170,9 @@ insert(Rel@lazy(_, Term), Value, !Map) :-
 	trm_insert(Rel, Value, Term, LazyMap, NewLazyMap),
 	!:Map = !.Map ^ lazy_map := NewLazyMap.
 
-%- pred prop_map_insert(Relation, Value, Term, !TRM).
-:- pred prop_map_insert(mh_relation::in, T::in, mh_term::in, 
-	term_relation_map(T)::in, term_relation_map(T)::out) is det.
+%- pred prop_map_insert(Relation, Value, Prop, !TRM).
+:- pred prop_map_insert(mh_relation::in, T::in, mh_proposition::in, 
+	prop_relation_map(T)::in, prop_relation_map(T)::out) is det.
 
 prop_map_insert(Rel, Val, Prop, !TM) :-
 		(if search(!.TM, Prop, RM)
@@ -173,7 +183,7 @@ prop_map_insert(Rel, Val, Prop, !TM) :-
 			else true
 			)
 		else
-			det_insert(Term, singleton(Rel, Val), !TM)
+			det_insert(Prop, singleton(Rel, Val), !TM)
 		).
 	
 insert(Rel@proposition(_, Prop), Value, !Map) :-

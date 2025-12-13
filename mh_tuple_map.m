@@ -29,11 +29,11 @@
 :- type mh_tuple_map(T).
 :- type mh_tuple_set == mh_tuple_map(unit).
 
-:- func init = (mh_tuple_map(_)::uo) is det.
-:- pred init(mh_tuple_set::uo) is det.
+:- func init = mh_tuple_map(_).
+:- pred init(mh_tuple_set::out) is det.
 
-:- func eager_init = (mh_tuple_map(_)::uo) is det.
-:- pred eager_init(mh_tuple_set::uo) is det.
+:- func eager_init = mh_tuple_map(_).
+:- pred eager_init(mh_tuple_map(_)::out) is det.
 
 :- func singleton(mh_tuple, T) = mh_tuple_map(T).
 :- func singleton(mh_tuple) = mh_tuple_set.
@@ -52,7 +52,6 @@
 
 :- pred force_pattern_map(mh_tuple_map(T), mh_tuple_map(T)).
 :- mode force_pattern_map(in, out) is det.
-:- mode force_pattern_map(di, uo) is det.
 
 %-----------------------------------------------------------------------------%
 % Search
@@ -118,8 +117,12 @@
 :- pred remove(mh_tuple::in, T::out, mh_tuple_map(T)::in, 
 	mh_tuple_map(T)::out) is semidet.
 	
+:- pred remove(mh_tuple::in, mh_tuple_set::in, mh_tuple_set::out) is semidet.
+	
 :- pred det_remove(mh_tuple::in, T::out, mh_tuple_map(T)::in, 
 	mh_tuple_map(T)::out) is det.
+	
+:- pred remove(mh_tuple::in, mh_tuple_set::in, mh_tuple_set::out) is det.
 	
 :- pred delete(mh_tuple::in,  mh_tuple_map(T)::in, 
 	mh_tuple_map(T)::out) is det.
@@ -134,7 +137,6 @@
 	mh_tuple_map(T).
 :- mode union(in(func(in, in) = out is det), in, in) = out is det.
 :- mode union(in(func(in, in) = out is semidet), in, in) = out is semidet.
-
 
 :- pred union(func(T, T) = T, mh_tuple_map(T), mh_tuple_map(T), 
 	mh_tuple_map(T)).
@@ -216,9 +218,9 @@
 :- type mh_tuple_map(T)
 	--->	tuple_map(exact_map(T), lazy_pattern_map(T)).
 
-
 :- func delay_pattern(exact_map(T)) = lazy_pattern_map(T).
-delay_pattern(Exact) = delay(mh_tuple_pattern_map.from_exact_map(!.E)).
+delay_pattern(Exact) = delay(Closure) :-
+	Closure = ((func) = mh_tuple_pattern_map.from_exact_map(Exact)).
 :- pragma inline(delay_pattern/1).
 
 init = tuple_map(map.init@Map, delay_pattern(Map)).
@@ -228,8 +230,7 @@ eager_init = tuple_map(map.init, val(mh_tuple_pattern_map.init)).
 eager_init(eager_init).
 	
 singleton(Tuple, Value) = 
-	tuple_map(map.singleton(to_array(Tuple), Value)@Map, 
-		delay(from_exact_map(Map))).
+	tuple_map(map.singleton(Tuple, Value)@Map, delay_pattern(Map)).
 		
 singleton(Tuple) = singleton(Tuple, unit).
 
@@ -246,7 +247,9 @@ count(Map, count(Map)).
 
 equal(tuple_map(M1, _), tuple_map(M2, _)) :- map.equal(M1, M2).
 
-force_pattern_map(tuple_map(_, Lazy)) :- _ = force(Lazy).
+force_pattern_map(tuple_map(_, Lazy)) :-  
+	_ = force(Lazy), 
+	impure private_builtin.imp.
 
 force_pattern_map(!Map) :-
 	impure force_pattern_map(!.Map).
@@ -316,7 +319,7 @@ det_insert_from_assoc_list([K - V | KVs], !Map) :-
     det_insert_from_assoc_list(KVs, !Map).
 	
 det_insert_from_list([], !Set).
-det_insert_from_list([Tuple | List]) :-
+det_insert_from_list([Tuple | List], !Set) :-
 	det_insert(Tuple, !Set),
 	det_insert_from_list(List, !Set).
 	
@@ -350,7 +353,7 @@ set_from_assoc_list([K - V | KVs], !Map) :-
     set_from_assoc_list(KVs, !Map).
 	
 set_from_list([], !Set).
-set_from_list([Tuple | List]) :-
+set_from_list([Tuple | List], !Set) :-
 	set(Tuple, !Set),
 	set_from_list(List, !Set).
 	
@@ -388,6 +391,8 @@ remove(Tuple, Value, tuple_map(!.E, !.L), tuple_map(!:E, !:L)) :-
 		else
 			!:L = delay_pattern(!.E)
 		).
+	
+remove(E, !Map) :- remove(E, _, !Map).
 
 det_remove(Tuple, Value, !Map) :-	
 	(if remove(Tuple, FoundVal, !Map)
@@ -396,6 +401,8 @@ det_remove(Tuple, Value, !Map) :-
 		"mh_tuple_map.det_remove: tuple not present in map", Tuple, 
 		!.Map)
 	).
+	
+det_remove(E, !Map) :- det_remove(E, _, !Map).
 	
 delete(Tuple, !Map) :- array_delete(to_array(Tuple), !Map).
 	Array = to_array(Tuple),
@@ -439,7 +446,7 @@ set_intersect(M1, M2) = intersect(merge_units, M1, M2).
 set_intersect(M1, M2, set_intersect(M1, M2)).
 	
 difference(tuple_map(E1, _), tuple_map(E2, _)) = 
-	tuple_map(E3@fold(difference_fold, M2, M1), delay_pattern(E3)).
+	tuple_map(E3@fold(difference_fold, E2, E1), delay_pattern(E3)).
 	
 :- func difference_fold(array(mh_term), _,	exact_map(T)) = 
 	exact_map(T).

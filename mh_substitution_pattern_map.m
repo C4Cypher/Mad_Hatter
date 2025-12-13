@@ -71,7 +71,11 @@ singleton(Sub, T) = Map :- insert(Sub, T, init, Map).
 
 is_empty(init). % All descendants have empty constructors
 
-from_exact_map(Exact) = map.foldl(insert, Exact, init).
+:- func insert_pattern(mh_substitution, T, substitution_pattern_map(T)) 
+	= substitution_pattern_map(T).
+insert_pattern(P, V, !.Map) = !:Map :- insert(P, V, !Map).
+
+from_exact_map(Exact) = map.foldl(insert_pattern, Exact, init).
 
 %-----------------------------------------------------------------------------%
 % Insertion
@@ -81,7 +85,7 @@ from_exact_map(Exact) = map.foldl(insert, Exact, init).
 	var_substitution_map(T)::in, var_substitution_map(T)::out) is det.
 
 vsm_insert(Sub, Val, Var, !VM) :-
-		(if search(!.TM, Var, SM)
+		(if search(!.VM, Var, SM)
 		then
 			(if insert(Sub, Val, SM, NewSM)
 			then

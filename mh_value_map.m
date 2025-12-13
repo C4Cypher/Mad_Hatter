@@ -105,11 +105,26 @@
 :- mode fold(in(func(in, in, in) = out is det), in, in) = out is det.
 :- mode fold(in(func(in, in, in) = out is semidet), in, in) = out 
 	is semidet.
+	
+:- func det_fold(func(mh_value, T, A) = A, mh_value_map(T), A)
+	= A.
+:- mode det_fold(in(func(in, in, in) = out is det), in, in) = out is det.
+
+:- func semidet_fold(func(mh_value, T, A) = A, mh_value_map(T),
+	A) = A.
+:- mode semidet_fold(in(func(in, in, in) = out is semidet), in, in) = out 
+	is semidet.
 
 :- pred fold(func(mh_value, T, A) = A, mh_value_map(T), A, A).
 :- mode fold(in(func(in, in, in) = out is det), in, in, out) is det.
 :- mode fold(in(func(in, in, in) = out is semidet), in, in, out) 
 	is semidet.
+	
+:- pred fold2(pred(mh_value, T, A, A, B, B), mh_value_map(T), A, A, B, B).
+:- mode fold2(in(pred(in, in, in, out, in, out) is semidet), in, in, out, 
+	in,	out) is semidet.
+:- mode fold2(in(pred(in, in, in, out, in, out) is det), in, in, out, in, out)
+	is det.
 
 :- func map(func(mh_value, T) = U, mh_value_map(T)) = mh_value_map(U).
  
@@ -205,13 +220,25 @@ difference(Map1, Map2, difference(Map1, Map2)).
 %-----------------------------------------------------------------------------%
 % Higher Order
 
-fold(F, mh_value_map(Map), A) = univ_map.fold(value_fold(F), Map, A).
-
 :- func value_fold(func(mh_value, T, A) = A, univ, T, A) = A.
 
 value_fold(F, Univ, T, A) = F(mr_value(Univ), T, A).
 
+fold(F, mh_value_map(Map), A) = univ_map.fold(value_fold(F), Map, A).
+
+det_fold(F, M, A) = fold(F, M, A).
+semidet_fold(F, M, A) = fold(F, M, A).
+
 fold(F, Map, A, fold(F, Map, A)).
+
+:- pred value_fold2(pred(mh_value, T, A, A, B, B), univ, T, A, A, B, B).
+:- mode value_fold2(in(pred(in, in, in, out, in, out) is det), in, in, 
+	in, out, in, out) is det.
+:- mode value_fold2(in(pred(in, in, in, out, in, out) is semidet), in, in, 
+	in, out, in, out) is semidet.
+
+fold2(P, mh_value_map(Map), !A, !B) :- 
+	univ_map.fold2(value_fold2(P), Map, !A, !B). 
 
 map(F, mh_value_map(Map)) = mh_value_map(univ_map.map(value_map(F), Map)).
 

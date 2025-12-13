@@ -199,7 +199,11 @@ array_singleton(Tuple, Array, T) = Map :-
 
 is_empty(init).
 
-from_exact_map(Exact) = map.foldl(array_insert, Exact, map.init).
+:- func insert_pattern(mh_tuple, T, tuple_pattern_map(T)) 
+	= tuple_pattern_map(T).
+insert_pattern(P, V, !.Map) = !:Map :- array_insert(P, V, !Map).
+
+from_exact_map(Exact) = map.foldl(insert_pattern, Exact, map.init).
 
 %-----------------------------------------------------------------------------%
 % Insertion

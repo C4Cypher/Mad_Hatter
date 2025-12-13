@@ -164,6 +164,15 @@
 :- mode fold(in(func(in, in, in) = out is semidet), in, in) = out 
 	is semidet.
 
+:- func det_fold(func(mh_term, T, A) = A, mh_term_map(T), A)
+	= A.
+:- mode det_fold(in(func(in, in, in) = out is det), in, in) = out is det.
+
+:- func semidet_fold(func(mh_term, T, A) = A, mh_term_map(T),
+	A) = A.
+:- mode semidet_fold(in(func(in, in, in) = out is semidet), in, in) = out 
+	is semidet.
+
 :- pred fold(func(mh_term, T, A) = A, mh_term_map(T), A, A).
 :- mode fold(in(func(in, in, in) = out is det), in, in, out) is det.
 :- mode fold(in(func(in, in, in) = out is semidet), in, in, out) is semidet.
@@ -502,6 +511,8 @@ remove(relation(Rel), T, !Map) :-
 	mh_relation_map.remove(Symbol, T, Rels0, Rels),
 	!:Map = construct_term_map(Atoms, Vars, Vals, Cons, Rels).
 	
+remove(E, !Map) :- remove(E, _, !Map).
+	
 det_remove(Term, T, !Map) :-	
 	(if remove(Term, FoundT, !Map)
 	then !:Map = !.Map, T = FoundT
@@ -509,6 +520,8 @@ det_remove(Term, T, !Map) :-
 		"mh_term_map.det_remove: term not present in map", Term, 
 		!.Map)
 	).
+	
+det_remove(E, !Map) :- det_remove(E, _, !Map).
 	
 delete(atom(Symbol), !Map) :-
 	!.Map = term_map(Atoms0, Vars, Vals, Cons, Rels),
@@ -668,6 +681,9 @@ cons_fold(F, Tuple, T, A) =
 	is semidet.
 	
 relation_fold(F, R, T, A) = F(relation(R), T, A).
+
+det_fold(F, M, A) = fold(F, M, A).
+semidet_fold(F, M, A) = fold(F, M, A).
 	
 %---------------------%
 

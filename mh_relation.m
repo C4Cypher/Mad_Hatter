@@ -15,15 +15,12 @@
 
 :- interface.
 
-:- import_module univ.
-
 :- import_module mh_ordered_term_set.
 :- import_module mh_scope.
 :- import_module mh_term.
 :- import_module mh_proposition.
 :- import_module mh_foreign_function.
 :- import_module mh_tuple.
-:- import_module mh_term_map.
 :- import_module mh_substitution.
 
 %-----------------------------------------------------------------------------%
@@ -154,8 +151,8 @@
 :- pred relation_subterms(mh_relation::in, mh_tuple::out) is semidet.
 
 % Return an empty tuple if there are no subterms.
-:- func det_relation_subterms(mh_term) = mh_tuple is det.
-:- pred det_relation_subterms(mh_term::in, mh_tuple::out) is det.
+:- func det_relation_subterms(mh_relation) = mh_tuple.
+:- pred det_relation_subterms(mh_relation::in, mh_tuple::out) is det.
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
@@ -183,3 +180,10 @@ relation_subterms(_) = sorry($module, $pred, "relation_subterms/1").
 :- pragma no_determinism_warning(relation_subterms/1).
 
 relation_subterms(R, relation_subterms(R)).
+
+
+det_relation_subterms(_) = sorry($module, $pred, "det_relation_subterms/1").
+
+:- pragma no_determinism_warning(det_relation_subterms/1).
+
+det_relation_subterms(R, det_relation_subterms(R)).

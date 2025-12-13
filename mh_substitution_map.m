@@ -27,11 +27,11 @@
 :- type mh_substitution_map(T).
 :- type mh_substitution_set == mh_substitution_map(unit).
 
-:- func init = (mh_substitution_map(_)::uo) is det.
+:- func init = mh_substitution_map(_).
 :- pred init(mh_substitution_map(_)::out) is det.
 
-:- func eager_init = (mh_substitution_map(_)::uo) is det.
-:- pred eager_init(mh_substitution_set::uo) is det.
+:- func eager_init = mh_substitution_map(_).
+:- pred eager_init(mh_substitution_map(_)::out) is det.
 
 :- func singleton(mh_substitution, T) = mh_substitution_map(T).
 :- func singleton(mh_substitution) = mh_substitution_set.
@@ -51,7 +51,6 @@
 
 :- pred force_pattern_map(mh_substitution_map(T), mh_substitution_map(T)).
 :- mode force_pattern_map(in, out) is det.
-:- mode force_pattern_map(di, uo) is det.
 
 %-----------------------------------------------------------------------------%
 % Search
@@ -141,6 +140,8 @@ T::out) is semidet.
 
 :- func union(func(T, T) = T, mh_substitution_map(T), mh_substitution_map(T))
 	= mh_substitution_map(T).
+:- mode union(in(func(in, in) = out is det), in, in) = out is det.
+:- mode union(in(func(in, in) = out is semidet), in, in) = out is semidet.
 
 :- pred union(func(T, T) = T, mh_substitution_map(T), mh_substitution_map(T),
 	mh_substitution_map(T)).
@@ -154,6 +155,8 @@ T::out) is semidet.
 
 :- func intersect(func(T1, T2) = T3, mh_substitution_map(T1),
 	mh_substitution_map(T2)) = mh_substitution_map(T3).
+:- mode intersect(in(func(in, in) = out is det), in, in) = out is det.
+:- mode intersect(in(func(in, in) = out is semidet), in, in) = out is semidet.
 	
 :- pred intersect(func(T1, T2) = T3, mh_substitution_map(T1),
 	mh_substitution_map(T2), mh_substitution_map(T3)).
@@ -195,6 +198,13 @@ T::out) is semidet.
 	is semidet.
 :- mode fold(in(func(in, in, di) = uo is det), in, di, uo) is det.
 
+:- pred fold2(pred(mh_substitution, T, A, A, B, B), mh_substitution_map(T), 
+	A, A, B, B).
+:- mode fold2(in(pred(in, in, in, out, in, out) is semidet), in, in, out, 
+	in,	out) is semidet.
+:- mode fold2(in(pred(in, in, in, out, in, out) is det), in, in, out, in, out)
+	is det.
+
 :- func map(func(mh_substitution, T) = U, mh_substitution_map(T))
 	= mh_substitution_map(U).
  
@@ -214,6 +224,8 @@ T::out) is semidet.
 :- import_module pair.
 :- import_module require.
 
+:- import_module map_util.
+
 :- import_module mh_var_map.
 :- import_module mh_term.
 
@@ -231,7 +243,8 @@ T::out) is semidet.
 	--->	substitution_map(exact_map(T), lazy_pattern_map(T)).
 	
 :- func delay_pattern(exact_map(T)) = lazy_pattern_map(T).
-delay_pattern(Exact) = delay(mh_substitution_pattern_map.from_exact_map(!.E)).
+delay_pattern(Exact) = delay(Closure) :-
+	Closure = ((func) = mh_substitution_pattern_map.from_exact_map(Exact)).
 :- pragma inline(delay_pattern/1).
 				
 init = substitution_map(map.init@Map, delay_pattern(Map)).
@@ -241,8 +254,7 @@ eager_init = substitution_map(map.init, val(mh_substitution_pattern_map.init)).
 eager_init(eager_init).
 
 singleton(Sub, Value) = 
-	substitution_map(map.singleton(Sub, Value)@Map, 
-		delay(from_exact_map(Map))).
+	substitution_map(map.singleton(Sub, Value)@Map, delay_pattern(Map)).
 		
 singleton(Sub) = singleton(Sub, unit).
 
@@ -254,14 +266,14 @@ eager_singleton(Sub) = eager_singleton(Sub, unit).
 
 is_empty(substitution_map(Map, _)) :- map.is_empty(Map).
 
-count(empty_substitution_map) = 0.
-
 count(substitution_map(Map, _)) = map.count(Map).
 count(Map, count(Map)).
 
 equal(substitution_map(M1, _), substitution_map(M2, _)) :- map.equal(M1, M2).
 
-force_pattern_map(substitution_map(_, Lazy)) :- _ = force(Lazy).
+force_pattern_map(substitution_map(_, Lazy)) :-  
+	_ = force(Lazy), 
+	impure private_builtin.imp.
 
 force_pattern_map(!Map) :-
 	impure force_pattern_map(!.Map).
@@ -330,13 +342,12 @@ det_insert_from_assoc_list([K - V | KVs], !Map) :-
     det_insert_from_assoc_list(KVs, !Map).
 	
 det_insert_from_list([], !Set).
-det_insert_from_list([Sub | List]) :-
+det_insert_from_list([Sub | List], !Set) :-
 	det_insert(Sub, !Set),
 	det_insert_from_list(List, !Set).
 	
-set(Sub, Value, substitution_map(!.E, !.L), substitution_map(!:E, !:L)) :-
-	map.set(to_var_map(Sub), Value, !E),
-	!:L = delay_pattern(!.E).
+set(Sub, Value, substitution_map(!.E, _), substitution_map(!:E, L)) :-
+	map.set(to_var_map(Sub), Value, !E), L = delay_pattern(!.E).
 
 set(Sub, !Set) :- set(Sub, unit, !Set).
 
@@ -355,13 +366,13 @@ set_from_assoc_list([K - V | KVs], !Map) :-
     set_from_assoc_list(KVs, !Map).
 	
 set_from_list([], !Set).
-set_from_list([Sub | List]) :-
+set_from_list([Sub | List], !Set) :-
 	set(Sub, !Set),
 	set_from_list(List, !Set).	
 
-update(Sub, Value, substitution_map(!.E, !.L), substitution_map(!:E, !:L)) :-
+update(Sub, Value, substitution_map(!.E, _), substitution_map(!:E, L)) :-
 	map.update(to_var_map(Sub), Value, !E),
-	!:L = delay_pattern(!.E).
+	L = delay_pattern(!.E).
 
 det_update(Sub, Value, !Map) :-	
 	(if update(Sub, Value, !Map)
@@ -374,9 +385,11 @@ det_update(Sub, Value, !Map) :-
 %-----------------------------------------------------------------------------%
 % Removal
 
-remove(Sub, Value, substitution_map(!.E, !.L), substitution_map(!:E, !:L)) :-
+remove(Sub, Value, substitution_map(!.E, _), substitution_map(!:E, L)) :-
 	map.remove(to_var_map(Sub), Value, !E),
-	!:L = delay_pattern(!.E).
+	L = delay_pattern(!.E).
+	
+remove(E, !Map) :- remove(E, _, !Map).
 
 det_remove(Sub, Value, !Map) :-	
 	(if remove(Sub, FoundVal, !Map)
@@ -385,10 +398,12 @@ det_remove(Sub, Value, !Map) :-
 		"mh_substitution_map.det_remove: substitution not present in map", 
 		Sub, !.Map)
 	).
+	
+det_remove(E, !Map) :- det_remove(E, _, !Map).
 
-delete(Sub, substitution_map(!.E, !.L), substitution_map(!:E, !:L)) :-
+delete(Sub, substitution_map(!.E, _), substitution_map(!:E, L)) :-
 	map.delete(to_var_map(Sub), !E),
-	!:L = delay_pattern(!.E).
+	L = delay_pattern(!.E).
 		
 delete_list([], !Map).
 delete_list([Sub | Subs], !Map) :- 
@@ -420,7 +435,7 @@ set_intersect(M1, M2) = intersect(merge_units, M1, M2).
 set_intersect(M1, M2, set_intersect(M1, M2)).
 	
 difference(substitution_map(E1, _), substitution_map(E2, _)) = 
-	substitution_map(E3@fold(difference_fold, M2, M1), delay_pattern(E3)).
+	substitution_map(E3@fold(difference_fold, E2, E1), delay_pattern(E3)).
 	
 :- func difference_fold(mh_substitution, _,	exact_map(T)) = 
 	exact_map(T).
@@ -448,6 +463,8 @@ det_fold(F, M, A) = fold(F, M, A).
 semidet_fold(F, M, A) = fold(F, M, A).
 
 fold(F, M, A, fold(F, M, A)).
+
+fold2(P, substitution_map(E, _), !A, !B) :- foldl2(P, E, !A, !B).
 
 map(F, substitution_map(E0, _)) = 
 	substitution_map(E@map.map_values(F, E0), delay_pattern(E)).

@@ -16,13 +16,10 @@
 :- interface.
 
 :- use_module map.
-:- import_module list.
-:- import_module assoc_list.
 
 :- import_module mh_proposition_map.
 :- import_module mh_term_map.
 :- import_module mh_substitution_map.
-:- import_module mh_term.
 :- import_module mh_proposition.
 
 %-----------------------------------------------------------------------------%
@@ -55,7 +52,8 @@
 
 :- pred is_empty(proposition_pattern_map(_)::in) is semidet.
 
-:- func from_exact_map(map.map(mh_proposition, T)) = proposition_pattern_map(T).
+:- func from_exact_map(map.map(mh_proposition, T)) 
+	= proposition_pattern_map(T).
 
 %-----------------------------------------------------------------------------%
 % Insertion
@@ -69,7 +67,13 @@
 :- implementation.
 
 :- import_module int.
-:- import_module require.
+% :- import_module require.
+:- import_module array.
+
+:- import_module mh_substitution.
+:- import_module mh_term.
+:- import_module mh_ordered_proposition_set.
+:- import_module mh_ordered_term_set.
 
 %-----------------------------------------------------------------------------%
 % Proposition Pattern map
@@ -93,14 +97,18 @@ singleton(Proposition, T) = Map :- insert(Proposition, T, init, Map).
 
 is_empty(init). % All descendants have empty constructors
 
-from_exact_map(Exact) = map.foldl(insert, Exact, init).
+:- func insert_pattern(mh_proposition, T, proposition_pattern_map(T)) 
+	= proposition_pattern_map(T).
+insert_pattern(P, V, !.Map) = !:Map :- insert(P, V, !Map).
+
+from_exact_map(Exact) = map.foldl(insert_pattern, Exact, init).
 
 %-----------------------------------------------------------------------------%
 % Insertion
 
 %- pred pm_insert(Proposition, Value, !PM).
 :- pred pm_insert(mh_proposition::in, T::in, 
-	substitution_proposition_map(T)::in, substitution_proposition_map(T)::out) is det.
+	mh_proposition_map(T)::in, mh_proposition_map(T)::out) is det.
 
 pm_insert(Prop, Val, !PM) :-
 	(if insert(Prop, Val, !.PM, NewPM)
@@ -113,7 +121,7 @@ pm_insert(Prop, Val, !PM) :-
 	substitution_proposition_map(T)::in, substitution_proposition_map(T)::out) is det.
 
 spm_insert(Prop, Val, Sub, !SPM) :-
-		(if search(!.TM, Sub, PM)
+		(if search(!.SPM, Sub, PM)
 		then
 			(if insert(Prop, Val, PM, NewPM)
 			then
@@ -125,11 +133,11 @@ spm_insert(Prop, Val, Sub, !SPM) :-
 		).
 
 %- pred mpm_insert(Member, Value, Proposition, !MPM).
-:- pred mpm_insert(mh_proposition::in, T::in, mh_term::in, 
-	term_proposition_map(T)::in, term_proposition_map(T)::out) is det.
+:- pred mpm_insert(mh_proposition::in, T::in, mh_proposition::in, 
+	member_proposition_map(T)::in, member_proposition_map(T)::out) is det.
 
 mpm_insert(Prop, Val, Member, !MPM) :-
-		(if search(!.TM, Member, PM)
+		(if search(!.MPM, Member, PM)
 		then
 			(if insert(Prop, Val, PM, NewPM)
 			then
@@ -174,7 +182,7 @@ insert(Prop@proposition_fail(_), Value, !Map) :-
 	
 insert(Prop@proposition_true, Value, !Map) :-
 	SM = !.Map ^ success_map,
-	spm_insert(Prop, Value, init, SM, NewSM),
+	spm_insert(Prop, Value, init_sub, SM, NewSM),
 	!:Map = !.Map ^ success_map := NewSM.
 	
 insert(Prop@proposition_successs(Sub), Value, !Map) :-
@@ -182,33 +190,33 @@ insert(Prop@proposition_successs(Sub), Value, !Map) :-
 	spm_insert(Prop, Value, Sub, SM, NewSM),
 	!:Map = !.Map ^ success_map := NewSM.
 	
-insert(Prop@disjunction(OS), Value, !Map) :-
+insert(Prop@proposition_disj(OS), Value, !Map) :-
 	DM = !.Map ^ disjunction_map,
-	NewDM = foldl(mpm_insert(Prop, Value), to_array(OS), DM),
+	foldl(mpm_insert(Prop, Value), to_array(OS), DM, NewDM),
 	!:Map = !.Map ^ disjunction_map := NewDM.
 	
-insert(Prop@conjunction(OS), Value, !Map) :-
-	CM = !.Map ^ conjuction_map,
-	NewCM = foldl(mpm_insert(Prop, Value), to_array(OS), CM),
+insert(Prop@proposition_conj(OS), Value, !Map) :-
+	CM = !.Map ^ conjunction_map,
+	foldl(mpm_insert(Prop, Value), to_array(OS), CM, NewCM),
 	!:Map = !.Map ^ conjunction_map := NewCM.
 	
-insert(Prop@proposition_neg(Neg), Value, !Map) :-
+insert(proposition_neg(Neg), Value, !Map) :-
 	NegMap = !.Map ^ negation_map,
-	mpm_insert(Prop, Value, Neg, NegMap, NewNegMap),
+	pm_insert(Neg, Value, NegMap, NewNegMap),
 	!:Map = !.Map ^ negation_map := NewNegMap.
 	
 insert(Prop@proposition_unification(OS), Value, !Map) :-
 	UM = !.Map ^ unification_map,
-	NewUM = foldl(tpm_insert(Prop, Value), to_array(OS), UM),
+	foldl(tpm_insert(Prop, Value), to_array(OS), UM, NewUM),
 	!:Map = !.Map ^ unification_map := NewUM.
 	
 insert(Prop@proposition_branch(Cond, Then, Else), Value, !Map) :-	
 	CondMap = !.Map ^ condition_branch_map,
 	ThenMap = !.Map ^ then_branch_map,
 	ElseMap = !.Map ^ else_branch_map,
-	tpm_insert(Prop, Value, Cond, CondMap, NewCondMap),
-	tpm_insert(Prop, Value, Then, ThenMap, NewThenMap),
-	tpm_insert(Prop, Value, Else, ElseMap, NewElseMap),
+	mpm_insert(Prop, Value, Cond, CondMap, NewCondMap),
+	mpm_insert(Prop, Value, Then, ThenMap, NewThenMap),
+	mpm_insert(Prop, Value, Else, ElseMap, NewElseMap),
 	!:Map = !.Map ^ condition_branch_map := NewCondMap,
 	!:Map = !.Map ^ then_branch_map := NewThenMap,
 	!:Map = !.Map ^ else_branch_map := NewElseMap.

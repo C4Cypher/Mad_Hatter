@@ -17,7 +17,6 @@
 
 :- import_module list.
 :- import_module array.
-:- import_module set.
 
 :- import_module ordered_set.
 
@@ -43,9 +42,9 @@
 
 :- pred is_empty(mh_ordered_proposition_set::in) is semidet.
 
-:- func singleton(T) = mh_ordered_proposition_set.
+:- func singleton(mh_proposition) = mh_ordered_proposition_set.
 
-:- pred singleton(T::in, mh_ordered_proposition_set::out) is det.
+:- pred singleton(mh_proposition::in, mh_ordered_proposition_set::out) is det.
 
 :- pred is_singleton(mh_ordered_proposition_set::in) is semidet.
 
@@ -177,7 +176,7 @@
 :- func det_search_all(mh_ordered_proposition_set, mh_proposition)
 	= list(int) is det.
 :- pred det_search_all(mh_ordered_proposition_set::in, mh_proposition::in,
-	set(int)::out) is det.
+	list(int)::out) is det.
 	
 	% return the lowest (leftmost) element, fails if the set is empty
 :- func first(mh_ordered_proposition_set) = mh_proposition is semidet.
@@ -185,18 +184,18 @@
 	is semidet.
 
 	% throw an exception if the set is empty
-:- func det_first(mh_ordered_proposition_set) = mh_proposition is semidet.
+:- func det_first(mh_ordered_proposition_set) = mh_proposition is det.
 :- pred det_first(mh_ordered_proposition_set::in, mh_proposition::out)
-	is semidet.
+	is det.
 
 	% return the highest (rightmost) element, fails if the set is empty
 :- func last(mh_ordered_proposition_set) = mh_proposition is semidet.
 :- pred last(mh_ordered_proposition_set::in, mh_proposition::out)
 	is semidet.
 	
-:- func det_last(mh_ordered_proposition_set) = mh_proposition is semidet.
+:- func det_last(mh_ordered_proposition_set) = mh_proposition is det.
 :- pred det_last(mh_ordered_proposition_set::in, mh_proposition::out)
-	is semidet.
+	is det.
 
 	
 %-----------------------------------------------------------------------------%
@@ -223,7 +222,8 @@
 	
 	% Given any proposition map (including mh_proposition_set),
 	% create an ordering using the given comparison function
-:- func to_ordered_proposition_set(comparison_func(T)::in(comparison_func),
+:- func to_ordered_proposition_set(
+	comparison_func(mh_proposition)::in(comparison_func),
 	mh_proposition_map(_)::in) = (mh_ordered_proposition_set::out) is det.
 
 
@@ -282,8 +282,6 @@
 :- import_module util.
 :- import_module array_util.
 
-:- import_module mh_proposition_map.
-
 
 % Variable naming
 % A == Array
@@ -331,11 +329,16 @@ os(O::out, S::out) = (OS::in) :-
 
 :- func new_proposition_set(proposition_array) = mh_proposition_set.
 
-new_proposition_set(A) = foldl(set, A, init).
+:- func set_fold(mh_proposition, mh_proposition_set) = mh_proposition_set
+	is det.
+	
+set_fold(E, !.Map) = !:Map :- set(E, !Map).
+
+new_proposition_set(A) = foldl(set_fold, A, init).
 
 :- pred valid_element(mh_proposition_set::in, mh_proposition::in) is semidet.
 
-valid_element(Set, Term) :- contains(Set, Term).
+valid_element(Set, Prop) :- contains(Set, Prop).
 
 is_valid(os(O, S)) :- all_true(valid_element(S), O).
 	
@@ -355,14 +358,17 @@ is_singleton(os(A, _)) :- size(A, 1).
 is_sorted(os(A, _)) :- is_sorted(A).
 	
 sort(os(O, S)) = os(sort(copy(O)), S).
+sort(OS, sort(OS)).
 
 sort_and_remove_dups(os(O, S)) = os(sort_and_remove_dups(O), S).
+sort_and_remove_dups(OS, sort_and_remove_dups(OS)).
 	
 remove_dups(os(Order, Set)@OS) =  
 	(if Order = NewOrder
 	then OS
 	else os(NewOrder, Set)
 	) :- remove_dups_stable(Order, NewOrder).
+remove_dups(OS, remove_dups(OS)).
 
 length(os(A, _)) = size(A).
 length(OS, length(OS)).
@@ -374,7 +380,8 @@ equal(os(A, _), os(A, _)).
 
 equivalent(os(_, M), os(_, M)).
 
-compare_ordered_proposition_sets(compare(M1, M2),	os(_, M1), 	os(_, M2)). 
+compare_ordered_proposition_sets(CMP, os(_, M1), os(_, M2)) :- 
+	compare(CMP, M1, M2). 
 
 
 %-----------------------------------------------------------------------------%
@@ -415,9 +422,7 @@ semidet_bounds(os(A, _), Min, Max) :-
 	Max = array.max(A) + 1.
 
 in_bounds(os(O, _), I) :- array.in_bounds(O, I - 1).
-in_set_bounds(os(_, S), I) :- array.in_bounds(S, I - 1).
 
-	
 min(os(A, _)) = 
 	(if size(A) = 0
 	then
@@ -433,12 +438,12 @@ semidet_min(os(A, _)) = array.min(A) :- size(A) > 0.
 semidet_min(OS, semidet_min(OS)).
 	
 max(os(A, _)) = 
-	(if array.max(A)@Amax < 0
+	(if Amax < 0
 	then
 		-1
 	else
 		Amax + 1
-	).
+	) :- Amax = array.max(A).
 	
 max(OS, max(OS)).
 
@@ -446,18 +451,18 @@ semidet_max(os(A, _)) = array.max(A) :- size(A) > 0.
 
 semidet_max(OS, semidet_max(OS)).
 
-contains(os(_, S), T) :- contains(OS, T).
+contains(os(_, S), T) :- contains(S, T).
 
 lookup(os(A, _), Index) = array.lookup(A, Index - 1).
 lookup(OS, Index, lookup(OS, Index)).
 
-unsafe_lookup(os(A, _), Index) = array.unsafe_lookup(A, Index - 1).
+unsafe_lookup(os(A, _), Index) = array.unsafe_elem(Index - 1, A).
 unsafe_lookup(OS, Index, unsafe_lookup(OS, Index)).
 
 search(os(O, _), Value) = Index + 1 :- search(O, Value, Index).
 search(OS, Value, search(OS, Value)).
 
-search_all(OS, Value) = det_search_all(OS, Value)@List :- is_not_empty(List).
+search_all(OS, Value) = det_search_all(OS, Value)@[_|_].
 search_all(OS, Value, search_all(OS, Value)).
 
 :- func search_fold(mh_proposition, int, mh_proposition, list(int)) 
@@ -469,47 +474,52 @@ search_fold(Search, Index, Found, List) =
 	else List
 	).
 
-det_search_all(os(O, _), Value) = index_fold(search_fold, O, []).
+det_search_all(os(O, _), Value) = index_fold(search_fold(Value), O, []).
 	
 	
 det_search_all(OS, Value, det_search_all(OS, Value)).
 
 first(OS) = lookup(OS, 1) :- size(OS) > 0.
+first(OS, first(OS)).
 
 det_first(OS) = (if First = first(OS) then First 
-	else error($pred, "Empty ordered set has no first element.")).
+	else func_error($pred, "Empty ordered set has no first element.")).
+det_first(OS, det_first(OS)).
 	
-last(OS) = lookup(OS, max(Os)@Max) :- Max > 0.
+last(OS) = lookup(OS, max(OS)@Max) :- Max > 0.
+last(OS, last(OS)).
 
 det_last(OS) = (if Last = last(OS) then Last 
-	else error($pred, "Empty ordered set has no last element.")).
+	else func_error($pred, "Empty ordered set has no last element.")).
+det_last(OS, det_last(OS)).
 
 %-----------------------------------------------------------------------------%
 % Ordering
 
 order_by(CMP, OS, order_by(CMP, OS)).
 
-order_by(CMP, os(O, S)) = os(O@samsort(CMP, copy(O)), S).
+order_by(CMP, os(O, S)) = os(samsort(CMP, copy(O)), S).
 
 reorder(CMP, OS, order_by(CMP, OS)).
 
-reorder(CMP, os(O, S)) = os(O@mergesort(CMP, copy(O)), S).
+reorder(CMP, os(O, S)) = os(mergesort(CMP, copy(O)), S).
 
 :- type unsorted_accumulator ---> usacc(int, proposition_array).
-:- inst unsorted_accumulator == usacc(ground, array_uniq).
+:- inst unsorted_accumulator ---> usacc(ground, uniq_array).
 
-:- func to_unsorted_array(mh_proposition_set::in) 
+:- func to_unsorted_array(mh_proposition_map(_)::in) 
 	= (proposition_array::array_uo) is det.
 
-:- func unsorted_insert(mh_proposition, unsorted_accumulator) 
-	= un_sorted_accumulator.
+:- func unsorted_insert(mh_proposition, T, unsorted_accumulator) = 
+	unsorted_accumulator.
 
-unsorted_insert(Term, usacc(Index, !.Array)) = usacc(Index + 1, !:Array) :-
-	unsafe_set(Index, !Array).
+unsorted_insert(Prop, _, usacc(Index, !.Array)) = usacc(Index + 1, !:Array) :-
+	unsafe_set(Index, Prop, !Array).
 	
 to_unsorted_array(Set) = Array :- %probably get a mode error,  
-	fold(unsorted_insert, Set, usacc(0, init(count(Set), init))) =
-		usacc(_, Array).
+	fold(unsorted_insert, Set, usacc(0, init(count(Set), 
+		proposition_error(message("Uninitialized proposition in array"))))) 
+		= usacc(_, Array).
 		
 :- func to_unit_map(mh_proposition_map(_)) = mh_proposition_set.
 
@@ -530,13 +540,14 @@ to_ordered_proposition_set(CMP, Map) =
 % Set operations
 
 %- pred union_and_contains(Element, !Union, !RevList).		
-:- pred union_and_contains(mh_proposition::in, mh_proposition_set::in, mh_proposition_set::out,
+:- pred union_and_contains(mh_proposition::in, 	mh_proposition_set::in,
+	mh_proposition_set::out,
 	list(mh_proposition)::in, list(mh_proposition)::out) is det.
 	
-union_and_contains(Term, !Union, !Rev) :-
-	(if insert(Term, !Union) % fails if already present 
+union_and_contains(Prop, !Union, !Rev) :-
+	(if insert(Prop, !Union) % fails if already present 
 	then 
-		!:Rev = [ Term | !.Rev], 
+		!:Rev = [ Prop | !.Rev], 
 		!:Union = !.Union % Jank if semantics requires then clause to bind var
 	else true
 	).
@@ -544,7 +555,7 @@ union_and_contains(Term, !Union, !Rev) :-
 union(OS1, OS2, union(OS1, OS2)).
 
 union(os(O1, S1), os(O2, _)) = os(O3, S3) :-
-	fold2(union_and_contains, O2, S1, S3, [], RevAppend),
+	foldl2(union_and_contains, O2, S1, S3, [], RevAppend),
 	O3 = append(O1, from_reverse_list(RevAppend)).
 	
 remove_dups_union(OS1, OS2, remove_dups_union(OS1, OS2)).
@@ -562,7 +573,7 @@ intersect_loop(Current, Last, O1, S2, !S3, !O3, !Size) :-
 	then true
 	else
 		unsafe_lookup(O1, Current, Element),
-		(if contains(Element, S2), insert(Element, !S3)
+		(if contains(S2, Element), insert(Element, !S3)
 		then
 			unsafe_set(!.Size, Element, !O3),
 			!:Size = !.Size + 1
@@ -573,7 +584,7 @@ intersect_loop(Current, Last, O1, S2, !S3, !O3, !Size) :-
 
 intersect(OS1, OS2, intersect(OS1, OS2)).
 	
-intersect(os(O1, S1)@OS1, os(O2, S2)@OS2) = OS3 :- 
+intersect(os(O1, _)@OS1, os(O2, S2)) = OS3 :- 
 	Size = size(O1),
 	(if Size = 1, unsafe_lookup(O1, 0, E), contains(S2, E) 
 	then OS3 = OS1 
@@ -598,7 +609,7 @@ difference_loop(Current, Last, O1, S2, !S3, !O3, !Size) :-
 	then true
 	else
 		unsafe_lookup(O1, Current, Element),
-		(if contains(Element, S2) 
+		(if contains(S2, Element) 
 		then true
 		else if insert(Element, !S3)
 		then
@@ -611,7 +622,7 @@ difference_loop(Current, Last, O1, S2, !S3, !O3, !Size) :-
 
 difference(OS1, OS2, difference(OS1, OS2)).
 	
-difference(os(O1, S1)@OS1, os(O2, S2)@OS2) = OS3 :- 
+difference(os(O1, _)@OS1, os(_, S2)) = OS3 :- 
 	Size = size(O1),
 	(if Size = 0
 	then OS3 = empty_set

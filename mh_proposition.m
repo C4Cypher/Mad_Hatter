@@ -18,13 +18,10 @@
 :- import_module list.
 :- import_module string.
 
-:- import_module ordered_set.
-
 :- import_module mh_term.
 :- import_module mh_ordered_term_set. 
 :- import_module mh_substitution.
 :- import_module mh_ordered_proposition_set.
-:- import_module mh_foreign_function.
 :- import_module mh_tuple.
 
 

@@ -27,11 +27,11 @@
 :- type mh_relation_map(T).
 :- type mh_relation_set == mh_relation_map(unit).
 
-:- func init = (mh_relation_map(_)::uo) is det.
+:- func init = mh_relation_map(_).
 :- pred init(mh_relation_map(_)::out) is det.
 
-:- func eager_init = (mh_relation_map(_)::uo) is det.
-:- pred eager_init(mh_relation_set::uo) is det.
+:- func eager_init = mh_relation_map(_).
+:- pred eager_init(mh_relation_map(_)::out) is det.
 
 :- func singleton(mh_relation, T) = mh_relation_map(T).
 :- func singleton(mh_relation) = mh_relation_set.
@@ -50,7 +50,6 @@
 
 :- pred force_pattern_map(mh_relation_map(T), mh_relation_map(T)).
 :- mode force_pattern_map(in, out) is det.
-:- mode force_pattern_map(di, uo) is det.
 
 %-----------------------------------------------------------------------------%
 % Search
@@ -136,6 +135,8 @@ T::out) is semidet.
 
 :- func union(func(T, T) = T, mh_relation_map(T), mh_relation_map(T)) =
 	mh_relation_map(T).
+:- mode union(in(func(in, in) = out is det), in, in) = out is det.
+:- mode union(in(func(in, in) = out is semidet), in, in) = out is semidet.
 
 :- pred union(func(T, T) = T, mh_relation_map(T), mh_relation_map(T),
 	mh_relation_map(T)).
@@ -148,6 +149,8 @@ T::out) is semidet.
 
 :- func intersect(func(T1, T2) = T3, mh_relation_map(T1), mh_relation_map(T2))
 	= mh_relation_map(T3).
+:- mode intersect(in(func(in, in) = out is det), in, in) = out is det.
+:- mode intersect(in(func(in, in) = out is semidet), in, in) = out is semidet.
 	
 :- pred intersect(func(T1, T2) = T3, mh_relation_map(T1), mh_relation_map(T2),
 	mh_relation_map(T3)).
@@ -186,6 +189,13 @@ T::out) is semidet.
 	is semidet.
 :- mode fold(in(func(in, in, di) = uo is det), in, di, uo) is det.
 
+:- pred fold2(pred(mh_relation, T, A, A, B, B), mh_relation_map(T), A, A,
+	B, B).
+:- mode fold2(in(pred(in, in, in, out, in, out) is semidet), in, in, out, 
+	in,	out) is semidet.
+:- mode fold2(in(pred(in, in, in, out, in, out) is det), in, in, out, in, out)
+	is det.
+
 :- func map(func(mh_relation, T) = U, mh_relation_map(T)) = mh_relation_map(U).
  
 :- pred map(func(mh_relation, T) = U, mh_relation_map(T), mh_relation_map(U)).
@@ -203,6 +213,8 @@ T::out) is semidet.
 :- import_module pair.
 :- import_module require.
 
+:- import_module map_util.
+
 :- use_module mh_relation_pattern_map.
 
 %-----------------------------------------------------------------------------%
@@ -216,7 +228,8 @@ T::out) is semidet.
 	--->	relation_map(exact_map(T), lazy_pattern_map(T)).
 	
 :- func delay_pattern(exact_map(T)) = lazy_pattern_map(T).
-delay_pattern(Exact) = delay(mh_relation_pattern_map.from_exact_map(!.E)).
+delay_pattern(Exact) = delay(Closure) :-
+	Closure = ((func) = mh_relation_pattern_map.from_exact_map(Exact)).
 :- pragma inline(delay_pattern/1).
 				
 init = relation_map(map.init@Map, delay_pattern(Map)).
@@ -226,27 +239,26 @@ eager_init = relation_map(map.init, val(mh_relation_pattern_map.init)).
 eager_init(eager_init).
 
 singleton(Rel, Value) = 
-	relation_map(map.singleton(Rel, Value)@Map, 
-		delay(from_exact_map(Map))).
+	relation_map(map.singleton(Rel, Value)@Map, delay_pattern(Map)).
 		
 singleton(Relation) = singleton(Relation, unit).
 
-eager_singleton(Relation, Value) = 
+eager_singleton(Rel, Value) = 
 	relation_map(map.singleton(Rel, Value),
-		val(mh_relation_pattern_map.singleton(Relation, Value))).
+		val(mh_relation_pattern_map.singleton(Rel, Value))).
 	
 eager_singleton(Relation) = eager_singleton(Relation, unit).
 
 is_empty(relation_map(Map, _)) :- map.is_empty(Map).
-
-count(empty_relation_map) = 0.
 
 count(relation_map(Map, _)) = map.count(Map).
 count(Map, count(Map)).
 
 equal(relation_map(M1, _), relation_map(M2, _)) :- map.equal(M1, M2).
 
-force_pattern_map(relation_map(_, Lazy)) :- _ = force(Lazy).
+force_pattern_map(relation_map(_, Lazy)) :-  
+	_ = force(Lazy), 
+	impure private_builtin.imp.
 
 force_pattern_map(!Map) :-
 	impure force_pattern_map(!.Map).
@@ -315,13 +327,12 @@ det_insert_from_assoc_list([K - V | KVs], !Map) :-
     det_insert_from_assoc_list(KVs, !Map).
 	
 det_insert_from_list([], !Set).
-det_insert_from_list([Relation | List]) :-
+det_insert_from_list([Relation | List], !Set) :-
 	det_insert(Relation, !Set),
 	det_insert_from_list(List, !Set).
 	
-set(Relation, Value, relation_map(!.E, !.L), relation_map(!:E, !:L)) :-
-	map.set(Relation, Value, !E),
-	!:L = delay_pattern(!.E).
+set(Relation, Value, relation_map(!.E, _), relation_map(!:E, L)) :-
+	map.set(Relation, Value, !E), L = delay_pattern(!.E).
 
 set(Relation, !Set) :- set(Relation, unit, !Set).
 
@@ -340,13 +351,13 @@ set_from_assoc_list([K - V | KVs], !Map) :-
     set_from_assoc_list(KVs, !Map).
 	
 set_from_list([], !Set).
-set_from_list([Relation | List]) :-
+set_from_list([Relation | List], !Set) :-
 	set(Relation, !Set),
 	set_from_list(List, !Set).	
 
-update(Relation, Value, relation_map(!.E, !.L), relation_map(!:E, !:L)) :-
+update(Relation, Value, relation_map(!.E, _), relation_map(!:E, L)) :-
 	map.update(Relation, Value, !E),
-	!:L = delay_pattern(!.E).
+	L = delay_pattern(!.E).
 
 det_update(Relation, Value, !Map) :-	
 	(if update(Relation, Value, !Map)
@@ -359,9 +370,11 @@ det_update(Relation, Value, !Map) :-
 %-----------------------------------------------------------------------------%
 % Removal
 
-remove(Relation, Value, relation_map(!.E, !.L), relation_map(!:E, !:L)) :-
+remove(Relation, Value, relation_map(!.E, _), relation_map(!:E, L)) :-
 	map.remove(Relation, Value, !E),
-	!:L = delay_pattern(!.E).
+	L = delay_pattern(!.E).
+	
+remove(E, !Map) :- remove(E, _, !Map).
 
 det_remove(Relation, Value, !Map) :-	
 	(if remove(Relation, FoundVal, !Map)
@@ -370,10 +383,12 @@ det_remove(Relation, Value, !Map) :-
 		"mh_relation_map.det_remove: relation not present in map", Relation, 
 		!.Map)
 	).
+	
+det_remove(E, !Map) :- det_remove(E, _, !Map).
 
-delete(Relation, relation_map(!.E, !.L), relation_map(!:E, !:L)) :-
+delete(Relation, relation_map(!.E, _), relation_map(!:E, L)) :-
 	map.delete(Relation, !E),
-	!:L = delay_pattern(!.E).
+	L = delay_pattern(!.E).
 		
 delete_list([], !Map).
 delete_list([Relation | Relations], !Map) :- 
@@ -405,7 +420,7 @@ set_intersect(M1, M2) = intersect(merge_units, M1, M2).
 set_intersect(M1, M2, set_intersect(M1, M2)).
 	
 difference(relation_map(E1, _), relation_map(E2, _)) = 
-	relation_map(E3@fold(difference_fold, M2, M1), delay_pattern(E3)).
+	relation_map(E3@fold(difference_fold, E2, E1), delay_pattern(E3)).
 	
 :- func difference_fold(mh_relation, _,	exact_map(T)) = 
 	exact_map(T).
@@ -425,6 +440,8 @@ det_fold(F, M, A) = fold(F, M, A).
 semidet_fold(F, M, A) = fold(F, M, A).
 
 fold(F, M, A, fold(F, M, A)).
+
+fold2(P, relation_map(E, _), !A, !B) :- foldl2(P, E, !A, !B).
 
 map(F, relation_map(E0, _)) = 
 	relation_map(E@map.map_values(F, E0), delay_pattern(E)).
