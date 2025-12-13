@@ -16,14 +16,13 @@
 :- interface.
 
 :- use_module map.
-:- import_module list.
-:- import_module assoc_list.
+% :- import_module list.
+% :- import_module assoc_list.
 
 :- import_module mh_substitution_map.
 :- import_module mh_term_map.
 :- import_module mh_term.
 :- import_module mh_var_map.
-:- import_module mh_substitution.
 
 %-----------------------------------------------------------------------------%
 % Substitution Pattern map
@@ -40,23 +39,25 @@
 :- func init = (substitution_pattern_map(_)::out) is det.
 :- pred init(substitution_pattern_map(_)::out) is det.
 
-:- func singleton(mh_substitution, T) = substitution_pattern_map(T).
+:- func singleton(mh_var_map(mh_term), T) = substitution_pattern_map(T).
 
 :- pred is_empty(substitution_pattern_map(_)::in) is semidet.
 
-:- func from_exact_map(map.map(mh_substitution, T)) 
+:- func from_exact_map(map.map(mh_var_map(mh_term), T)) 
 	= substitution_pattern_map(T).
 
 %-----------------------------------------------------------------------------%
 % Insertion
 
 % does not modify map if substitution is already present
-:- pred insert(mh_substitution::in, T::in, substitution_pattern_map(T)::in,
+:- pred insert(mh_var_map(mh_term)::in, T::in, substitution_pattern_map(T)::in,
 	substitution_pattern_map(T)::out)	is det.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 :- implementation.
+
+:- import_module mh_substitution.
 
 %-----------------------------------------------------------------------------%
 % Substitution Pattern map
@@ -67,24 +68,25 @@ init = pattern_map(
 ).
 init(init).
 
-singleton(Sub, T) = Map :- insert(Sub, T, init, Map).
+singleton(VarMap, T) = Map :- insert(VarMap, T, init, Map).
 
 is_empty(init). % All descendants have empty constructors
 
-:- func insert_pattern(mh_substitution, T, substitution_pattern_map(T)) 
+:- func insert_pattern(mh_var_map(mh_term), T, substitution_pattern_map(T)) 
 	= substitution_pattern_map(T).
-insert_pattern(P, V, !.Map) = !:Map :- insert(P, V, !Map).
+insert_pattern(VarMap, V, !.Map) = !:Map :- insert(VarMap, V, !Map).
 
 from_exact_map(Exact) = map.foldl(insert_pattern, Exact, init).
 
 %-----------------------------------------------------------------------------%
 % Insertion
 
-%- pred vsm_insert(Sub, Value, Var, !VSM).
+%- pred vsm_insert(VarMap, Value, Var, !VSM).
 :- pred vsm_insert(mh_var_map(mh_term)::in, T::in, mh_var::in, 
 	var_substitution_map(T)::in, var_substitution_map(T)::out) is det.
 
-vsm_insert(Sub, Val, Var, !VM) :-
+vsm_insert(VarMap, Val, Var, !VM) :-
+		Sub = sub_map(VarMap),
 		(if search(!.VM, Var, SM)
 		then
 			(if insert(Sub, Val, SM, NewSM)
@@ -96,11 +98,12 @@ vsm_insert(Sub, Val, Var, !VM) :-
 			det_insert(Var, singleton(Sub, Val), !VM)
 		).
 
-%- pred tsm_insert(Sub, Term, Value, !TSM).
+%- pred tsm_insert(VarMap, Term, Value, !TSM).
 :- pred tsm_insert(mh_var_map(mh_term)::in, mh_term::in, T::in, 
 	term_substitution_map(T)::in, term_substitution_map(T)::out) is det.
 
-tsm_insert(Sub, Term, Val, !TM) :-
+tsm_insert(VarMap, Term, Val, !TM) :-
+		Sub = sub_map(VarMap),
 		(if search(!.TM, Term, SM)
 		then
 			(if insert(Sub, Val, SM, NewSM)
@@ -112,16 +115,16 @@ tsm_insert(Sub, Term, Val, !TM) :-
 			det_insert(Term, singleton(Sub, Val), !TM)
 		).
 
-%- pred insert_fold(Sub, Value, Var, Term, !Pattern).	
+%- pred insert_fold(VarMap, Value, Var, Term, !Pattern).	
 :- pred insert_fold(mh_var_map(mh_term)::in, T::in, mh_var::in, mh_term::in,
 	substitution_pattern_map(T)::in, substitution_pattern_map(T)::out) is det.
 	
-insert_fold(Sub, Val, Var, Term, pattern_map(!.VSM, !.TSM), 
+insert_fold(VarMap, Val, Var, Term, pattern_map(!.VSM, !.TSM), 
 	pattern_map(!:VSM, !:TSM)) :-
-	vsm_insert(Sub, Val, Var, !VSM),
-	tsm_insert(Sub, Val, Term, !TSM).
+	vsm_insert(VarMap, Val, Var, !VSM),
+	tsm_insert(VarMap, Term, Val, !TSM).
 	
-insert(Sub, Value, !Map) :- fold(insert_fold(Sub, Value), !Map).
+insert(VarMap, Value, !Map) :- fold(insert_fold(VarMap, Value), VarMap, !Map).
 
 	
 	

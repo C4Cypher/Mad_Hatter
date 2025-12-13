@@ -254,13 +254,14 @@ eager_init = substitution_map(map.init, val(mh_substitution_pattern_map.init)).
 eager_init(eager_init).
 
 singleton(Sub, Value) = 
-	substitution_map(map.singleton(Sub, Value)@Map, delay_pattern(Map)).
+	substitution_map(map.singleton(to_var_map(Sub), Value)@Map, 
+		delay_pattern(Map)).
 		
 singleton(Sub) = singleton(Sub, unit).
 
 eager_singleton(Sub, Value) = 
-	substitution_map(map.singleton(Sub, Value),
-		val(mh_substitution_pattern_map.singleton(Sub, Value))).
+	substitution_map(map.singleton(to_var_map(Sub)@VarMap, Value),
+		val(mh_substitution_pattern_map.singleton(VarMap, Value))).
 	
 eager_singleton(Sub) = eager_singleton(Sub, unit).
 
@@ -299,11 +300,11 @@ lookup(substitution_map(Map, _), Sub) = map.lookup(Map, to_var_map(Sub)).
 % Insertion
 
 insert(Sub, Value, substitution_map(!.E, !.L), substitution_map(!:E, !:L)) :-
-	map.insert(to_var_map(Sub), Value, !E),
+	map.insert(to_var_map(Sub)@VarMap, Value, !E),
 	promise_pure 
 		(if impure read_if_val(!.L, P0)
 		then
-			mh_substitution_pattern_map.insert(Sub, Value, P0, P),
+			mh_substitution_pattern_map.insert(VarMap, Value, P0, P),
 			!:L = val(P)
 		else
 			!:L = delay_pattern(!.E)
@@ -437,7 +438,7 @@ set_intersect(M1, M2, set_intersect(M1, M2)).
 difference(substitution_map(E1, _), substitution_map(E2, _)) = 
 	substitution_map(E3@fold(difference_fold, E2, E1), delay_pattern(E3)).
 	
-:- func difference_fold(mh_substitution, _,	exact_map(T)) = 
+:- func difference_fold(mh_var_map(mh_term), _,	exact_map(T)) = 
 	exact_map(T).
 	
 difference_fold(Key, _, !.Map) = !:Map :-
@@ -456,6 +457,7 @@ fold(F, substitution_map(E, _), A) = fold(fold_sub(F), E, A).
 :- mode fold_sub(in(func(in, in, in) = out is det), in, in, in) = out is det.
 :- mode fold_sub(in(func(in, in, in) = out is semidet), in, in, in) = out 
 	is semidet.
+:- mode fold_sub(in(func(in, in, di) = uo is det), in, in, di) = uo is det.
 	
 fold_sub(F, K, V, A) = F(sub_map(K), V, A).
 	
@@ -464,9 +466,24 @@ semidet_fold(F, M, A) = fold(F, M, A).
 
 fold(F, M, A, fold(F, M, A)).
 
-fold2(P, substitution_map(E, _), !A, !B) :- foldl2(P, E, !A, !B).
+fold2(P, substitution_map(E, _), !A, !B) :- 
+	map.foldl2(fold2_sub(P), E, !A, !B).
+
+:- pred fold2_sub(pred(mh_substitution, T, A, A, B, B), mh_var_map(mh_term), 
+	T, A, A, B, B).
+:- mode fold2_sub(in(pred(in, in, in, out, in, out) is det), in, in, 
+	in, out, in, out) is det.
+:- mode fold2_sub(in(pred(in, in, in, out, in, out) is semidet), in, in, 
+	in, out, in, out) is semidet.
+	
+fold2_sub(P, K, V, !A, !B) :- P(sub_map(K), V, !A, !B).
 
 map(F, substitution_map(E0, _)) = 
-	substitution_map(E@map.map_values(F, E0), delay_pattern(E)).
+	substitution_map(E@map.map_values(map_sub(F), E0), delay_pattern(E)).
+
+:- func map_sub(func(mh_substitution, T) = U, mh_var_map(mh_term), T) = U.
+:- mode map_sub(in(func(in, in) = out is det), in, in) = out is det.
+
+map_sub(F, K, V) = F(sub_map(K), V).
 
 map(F, M, map(F, M)).
