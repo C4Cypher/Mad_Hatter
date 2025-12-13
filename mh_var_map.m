@@ -267,8 +267,8 @@
 	di, uo) is det.
 :- mode fold2_id(in(pred(in, in, in, out, in, out) is semidet), in, in, out, 
 	in, out) is semidet.
-:- mode fold2_id(in(pred(in, in, mdi, muo) is semidet), in, in, out, mdi, muo) 
-	is semidet.
+:- mode fold2_id(in(pred(in, in, in, out, mdi, muo) is semidet), in, in, out,
+	mdi, muo) is semidet.
 
 :- pred fold2(pred(mh_var, T, A, A, B, B), mh_var_map(T), A, A, B, B).
 :- mode fold2(in(pred(in, in, in, out, in, out) is det), in, in, out, in, out)
@@ -279,8 +279,8 @@
 	is det.
 :- mode fold2(in(pred(in, in, in, out, in, out) is semidet), in, in, out,
 	in, out) is semidet.
-:- mode fold2(in(pred(in, in, mdi, muo) is semidet), in, in, out, mdi, muo) 
-	is semidet.
+:- mode fold2(in(pred(in, in, in, out, mdi, muo) is semidet), in, in, 
+	out, mdi, muo) is semidet.
 	
 :- pred map_id(pred(var_id, T, U), mh_var_map(T), mh_var_map(U)).
 :- mode map_id(in(pred(in, in, out) is det), in, out) is det.

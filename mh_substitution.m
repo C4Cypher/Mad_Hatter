@@ -277,7 +277,8 @@ var_to_id(_, var(ID), ID).
 
 ren_to_sub(ren_map(!.Map), sub_map(!:Map)) :- 
 	map_id(id_to_var, !Map).
-ren_to_sub(Sub@sub_map(_), Sub).
+	
+ren_to_sub(Sub, Sub@sub_map(_)).
 
 ren_to_sub(!.Sub) = !:Sub :- ren_to_sub(!Sub).
 
@@ -288,9 +289,10 @@ id_to_var(_, ID, var(ID)).
 to_var_map(Sub) = Map :- ren_to_sub(Sub, sub_map(Map)).
 
 from_var_map(Map) = 
-	(if sub_to_ren(sub_map(Map)@NewSub, NewRen)
+	(if sub_to_ren(Sub, NewRen)
 	then NewRen
-	else NewSub).
+	else Sub) :- 
+	Sub = sub_map(Map).
 
 %-----------------------------------------------------------------------------%
 % Bounds

@@ -24,7 +24,7 @@
 :- import_module mh_var_set.
 :- import_module mh_substitution.
 :- import_module mh_term.
-:- import_module mh_relation.
+% :- import_module mh_relation.
 
 :- type mr_varset(T) == varset.varset(T).
 :- type mr_varset == varset.varset.
@@ -92,23 +92,23 @@
  
 	% Throws an exception if input mr_varset does not contain a complete set 
 	% of variable ids from 1 to N. Ignores any variable bindings in mr_varset
-:- func root_scope_from_mr_varset(mh_relation, mh_context, mr_varset) =
+:- func root_scope_from_mr_varset(/*mh_relation,*/ mh_context, mr_varset) =
 	mh_scope.
-:- pred root_scope_from_mr_varset(mh_relation::in, mh_context::in, 
+:- pred root_scope_from_mr_varset(/*mh_relation::in,*/ mh_context::in, 
 	mr_varset::in, mh_scope::out) is det.
 	
 	% A variant of the above call that renames the variables into a church 
 	% encoding, if not already, also if the variables were not already
 	% church endcoded, provides a variable renaming that will normalize the 
 	% variables to the new church encoding in the root scope
-:- pred root_scope_from_mr_varset(mh_relation::in, mh_context::in,
+:- pred root_scope_from_mr_varset(/*mh_relation::in,*/ mh_context::in,
 	mr_varset::in, mh_scope::out, maybe(mh_renaming)::out) is det.
 
 	% Generate a root scope from a context, varset and name mapping. If the
 	% varset is not church encoded (complete from 1 to N), provide a variable
 	% renaming that will normalize the variables to the new church encoding
 	% in the root scope
-:- pred root_scope_from_var_set(mh_relation::in, mh_context::in, 
+:- pred root_scope_from_var_set(/*mh_relation::in,*/ mh_context::in, 
 	mh_var_set::in, var_names::in, mh_scope::out, maybe(mh_renaming)::out) 
 	is det.
 
@@ -358,7 +358,7 @@ valid_child_scope(Parent, VarSet) :-
 
 equivalent_scopes(S, S).
 equivalent_scopes(S1, S2) :- 
-	scope_environment(S1) = scope_environment(S2), % Replace this, see above
+	%scope_environment(S1) = scope_environment(S2), % Replace this, see above
 	scope_vars(S1, Vars), scope_vars(S2, Vars),
 	all_true(equivalent_var_context(S1, S2), Vars).
 	
