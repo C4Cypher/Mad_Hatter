@@ -10,4 +10,7 @@
 # MCFLAGS-module += --flag
 # CFLAGS += -f|--flag
 
-CFLAGS += -Wno-unused-function
+# CFLAGS += -W no-unused-function
+
+# MCFLAGS += --output-compile-error-lines 5 # Isn't doing what I want
+# MCFLAGS += --intermodule-optimization
