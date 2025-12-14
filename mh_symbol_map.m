@@ -483,6 +483,7 @@
 :- func sm(hashmap(mh_symbol, T)) = mh_symbol_map(T).
 :- mode sm(in) = out is det.
 :- mode sm(out) = in is det.
+:- mode sm(di) = uo is det.
 
 sm(M) = symbol_map(M).
 

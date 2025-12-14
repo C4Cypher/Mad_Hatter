@@ -53,7 +53,6 @@
 % and postconditions.
 */
 
-% TODO: mh_relation_map and mh_relation_set
 :- type mh_relation
 	--->	nil		
 	%		The abscense of value, only unifies with nil
@@ -61,8 +60,7 @@
 	
 	;		conjunction(mh_scope, mh_ordered_term_set)
 	%		A relation that contains a set of terms, and succesfully unifies
-	%		with any member of the given set so long as every member of the
-	%		set unifies with each other, otherwise the entire expression fails
+	%		with any member of the given set
 	%		(a , b)(X) -> a(X) , b(X),  a = b, a(X) = b(X).
 	%		conjunction(_, []) == true. 
 
@@ -72,7 +70,7 @@
 	%		considered deterministic, representing the possibility that the
 	%		term could be any one of it's members
 	%		(a ; b)(X) == a(X) ; b(X).
-	% 		';'() == false. 
+	% 		disjunction(_, []) == false. 
 
 	;		not(mh_scope, mh_term)
 	%		'not'(a)(X) ==  a(X), false; not a(X).

@@ -144,46 +144,13 @@
 :- pred is_var(mh_term::is_var) is semidet.
 
 
-/* Depriciated
-
-%-----------------------------------------------------------------------------%
-%	Values
-
-:- inst value_term
-	--->	value(ground).
-
-:- type value_term =< mh_term
-	---> 	value(mh_value).
-	
-:- mode is_value == ground >> value_term.
-
-:- pred is_value(mh_term::is_value) is semidet.
-
-
-%-----------------------------------------------------------------------------%
-%	Mad Hatter constructors
-	
-:- inst mh_constructor ---> cons(ground, ground).
-	
-:- type mh_constructor =< mh_term
-	--->	cons(mh_term, mh_tuple).
-	
-:- mode mh_constructor == ground >> mh_constructor.
-
-:- pred mh_constructor(mh_term::mh_constructor) is semidet.
-
-
 %-----------------------------------------------------------------------------%
 % Relation terms
 
-:- inst relation_term 
-	--->	relation(ground).
-	
-:- type relation_term =< mh_term
-	--->	relation(mh_relation).
-*/	
-
 :- func nil_term = mh_term.
+%- func true_term = mh_term.
+%- func false_term = mh_term.
+%- func fail_term(string) = mh_term.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -196,11 +163,18 @@
 :- import_module list.
 
 %-----------------------------------------------------------------------------%
+% Concrete terms
+
+is_concrete(atom(_)).
+is_concrete(var(_)).
+is_concrete(value(_)).
+is_concrete(cons(_, _)).
+
+%-----------------------------------------------------------------------------%
 % Subterms
 
 %TODO: append for mh_tuple
-subterms(cons(Car, Cdr)) = 
-	list_tuple( [ Car | to_list(Cdr) ] ).
+subterms(cons(Car, Cdr)) = tuple_cons(Car, Cdr).
 
 subterms(relation(R)) = relation_subterms(R).
 		
@@ -209,9 +183,9 @@ subterms(Term, subterms(Term)).
 det_subterms(Term) = 
 	(if Subterms = subterms(Term) 
 	then 
-		SubTerms
+		Subterms
 	else 
-		list_tuple([]) 
+		from_list([]) 
 	).
 
 det_subterms(Term, det_subterms(Term)).
@@ -220,7 +194,6 @@ det_subterms(Term, det_subterms(Term)).
 
 ground_term(T) :-
 	require_complete_switch [T] (
-		T = nil; % nil is itself considered ground
 		T = atom(_);
 		T = var(_), fail;
 		T = value(_);
@@ -236,18 +209,13 @@ ground_term(T) = T :- ground_term(T).
 
 apply_term_substitution(Sub, !Term) :- 	require_complete_switch [!.Term] 
 	(
-		( 
-			!.Term = nil 
-		;	!.Term = atom(_) 
-		;	!.Term = value(_) 
-		), 
-		!:Term = !.Term 
-		
+		( 	!.Term = atom(_) ; !.Term = value(_) ), !:Term = !.Term 
+
 	;	!.Term = var(ID), sub_id_lookup(Sub, ID, !:Term)
 			
 	;	!.Term = cons(Car0, Cdr0),
 		apply_term_substitution(Sub, Car0, Car),
-		apply_tuple_substitution(Sub, Cdr0, Cdr),
+		apply_tuple_substiution(Sub, Cdr0, Cdr),
 		!:Term = cons(Car, Cdr)	
 	;	!.Term = relation(Rel0), 
 		apply_relation_substitution(Sub, Rel0, Rel),
@@ -255,29 +223,11 @@ apply_term_substitution(Sub, !Term) :- 	require_complete_switch [!.Term]
 	).
 
 apply_term_substitution(S, !.T) = !:T :- apply_term_substitution(S, !T).
-
-
-%-----------------------------------------------------------------------------%
-%	Atoms
-
-is_atom(atom(_)).
-
-
 		
 %-----------------------------------------------------------------------------%
 %	Variables
 
 is_var(var(_)).
-
-%-----------------------------------------------------------------------------%
-%	Values
-
-is_value(value(_)).
-
-%-----------------------------------------------------------------------------%
-%	Mad Hatter constructors
-
-mh_constructor(cons(_, _)).
 
 %-----------------------------------------------------------------------------%
 % Relation terms
@@ -305,7 +255,6 @@ mr_type_name(T) = type_name(type_of(T)).
 
 :- func term_description(mh_term) = string.
 
-term_description(nil) = "nil term".
 term_description(atom(Symbol)) = "atom """ ++ to_string(Symbol) ++ """".
 term_description(var(V)) = "variable with id " ++ string(V).
 term_description(value(M)) = 
@@ -313,6 +262,4 @@ term_description(value(M)) =
 term_description(cons(A, R)) = 
 	"constructor " ++ string(A) ++ "(" ++ mr_type_name(R) ++ ")".
 term_description(relation(_)) =
-	"mercury relation term".
-term_description(term_sub(Term, _)) =
-	"substitution of " ++ term_description(Term).
+	"mercury relation term". %TODO: Relation and proposition description
