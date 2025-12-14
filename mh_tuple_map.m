@@ -122,7 +122,7 @@
 :- pred det_remove(mh_tuple::in, T::out, mh_tuple_map(T)::in, 
 	mh_tuple_map(T)::out) is det.
 	
-:- pred remove(mh_tuple::in, mh_tuple_set::in, mh_tuple_set::out) is det.
+:- pred det_remove(mh_tuple::in, mh_tuple_set::in, mh_tuple_set::out) is det.
 	
 :- pred delete(mh_tuple::in,  mh_tuple_map(T)::in, 
 	mh_tuple_map(T)::out) is det.
@@ -154,8 +154,8 @@
 	
 :- pred intersect(func(T1, T2) = T3, mh_tuple_map(T1), mh_tuple_map(T2),
 	mh_tuple_map(T3)).
-:- mode func_intersect(in(func(in, in) = out is det), in, in, out) is det.
-:- mode func_intersect(in(func(in, in) = out is semidet), in, in, out)
+:- mode intersect(in(func(in, in) = out is det), in, in, out) is det.
+:- mode intersect(in(func(in, in) = out is semidet), in, in, out)
 	is semidet.
 
 :- func set_intersect(mh_tuple_set, mh_tuple_set) = mh_tuple_set.
