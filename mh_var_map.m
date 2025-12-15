@@ -451,7 +451,9 @@ init_first(S, ID, Index@0) :-
 	else unexpected($pred, "Unable to produce ID for new var map iterator")
 	).
 
-init_next(S, id_reverse_sparse_index(Index, S), Last, Index@(Last + 1) ).
+init_next(S, id_reverse_sparse_index(Index, S), Last, Index) :-
+	Index = Last + 1. % moved from head, with intermodule opt, head clauses 
+	% may not get reordered properly
 
 iterator_index(I) = I.
 	
