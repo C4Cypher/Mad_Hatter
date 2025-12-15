@@ -33,8 +33,8 @@
 :- pred init(mh_var_map(T)::out) is det.
 :- func init = mh_var_map(T).
 	
-:- pred empty_var_map(mh_var_map(T)::uo) is det.
-:- func empty_var_map = (mh_var_map(T)::uo) is det.
+:- pred empty_var_map(mh_var_map(T)::out) is det.
+:- func empty_var_map = (mh_var_map(T)::out) is det.
 
 :- pred is_empty(mh_var_map(_)::in) is semidet.
 
@@ -216,7 +216,7 @@
 %-----------------------------------------------------------------------------%
 % Set operations
 
-:- func union(func(T, T) = T, mh_var_map(T), mh_var_map(T)) = mh_var_map(T3).
+:- func union(func(T, T) = T, mh_var_map(T), mh_var_map(T)) = mh_var_map(T).
 
 :- pred union(func(T, T) = T, mh_var_map(T), mh_var_map(T), mh_var_map(T)).
 :- mode union(in(func(in, in) = out is det), in, in, out) is det.
@@ -301,7 +301,7 @@
 :- import_module string.
 :- import_module pair.
 
-:- import_module util.
+:- import_module array_util.
 
 %-----------------------------------------------------------------------------%
 %  Var Maps
@@ -463,7 +463,7 @@ id_insert(ID, T, var_map_empty, singleton_id(ID, T)).
 id_insert(ID, T, var_map(!.Set, !.Array), var_map(!:Set, !:Array)) :-
 	var_set_insert_id(ID, !Set),
 	id_sparse_index(ID, !.Set, Index),
-	array_insert(Index, T, !Array).
+	insert(Index, T, !Array).
 	
 det_id_insert(ID, T, !Map) :-
 	(if id_insert(ID, T, !Map)
@@ -569,7 +569,7 @@ id_remove(ID, T, var_map(Set0, Array0), Map) :-
 	then
 		Map = var_map_empty
 	else
-		array_delete(Index, Array0, Array),
+		delete(Index, Array0, Array),
 		Map = var_map(Set, Array)
 	).
 	
@@ -591,7 +591,7 @@ id_delete(ID, !Map) :-
 		then
 			(if 
 				not empty_var_set(NewSet),
-				array_delete(Index, Array, NewArray)	
+				delete(Index, Array, NewArray)	
 			then var_map(NewSet, NewArray)
 			else var_map_empty
 			)
@@ -685,7 +685,7 @@ intersect(F, M1, M2, M) :-
 			M = var_map_empty
 		;
 			M2 = var_map(S2, _),
-			var_set_intersection(S1, S2, S),
+			var_set_intersect(S1, S2, S),
 			(if empty_var_set(S)
 			then
 				M = var_map_empty
@@ -700,7 +700,8 @@ intersect(F, M1, M2, M) :-
 	).
 
 	
-:- func element_intersect(func(T, T) = T, mh_var_map(T), mh_var_map(T), var_id) = T.
+:- func element_intersect(func(T1, T2) = T3, mh_var_map(T1), mh_var_map(T2),
+	var_id) = T3.
 :- mode element_intersect(in(func(in, in) = out is det), in, in, in) = out 
 	is det.
 :- mode element_intersect(in(func(in, in) = out is semidet), in, in, in) = out
@@ -708,8 +709,8 @@ intersect(F, M1, M2, M) :-
 	
 element_intersect(F, M1, M2, ID) = F(id_lookup(M1, ID), id_lookup(M2, ID)).
 	
-:- pred intersect_loop(func(T, T) = T, mh_var_map(T), mh_var_map(T), mh_var_set, 
-	var_map_iterator, array(T), array(T)).
+:- pred intersect_loop(func(T1, T2) = T3, mh_var_map(T1), mh_var_map(T2), 
+	mh_var_set, var_map_iterator, array(T3), array(T3)).
 :- mode intersect_loop(in(func(in, in) = out is det), in, in, in, in,
 	array_di, array_uo)	is det.
 :- mode intersect_loop(in(func(in, in) = out is semidet), in, in, in, in, 
@@ -803,6 +804,10 @@ fold_id(P, Map, !A, Iterator0) :-
 	is semidet.
 	
 curry_fold(P, ID, T, !A) :- P(var(ID), T, !A).
+
+fold(P, Map, !A) :-
+	CurriedP = curry_fold(P),
+	fold_id(CurriedP, Map, !A).
 	
 %---------------------%
 
@@ -813,15 +818,20 @@ fold2_id(P, Map, !A, !B) :-
 	else true.
 	
 	
-:- pred fold2_id(pred(var_id, T, A, A), mh_var_map(T), A, A, var_map_iterator).
-:- mode fold2_id(in(pred(in, in, in, out) is det), in, in, out, in) is det.
-:- mode fold2_id(in(pred(in, in, mdi, muo) is det), in, mdi, muo, in) is det.
-:- mode fold2_id(in(pred(in, in, di, uo) is det), in, di, uo, in) is det.
-:- mode fold2_id(in(pred(in, in, array_di, array_uo) is det), in, 
-	array_di, array_uo, in) is det.
-:- mode fold2_id(in(pred(in, in, in, out) is semidet), in, in, out, in) is semidet.
-:- mode fold2_id(in(pred(in, in, mdi, muo) is semidet), in, mdi, muo, in) 
-	is semidet.
+:- pred fold2_id(pred(var_id, T, A, A, B, B), mh_var_map(T), A, A, B, B,
+	var_map_iterator).
+:- mode fold2_id(in(pred(in, in, in, out, in, out) is det), in, in, out, 
+	in, out, in) is det.
+:- mode fold2_id(in(pred(in, in, in, out, mdi, muo) is det), in, in, out,
+	mdi, muo, in) is det.
+:- mode fold2_id(in(pred(in, in, in, out, di, uo) is det), in, in, out,
+	di, uo, in) is det.
+:- mode fold2_id(in(pred(in, in, in, out, array_di, array_uo) is det), in, 
+	in, out, array_di, array_uo, in) is det.
+:- mode fold2_id(in(pred(in, in, in, out, in, out) is semidet), in, in, out,
+	in, out, in) is semidet.
+:- mode fold2_id(in(pred(in, in, in, out, mdi, muo) is semidet), in, in, out,
+	mdi, muo, in) is semidet.
 	
 fold2_id(P, Map, !A, !B, Iterator0) :-
 	if next(Map, ID, T, Iterator0, Iterator) then
@@ -829,27 +839,28 @@ fold2_id(P, Map, !A, !B, Iterator0) :-
 		fold2_id(P, Map, !A, !B, Iterator)
 	else true.
 	
-:- pred curry_fold2(pred(mh_var, T, A, A), var_id, T, A, A).
+:- pred curry_fold2(pred(mh_var, T, A, A, B, B), var_id, T, A, A, B, B).
 :- mode curry_fold2(in(pred(in, in, in, out, in, out) is det), in, in, in, out,
 	in, out) is det.
-:- mode curry_fold2(in(pred(in, in, mdi, muo) is det), in, in, in, out,
-	mdi, muo) is det.
-:- mode curry_fold2(in(pred(in, in, di, uo) is det), in, in, in, out,
+:- mode curry_fold2(in(pred(in, in, in, out, mdi, muo) is det), in, in, 
+	in, out, mdi, muo) is det.
+:- mode curry_fold2(in(pred(in, in, in, out, di, uo) is det), in, in, in, out,
 	di, uo) is det.
-:- mode curry_fold2(in(pred(in, in, in, out) is semidet), in, in, in, out,
-	in, out) is semidet.
-:- mode curry_fold2(in(pred(in, in, mdi, muo) is semidet), in, in, in, out,
-	mdi, muo) is semidet.
+:- mode curry_fold2(in(pred(in, in, in, out, in, out) is semidet), in, in,
+	in, out, in, out) is semidet.
+:- mode curry_fold2(in(pred(in, in, in, out, mdi, muo) is semidet), in, in,
+	in, out, mdi, muo) is semidet.
 	
 curry_fold2(P, ID, T, !A, !B) :- P(var(ID), T, !A, !B).
 
+fold2(P, Map, !A, !B) :-
+	CurriedP = curry_fold2(P),
+	fold2_id(CurriedP, Map, !A, !B).
+	
 %---------------------%
 	
 
 
-fold(P, Map, !A) :-
-	CurriedP = curry_fold(P),
-	fold_id(CurriedP, Map, !A).
 
 map_id(P, MapT, MapU) :-
 	if first(MapT, ID, T, Iterator) then

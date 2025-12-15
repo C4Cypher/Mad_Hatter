@@ -16,11 +16,9 @@
 :- interface.
 
 :- import_module unit.
-:- import_module array.
 :- import_module list.
 :- import_module assoc_list.
 
-:- import_module mh_term.
 :- import_module mh_tuple.
 
 %-----------------------------------------------------------------------------%
@@ -190,6 +188,12 @@
 	is semidet.
 :- mode fold(in(func(in, in, di) = uo is det), in, di, uo) is det.
 
+:- pred fold2(pred(mh_tuple, T, A, A, B, B), mh_tuple_map(T), A, A, B, B).
+:- mode fold2(in(pred(in, in, in, out, in, out) is semidet), in, in, out, 
+	in,	out) is semidet.
+:- mode fold2(in(pred(in, in, in, out, in, out) is det), in, in, out, in, out)
+	is det.
+
 :- func map(func(mh_tuple, T) = U, mh_tuple_map(T)) = mh_tuple_map(U).
  
 :- pred map(func(mh_tuple, T) = U, mh_tuple_map(T), mh_tuple_map(U)).
@@ -200,6 +204,7 @@
 
 :- implementation.
 
+:- import_module array.
 :- import_module lazy.
 :- import_module pair.
 :- import_module require.
@@ -207,6 +212,7 @@
 
 :- import_module map_util.
 
+:- import_module mh_term.
 :- use_module mh_tuple_pattern_map.
 
 %-----------------------------------------------------------------------------%
@@ -230,7 +236,7 @@ eager_init = tuple_map(map.init, val(mh_tuple_pattern_map.init)).
 eager_init(eager_init).
 	
 singleton(Tuple, Value) = 
-	tuple_map(map.singleton(Tuple, Value)@Map, delay_pattern(Map)).
+	tuple_map(map.singleton(to_array(Tuple), Value)@Map, delay_pattern(Map)).
 		
 singleton(Tuple) = singleton(Tuple, unit).
 
@@ -275,7 +281,7 @@ lookup(tuple_map(Map, _), Tuple) = map.lookup(Map, to_array(Tuple)).
 
 insert(Tuple, Value, tuple_map(!.E, !.L), tuple_map(!:E, !:L)) :-
 	Array = to_array(Tuple),
-	map.unsafe_array_insert(Array, Value, !E),
+	map.insert(Array, Value, !E),
 	promise_pure 
 		(if impure read_if_val(!.L, P0)
 		then
@@ -330,7 +336,7 @@ set(Tuple, Value, tuple_map(!.E, !.L), tuple_map(!:E, !:L)) :-
 	promise_pure 
 		(if impure read_if_val(!.L, P0)
 		then
-			mh_tuple_pattern_map.array_set(Tuple, Array, Value, P0, P),
+			mh_tuple_pattern_map.array_set(Array, Value, P0, P),
 			!:L = val(P)
 		else
 			!:L = delay_pattern(!.E)
@@ -364,7 +370,7 @@ update(Tuple, Value, tuple_map(!.E, !.L), tuple_map(!:E, !:L)) :-
 	promise_pure 
 		(if impure read_if_val(!.L, P0)
 		then
-			mh_tuple_pattern_map.array_set(Tuple, Array, Value, P0, P),
+			mh_tuple_pattern_map.array_set(Array, Value, P0, P),
 			!:L = val(P)
 		else
 			!:L = delay_pattern(!.E)
@@ -404,7 +410,7 @@ det_remove(Tuple, Value, !Map) :-
 	
 det_remove(E, !Map) :- det_remove(E, _, !Map).
 	
-delete(Tuple, !Map) :- array_delete(to_array(Tuple), !Map).
+delete(Tuple, tuple_map(!.E, !.L), tuple_map(!:E, !:L)) :- 
 	Array = to_array(Tuple),
 	map.delete(Array, !E),
 	promise_pure 
@@ -462,20 +468,35 @@ difference(M1, M2, difference(M1, M2)).
 fold(F, tuple_map(E, _), A) = fold(fold_exact(F), E, A).
 
 :- func fold_exact(func(mh_tuple, T, A) = A, array(mh_term), T, A) = A.
+:- mode fold_exact(in(func(in, in, in) = out is det), in, in, in) = out is det.
+:- mode fold_exact(in(func(in, in, in) = out is semidet), in, in, in) = out 
+	is semidet.
+:- mode fold_exact(in(func(in, in, di) = uo is det), in, in, di) = uo is det.
 
-fold_exact(F, K, V, A) = F(from_array(K), V).
+fold_exact(F, K, V, A) = F(from_array(K), V, A).
 
 det_fold(F, M, A) = fold(F, M, A).
 semidet_fold(F, M, A) = fold(F, M, A).
 
 fold(F, M, A, fold(F, M, A)).
 
+fold2(P, tuple_map(E, _), !A, !B) :- map.foldl2(fold_exact2(P), E, !A, !B).
+
+:- pred fold_exact2(pred(mh_tuple, T, A, A, B, B), array(mh_term), T, 
+	A, A, B, B).
+:- mode fold_exact2(in(pred(in, in, in, out, in, out) is det), in, in,
+	in, out, in, out) is det.
+:- mode fold_exact2(in(pred(in, in, in, out, in, out) is semidet), in, in,
+	in, out, in, out) is semidet.
+	
+fold_exact2(P, K, V, !A, !B) :- P(from_array(K), V, !A, !B).
+
 map(F, tuple_map(E0, _)) = 
 	tuple_map(E@map.map_values(map_exact(F), E0), delay_pattern(E)).
 
 :- func map_exact(func(mh_tuple, T) = U, array(mh_term), T) = U.
 	
-map_exact(F, K, V) = K - F(from_array(K), V).
+map_exact(F, A, V) = F(from_array(A), V).
 
 map(F, M, map(F, M)).
 

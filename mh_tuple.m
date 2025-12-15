@@ -137,10 +137,12 @@
 :- import_module require.
 :- import_module int.
 :- import_module bool.
+:- import_module univ.
 
 :- import_module util.
 
 :- import_module mh_index.
+:- import_module mh_value.
 
 
 %-----------------------------------------------------------------------------%
@@ -189,8 +191,7 @@ tuple(T::in) = (Tuple::out) :-
 			dynamic_cast(T, U:mh_tuple);
 			dynamic_cast(T, V:list(mh_term)), U = list_tuple(V);
 			dynamic_cast(T, V:array(mh_term)), U = array_tuple(V);
-			dynamic_cast(T, tuple_term(V):mh_term), U = V;
-			dynamic_cast(T, tuple_term(V):tuple_term), U = V
+			dynamic_cast(T, V:mh_term), V = value(mr_value(univ(U)))
 		),
 	Tuple = U.
 		
@@ -200,8 +201,7 @@ tuple(T::out) = (Tuple::in) :-
 		Tuple = array_tuple(U), dynamic_cast(U, T);
 		Tuple = slice_tuple(Array, First), 
 			dynamic_cast(unslice_array(Array, First), T);
-		dynamic_cast(tuple_term(Tuple):mh_term, T);
-		dynamic_cast(tuple_term(Tuple):tuple_term, T)
+		dynamic_cast(value(mr_value(univ(Tuple))):mh_term, T)
 	).
 	
 

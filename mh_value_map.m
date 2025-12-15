@@ -85,11 +85,11 @@
 	mh_value_map(T)).
 :- mode union(in(func(in, in) = out is det), in, in, out) is det.
 
-:- func intersect(func(T, T) = T, mh_value_map(T), mh_value_map(T)) = 
-	mh_value_map(T).
+:- func intersect(func(T1, T2) = T3, mh_value_map(T1), mh_value_map(T2)) = 
+	mh_value_map(T3).
 	
-:- pred intersect(func(T, T) = T, mh_value_map(T), mh_value_map(T),
-	mh_value_map(T)).
+:- pred intersect(func(T1, T2) = T3, mh_value_map(T1), mh_value_map(T2),
+	mh_value_map(T3)).
 :- mode intersect(in(func(in, in) = out is det), in, in, out) is det.
 
 :- func difference(mh_value_map(T), mh_value_map(_)) = mh_value_map(T).
@@ -136,6 +136,8 @@
 %-----------------------------------------------------------------------------%
 
 :- implementation.
+
+:- import_module univ.
 
 :- import_module univ_map.
 
@@ -193,6 +195,9 @@ delete(mr_value(U), mh_value_map(!.M), mh_value_map(!:M)) :-
 remove(mr_value(U), T, mh_value_map(!.M), mh_value_map(!:M)) :-
 	univ_map.remove_univ(U, T, !M).
 	
+remove_smallest(mr_value(univ(K)), V, mh_value_map(!.M), mh_value_map(!:M)) :-
+	univ_map.remove_smallest(K, V, !M).
+	
 %-----------------------------------------------------------------------------%
 % Nondeterminsitic lookup
 	
@@ -221,6 +226,9 @@ difference(Map1, Map2, difference(Map1, Map2)).
 % Higher Order
 
 :- func value_fold(func(mh_value, T, A) = A, univ, T, A) = A.
+:- mode value_fold(in(func(in, in, in) = out is det), in, in, in) = out is det.
+:- mode value_fold(in(func(in, in, in) = out is semidet), in, in, in) = out
+	is semidet.
 
 value_fold(F, Univ, T, A) = F(mr_value(Univ), T, A).
 
@@ -236,6 +244,8 @@ fold(F, Map, A, fold(F, Map, A)).
 	in, out, in, out) is det.
 :- mode value_fold2(in(pred(in, in, in, out, in, out) is semidet), in, in, 
 	in, out, in, out) is semidet.
+	
+value_fold2(P, Univ, T, !A, !B) :- P(mr_value(Univ), T, !A, !B). 
 
 fold2(P, mh_value_map(Map), !A, !B) :- 
 	univ_map.fold2(value_fold2(P), Map, !A, !B). 

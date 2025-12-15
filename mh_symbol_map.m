@@ -369,6 +369,7 @@
 	% Take two maps and return the elements of the first map that do not have
 	% equivalent keys in the second map. Take note that the value type
 	% of the maps in question need not have the same type.
+:- func difference(mh_symbol_map(T), mh_symbol_map(_)) = mh_symbol_map(T).
 :- pred difference(mh_symbol_map(T)::in, mh_symbol_map(_)::in,
 	mh_symbol_map(T)::out) is det.
 	
@@ -813,6 +814,8 @@ union_list(P, [M | Ms], Res) :- union_list(P, M, Ms, Res).
 
 %-----------------------------------------------------------------------------%
 % Difference
+
+difference(A, B) = C :- difference(A, B, C).
 
 difference(sm(A), sm(B), sm(C)) :- hashmap.difference(A, B, C).
 

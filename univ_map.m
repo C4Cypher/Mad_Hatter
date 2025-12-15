@@ -112,11 +112,11 @@
 	univ_map(T)).
 :- mode union(in(func(in, in) = out is det), in, in, out) is det.
 
-:- func intersect(func(T, T) = T, univ_map(T), univ_map(T)) = 
-	univ_map(T).
+:- func intersect(func(T1, T2) = T3, univ_map(T1), univ_map(T2)) = 
+	univ_map(T3).
 	
-:- pred intersect(func(T, T) = T, univ_map(T), univ_map(T),
-	univ_map(T)).
+:- pred intersect(func(T1, T2) = T3, univ_map(T1), univ_map(T2),
+	univ_map(T3)).
 :- mode intersect(in(func(in, in) = out is det), in, in, out) is det.
 
 :- func difference(univ_map(T), univ_map(_)) = univ_map(T).
@@ -362,8 +362,8 @@ union(F, Map1, Map2, union(F, Map1, Map2)).
 
 intersect(F, Map1, Map2) = fold(intersect_fold(F, Map1), Map2, init).
 
-:- func intersect_fold(func(T, T) = T, univ_map(T), univ, T, univ_map(T)) = 
-	univ_map(T).
+:- func intersect_fold(func(T1, T2) = T3, univ_map(T1), univ, T2, univ_map(T3))
+	= univ_map(T3).
 	
 intersect_fold(F, Map1, Univ, T2, !.Map3) = !:Map3 :-
 	(if search_univ(Map1, Univ, T1) then

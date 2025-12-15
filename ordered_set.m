@@ -262,7 +262,7 @@
 :- import_module bool.
 :- import_module require.
 
-:- import_module util.
+:- import_module array_util.
 
 
 % Variable naming
@@ -481,7 +481,7 @@ lookup(OS, Index, lookup(OS, Index)).
 set_lookup(os(_, A), Index) = array.lookup(A, Index - 1).
 set_lookup(OS, Index, set_lookup(OS, Index)).
 
-search(os(O, _), T) = array_search(O, T) + 1.
+search(os(O, _), T) = search(O, T) + 1.
 search(OS, T, search(OS, T)).
 
 set_search(os(_, S), T) = I + 1 :- binary_search(S, T, I). 
