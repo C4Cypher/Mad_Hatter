@@ -33,8 +33,8 @@ get a repl running
 					promises
 					fact assertions
 					mercury types
-				finish mh_term, my high level AST
-					Implement core term functionality  <- I am here
+				finish mh_term, my high level AST - Done
+					Implement core term functionality
 						Subterms
 						Groundedness
 						Substitutions
@@ -60,7 +60,7 @@ get a repl running
 					refactor substitutions
 					refactor tuples
 					partial set evaluation/iterators? 
-				evaluation
+				evaluation  <- I am here
 					environment 
 						finish substitutions 
 							term constraints 	
