@@ -13,4 +13,4 @@
 # CFLAGS += -W no-unused-function
 
 # MCFLAGS += --output-compile-error-lines 5 # Isn't doing what I want
-MCFLAGS += --intermodule-optimization
+# MCFLAGS += --intermodule-optimization # Turn of when frequently recompiling
