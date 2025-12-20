@@ -275,34 +275,6 @@
 
 %%% UNDER NO CIRCUMSTANCES SHOULD A CHILD SCOPE BE PLACED AS THE FIRST %%%
 %%% ARGUMENT OF extended_scope/2, check using is_root/1 and is_child/1 %%%
-/* Compiler error, skipping the subtyping, might reintroduce later, doubtful
-
-:- inst root_scope 
-	---> 	root_scope(ground, ground, ground)
-	;		extended_scope(ground, ground).
-	
-:- type mh_root_scope =< mh_scope 
-	--->	root_scope(mh_context, var_id_set, var_names)
-	;		extended_scope(scope_car :: mh_root_scope, scope_cdr :: mh_scope).
-	
-:- mode scope_is_root == ground >> root_scope.
-
-:- pred scope_is_root(mh_scope::scope_is_root) is semidet.
-
-scope_is_root(root_scope(_, _, _)).
-scope_is_root(extended_scope(_, _)).
-	
-:- inst child_scope ---> child_scope(ground, ground, ground).
-
-:- type mh_child_scope 
-	--->	child_scope(mh_scope, maybe(mh_context), mh_var_set).
-	
-:- mode scope_is_child == ground >> child_scope.
-
-:- pred scope_is_root(mh_scope::scope_is_child) is semidet.
-
-scope_is_child(child_scope(_, _, _)).
-*/
 
 require_valid_scope(root_scope(_context, IDSet, Names)) :-
 	(if first(Names, ID, _, Iterator)
@@ -358,7 +330,6 @@ valid_child_scope(Parent, VarSet) :-
 
 equivalent_scopes(S, S).
 equivalent_scopes(S1, S2) :- 
-	%scope_environment(S1) = scope_environment(S2), % Replace this, see above
 	scope_vars(S1, Vars), scope_vars(S2, Vars),
 	all_true(equivalent_var_context(S1, S2), Vars).
 	
