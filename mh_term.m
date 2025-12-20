@@ -111,23 +111,6 @@
 :- func apply_term_substitution(mh_substitution, mh_term) = mh_term.
 
 
-% :- instance tuple(mh_term).
-% :- instance substitutable(mh_term).
-
-/* Depriciated
-
-%-----------------------------------------------------------------------------%
-% Atoms
-
-:- inst atom ---> atom(ground).
-
-:- type atom =< mh_term ---> atom(mh_symbol).
-
-:- mode is_atom == ground >> atom.
-
-:- pred is_atom(mh_term::is_atom) is semidet.
-
-*/
 
 %-----------------------------------------------------------------------------%
 %	Variables
@@ -168,7 +151,9 @@
 is_concrete(atom(_)).
 is_concrete(var(_)).
 is_concrete(value(_)).
-is_concrete(cons(_, _)).
+is_concrete(cons(Functor, Tuple)) :- 
+	is_concrete(Functor),
+	all_tuple(is_concrete, Tuple).
 
 %-----------------------------------------------------------------------------%
 % Subterms
