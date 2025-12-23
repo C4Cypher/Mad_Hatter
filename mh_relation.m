@@ -80,12 +80,12 @@
 	%		(\A = B) -> (\A -> B), (\A <- B). 
 	
 	;		lambda_application(mh_scope, mh_term, mh_term)
-	%		lambda_application(S, A, B) -> (\A -> B). 
+	%		lambda_application(S, A, B) == (\A -> B). 
 	%		(\A -> B)(A) = B. 
 	%		The lambda expression \A evaluates to B with A substituted into B
 	
 	;		lambda_unification(mh_scope, mh_term, mh_term)
-	%		lambda_match(S, A, B) -> (\A <- B). 
+	%		lambda_match(S, A, B) == (\A <- B). 
 	%		The lambda expresssion \A successsfully unifies with B without loss
 	%		of information
 	
@@ -97,10 +97,10 @@
 	%		to it.
 	%
 	% 		Conjunction of term and applied constraint
-	%		X, ?C == X, C(X). 
+	%		X, ?C = X, C(X). 
 	%
 	%		The 'constraint' operator ':'/2 
-	%		X:C == X, ?C.
+	%		X:C = X, ?C.
 	
 	;		proposition(mh_scope, mh_proposition)
 	% 		Succeed or fail based on evaluation of the embedded proposition;
@@ -114,7 +114,7 @@
 	%		substitution would create an environment conflict. May also serve
 	%		to short cut pattern matching terms passed between environments.
 	%
-	%		closure(Term, Sub) -> Term, Sub
+	%		closure(Term, Sub) = Term, Sub
 			
 	;		call(mh_scope, mh_foreign_function).
 			% Call a foreign function as if it were an application.
