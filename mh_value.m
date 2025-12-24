@@ -74,6 +74,7 @@
 
 %-----------------------------------------------------------------------------%
 % Mercury values
+
 /* Redundant if mr_value is the only constructor.
 :- inst mercury_value ---> mr_value(ground).
 
@@ -85,7 +86,11 @@
 :- pred is_mercury_value(mh_value::is_mercury_value).
 */
 
+:- func from_mr_value(T) = mh_value is det.
+
 :- func to_mr_value(mh_value) = T is semidet.
+
+:- some [T] func to_some_mr_value(mh_value) = T is det.
 
 :- func to_mh_value(T) = mh_value is det.
 
@@ -113,7 +118,11 @@
 
 %is_mercury_value(mr_value(_)).
 
+from_mr_value(T) = mr_value(univ(T)).
+
 to_mr_value(mr_value(univ(T))) = T.
+
+to_some_mr_value(mr_value(Univ)) = univ_value(Univ).
 
 to_mh_value(T) = mr_value(univ(T)).
 

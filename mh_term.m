@@ -74,6 +74,9 @@
 
 :- pred is_concrete(mh_term::is_concrete) is semidet.
 
+
+
+
 %-----------------------------------------------------------------------------%
 % Subterms
 
@@ -110,10 +113,16 @@
 	mh_term::in, mh_term::out) is det.
 :- func apply_term_substitution(mh_substitution, mh_term) = mh_term.
 
+%-----------------------------------------------------------------------------%
+% Atoms
 
+:- func term_atom(string) = mh_term.
+:- mode term_atom(in) = out is det.
+:- mode term_atom(in) = in is semidet.
+:- mode term_atom(out) = in is semidet.
 
 %-----------------------------------------------------------------------------%
-%	Variables
+% Variables
 
 :- inst mh_var 
 	--->	var(ground).
@@ -127,8 +136,35 @@
 :- pred is_var(mh_term::is_var) is semidet.
 
 
+	% Term constructor for variables
+	% Skips the need for explicit type qualification between mh_term and mh_var
+
+:- func term_var(var_id) = mh_term.  
+:- mode	term_var(in) = out is det.
+:- mode term_var(out) = in is semidet.
+
 %-----------------------------------------------------------------------------%
-% Relation terms
+% Values
+
+	% Term constructor for value terms
+	% Deconstruction will fail on type mismatch
+:- func term_value(T) = mh_term.
+:- mode term_value(in) = out is det.
+:- mode term_value(out) = in is semidet.
+
+:- inst value_term
+	--->	value(ground).
+	
+:- mode is_value == ground >> value_term.
+
+:- pred is_value(mh_term::is_value) is semidet.
+
+	% Determenistic deconstructor for term values
+:- some [T] func deconstruct_value_term(mh_term::in(value_term)) = (T::out) 
+	is det.
+
+%-----------------------------------------------------------------------------%
+% Relations 
 
 :- func nil_term = mh_term.
 %- func true_term = mh_term.
@@ -208,11 +244,40 @@ apply_term_substitution(Sub, !Term) :- 	require_complete_switch [!.Term]
 	).
 
 apply_term_substitution(S, !.T) = !:T :- apply_term_substitution(S, !T).
-		
+
+%-----------------------------------------------------------------------------%
+% Atoms	
+
+term_atom(Name::in) = (atom(symbol(Name))::out).
+
+% Force explicit symbol comparison, rather than deconstructing symbols for
+% string comparison.
+term_atom(Name::in) = (atom(Symbol)::in) :- Symbol = symbol(Name).
+
+term_atom(Name::out) = (atom(symbol(Name))::in).
+
+:- pragma promise_equivalent_clauses(term_atom/1).
+	
 %-----------------------------------------------------------------------------%
 %	Variables
 
 is_var(var(_)).
+
+term_var(ID) = var(ID).
+
+%-----------------------------------------------------------------------------%
+% Values
+
+term_value(T::in) = (value(from_mr_value(T))::out).
+term_value(to_mr_value(Value)::out) = (value(Value)::in).
+
+:- pragma promise_equivalent_clauses(term_value/1).
+
+is_value(value(_)).
+
+deconstruct_value_term(value(Value)) = to_some_mr_value(Value).
+
+
 
 %-----------------------------------------------------------------------------%
 % Relation terms
