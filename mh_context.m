@@ -23,7 +23,7 @@
 :- type mr_context == term_context.term_context.
 
 :- type mh_context
-	--->	dummy_context % unifies with context("", 0)
+	--->	no_context % unifies with context("", 0)
 	;		interactive_context(int) % For REPL commands
 	;		file_context(filename::string, int).
 	%TODO: contexts for relations loaded from foreign library modules
@@ -43,7 +43,7 @@
 from_mr_context(term_context.context(File, Line)) = 
 	(if File = "", Line = 0
 	then 
-		dummy_context
+		no_context
 	else
 		file_context(File, Line)
 	).
