@@ -54,6 +54,9 @@
 
 :- type mh_scope.
 
+	% Construct a scope with no context and no variables
+:- func no_scope = mh_scope.
+
 	% Throws an exception if a scope contains name mappings outside of the 
 	% scope, if the root (CAR) of an extended scope is a child, or if a child 
 	% scope contains variables outside the scope of it's parent.
@@ -272,6 +275,8 @@
 	;		extended_scope(scope_car :: mh_scope, scope_cdr :: mh_scope)
 		%If no child context, default to parent
 	;		child_scope(mh_scope, maybe(mh_context), mh_var_set). 
+	
+no_scope = root_scope(no_context, empty_var_id_set, empty_var_map).
 
 %%% UNDER NO CIRCUMSTANCES SHOULD A CHILD SCOPE BE PLACED AS THE FIRST %%%
 %%% ARGUMENT OF extended_scope/2, check using is_root/1 and is_child/1 %%%
