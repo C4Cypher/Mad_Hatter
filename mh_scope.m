@@ -63,7 +63,7 @@
 % variables in source code, and that each root context is unique to the
 % root that was constructed with it.  The following calls may return false
 % positives if the contexts the scopes were created with are not unique to
-% said scopes.
+% said scopes (usually if they were defined on the same line).
 
 	% True of two scopes if each variable in both scopes share the same 
 	% context.  Two scopes may have different structures, or variable namings

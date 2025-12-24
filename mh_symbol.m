@@ -57,6 +57,9 @@
 %-----------------------------------------------------------------------------%
 % Symbols
 
+
+	% The '~' constructor is only meant for easy to read pretty printing, use
+	% symbol/1 when constructing or deconstructing symbols.
 :- type mh_symbol ---> ~string.
 
 symbol(String) = '~'(String).
