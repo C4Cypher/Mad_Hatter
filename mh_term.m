@@ -11,7 +11,6 @@
 % Stability: low.
 %-----------------------------------------------------------------------------%
 
-
 :- module mh_term. 
 
 :- interface.
@@ -22,7 +21,6 @@
 :- import_module mh_tuple.
 :- import_module mh_relation.
 :- import_module mh_substitution.
-
 
 %-----------------------------------------------------------------------------%
 % Terms
@@ -74,9 +72,6 @@
 
 :- pred is_concrete(mh_term::is_concrete) is semidet.
 
-
-
-
 %-----------------------------------------------------------------------------%
 % Subterms
 
@@ -104,7 +99,6 @@
 %-----------------------------------------------------------------------------%
 % Substitutions
 
-
 % Apply a substitution to a term, if the term is a variable, replace the
 % variable with the substituted term as appropriate, if not, return the term
 % with the substitution applied.
@@ -130,11 +124,9 @@
 :- type mh_var =< mh_term 
 	---> 	var(var_id).
 	
-	
 :- mode is_var == ground >> mh_var.
 
 :- pred is_var(mh_term::is_var) is semidet.
-
 
 	% Term constructor for variables
 	% Skips the need for explicit type qualification between mh_term and mh_var
@@ -154,7 +146,7 @@
 
 :- inst value_term
 	--->	value(ground).
-	
+
 :- mode is_value == ground >> value_term.
 
 :- pred is_value(mh_term::is_value) is semidet.
