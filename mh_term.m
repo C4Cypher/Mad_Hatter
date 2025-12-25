@@ -158,7 +158,7 @@
 %-----------------------------------------------------------------------------%
 % Relations 
 
-:- func nil_term = mh_term.
+:- func term_nil = mh_term.
 %- func true_term = mh_term.
 %- func false_term = mh_term.
 %- func fail_term(string) = mh_term.
@@ -274,7 +274,7 @@ deconstruct_value_term(value(Value)) = to_some_mr_value(Value).
 %-----------------------------------------------------------------------------%
 % Relation terms
 
-nil_term = relation(nil).
+term_nil = relation(nil).
 
 
 %-----------------------------------------------------------------------------%

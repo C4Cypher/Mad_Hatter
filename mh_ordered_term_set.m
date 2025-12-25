@@ -500,7 +500,7 @@ unsorted_insert(Term, _, usacc(Index, !.Array)) = usacc(Index + 1, !:Array) :-
 	unsafe_set(Index, Term, !Array).
 	
 to_unsorted_array(Set) = Array :- %probably get a mode error,  
-	fold(unsorted_insert, Set, usacc(0, init(count(Set), nil_term))) =
+	fold(unsorted_insert, Set, usacc(0, init(count(Set), term_nil))) =
 		usacc(_, Array).
 		
 :- func to_unit_map(mh_term_map(_)) = mh_term_set.
