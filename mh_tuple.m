@@ -119,13 +119,22 @@
 %-----------------------------------------------------------------------------%
 % Higher Order
 
+	% This was written before I adopted the convention of single accumulators
+	% being passed by function, rather than predicate, I've refactored the
+	% func call with a closure, holding off on reimplementing the main call
 :- pred fold_tuple(pred(mh_term, A, A), mh_tuple, A, A).
 :- mode fold_tuple(pred(in, in, out) is det, in, in, out) is det.
 :- mode fold_tuple(pred(in, in, out) is semidet, in, in, out) is semidet.
 
-:- func fold_tuple(pred(mh_term, A, A), mh_tuple, A) = A.
-:- mode fold_tuple(pred(in, in, out) is det, in, in) = out is det.
-:- mode fold_tuple(pred(in, in, out) is semidet, in, in) = out is semidet.
+:- func fold_tuple(func(mh_term, A) = A, mh_tuple, A) = A.
+:- mode fold_tuple(func(in, in) = out is det, in, in) = out is det.
+:- mode fold_tuple(func(in, in) = out is semidet, in, in) = out is semidet.
+
+:- func det_fold_tuple(func(mh_term, A) = A, mh_tuple, A) = A.
+
+:- func semidet_fold_tuple(func(mh_term, A) = A, mh_tuple, A) = A.
+:- mode semidet_fold_tuple(func(in, in) = out is semidet, in, in) = out 
+	is semidet.
 
 :- pred map_tuple(func(mh_term) = mh_term, mh_tuple, mh_tuple).
 :- mode map_tuple(func(in) = out is det, in, out) is det.
@@ -343,16 +352,25 @@ fold_slice_index(Closure, Array, First, !Acc) :-
 		Closure(Term, !Acc),
 		fold_slice_index(Closure, Array, First + 1, !Acc)
 	).
+	
+:- pred func_closure(func(mh_term, A) = A, mh_term, A, A).
+:- mode func_closure(func(in, in) = out is det, in, in, out) is det.
+:- mode func_closure(func(in, in) = out is semidet, in, in, out) is semidet.
 
-fold_tuple(Closure, Tuple, !.A) = !:A :- fold_tuple(Closure, Tuple, !A).
+func_closure(F, Term, A, F(Term, A)).
+
+fold_tuple(F, Tuple, !.A) = !:A :- fold_tuple(func_closure(F), Tuple, !A).
+
+det_fold_tuple(F, T, A) = fold_tuple(F, T, A).
+semidet_fold_tuple(F, T, A) = fold_tuple(F, T, A).
 
 map_tuple(F, Tuple, map_tuple(F, Tuple)).
 
 map_tuple(F, list_tuple(L)) = list_tuple(map(F, L)).
-map_tuple(F, Tuple) = 
-	array_tuple(generate(tuple_size(Tuple), map_gen(F, Tuple)))   
-:- 
-	Tuple = array_tuple(_) ; Tuple = slice_tuple(_, _). 
+map_tuple(F, Tuple@array_tuple(_)) = 
+	array_tuple(generate(tuple_size(Tuple), map_gen(F, Tuple))).
+map_tuple(F, Tuple@slice_tuple(_, _)) = 
+	array_tuple(generate(tuple_size(Tuple), map_gen(F, Tuple))).
 
 :- func map_gen(func(mh_term) = mh_term, mh_tuple, int) = mh_term.
 
