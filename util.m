@@ -71,6 +71,9 @@
 
 :- func func_fail = _ is failure.
 
+	% check_dup(New, Original), If New = Original, default to the Original
+:- func check_dup(T, T) = T.
+
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
@@ -137,3 +140,6 @@ report_lookup_error(Msg, K, V) = _ :-
 % Misc
 
 func_fail = _ :- fail.
+
+check_dup(New, Original) = (New = Original -> Original ; New).
+:- pragma inline(check_dup/1).
