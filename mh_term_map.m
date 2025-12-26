@@ -160,22 +160,19 @@
 % Higher Order
 
 :- func fold(func(mh_term, T, A) = A, mh_term_map(T), A) = A.
-:- mode fold(in(func(in, in, in) = out is det), in, in) = out is det.
-:- mode fold(in(func(in, in, in) = out is semidet), in, in) = out 
+:- mode fold(func(in, in, in) = out is det, in, in) = out is det.
+:- mode fold(func(in, in, in) = out is semidet, in, in) = out 
 	is semidet.
 
-:- func det_fold(func(mh_term, T, A) = A, mh_term_map(T), A)
-	= A.
-:- mode det_fold(in(func(in, in, in) = out is det), in, in) = out is det.
+:- func det_fold(func(mh_term, T, A) = A, mh_term_map(T), A) = A.
 
-:- func semidet_fold(func(mh_term, T, A) = A, mh_term_map(T),
-	A) = A.
-:- mode semidet_fold(in(func(in, in, in) = out is semidet), in, in) = out 
+:- func semidet_fold(func(mh_term, T, A) = A, mh_term_map(T), A) = A.
+:- mode semidet_fold(func(in, in, in) = out is semidet, in, in) = out 
 	is semidet.
 
 :- pred fold(func(mh_term, T, A) = A, mh_term_map(T), A, A).
-:- mode fold(in(func(in, in, in) = out is det), in, in, out) is det.
-:- mode fold(in(func(in, in, in) = out is semidet), in, in, out) is semidet.
+:- mode fold(func(in, in, in) = out is det, in, in, out) is det.
+:- mode fold(func(in, in, in) = out is semidet, in, in, out) is semidet.
 
 :- pred fold2(pred(mh_term, T, A, A, B, B), mh_term_map(T), A, A, B, B).
 :- mode fold2(in(pred(in, in, in, out, in, out) is semidet), in, in, out, 

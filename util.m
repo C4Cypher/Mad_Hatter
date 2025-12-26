@@ -142,4 +142,4 @@ report_lookup_error(Msg, K, V) = _ :-
 func_fail = _ :- fail.
 
 check_dup(New, Original) = (New = Original -> Original ; New).
-:- pragma inline(check_dup/1).
+:- pragma inline(check_dup/2).
