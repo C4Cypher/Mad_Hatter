@@ -106,8 +106,18 @@
 
 :- pred tuple_member(mh_tuple::in, int::out, mh_term::out) is nondet.
 
+
 %-----------------------------------------------------------------------------%
-% Tuple fold
+% Tuple substitutions
+
+
+:- pred apply_tuple_substiution(mh_substitution::in, mh_tuple::in,
+	mh_tuple::out) is det.
+	
+:- func apply_tuple_substiution(mh_tuple, mh_substitution) = mh_tuple.
+
+%-----------------------------------------------------------------------------%
+% Higher Order
 
 :- pred fold_tuple(pred(mh_term, A, A), mh_tuple, A, A).
 :- mode fold_tuple(pred(in, in, out) is det, in, in, out) is det.
@@ -117,17 +127,13 @@
 :- mode fold_tuple(pred(in, in, out) is det, in, in) = out is det.
 :- mode fold_tuple(pred(in, in, out) is semidet, in, in) = out is semidet.
 
+:- pred map_tuple(func(mh_term) = mh_term, mh_tuple, mh_tuple).
+:- mode map_tuple(func(in) = out is det, in, out) is det.
+
+:- func map_tuple(func(mh_term) = mh_term, mh_tuple) = mh_tuple.
+
 :- pred all_tuple(pred(mh_term), mh_tuple).
 :- mode all_tuple(pred(in) is semidet, in) is semidet.
-
-
-%-----------------------------------------------------------------------------%
-% Tuple substitutions
-
-:- pred apply_tuple_substiution(mh_substitution::in, mh_tuple::in,
-	mh_tuple::out) is det.
-	
-:- func apply_tuple_substiution(mh_tuple, mh_substitution) = mh_tuple.
 	
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -303,9 +309,19 @@ tuple_member(Tup, Index, Term) :-
 	Last > 0,
 	nondet_int_in_range(1, Last, Index),
 	tuple_index(Tup, Index, Term).
+
+%-----------------------------------------------------------------------------%
+% Tuple substitutions
+
+apply_tuple_substiution(_, _, _) :- sorry($module, $pred,
+	"apply_tuple_substiution/3").
+	
+:- pragma no_determinism_warning(apply_tuple_substiution/3).
+
+apply_tuple_substiution(!.T, S) = !:T :- apply_tuple_substiution(S, !T).
 	
 %-----------------------------------------------------------------------------%
-% Tuple fold
+% Higher Order
 
 fold_tuple(Closure, list_tuple(L), !A) :- fold_list_index(Closure, L, !A).
 
@@ -328,20 +344,20 @@ fold_slice_index(Closure, Array, First, !Acc) :-
 		fold_slice_index(Closure, Array, First + 1, !Acc)
 	).
 
-
-		
-		
 fold_tuple(Closure, Tuple, !.A) = !:A :- fold_tuple(Closure, Tuple, !A).
+
+map_tuple(F, Tuple, map_tuple(F, Tuple)).
+
+map_tuple(F, list_tuple(L)) = list_tuple(map(F, L)).
+map_tuple(F, Tuple) = 
+	array_tuple(generate(tuple_size(Tuple), map_gen(F, Tuple)))   
+:- 
+	Tuple = array_tuple(_) ; Tuple = slice_tuple(_, _). 
+
+:- func map_gen(func(mh_term) = mh_term, mh_tuple, int) = mh_term.
+
+map_gen(F, Tuple, Index) = F(Term) :- tuple_index(Tuple, Index + 1, Term).
+
 
 all_tuple(Pred, list_tuple(L)) :- all_list_index(Pred, L).
 all_tuple(Pred, array_tuple(A)) :- all_array_index(Pred, A).
-
-%-----------------------------------------------------------------------------%
-% Tuple substitutions
-
-apply_tuple_substiution(_, _, _) :- sorry($module, $pred,
-	"apply_tuple_substiution/3").
-	
-:- pragma no_determinism_warning(apply_tuple_substiution/3).
-
-apply_tuple_substiution(!.T, S) = !:T :- apply_tuple_substiution(S, !T).
