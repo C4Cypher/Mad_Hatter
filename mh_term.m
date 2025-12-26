@@ -20,6 +20,7 @@
 :- import_module mh_value.
 :- import_module mh_tuple.
 :- import_module mh_relation.
+:- import_module mh_var_set.
 :- import_module mh_substitution.
 
 %-----------------------------------------------------------------------------%
@@ -72,6 +73,14 @@
 
 :- pred is_concrete(mh_term::is_concrete) is semidet.
 
+:- pred expect_concrete_term(mh_term::is_concrete) is det.
+
+% :- func expect_concrete_term(mh_term) = mh_concrete_term.
+
+% :- func from_concrete_term(mh_concrete_term) = mh_term is semidet.
+
+:- func vars_in_concrete_term(mh_term::in(concrete)) = (mh_var_set::out) 
+	is det.
 
 %-----------------------------------------------------------------------------%
 % Ground terms
@@ -119,10 +128,11 @@
 
 	% Term constructor for variables
 	% Skips the need for explicit type qualification between mh_term and mh_var
-
 :- func term_var(var_id) = mh_term.  
 :- mode	term_var(in) = out is det.
 :- mode term_var(out) = in is semidet.
+
+
 
 %-----------------------------------------------------------------------------%
 % Values
@@ -173,6 +183,36 @@ is_concrete(value(_)).
 is_concrete(cons(Functor, Tuple)) :- 
 	is_concrete(Functor),
 	all_tuple(is_concrete, Tuple).
+	
+expect_concrete_term(Term) :-
+	(if is_concrete(Term) then true
+	else unexpected($module, $pred, 
+		"Relation found when concrete term expected.")
+	).
+
+/* Causes: 	Software Error: predicate `check_hlds.typecheck_coerce.build_type_param_variance_restrictions_in_cto
+r_arg_type'/6: Unexpected: hlds_eqv_type
+expect_concrete_term(Term) = Conc :- 
+	expect_concrete_term(Term), 
+	Conc = coerce(Term).
+	
+from_concrete_term(Term) = Conc :- 
+	is_concrete(Term), 
+	Conc = coerce(Term).
+*/
+
+vars_in_concrete_term(atom(_)) = empty_var_set.
+vars_in_concrete_term(var(ID)) = singleton_var_set(ID).
+vars_in_concrete_term(value(_)) = empty_var_set.
+vars_in_concrete_term(cons(Functor, Args)) = 
+	var_set_union(
+		vars_in_concrete_term(Functor),
+		fold_tuple(vict_tuple_fold, Args, empty_var_set)
+	) :- expect_concrete_term(Functor).
+	
+:- func vict_tuple_fold(mh_term, mh_var_set) = mh_var_set.
+vict_tuple_fold(Term, Set) = var_set_union(vars_in_concrete_term(Term), Set) 
+	:- expect_concrete_term(Term).
 
 
 %-----------------------------------------------------------------------------%
@@ -229,6 +269,8 @@ term_atom(Name::out) = (atom(symbol(Name))::in).
 is_var(var(_)).
 
 term_var(ID) = var(ID).
+
+
 
 %-----------------------------------------------------------------------------%
 % Values
