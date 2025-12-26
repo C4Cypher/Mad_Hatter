@@ -133,24 +133,20 @@
 			% refrences that have the same uid
 */
 	
-:- pred apply_relation_substitution(mh_substitution::in, mh_relation::in,
-	mh_relation::out) is det.
+
 	
 %:- func relation_scope(mh_relation) = mh_scope.
 	
  
 :- pred ground_relation(mh_relation::in) is semidet.
- 
+
 %-----------------------------------------------------------------------------%
-% Relation Subterms
+% Relation substitutions
 
-% Return subterms in a Relation 
-:- func relation_subterms(mh_relation) = mh_tuple is semidet.
-:- pred relation_subterms(mh_relation::in, mh_tuple::out) is semidet.
+:- pred apply_relation_substitution(mh_substitution::in, mh_relation::in,
+	mh_relation::out) is det.
 
-% Return an empty tuple if there are no subterms.
-:- func det_relation_subterms(mh_relation) = mh_tuple.
-:- pred det_relation_subterms(mh_relation::in, mh_tuple::out) is det.
+
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
@@ -161,27 +157,20 @@
 
 %-----------------------------------------------------------------------------%
 
-apply_relation_substitution(_, _, _) :- sorry($module, $pred,
-	"apply_relation_substitution/3").
-	
-:- pragma no_determinism_warning(apply_relation_substitution/3).
+
 
 ground_relation(_) :- sorry($module, $pred, "ground_relation/1").
 
 :- pragma no_determinism_warning(ground_relation/1).
 
+
 %-----------------------------------------------------------------------------%
-% Relation Subterms
-
-relation_subterms(_) = sorry($module, $pred, "relation_subterms/1").
-
-:- pragma no_determinism_warning(relation_subterms/1).
-
-relation_subterms(R, relation_subterms(R)).
+% Relation substitutions
 
 
-det_relation_subterms(_) = sorry($module, $pred, "det_relation_subterms/1").
 
-:- pragma no_determinism_warning(det_relation_subterms/1).
 
-det_relation_subterms(R, det_relation_subterms(R)).
+apply_relation_substitution(_, _, _) :- sorry($module, $pred,
+	"apply_relation_substitution/3").
+	
+:- pragma no_determinism_warning(apply_relation_substitution/3).

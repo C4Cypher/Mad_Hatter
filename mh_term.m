@@ -72,36 +72,25 @@
 
 :- pred is_concrete(mh_term::is_concrete) is semidet.
 
-%-----------------------------------------------------------------------------%
-% Subterms
-
-% Return a tuple of a term's subterms, fail if there are none
-:- func subterms(mh_term) = mh_tuple is semidet.
-:- pred subterms(mh_term::in, mh_tuple::out) is semidet.
-
-% Return an empty tuple if there are no subterms.
-:- func det_subterms(mh_term) = mh_tuple is det.
-:- pred det_subterms(mh_term::in, mh_tuple::out) is det.
 
 %-----------------------------------------------------------------------------%
 % Ground terms
 
-% True if a term is semantically ground under no context
+	% True if a term is semantically ground 
 :- pred ground_term(mh_term::in) is semidet.
 
+	% Constraint form of ground/1, returns the same term
 :- func ground_term(mh_term) = mh_term.
 :- mode ground_term(in) = out is semidet.
 :- mode ground_term(out) = in is semidet.
 
-% True if a term is semantically ground with the given substitution.
-% :- pred ground_term(mh_term::in, mh_substitution::in) is semidet.
 
 %-----------------------------------------------------------------------------%
 % Substitutions
 
-% Apply a substitution to a term, if the term is a variable, replace the
-% variable with the substituted term as appropriate, if not, return the term
-% with the substitution applied.
+	% Apply a substitution to a term, if the term is a variable, replace the
+	% variable with the substituted term as appropriate, if not, return the 
+	% term with the substitution applied.
 
 :- pred apply_term_substitution(mh_substitution::in, 
 	mh_term::in, mh_term::out) is det.
@@ -159,9 +148,9 @@
 % Relations 
 
 :- func term_nil = mh_term.
-%- func true_term = mh_term.
-%- func false_term = mh_term.
-%- func fail_term(string) = mh_term.
+%- func term_true = mh_term.
+%- func term_false = mh_term.
+%- func term_fail(string) = mh_term.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -173,6 +162,8 @@
 :- import_module string.
 :- import_module list.
 
+:- import_module util.
+
 %-----------------------------------------------------------------------------%
 % Concrete terms
 
@@ -183,25 +174,7 @@ is_concrete(cons(Functor, Tuple)) :-
 	is_concrete(Functor),
 	all_tuple(is_concrete, Tuple).
 
-%-----------------------------------------------------------------------------%
-% Subterms
 
-%TODO: append for mh_tuple
-subterms(cons(Car, Cdr)) = tuple_cons(Car, Cdr).
-
-subterms(relation(R)) = relation_subterms(R).
-		
-subterms(Term, subterms(Term)).
-
-det_subterms(Term) = 
-	(if Subterms = subterms(Term) 
-	then 
-		Subterms
-	else 
-		from_list([]) 
-	).
-
-det_subterms(Term, det_subterms(Term)).
 %-----------------------------------------------------------------------------%
 % Ground terms
 
