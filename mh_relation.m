@@ -20,8 +20,9 @@
 :- import_module mh_term.
 :- import_module mh_proposition.
 :- import_module mh_foreign_function.
-:- import_module mh_tuple.
+% :- import_module mh_tuple.
 :- import_module mh_substitution.
+:- import_module mh_var_set.
 
 %-----------------------------------------------------------------------------%
 % Relation type
@@ -135,7 +136,7 @@
 	
 
 	
-%:- func relation_scope(mh_relation) = mh_scope.
+:- func relation_scope(mh_relation) = mh_scope.
 	
  
 :- pred ground_relation(mh_relation::in) is semidet.
@@ -157,11 +158,22 @@
 
 %-----------------------------------------------------------------------------%
 
-
+relation_scope(nil) = no_scope.
+relation_scope(conjunction(Scope, _)) = Scope.
+relation_scope(disjunction(Scope, _)) = Scope.
+relation_scope(not(Scope, _)) = Scope.
+relation_scope(lambda_equivalence(Scope, _, _)) = Scope.
+relation_scope(lambda_application(Scope, _, _)) = Scope.
+relation_scope(lambda_unification(Scope, _, _)) = Scope.
+relation_scope(lazy(Scope, _)) = Scope.
+relation_scope(proposition(Scope, _)) = Scope.
+relation_scope(closure(Scope, _, _)) = Scope.
+relation_scope(call(Scope, _)) = Scope.
 
 ground_relation(_) :- sorry($module, $pred, "ground_relation/1").
 
 :- pragma no_determinism_warning(ground_relation/1).
+
 
 
 %-----------------------------------------------------------------------------%
