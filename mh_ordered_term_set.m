@@ -251,6 +251,20 @@
 :- func difference(mh_ordered_term_set, mh_ordered_term_set)
 	= mh_ordered_term_set.
 
+%-----------------------------------------------------------------------------%
+% Higher Order
+
+:- func fold(func(mh_term, A) = A, mh_ordered_term_set, A) = A.
+:- mode fold(func(in, in) = out is det, in, in) = out is det.
+:- mode fold(func(in, in) = out is semidet, in, in) = out 
+	is semidet.
+
+:- func det_fold(func(mh_term, A) = A, mh_ordered_term_set, A) = A.
+
+:- func semidet_fold(func(mh_term, A) = A, mh_ordered_term_set, A) = A.
+:- mode semidet_fold(func(in, in) = out is semidet, in, in) = out 
+	is semidet.
+
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -620,5 +634,14 @@ difference(os(O1, _)@OS1, os(_, S2)) = OS3 :-
 			OS3 = os(O3, S3)
 		)
 	).
+	
+%-----------------------------------------------------------------------------%
+% Higher Order
+
+fold(F, OTS, A) = fold(F, to_array(OTS), A).
+
+det_fold(F, OTS, A) = fold(F, OTS, A).
+
+semidet_fold(F, OTS, A) = fold(F, OTS, A).
 		
 
