@@ -134,15 +134,25 @@
 %-----------------------------------------------------------------------------%
 % Higher order 
 
+	% Functionally identical to lfold, but allowing semidet higher order calls
+:- func fold(func(T, A) = A, array(T), A) = A.
+:- mode fold(func(in, in) = out is det, in, in) = out is det.
+:- mode fold(func(in, in) = out is semidet, in, in) = out is semidet.
+
+:- func det_fold(func(T, A) = A, array(T), A) = A.
+
+:- func semidet_fold(func(T, A) = A, array(T), A) = A.
+:- mode semidet_fold(func(in, in) = out is semidet, in, in) = out is semidet.
+
 	% Left fold over items in an array, providing the array index
 :- func index_fold(func(int, T, A) = A, array(T), A) = A.
-:- mode index_fold(in(func(in, in, in) = out is det), in, in) = out is det.
-:- mode index_fold(in(func(in, in, in) = out is semidet), in, in) = out 
+:- mode index_fold(func(in, in, in) = out is det, in, in) = out is det.
+:- mode index_fold(func(in, in, in) = out is semidet, in, in) = out 
 	is semidet.
 	
 :- pred index_fold(func(int, T, A) = A, array(T), A, A).
-:- mode index_fold(in(func(in, in, in) = out is det), in, in, out) is det.
-:- mode index_fold(in(func(in, in, in) = out is semidet), in, in, out) 
+:- mode index_fold(func(in, in, in) = out is det, in, in, out) is det.
+:- mode index_fold(func(in, in, in) = out is semidet, in, in, out) 
 	is semidet.
 	
 :- pred index_all_true(pred(int, T)::in(pred(in, in) is semidet), 
@@ -952,9 +962,9 @@ search_until(CMP, R, A, Lo, Hi) =
 % Higher order 
 
 :- func for_fold(int, int, func(int, T, A) = A, array(T), A) = A.
-:- mode for_fold(in, in, in(func(in, in, in) = out is det), in, in) = out 
+:- mode for_fold(in, in, func(in, in, in) = out is det, in, in) = out 
 	is det.
-:- mode for_fold(in, in, in(func(in, in, in) = out is semidet), in, in) = out 
+:- mode for_fold(in, in, func(in, in, in) = out is semidet, in, in) = out 
 	is semidet.
 
 for_fold(Current, Last, F, Array, Acc) = 
@@ -964,6 +974,20 @@ for_fold(Current, Last, F, Array, Acc) =
 	)
 :-
 	NextAcc = F(Current, unsafe_elem(Current, Array), Acc).
+	
+:- func strip_index(func(T, A) = A, int, T, A) = A.
+:- mode strip_index(func(in, in) = out is det, in, in, in) = out is det.
+:- mode strip_index(func(in, in) = out is semidet, in, in, in) = out
+ is semidet.
+ 
+strip_index(F, _, T, A) = F(T, A).
+
+fold(F, Array, A) = 
+	for_fold(min(Array), max(Array), strip_index(F), Array, A).
+
+det_fold(F, Array, A) = fold(F, Array, A).
+
+semidet_fold(F, Array, A) = fold(F, Array, A).
 	
 index_fold(F, Array, Acc) = for_fold(min(Array), max(Array), F, Array, Acc).
 
