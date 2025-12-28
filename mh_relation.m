@@ -20,9 +20,7 @@
 :- import_module mh_term.
 :- import_module mh_proposition.
 :- import_module mh_foreign_function.
-% :- import_module mh_tuple.
 :- import_module mh_substitution.
-:- import_module mh_var_set.
 
 %-----------------------------------------------------------------------------%
 % Relation type
