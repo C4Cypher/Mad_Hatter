@@ -57,6 +57,8 @@
 	% Construct a scope with no context and no variables
 :- func no_scope = mh_scope.
 
+:- pred no_scope(mh_scope::in) is semidet.
+
 	% Throws an exception if a scope contains name mappings outside of the 
 	% scope, if the root (CAR) of an extended scope is a child, or if a child 
 	% scope contains variables outside the scope of it's parent.
@@ -79,6 +81,9 @@
 	% has the same context for it's counterpart in the second scope.
 :- pred compatable_scope(mh_scope::in, mh_scope::in) is semidet.  
 
+	% Succeeds if the first scope shares the same root with the second
+:- pred semi_compatable_scope(mh_scope::in, mh_scope::in) is semidet.
+
 
 %-----------------------------------------------------------------------------%
 % Root Scopes
@@ -95,25 +100,22 @@
  
 	% Throws an exception if input mr_varset does not contain a complete set 
 	% of variable ids from 1 to N. Ignores any variable bindings in mr_varset
-:- func root_scope_from_mr_varset(/*mh_relation,*/ mh_context, mr_varset) =
-	mh_scope.
-:- pred root_scope_from_mr_varset(/*mh_relation::in,*/ mh_context::in, 
-	mr_varset::in, mh_scope::out) is det.
+:- func root_scope_from_mr_varset(mh_context, mr_varset) = mh_scope.
+:- pred root_scope_from_mr_varset(mh_context::in, mr_varset::in, mh_scope::out)
+	is det.
 	
 	% A variant of the above call that renames the variables into a church 
 	% encoding, if not already, also if the variables were not already
 	% church endcoded, provides a variable renaming that will normalize the 
 	% variables to the new church encoding in the root scope
-:- pred root_scope_from_mr_varset(/*mh_relation::in,*/ mh_context::in,
-	mr_varset::in, mh_scope::out, maybe(mh_renaming)::out) is det.
+:- pred root_scope_from_mr_varset(mh_context::in, mr_varset::in, mh_scope::out,
+	maybe(mh_renaming)::out) is det.
 
 	% Generate a root scope from a context, varset and name mapping. If the
 	% varset is not church encoded (complete from 1 to N), provide a variable
 	% renaming that will normalize the variables to the new church encoding
 	% in the root scope
-:- pred root_scope_from_var_set(/*mh_relation::in,*/ mh_context::in, 
-	mh_var_set::in, var_names::in, mh_scope::out, maybe(mh_renaming)::out) 
-	is det.
+:- pred root_scope_from_var_set(mh_context::in, mh_var_set::in, var_names::in, 	mh_scope::out, maybe(mh_renaming)::out) is det.
 
 	
 %-----------------------------------------------------------------------------%
@@ -203,6 +205,8 @@
 
 :- pred semidet_scope_contains_var(mh_scope::in, mh_var::in) is semidet.
 
+:- pred assert_var_in_scope(mh_scope::in, mh_var::in) is det. 
+
 
 :- func scope_vars(mh_scope) = mh_var_set.
 :- pred scope_vars(mh_scope::in, mh_var_set::out) is det.
@@ -278,8 +282,12 @@
 	
 no_scope = root_scope(no_context, empty_var_id_set, empty_var_map).
 
-%%% UNDER NO CIRCUMSTANCES SHOULD A CHILD SCOPE BE PLACED AS THE FIRST %%%
-%%% ARGUMENT OF extended_scope/2, check using is_root/1 and is_child/1 %%%
+no_scope(Scope) :- 
+	scope_context(Scope) = no_context, 
+	scope_var_count(Scope) = 0.
+
+%%% UNDER NO CIRCUMSTANCES SHOULD A CHILD SCOPE BE PLACED AS AN ARGUMENT %%%
+%%% OF extended_scope/2, check using is_root/1 and is_child/1 %%%
 
 require_valid_scope(root_scope(_context, IDSet, Names)) :-
 	(if first(Names, ID, _, Iterator)
@@ -307,6 +315,9 @@ require_valid_scope(extended_scope(Car, Cdr)) :-
 	(if Car = child_scope(_, _, _)
 	then
 		unexpected($module, $pred, "Attempt to extend child scope")
+	else if Cdr = child_scope(_, _, _)
+	then
+		unexpected($module, $pred, "Scope extended with child scope")
 	else
 		require_valid_scope(Car),
 		require_valid_scope(Cdr)
@@ -452,8 +463,9 @@ church_renaming_for_varset_loop(VarSet, !IDMap, PrevIDSet, FullIDSet) :-
 
 is_extended(extended_scope(_, _)).
 	
-extend_root_scope(Car, Cdr, extended_scope(Car, Cdr), Renaming) :-
+extend_root_scope(Car, Extend, extended_scope(Car, Cdr), Renaming) :-
 	require_root_scope($module, $pred, Car),
+	root_ancestor(Extend, Cdr),
 	extended_renaming(scope_vars(Cdr), root_scope_id_set(Car), Renaming).
 	
 :- pred extended_renaming(mh_var_set::in, var_id_set::in, mh_renaming::out) 
@@ -556,6 +568,10 @@ scope_contains_var(Scope, var(ID)) :- scope_contains_id(Scope, ID).
 
 semidet_scope_contains_var(Scope, Var) :- 
 	scope_contains_var(Scope, Var).
+	
+assert_var_in_scope(Scope, Var) :-
+	(if scope_contains_var(Scope, Var) then true
+	else unexpected($module, $pred, "Variable not in scope.")).
 	
 :- pred scope_contains_id(mh_scope, var_id).
 :- mode scope_contains_id(in, in) is semidet.
