@@ -21,6 +21,7 @@
 :- import_module mh_tuple.
 :- import_module mh_relation.
 :- import_module mh_var_set.
+:- import_module mh_scope.
 :- import_module mh_substitution.
 
 %-----------------------------------------------------------------------------%
@@ -132,6 +133,9 @@
 :- mode	term_var(in) = out is det.
 :- mode term_var(out) = in is semidet.
 
+:- func vars_in_scope(mh_scope, mh_term) = mh_var_set.
+:- pred vars_in_scope(mh_scope::in, mh_term::in, mh_var_set::out) is det.
+
 
 
 %-----------------------------------------------------------------------------%
@@ -213,8 +217,7 @@ vars_in_concrete_term(cons(Functor, Args)) =
 :- func vict_tuple_fold(mh_term, mh_var_set) = mh_var_set.
 vict_tuple_fold(Term, Set) = var_set_union(vars_in_concrete_term(Term), Set) 
 	:- expect_concrete_term(Term).
-
-
+	
 %-----------------------------------------------------------------------------%
 % Ground terms
 
@@ -270,6 +273,28 @@ is_var(var(_)).
 
 term_var(ID) = var(ID).
 
+
+vars_in_scope(_, atom(_)) = empty_var_set.
+vars_in_scope(Scope, var(ID)) = singleton_var_set(ID) :-
+	assert_var_in_scope(Scope, var(ID)).
+vars_in_scope(_, value(_)) = empty_var_set.
+vars_in_scope(Scope, cons(Functor, Args)) = 
+	var_set_union(
+		vars_in_scope(Scope, Functor),
+		fold_tuple(vis_fold(Scope), Args, empty_var_set)
+	). 
+	
+:- func vis_fold(mh_scope, mh_term, mh_var_set) = mh_var_set.
+vis_fold(Scope, Term, Set) = 
+	var_set_union(vars_in_scope(Scope, Term), Set).
+
+vars_in_scope(Scope, relation(R)) = 
+	(if compatable_scope(Other@relation_scope(R), Scope)
+	then scope_vars(Other)
+	else empty_var_set
+	).
+
+vars_in_scope(Scope, Term, vars_in_scope(Scope, Term)).
 
 
 %-----------------------------------------------------------------------------%
