@@ -70,7 +70,7 @@
 % positives if the contexts the scopes were created with are not unique to
 % said scopes (usually if they were defined on the same line).
 
-	% True of two scopes if each variable in both scopes share the same 
+	% True of two scopes if each variable in both scopes share the same root
 	% context.  Two scopes may have different structures, or variable namings
 	% but if the variables within are the same, and came from the same place
 	% they can be considered the same scopes.
@@ -82,7 +82,7 @@
 :- pred compatable_scope(mh_scope::in, mh_scope::in) is semidet.  
 
 	% Succeeds if the first scope shares the same root with the second
-:- pred semi_compatable_scope(mh_scope::in, mh_scope::in) is semidet.
+% :- pred semi_compatable_scope(mh_scope::in, mh_scope::in) is semidet.
 
 
 %-----------------------------------------------------------------------------%
@@ -343,18 +343,16 @@ valid_child_scope(Parent, VarSet) :-
 		"child scope contains variables not in parent scope")
 	).
 	
-
-equivalent_scopes(S, S).
-equivalent_scopes(S1, S2) :- 
-	scope_vars(S1, Vars), scope_vars(S2, Vars),
-	all_true(equivalent_var_context(S1, S2), Vars).
-	
 :- pred equivalent_var_context(mh_scope::in, mh_scope::in, mh_var::in) is semidet.
 
 equivalent_var_context(S1, S2, V) :-
 	semidet_scope_variable_context(S1, V, Ctx),
 	semidet_scope_variable_context(S2, V, Ctx).
 
+equivalent_scopes(S, S).
+equivalent_scopes(S1, S2) :- 
+	scope_vars(S1, Vars), scope_vars(S2, Vars),
+	all_true(equivalent_var_context(S1, S2), Vars).
 compatable_scope(S1, S2) :- 
 	all_true(equivalent_var_context(S1, S2), scope_vars(S1)).
 

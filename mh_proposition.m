@@ -23,6 +23,8 @@
 :- import_module mh_substitution.
 :- import_module mh_ordered_proposition_set.
 :- import_module mh_tuple.
+:- import_module mh_scope.
+:- import_module mh_var_set.
 
 
 %-----------------------------------------------------------------------------%
@@ -69,6 +71,8 @@
 :- pred apply_proposition_substitution(mh_substitution::in, mh_proposition::in,
 	mh_proposition::out) is det.
 	
+:- func vars_in_proposition(mh_scope, mh_proposition) = mh_var_set.
+	
 :- pred ground_proposition(mh_proposition::in) is semidet.
 
 %-----------------------------------------------------------------------------%
@@ -99,6 +103,8 @@ apply_proposition_substitution(_, _, _) :- sorry($module, $pred,
 
 :- pragma no_determinism_warning(apply_proposition_substitution/3).
 
+
+vars_in_proposition(_, _) = sorry($module, $pred, "vars_in_proposition/2").
 
 ground_proposition(_) :- sorry($module, $pred, "ground_proposition/1").
 

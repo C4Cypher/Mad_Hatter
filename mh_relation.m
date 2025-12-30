@@ -21,6 +21,7 @@
 :- import_module mh_proposition.
 :- import_module mh_foreign_function.
 :- import_module mh_substitution.
+:- import_module mh_var_set.
 
 %-----------------------------------------------------------------------------%
 % Relation type
@@ -136,7 +137,8 @@
 	
 :- func relation_scope(mh_relation) = mh_scope.
 	
- 
+:- func vars_in_relation(mh_relation) = mh_var_set.
+
 :- pred ground_relation(mh_relation::in) is semidet.
 
 %-----------------------------------------------------------------------------%
@@ -167,6 +169,29 @@ relation_scope(lazy(Scope, _)) = Scope.
 relation_scope(proposition(Scope, _)) = Scope.
 relation_scope(closure(Scope, _, _)) = Scope.
 relation_scope(call(Scope, _)) = Scope.
+
+:- func vir_fold(mh_scope, mh_term, mh_var_set) = mh_var_set.
+
+vir_fold(Scope, Term, Set) = var_set_union(vars_in_scope(Scope, Term), Set).
+
+vars_in_relation(nil) = empty_var_set.
+vars_in_relation(conjunction(Scope, OTS)) = 
+	fold(vir_fold(Scope), OTS, empty_var_set).
+vars_in_relation(disjunction(Scope, OTS)) = 
+	fold(vir_fold(Scope), OTS, empty_var_set).
+vars_in_relation(not(Scope, Term)) = vars_in_scope(Scope, Term).
+vars_in_relation(lambda_equivalence(Scope, L, R)) = 
+	var_set_union(vars_in_scope(Scope, L), vars_in_scope(Scope, R)).
+vars_in_relation(lambda_application(Scope, L, R)) =  
+	var_set_union(vars_in_scope(Scope, L), vars_in_scope(Scope, R)).
+vars_in_relation(lambda_unification(Scope, L, R)) =  
+	var_set_union(vars_in_scope(Scope, L), vars_in_scope(Scope, R)).
+vars_in_relation(lazy(Scope, Term)) = vars_in_scope(Scope, Term).
+vars_in_relation(proposition(Scope, Prop)) = vars_in_proposition(Scope, Prop).
+vars_in_relation(closure(Scope, _, _)) = 
+	sorry($module, $pred, "vars_in_relation/1").
+vars_in_relation(call(Scope, _)) = empty_var_set.
+
 
 ground_relation(_) :- sorry($module, $pred, "ground_relation/1").
 
