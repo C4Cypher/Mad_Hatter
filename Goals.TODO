@@ -51,18 +51,17 @@ get a repl running
 								representation for foreign calls
 							mode system
 					ordered term sets
-						finish term map	 - on hold
+						finish term map	 - done
 							proposition map
 							relation map
 							function map
 							mode map
 							substitution map
-					refactor substitutions
-					refactor tuples
-					partial set evaluation/iterators? 
-				evaluation  <- I am here
+				evaluation
+					scope management
+						substitutions that properly maintain scopes <- I am here
 					environment 
-						finish substitutions 
+						finish substitutions
 							term constraints 	
 						A mapping of symbols to relations 
 							(modules are envorionments)
@@ -120,7 +119,7 @@ ensure that Mad Hatter can be a fully backwards compatable Mercury compiler
 
 			
 Higher order constructs:
-	* A relation is unification with a disjunction of higher order terms
+	* A relation represents higher order constructs with their own scope
 	* A proposition represents a truth value
 		- As such, it can be represented as a function that returns a truth val
 	% A function represents a one way transformation from one term to another
@@ -143,12 +142,6 @@ Id' have to re-think the rules to unification in relation to constraints.
 	evaluations can be inherent in the structure.
 
 And I suspect I can use relations as the mechanism for defining constraints
-
-/* OLD
-I've been struggling to define relations in anything but a general sense, 
-I know they're something of a superclass to both predicates and functions,
-Depending on the mode, i.e. information flow of the arguments and return value
-*/
 
 A relation represents a unification rule beyond a simple equality test.
 This definition alows relations to encompass just about all higher order lambda
