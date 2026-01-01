@@ -20,6 +20,7 @@
 :- import_module mh_term.
 :- import_module mh_term_map.
 :- import_module mh_environment.
+:- import_module mh_substitution.
 
 %-----------------------------------------------------------------------------%
 % Evaluation
@@ -33,6 +34,11 @@
 	mh_environment::in, mh_environment::out,
 	mh_scope::in, mh_scope::out, 
 	mh_term::in, mh_term::in, mh_term::out) is det.	% A(B) -> C
+	
+:- pred substitute(eval_strategy::in,
+	mh_environment::in, mh_environment::out,
+	mh_scope::in, mh_scope::out,
+	mh_term::in, mh_substitution::in, mh_term::out) is det.
 
 %-----------------------------------------------------------------------------%
 % Evaluation strategy.
