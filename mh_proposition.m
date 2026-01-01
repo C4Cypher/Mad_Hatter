@@ -106,6 +106,8 @@ apply_proposition_substitution(_, _, _) :- sorry($module, $pred,
 
 vars_in_proposition(_, _) = sorry($module, $pred, "vars_in_proposition/2").
 
+:- pragma no_determinism_warning(vars_in_proposition/2).
+
 ground_proposition(_) :- sorry($module, $pred, "ground_proposition/1").
 
 :- pragma no_determinism_warning(ground_proposition/1).
