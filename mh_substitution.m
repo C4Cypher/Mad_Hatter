@@ -19,6 +19,7 @@
 
 :- import_module mh_term.
 :- import_module mh_var_id.
+:- import_module mh_var_set.
 :- import_module mh_var_map.
 
 %-----------------------------------------------------------------------------%
@@ -211,7 +212,40 @@
 	mh_renaming.
 	
 %-----------------------------------------------------------------------------%
-% Renaming var_maps
+% Renaming structures
+
+	% Produce a new var set that is the result of mapping the variables in
+	% input set through the renaming, fails if the input set contains vars
+	% that are not present in the renaming.
+:- pred rename_var_set(mh_renaming::in, mh_var_set::in, mh_var_set::out)
+	is semidet.
+	
+:- func rename_var_set(mh_renaming, mh_var_set) = mh_var_set is semidet.
+
+	% As above, but throw an exception if the input set contains vars that are
+	% not present in the renaming.
+:- pred det_rename_var_set(mh_renaming::in, mh_var_set::in, mh_var_set::out)
+	is det.
+	
+:- func det_rename_var_set(mh_renaming, mh_var_set) = mh_var_set.
+
+	% Similar to rename_var_set, but leave any unmapped variables in the
+	% resulting set.
+:- pred partial_rename_var_set(mh_renaming::in, mh_var_set::in, 
+	mh_var_set::out) is det.
+	
+:- func partial_rename_var_set(mh_renaming, mh_var_set) = mh_var_set.
+
+	% Variations that remove any mappings that are not present in the renamed
+	% var set.
+:- pred rename_var_set(mh_renaming::in, mh_renaming::out, mh_var_set::in,
+	mh_var_set::out) is semidet.
+	
+:- pred det_rename_var_set(mh_renaming::in, mh_renaming::out, mh_var_set::in,
+	mh_var_set::out) is det.
+
+:- pred partial_rename_var_set(mh_renaming::in, mh_renaming::out, 
+	mh_var_set::in, mh_var_set::out) is det.
 
 	% Re-map the variable bindings in an mh_var_map, fails if any
 	% of the new bindings collide with existing ones in the var map.
@@ -465,7 +499,64 @@ remap_renaming(Map2, From1, To1, !.Map3 - !.MapDiff, !:Map3 - !:MapDiff)
 compose_renamings(Ren1, Ren2) = Ren3 :- compose_renamings(Ren1, Ren2, Ren3).
 
 %-----------------------------------------------------------------------------%
-% Renaming var_maps
+% Renaming structures
+
+:- pred reset(func(var_id) = var_id, var_id, mh_var_set, mh_var_set).
+:- mode reset(func(in) = out is det, in, in, out) is det.
+:- mode reset(func(in) = out is semidet, in, in, out) is semidet.
+
+reset(F, ID, !Set) :- var_set_merge_id(F(ID), !Set).
+
+rename_var_set(ren_map(RenMap), !Set) :-
+	fold_id(reset(id_search(RenMap)), !.Set, empty_var_set, !:Set).
+	
+rename_var_set(Ren, !.Set) = !:Set :- rename_var_set(Ren, !Set).
+
+det_rename_var_set(ren_map(RenMap), !Set) :-
+	fold_id(reset(id_lookup(RenMap)), !.Set, empty_var_set, !:Set).
+	
+det_rename_var_set(Ren, !.Set) = !:Set :- det_rename_var_set(Ren, !Set).
+
+:- pred partial_reset(mh_var_map(var_id)::in, var_id::in, mh_var_set::in,
+	mh_var_set::out) is det.
+	
+partial_reset(RenMap, ID, !Set) :-
+	(if id_search(RenMap, ID, NewID)
+	then
+		var_set_delete_id(ID, !Set),
+		var_set_merge_id(NewID, !Set)
+	else true	
+	).
+	
+:- pred del_if_not_present(mh_var_set::in, var_id::in, T::in,
+	mh_var_map(var_id)::in, mh_var_map(var_id)::out) is det.
+
+del_if_not_present(Set, ID, _, !Map) :-
+	(if var_set_contains_id(Set, ID)
+	then true
+	else
+		id_delete(ID, !Map)
+	).
+
+rename_var_set(!Ren, !Set) :- 
+	!.Ren = ren_map(RenMap),
+	fold_id(del_if_not_present(!.Set), RenMap, RenMap, NewRenMap),
+	rename_var_set(!.Ren, !Set),
+	!:Ren = ren_map(NewRenMap).
+	
+det_rename_var_set(!Ren, !Set) :- 
+	!.Ren = ren_map(RenMap),
+	fold_id(del_if_not_present(!.Set), RenMap, RenMap, NewRenMap),
+	det_rename_var_set(!.Ren, !Set),
+	!:Ren = ren_map(NewRenMap).
+	
+partial_rename_var_set(!Ren, !Set) :- 
+	!.Ren = ren_map(RenMap),
+	fold_id(del_if_not_present(!.Set), RenMap, RenMap, NewRenMap),
+	partial_rename_var_set(!.Ren, !Set),
+	!:Ren = ren_map(NewRenMap).
+	
+%-----------------------------------------------------------------------------%
 
 rename_var_map(ren_map(Ren), !Map) :-
 	fold_id(remap, Ren, !Map).
