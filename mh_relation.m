@@ -107,7 +107,7 @@
 	%		Should evaluate to either a success or failure as defined in 
 	%		mh_proposition.m
  
-	;		closure(mh_scope, mh_term, mh_substitution)
+	;		closure(mh_term, mh_substitution)
 	%		Evaluates to the given term with the applied variable substitution
 	%		Allows for terms from incompatable scope to be grounded into the
 	%		enclosing scope when the raw conjunction of a term and a
@@ -135,7 +135,7 @@
 	
 
 	
-:- func relation_scope(mh_relation) = mh_scope.
+:- func relation_scope(mh_relation) = mh_scope is semidet.
 	
 :- func vars_in_relation(mh_relation) = mh_var_set.
 
@@ -167,7 +167,7 @@ relation_scope(lambda_application(Scope, _, _)) = Scope.
 relation_scope(lambda_unification(Scope, _, _)) = Scope.
 relation_scope(lazy(Scope, _)) = Scope.
 relation_scope(proposition(Scope, _)) = Scope.
-relation_scope(closure(Scope, _, _)) = Scope.
+relation_scope(closure(Scope, _, _)) = no_scope. %!!!
 relation_scope(call(Scope, _)) = Scope.
 
 :- func vir_fold(mh_scope, mh_term, mh_var_set) = mh_var_set.
