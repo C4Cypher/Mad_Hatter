@@ -161,6 +161,13 @@
 :- mode var_set_remove(in, out, in) is semidet.
 :- mode var_set_remove(out, in, in) is semidet.
 
+% If the var_id is not present in the set, the set is unmodified
+:- pred var_set_delete_id(var_id::in, mh_var_set::in, mh_var_set::out)
+	is det.
+	
+:- pred var_set_delete(mh_var::in, mh_var_set::in, mh_var_set::out)
+	is det.
+
 %-----------------------------------------------------------------------------%
 % Var Set composition and set operations
 
@@ -534,6 +541,10 @@ var_set_merge(var(ID), VS1, VS2) :- var_set_merge_id(ID, VS1, VS2).
 var_set_remove_id(ID, VS1, VS2) :- var_set_insert_id(ID, VS2, VS1).
 	
 var_set_remove(var(ID), VS1, VS2) :- var_set_remove_id(ID, VS1, VS2).
+
+var_set_delete_id(ID, VS, var_set_difference(VS1, singleton_var_set(ID))).
+
+var_set_delete(var(ID), VS1, VS2) :- var_set_delete_id(ID, VS1, VS2).
 
 %-----------------------------------------------------------------------------%
 % Var Set composition and set operations
