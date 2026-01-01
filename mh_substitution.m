@@ -236,6 +236,11 @@
 	
 :- func partial_rename_var_set(mh_renaming, mh_var_set) = mh_var_set.
 
+	% Prune a renaming to only include mappings from the given var set
+:- pred prune_renaming(mh_var_set::in, mh_renaming::in, mh_renaming::out)
+	is det.
+:- func prune_renaming(mh_var_set, mh_renaming) = mh_renaming.
+
 	% Variations that remove any mappings that are not present in the renamed
 	% var set.
 :- pred rename_var_set(mh_renaming::in, mh_renaming::out, mh_var_set::in,
@@ -537,24 +542,26 @@ del_if_not_present(Set, ID, _, !Map) :-
 	else
 		id_delete(ID, !Map)
 	).
+	
+prune_renaming(Set, ren_map(!.RenMap), ren_map(!:RenMap)) :-
+	fold_id(del_if_not_present(Set), !.RenMap, !RenMap).
+	
+prune_renaming(Set !.Ren) = !:Ren :- prune_renamings(Set, !Ren).
 
 rename_var_set(!Ren, !Set) :- 
 	!.Ren = ren_map(RenMap),
-	fold_id(del_if_not_present(!.Set), RenMap, RenMap, NewRenMap),
-	rename_var_set(!.Ren, !Set),
-	!:Ren = ren_map(NewRenMap).
+	!:Ren = ren_map(prune_renaming(!.Set, !.Ren)),
+	rename_var_set(!.Ren, !Set).
 	
 det_rename_var_set(!Ren, !Set) :- 
 	!.Ren = ren_map(RenMap),
-	fold_id(del_if_not_present(!.Set), RenMap, RenMap, NewRenMap),
-	det_rename_var_set(!.Ren, !Set),
-	!:Ren = ren_map(NewRenMap).
+	!:Ren = ren_map(prune_renaming(!.Set, !.Ren)),
+	det_rename_var_set(!.Ren, !Set).
 	
 partial_rename_var_set(!Ren, !Set) :- 
 	!.Ren = ren_map(RenMap),
-	fold_id(del_if_not_present(!.Set), RenMap, RenMap, NewRenMap),
-	partial_rename_var_set(!.Ren, !Set),
-	!:Ren = ren_map(NewRenMap).
+	!:Ren = ren_map(prune_renaming(!.Set, !.Ren)),
+	partial_rename_var_set(!.Ren, !Set).
 	
 %-----------------------------------------------------------------------------%
 
