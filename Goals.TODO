@@ -58,13 +58,27 @@ get a repl running
 							mode map
 							substitution map
 				evaluation
-					scope management
-						substitutions that properly maintain scopes <- I am here
+					scope management <- I am here
+						substitutions that properly maintain scopes
+							* Substitutions are not merely operations on terms
+							in fact, the process of applying substitutions
+							may result in further evaluations (usually 
+							unifications) , thus applying a full substitution
+							requires not only full scope bookeeping, but may
+							modify the scope of the current evaluation and
+							requires full calling context
+							* Renamings, by contrast, can still mostly be done
+							'in place', as they do not modify a term's internal
+							structure, and as such, may not trigger 
+							unifications. They will, by nature, alter the 
+							scope of the term whose variables are being renamed
 					environment 
 						finish substitutions
 							term constraints 	
 						A mapping of symbols to relations 
 							(modules are envorionments)
+						Update nested module refrences when an inner call
+							modifies a called environment?
 						basic interface for map structure
 							bind, bound 
 							a table of evaluations, serves as a truth table and
@@ -127,8 +141,8 @@ Higher order constructs:
 	
 HO Notes:
 
-I just realized I can implement constraint solving (and thus types) by making
-'constraint terms' ... 
+I just realized I can implement constraint solving (and thus dependent types) 
+by making 'constraint terms' ... 
 
 Id' have to re-think the rules to unification in relation to constraints.
 * A free variable unified with a constraint binds the variable to the constraint the same as if bound to a ground value.
