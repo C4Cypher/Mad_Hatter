@@ -191,7 +191,7 @@ insert(Rel@proposition(_, Prop), Value, !Map) :-
 	prop_map_insert(Rel, Value, Prop, PropMap, NewPropMap),
 	!:Map = !.Map ^ proposition_map := NewPropMap. 
 	
-insert(Rel@closure(_, _, _), Value, !Map) :-
+insert(Rel@closure(_, _), Value, !Map) :-
 	ClosureMap = !.Map ^ closure_map,
 	(if insert(Rel, Value, ClosureMap, NewClosureMap)
 	then
