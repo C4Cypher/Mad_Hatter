@@ -124,16 +124,33 @@
 	% Succeeds if a root scope is extended, fails if provided a child scope.
 :- pred is_extended(mh_scope::in) is semidet.
 	
-	% All calls to extend root scopes throw an exception if provided a child
-	% scope as the first argument
+	% If both input scopes are root scopes, output is the same as 
+	% extend_root_scope/4. If the first argument is a child scope, 
+	% recursively reconstructs the child scope with the renamed variables from
+	% The second argument. The returned renaming only re-maps variables
+	% actually present in the second argument. Use extend_root_scope/4 to
+	% generate the full renaming.
+:- pred extend_scope(mh_scope::in, mh_scope::in, mh_scope::out, 
+	mh_renaming::out) is det.
 	
+	% Variation that also returns the renamed vars of the extending scope
+	% Prerequisite for efficient execution of the above call
+:- pred extend_scope(mh_scope::in, mh_scope::in, mh_scope::out, 
+	mh_var_set::out, mh_renaming::out) is det.
+		
 	% Extend a root scope by inlining another scope, provides a renaming to
-	% re-map the variables under the inlined scope under the new scope
+	% re-map the variables under the inlined scope under the new scope.
+	% Throws an exception if the first argument is a child scope.
+	% If the second argument is a child scope, it's root ancestor is used.
+	% Output is garunteed to be an extended root scope.
 :- pred extend_root_scope(mh_scope::in, mh_scope::in, mh_scope::out, 
 	mh_renaming::out) is det.
+	
 
 %TODO: extend a root scope by providing a var_set, a prefix and offset
 % May implement in another module
+
+
 
 	% Decomposes an extended scope into it's root and the scopes that extend
 	% it.  If the scope is not extended, returns the input scope as root and
@@ -460,6 +477,28 @@ church_renaming_for_varset_loop(VarSet, !IDMap, PrevIDSet, FullIDSet) :-
 % Extended Root Scopes
 
 is_extended(extended_scope(_, _)).
+
+extend_scope(Car, Cdr, NewScope, Renaming) :-
+	extend_scope(Car, Cdr, NewScope, _, Renaming).
+
+extend_scope(Car, Cdr, NewScope, RenamedVars, Renaming) :-
+	(if Car = child_scope(Parent, Ctx, ChildVars)
+	then
+		extend_scope(Parent, Cdr, NewParent, RenamedVars, Renaming),
+		var_set_union(ChildVars, RenamedVars, NewChildVars),
+		NewScope = child_scope(NewParent, Ctx, NewChildVars)
+	else
+		extend_root_scope(Car, Cdr, NewScope, FullRenaming),
+		(if Cdr = child_scope(_, _, CdrChildVars)
+		then
+			prune_renaming(CdrChildVars, FullRenaming, Renaming),
+			CdrVars = CdrChildVars
+		else
+			Renaming = FullRenaming,
+			CdrVars = scope_vars(Cdr)
+		),
+		RenamedVars = det_rename_var_set(Renaming, CdrVars)
+	).
 	
 extend_root_scope(Car, Extend, extended_scope(Car, Cdr), Renaming) :-
 	require_root_scope($module, $pred, Car),
