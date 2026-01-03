@@ -546,7 +546,7 @@ del_if_not_present(Set, ID, _, !Map) :-
 prune_renaming(Set, ren_map(!.RenMap), ren_map(!:RenMap)) :-
 	fold_id(del_if_not_present(Set), !.RenMap, !RenMap).
 	
-prune_renaming(Set !.Ren) = !:Ren :- prune_renamings(Set, !Ren).
+prune_renaming(Set, !.Ren) = !:Ren :- prune_renamings(Set, !Ren).
 
 rename_var_set(!Ren, !Set) :- 
 	!.Ren = ren_map(RenMap),
