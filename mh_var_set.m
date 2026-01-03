@@ -542,7 +542,7 @@ var_set_remove_id(ID, VS1, VS2) :- var_set_insert_id(ID, VS2, VS1).
 	
 var_set_remove(var(ID), VS1, VS2) :- var_set_remove_id(ID, VS1, VS2).
 
-var_set_delete_id(ID, VS, var_set_difference(VS1, singleton_var_set(ID))).
+var_set_delete_id(ID, VS, var_set_difference(VS, singleton_var_set(ID))).
 
 var_set_delete(var(ID), VS1, VS2) :- var_set_delete_id(ID, VS1, VS2).
 

@@ -533,8 +533,15 @@ partial_reset(RenMap, ID, !Set) :-
 	else true	
 	).
 	
+partial_rename_var_set(ren_map(RenMap), !Set) :- 
+	fold_id(partial_reset(RenMap), !.Set, !.Set, !:Set).
+	
+partial_rename_var_set(Ren, !.Set) = !:Set :- 
+	partial_rename_var_set(Ren, !Set).
+	
 :- pred del_if_not_present(mh_var_set::in, var_id::in, T::in,
 	mh_var_map(var_id)::in, mh_var_map(var_id)::out) is det.
+	
 
 del_if_not_present(Set, ID, _, !Map) :-
 	(if var_set_contains_id(Set, ID)
@@ -546,21 +553,18 @@ del_if_not_present(Set, ID, _, !Map) :-
 prune_renaming(Set, ren_map(!.RenMap), ren_map(!:RenMap)) :-
 	fold_id(del_if_not_present(Set), !.RenMap, !RenMap).
 	
-prune_renaming(Set, !.Ren) = !:Ren :- prune_renamings(Set, !Ren).
+prune_renaming(Set, !.Ren) = !:Ren :- prune_renaming(Set, !Ren).
 
 rename_var_set(!Ren, !Set) :- 
-	!.Ren = ren_map(RenMap),
-	!:Ren = ren_map(prune_renaming(!.Set, !.Ren)),
+	!:Ren = prune_renaming(!.Set, !.Ren),
 	rename_var_set(!.Ren, !Set).
 	
 det_rename_var_set(!Ren, !Set) :- 
-	!.Ren = ren_map(RenMap),
-	!:Ren = ren_map(prune_renaming(!.Set, !.Ren)),
+	!:Ren = prune_renaming(!.Set, !.Ren),
 	det_rename_var_set(!.Ren, !Set).
 	
 partial_rename_var_set(!Ren, !Set) :- 
-	!.Ren = ren_map(RenMap),
-	!:Ren = ren_map(prune_renaming(!.Set, !.Ren)),
+	!:Ren = prune_renaming(!.Set, !.Ren),
 	partial_rename_var_set(!.Ren, !Set).
 	
 %-----------------------------------------------------------------------------%
