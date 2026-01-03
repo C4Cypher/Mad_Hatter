@@ -134,10 +134,10 @@
 */
 	
 
-	
+	% These calls fail if they contained unresolved closures
 :- func relation_scope(mh_relation) = mh_scope is semidet.
 	
-:- func vars_in_relation(mh_relation) = mh_var_set.
+:- func vars_in_relation(mh_relation) = mh_var_set is semidet.
 
 :- pred ground_relation(mh_relation::in) is semidet.
 
@@ -167,7 +167,7 @@ relation_scope(lambda_application(Scope, _, _)) = Scope.
 relation_scope(lambda_unification(Scope, _, _)) = Scope.
 relation_scope(lazy(Scope, _)) = Scope.
 relation_scope(proposition(Scope, _)) = Scope.
-relation_scope(closure(Scope, _, _)) = no_scope. %!!!
+relation_scope(closure(_, _)) = no_scope :- fail.
 relation_scope(call(Scope, _)) = Scope.
 
 :- func vir_fold(mh_scope, mh_term, mh_var_set) = mh_var_set.
@@ -188,9 +188,8 @@ vars_in_relation(lambda_unification(Scope, L, R)) =
 	var_set_union(vars_in_scope(Scope, L), vars_in_scope(Scope, R)).
 vars_in_relation(lazy(Scope, Term)) = vars_in_scope(Scope, Term).
 vars_in_relation(proposition(Scope, Prop)) = vars_in_proposition(Scope, Prop).
-vars_in_relation(closure(Scope, _, _)) = 
-	sorry($module, $pred, "vars_in_relation/1").
-vars_in_relation(call(Scope, _)) = empty_var_set.
+vars_in_relation(closure(_, _)) = empty_var_set :- fail.
+vars_in_relation(call(Scope, _)) = scope_vars(Scope).
 
 
 ground_relation(_) :- sorry($module, $pred, "ground_relation/1").
