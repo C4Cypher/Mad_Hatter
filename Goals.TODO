@@ -95,15 +95,11 @@ Define TOP level constructs
 				warning
 				error
 				custom
-			ground check
-			groundedness
-				evaluate a numeric 'groundedness' based on free
-				variables and groundedness of sub components
-			redesign tuples
-				partial evaluation of tuples (CPS?)
-				array tuple sub ranges
-				native lists ( cons('[|]', ?list) )
-		eval table
+		ground check
+		groundedness
+			evaluate a numeric 'groundedness' based on free
+			variables and groundedness of sub components
+		eval table - merged with environment
 			memo table for evaluations
 			segregated by calling environment
 		unification
