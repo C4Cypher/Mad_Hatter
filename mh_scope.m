@@ -184,13 +184,24 @@
 	% determines if the given scope is a child of another context
 :- pred is_child(mh_scope::in) is semidet.
 
-
 	% if a scope has a parent, return it
 :- func parent(mh_scope) = mh_scope is semidet.
 
 	% parent(Child, Parent). Note that Child scopes cannot be determined from
 	% the parent.
 :- pred parent(mh_scope::in, mh_scope::out) is semidet.
+
+	% If a child to an extended scope no longer contains variables to the
+	% outermost extended portions of it's parent, those portions can be removed
+	% without changing the identity of it's variables. Fails if the scope
+	% is not a child, or if the child's parent cannot be pruned.
+:- pred prune_outer_parents(mh_scope::in, mh_scope::out) is semidet.
+:- func prune_outer_parents(mh_scope) = mh_scope is semidet.
+
+	% Det version simply returns the original scope where prune_outer_parents
+	% would fail
+:- pred det_prune_outer_parents(mh_scope::in, mh_scope::out) is det.
+:- func det_prune_outer_parents(mh_scope) = mh_scope.
 
 	% if the scope is a root, return itself, otherwise, if it is a child
 	% return the root_ancestor of it's parent.
@@ -244,7 +255,7 @@
 :- pred semidet_scope_variable_root(mh_scope::in, mh_var::in, mh_scope::out)
 	is semidet.	
 
-	% Derives the context from results of scope_variable_context, effectively
+	% Derives the context from results of scope_variable_root, effectively
 	% scope_variable_context(S, V) = scope_context(scope_variable_root(S, V)).
 :- func scope_variable_context(mh_scope, mh_var) = mh_context.
 
@@ -284,6 +295,8 @@
 :- import_module require.
 :- import_module string.
 :- import_module int.
+
+:- import_module util.
 
 :- import_module mh_var_id.
 :- import_module mh_mercury_term. % for mr_var.
@@ -563,6 +576,35 @@ is_child(extended_scope(Car, _)) :- is_child(Car).
 parent(child_scope(Parent, _, _)) = Parent.
 
 parent(Child, parent(Child)).
+
+	% If the given var is not in the outermost scope, remove it, do so
+	% recursively until the var is encountered, fail if the last is found
+	% in the outermost scope, or if the given scope is not extended
+:- func prune_by_last(mh_scope, mh_var) = mh_scope is semidet.
+
+prune_by_last(Scope@extended_scope(Car, Cdr), Last) =
+	(if scope_variable_root(Scope, Last, Cdr)
+	then func_fail
+	else if Further = prune_by_last(Car, Last)
+	then Further
+	else Car
+	).
+	
+prune_outer_parents(S, prune_outer_parents(S)).
+
+prune_outer_parents(child_scope(Parent, Ctx, Set)) =
+	(if is_child(Parent)
+	then child_scope(prune_outer_parents(Parent), Ctx, Set)
+	else child_scope(prune_by_last(Parent, var_set_last(Set)), Ctx, Set)
+	).
+	
+det_prune_outer_parents(S, det_prune_outer_parents(S)).
+
+det_prune_outer_parents(Scope) =
+	(if Pruned = prune_outer_parents(Scope)
+	then Pruned
+	else Scope
+	).
 
 root_ancestor(Scope) = 
 	(if parent(Scope, Parent) 
