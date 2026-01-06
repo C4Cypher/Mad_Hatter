@@ -22,90 +22,97 @@ Read up on Knuth–Bendix completion algorithm
 Outline
 Current goals
 get a repl running
-		get parsing working !! Term parsing working! need to flesh out
-			convert mr_terms to mr_primitives
-			Define TOP level constructs 
-				definitions for module -  basic structure finished
-					method dispatch for top level atoms, done, mh_environment
-					finish mh_environment design - see below
-				declarations
-					pragmas
-					promises
-					fact assertions
-					mercury types
-				finish mh_term, my high level AST - Done
-					Implement core term functionality
-						Subterms
-						Groundedness
-						Substitutions
-						Unification
-					finish higher order types 
-						relations
-							scope
-							environment transition
-							ordered proposition sets
-								proposition maps 
-							ordered relation sets
-								relation maps
-							functions
-								representation for foreign calls
-							mode system
-					ordered term sets
-						finish term map	 - done
-							proposition map
-							relation map
-							function map
-							mode map
-							substitution map
-				evaluation
-					scope management <- I am here
-						substitutions that properly maintain scopes
-							* Substitutions are not merely operations on terms
-							in fact, the process of applying substitutions
-							may result in further evaluations (usually 
-							unifications) , thus applying a full substitution
-							requires not only full scope bookeeping, but may
-							modify the scope of the current evaluation and
-							requires full calling context
-							* Renamings, by contrast, can still mostly be done
-							'in place', as they do not modify a term's internal
-							structure, and as such, may not trigger 
-							unifications. They will, by nature, alter the 
-							scope of the term whose variables are being renamed
-					environment 
-						finish substitutions
-							term constraints 	
-						A mapping of symbols to relations 
-							(modules are envorionments)
-						Update nested module refrences when an inner call
-							modifies a called environment?
-						basic interface for map structure
-							bind, bound 
-							a table of evaluations, serves as a truth table and
-							memo table for evaluation state
-						event
-							rework context - done
-							warning
-							error
-							custom
-						ground check
-						groundedness
-							evaluate a numeric 'groundedness' based on free
-							variables and groundedness of sub components
-						redesign tuples
-							partial evaluation of tuples (CPS?)
-							array tuple sub ranges
-							native lists ( cons('[|]', ?list) )
-					eval table
-						memo table for evaluations
-						segregated by calling environment
-					unification
-					
-					an evaluation may not produce a value that is less ground
-						than the input, out = In >> Out, In =< Out
-			Incorporate mh_scope into mr_term conversion
-				Add mr_varset handling in term conversion
-			Mad Hatter ops table - add lazy operator - done
+get parsing working !! Term parsing working! need to flesh out
+convert mr_terms to mr_primitives
+Define TOP level constructs 
+	definitions for module -  basic structure finished
+		method dispatch for top level atoms, done, mh_environment
+		finish mh_environment design - see below
+	declarations
+		pragmas
+		promises
+		fact assertions
+		mercury types
+	finish mh_term, my high level AST - Done
+		Implement core term functionality
+			Subterms
+			Groundedness
+			Substitutions
+			Unification
+		finish higher order types 
+			relations
+				scope
+				environment transition
+				ordered proposition sets
+					proposition maps 
+				ordered relation sets
+					relation maps
+				functions
+					representation for foreign calls
+				mode system
+		ordered term sets
+			finish term map	 - done
+				proposition map
+				relation map
+				function map
+				mode map
+				substitution map
+	evaluation
+		scope management <- I am here
+			substitutions that properly maintain scopes
+				* Substitutions are not merely operations on terms
+				in fact, the process of applying substitutions
+				may result in further evaluations (usually 
+				unifications) , thus applying a full substitution
+				requires not only full scope bookeeping, but may
+				modify the scope of the current evaluation and
+				requires full calling context
+				* Renamings, by contrast, can still mostly be done
+				'in place', as they do not modify a term's internal
+				structure, and as such, may not trigger 
+				unifications. They will, by nature, alter the 
+				scope of the term whose variables are being renamed
+		evaluation strategy
+		eval
+			"__before" and "__after" event callbacks to be checked 
+				for and executed before and after apply is called
+		apply - the 'meat' of evaluation
+		unification
+		unify
+		environment 
+			finish substitutions
+				term constraints 	
+			A mapping of symbols to relations 
+				(modules are envorionments)
+			Update nested module refrences when an inner call
+				modifies a called environment?
+			basic interface for map structure
+				bind, bound 
+				a table of evaluations, serves as a truth table and
+				memo table for evaluation state
+			event
+				rework context - done
+				warning
+				error
+				custom
+			ground check
+			groundedness
+				evaluate a numeric 'groundedness' based on free
+				variables and groundedness of sub components
+			redesign tuples
+				partial evaluation of tuples (CPS?)
+				array tuple sub ranges
+				native lists ( cons('[|]', ?list) )
+		eval table
+			memo table for evaluations
+			segregated by calling environment
+		unification
+		
+		an evaluation may not produce a value that is less ground
+			than the input, out = In >> Out, In =< Out
+Incorporate mh_scope into mr_term conversion
+	Add mr_varset handling in term conversion
+Mad Hatter ops table - add lazy operator - done
 			
 destructive updates for map types (optimization) 
 	- not possible using normal unique modes, mh_var_maps contain arrays which
