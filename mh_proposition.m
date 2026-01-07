@@ -86,9 +86,15 @@
 	;		unification_failure(mh_term, mh_term) 
 	;		constraint_failure(mh_term, mh_term)
 	;		message(string)
-	;		message(string, mh_tuple).
-	
- 
+	;		message(string, mh_tuple)
+	;		flounder(mh_term). %Evaluation of given term floundered
+
+%-----------------------------------------------------------------------------%
+% Term constructors	
+
+:- func term_fail_reason(mh_scope, reason) = mh_term.
+
+:- func term_error_reason(mh_scope, reason) = mh_term. 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
@@ -111,3 +117,13 @@ vars_in_proposition(_, _) = sorry($module, $pred, "vars_in_proposition/2").
 ground_proposition(_) :- sorry($module, $pred, "ground_proposition/1").
 
 :- pragma no_determinism_warning(ground_proposition/1).
+
+%-----------------------------------------------------------------------------%
+% Term constructors	
+
+term_fail_reason(Scope, Reason) = 
+	relation(proposition(Scope, proposition_fail(Reason))).
+	
+term_error_reason(Scope, Reason) = 
+	relation(proposition(Scope, proposition_error(Reason))).
+ 
