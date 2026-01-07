@@ -58,7 +58,7 @@ Define TOP level constructs
 				mode map
 				substitution map
 	evaluation
-		scope management <- I am here
+		scope management
 			substitutions that properly maintain scopes
 				* Substitutions are not merely operations on terms
 				in fact, the process of applying substitutions
@@ -73,7 +73,7 @@ Define TOP level constructs
 				unifications. They will, by nature, alter the 
 				scope of the term whose variables are being renamed
 		evaluation strategy
-		eval
+		eval <- I am here
 			"__before" and "__after" event callbacks to be checked 
 				for and executed before and after apply is called
 		apply - the 'meat' of evaluation
