@@ -18,7 +18,6 @@
 
 :- import_module mh_scope.
 :- import_module mh_term.
-:- import_module mh_term_map.
 :- import_module mh_environment.
 :- import_module mh_substitution.
 
@@ -54,7 +53,7 @@
 :- pred unification(eval_strategy::in,
 	mh_environment::in, mh_environment::out,
 	mh_scope::in, mh_scope::out,
-	mh_term::in, mh_term::in, mh_substiution::out) is det.
+	mh_term::in, mh_term::in, mh_substitution::out) is det.
 	
 :- pred unify(eval_strategy::in,
 	mh_environment::in, mh_environment::out,
@@ -86,7 +85,7 @@
 	
 	% Exhaustive: all paths must be explored and consistent, may include
 	% additional semantics checks not present in other strategies
-    ;       validation
+    ;       validation.
 	
 	% Not sure if this is needed, but may be helpful, similar to deterministic
 	% but tries to continue executing even if further errors are encountered?
@@ -115,6 +114,7 @@
 :- import_module list.
 :- import_module require.
 
+:- import_module mh_term_map.
 :- import_module mh_relation.
 :- import_module mh_proposition.
 :- import_module mh_ordered_term_set.
@@ -191,15 +191,16 @@ eval(Strat, !Env, !Scope, !Term) :-
 		)
 	).
 	
-apply(Strat, !Env, !Scope, !Term) :-
-	Input = !.Term,
+apply(Strat, !Env, !Scope, Functor, Arg, Application) :-
 	(if
-		!:Term = term_error("Apply not implemented.")
-	then true
+		Result = term_error("Apply not implemented.")
+	then 
+		Application = Result
 	else 
-		!:Term = term_error("Eval failed for the " ++ string(Strat) ++ 
-			" strategy for the term: " ++ string(Input))
-		%TODO: proper pretty print input term
+		Application = term_error("Application of " ++ string(Arg) ++ " to "
+			++ string(Functor) ++ " failed for the given strategy: "
+			++ string(Strat))
+		%TODO: proper pretty print terms
 	).
 
 /*	
@@ -208,3 +209,16 @@ apply(Strat, !Env, !Scope, !Term) :-
 	mh_scope::in, mh_scope::out, 
 	mh_relation::in, mh_term::in, mh_term::out) is det.
 */
+
+substitute(_, !Env, !Scope, !.Term, _, !:Term) :- sorry($module, $pred, "substitute/8").
+
+:- pragma no_determinism_warning(substitute/8).
+
+unification(_, !Env, !Scope, _, _, init_sub) :- sorry($module, $pred, "unification/8").
+
+:- pragma no_determinism_warning(unification/8).
+
+unify(_, !Env, !Scope, _, _, term_false) :- 
+	sorry($module, $pred, "unify/8").
+
+:- pragma no_determinism_warning(unify/8).

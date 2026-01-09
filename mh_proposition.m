@@ -102,6 +102,8 @@
 
 :- import_module require.
 
+:- import_module mh_relation.
+
 %-----------------------------------------------------------------------------%
 
 apply_proposition_substitution(_, _, _) :- sorry($module, $pred,

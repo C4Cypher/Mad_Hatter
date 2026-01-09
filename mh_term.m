@@ -176,9 +176,11 @@
 :- import_module type_desc.
 :- import_module string.
 :- import_module list.
-:- import_module mh_term_map.
 
 :- import_module util.
+
+:- import_module mh_term_map.
+:- import_module mh_proposition.
 
 %-----------------------------------------------------------------------------%
 % Concrete terms
