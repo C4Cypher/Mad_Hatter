@@ -113,6 +113,7 @@
 :- import_module bool.
 :- import_module string.
 :- import_module list.
+:- import_module require.
 
 :- import_module mh_relation.
 :- import_module mh_proposition.
@@ -191,9 +192,19 @@ eval(Strat, !Env, !Scope, !Term) :-
 	).
 	
 apply(Strat, !Env, !Scope, !Term) :-
+	Input = !.Term,
 	(if
-		%eval block
+		!:Term = term_error("Apply not implemented.")
 	then true
-	else !:Term = term_error("Eval strategy not implemented: " ++ 
-		string(Strat))
+	else 
+		!:Term = term_error("Eval failed for the " ++ string(Strat) ++ 
+			" strategy for the term: " ++ string(Input))
+		%TODO: proper pretty print input term
 	).
+
+/*	
+:- pred apply_relation(eval_strategy::in,
+	mh_environment::in, mh_environment::out,
+	mh_scope::in, mh_scope::out, 
+	mh_relation::in, mh_term::in, mh_term::out) is det.
+*/
