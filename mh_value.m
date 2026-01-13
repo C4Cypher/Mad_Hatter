@@ -90,6 +90,8 @@
 
 :- func to_mr_value(mh_value) = T is semidet.
 
+:- func value_type_name(mh_value) = string.
+
 :- some [T] func to_some_mr_value(mh_value) = T is det.
 
 :- func to_mh_value(T) = mh_value is det.
@@ -111,6 +113,8 @@
 
 :- implementation.
 
+:- import_module type_desc.
+
 %-----------------------------------------------------------------------------%
 % Values
 %-----------------------------------------------------------------------------%
@@ -121,6 +125,8 @@
 from_mr_value(T) = mr_value(univ(T)).
 
 to_mr_value(mr_value(univ(T))) = T.
+
+value_type_name(mr_value(Univ)) = type_name(univ_type(Univ)).
 
 to_some_mr_value(mr_value(Univ)) = univ_value(Univ).
 
