@@ -97,6 +97,8 @@
 %-----------------------------------------------------------------------------%
 % Tuple indexing
 
+% Tuples are 1 indexed, 1 will always index the first element of a tuple
+
 :- pred tuple_contains(mh_tuple::in, int::in) is semidet.
 
 % Throw an exception if index is not found
