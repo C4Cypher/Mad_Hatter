@@ -72,7 +72,7 @@
 :- func from_array(array(mh_term)) = mh_tuple.
 
 :- func to_set(mh_tuple) = ordered_set(mh_term).
-:- func from_set(ordered_set(mh_term)) = mh_tuple.
+:- func from_set(ordered_set(mh_term)) = mh_tuple. %TODO: change this to ots
 
 
 %-----------------------------------------------------------------------------%
