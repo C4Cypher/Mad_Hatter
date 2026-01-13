@@ -118,6 +118,9 @@
 :- import_module mh_relation.
 :- import_module mh_proposition.
 :- import_module mh_ordered_term_set.
+:- import_module mh_symbol.
+:- import_module mh_value.
+:- import_module mh_tuple.
 
 %-----------------------------------------------------------------------------%
 % Evaluation
@@ -191,24 +194,68 @@ eval(Strat, !Env, !Scope, !Term) :-
 		)
 	).
 	
-apply(Strat, !Env, !Scope, Functor, Arg, Application) :-
-	(if
-		Result = term_error("Apply not implemented.")
-	then 
-		Application = Result
-	else 
-		Application = term_error("Application of " ++ string(Arg) ++ " to "
-			++ string(Functor) ++ " failed for the given strategy: "
-			++ string(Strat))
-		%TODO: proper pretty print terms
+apply(Strat, !Env, !Scope, Functor, Arg, Result) :-
+	require_complete_switch [Functor] (
+		(
+			Functor = atom(symbol(Symbol)),
+			Msg = "Attempted to apply term to atom " ++ Symbol
+		;
+			Functor = var(ID),
+			(if VarName = var_name(!.Scope, var(ID)) 
+			then Msg = "Attempted to apply term to variable named " ++ VarName 
+			else Msg = "Attempted to apply term to unnamed variaable."
+			)
+		;
+			Functor = value(Value),
+			Msg = "Attempted to apply term to value of type " ++
+				value_type_name(Value)
+		), Result = apply_simple_term(Functor, Arg, Msg)
+	;
+		% The calls to eval call may be tailrecursive if apply is inlined 
+		% into eval
+		Functor = cons(Car, Cdr),
+		(if Arg = term_nil
+		then
+			(if Cdr = tuple_cons(First, Rest) 
+			then
+				apply(Strat, !Env, !Scope, Car, First, Curried),
+				eval(Strat, !Env, !Scope, cons(Curried, Rest), Result)	
+			else
+				(if tuple_is_empty(Cdr)
+				then ConsArg = term_nil
+				else tuple_index(Cdr, 1, ConsArg)
+				),
+				apply(Strat, !Env, !Scope, Car, ConsArg, Result)
+			)
+		else
+			%In the future, implement adding elements to the end of tuples
+			NewCdr = from_list( to_list(Cdr) ++ [ Arg ] ),
+			eval(Strat, !Env, !Scope, cons(Car, NewCdr), Result)
+		)
+	;
+		Functor = relation(Relation),
+		apply_relation(Strat, !Env, !Scope, Relation, Arg, Result)
+	).
+	
+:- pragma inline(apply/8).
+	
+:- func apply_simple_term(mh_term, mh_term, string) = mh_term.
+
+apply_simple_term(Functor, Arg, Msg) =
+	(if Arg = term_nil
+	then Functor
+	else term_fail(Msg)
 	).
 
-/*	
+
 :- pred apply_relation(eval_strategy::in,
 	mh_environment::in, mh_environment::out,
 	mh_scope::in, mh_scope::out, 
 	mh_relation::in, mh_term::in, mh_term::out) is det.
-*/
+
+apply_relation(_, !Env, !Scope, _, _, term_nil) :- sorry($module, $pred, "apply_relation/8").
+
+:- pragma no_determinism_warning(apply_relation/8).
 
 substitute(_, !Env, !Scope, !.Term, _, !:Term) :- sorry($module, $pred, "substitute/8").
 
