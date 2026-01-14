@@ -169,7 +169,7 @@ eval(Strat, !Env, !Scope, !Term) :-
 			% (for now)
 			eval(Strat, !Env, !Scope, Output, EvalutedOutput),
 			% Note: this call can be made tail recurrsive by passing the
-			% EvaluedOutput as an additional argument. 
+			% Input and EvaluedOutput as additional arguments. 
 			
 			%TODO: Replace this with canonical non-evaluation conjunction
 			% constructor, IF I implement one, I may not
@@ -200,7 +200,7 @@ apply(Strat, !Env, !Scope, Functor, Arg, Result) :-
 			Functor = var(ID),
 			(if VarName = var_name(!.Scope, var(ID)) 
 			then Msg = "Attempted to apply term to variable named " ++ VarName 
-			else Msg = "Attempted to apply term to unnamed variaable."
+			else Msg = "Attempted to apply term to unnamed variable."
 			)
 		;
 			Functor = value(Value),
@@ -251,9 +251,13 @@ apply_simple_term(Functor, Arg, Msg) =
 	mh_scope::in, mh_scope::out, 
 	mh_relation::in, mh_term::in, mh_term::out) is det.
 
-apply_relation(_, !Env, !Scope, _, _, term_nil) :- sorry($module, $pred, "apply_relation/8").
-
-:- pragma no_determinism_warning(apply_relation/8).
+apply_relation(Strat, !Env, !Scope, Relation, Arg, Result) :- 
+	require_complete_switch [Relation] (
+		Relation = nil,
+		Result = apply_simple_term(term_nil, Arg, 
+			"Attempted to apply term to nil value.")
+	;
+		Relation = conjunction(InnerScope, ConjOts),
 
 substitute(_, !Env, !Scope, !.Term, _, !:Term) :- sorry($module, $pred, "substitute/8").
 
