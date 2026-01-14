@@ -15,7 +15,6 @@
 
 :- interface.
 
-
 :- import_module mh_scope.
 :- import_module mh_term.
 :- import_module mh_environment.
@@ -48,8 +47,7 @@
 	mh_environment::in, mh_environment::out,
 	mh_scope::in, mh_scope::out,
 	mh_term::in, mh_substitution::in, mh_term::out) is det.
-	
-	
+
 :- pred unification(eval_strategy::in,
 	mh_environment::in, mh_environment::out,
 	mh_scope::in, mh_scope::out,
@@ -152,13 +150,12 @@ eval(Strat, !Env, !Scope, !Term) :-
 		
 		%TODO: invoke __before here, 
 		% memoize the result of before as well?
-		
-		
+
 		% Apply nil to the input, performing the actual evaluation
 		apply(Strat, !Env, !Scope, !.Term, term_nil, !:Term),
 		
 		Output = !.Term,
-		
+
 		% Invoke __after here?
 		
 		(if  !.Term = EvalComplete
@@ -246,7 +243,8 @@ apply_simple_term(Functor, Arg, Msg) =
 	then Functor
 	else term_fail(Msg)
 	).
-
+	
+:- pragma inline(apply_simple_term/3).
 
 :- pred apply_relation(eval_strategy::in,
 	mh_environment::in, mh_environment::out,
