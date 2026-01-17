@@ -48,6 +48,9 @@
 	mh_scope::in, mh_scope::out,
 	mh_term::in, mh_substitution::in, mh_term::out) is det.
 
+	% Memoizing full operation, evaluates the propositional form of the two
+	% input terms, producing a substitution that will resolve both terms to
+	% the result of unify/8
 :- pred unification(eval_strategy::in,
 	mh_environment::in, mh_environment::out,
 	mh_scope::in, mh_scope::out,
@@ -252,14 +255,19 @@ apply_simple_term(Functor, Arg, Msg) =
 	mh_relation::in, mh_term::in, mh_term::out) is det.
 
 apply_relation(Strat, !Env, !Scope, Relation, Arg, Result) :- 
+	sorry($module, $pred, "apply_relation/8"). /*
 	require_complete_switch [Relation] (
 		Relation = nil,
 		Result = apply_simple_term(term_nil, Arg, 
 			"Attempted to apply term to nil value.")
 	;
 		Relation = conjunction(InnerScope, ConjOts),
+*/
 
-substitute(_, !Env, !Scope, !.Term, _, !:Term) :- sorry($module, $pred, "substitute/8").
+:- pragma no_determinism_warning(apply_relation/8).
+
+substitute(_, !Env, !Scope, !.Term, _, !:Term) :- 
+	sorry($module, $pred, "substitute/8").
 
 :- pragma no_determinism_warning(substitute/8).
 
