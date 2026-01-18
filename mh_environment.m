@@ -16,6 +16,8 @@
 :- interface.
 
 :- import_module string.
+:- import_module list.
+:- import_module bool.
 
 :- import_module mh_term.
 :- import_module mh_term_map.
@@ -83,7 +85,31 @@
 :- pred delete_env(string::in, mh_environment::in,	mh_environment::out)
 	is det.
 :- pred delete_env(string::in, string::in, mh_environment::in,
-	mh_environment::out) is det.	
+	mh_environment::out) is det.
+	
+%-----------------------------------------------------------------------------%
+% Memoization
+
+% Validate that memoization is not turned off in the given environment.
+:- pred memoizing(mh_environment::in) is semidet.
+
+% Return the result of memoizing/1 as a bool
+:- func memoizing(mh_environment) = bool.
+
+% Perform a lookup in the environment, if the lookup is successfull, check
+% to see if the result is also present in the environment, and if so
+% map the value directly to the eventual output of recursively looking up the
+% term in the environment
+:- pred memo_search(mh_environment::in, mh_environment::out,
+	mh_term::in, mh_term::out) is semidet.
+
+% Version that allows the environment memo check to be preevaluated	
+:- pred memo_search(mh_environment::in, mh_environment::out, bool::in,
+	mh_term::in, mh_term::out) is semidet.
+	
+% Map all members of the list to the given result, overwrites existing mappings
+:- pred memo_list(list(mh_term)::in, mh_term::in, mh_environment::in,
+	mh_environment::out) is det.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -135,3 +161,37 @@ remove_env(Mod, Name, Term, !Env) :- remove_env(local(Mod, Name), Term, !Env).
 
 delete_env(Name, !Env) :- delete(prefix(Name), !Env).
 delete_env(Mod, Name, !Env) :- delete_env(local(Mod, Name), !Env).
+
+%-----------------------------------------------------------------------------%
+% Memoization
+
+memoizing(Env) :- search_env(Env, "memo", term_value(no)).
+
+memoizing(Env) = (memoizing(Env) -> yes ; no).
+
+memo_search(!Env, !Term) :-
+	Memoizing = memoizing(!.Env),
+	memo_search(!Env, Memoizing, !Term).
+
+memo_search(!Env, Memoizing, !Term) :-
+	Input = !.Term,
+	search(!.Env, !Term),
+	(if Memoizing = yes, memo_search(!Env, !Term) 
+	then det_update(Input, !.Term, !Env)
+	else true
+	).
+	
+memo_list(From, To, !Env) :-
+	foldl(memo_fold(To), From, !Env).
+	
+:- pred memo_fold(mh_term::in, mh_term::in, mh_environment::in, 
+	mh_environment::out) is det.
+
+memo_fold(To, From, !Env) :-
+	set(From, To, !Env).
+	
+
+	
+	
+
+

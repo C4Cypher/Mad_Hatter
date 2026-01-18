@@ -126,21 +126,33 @@
 %-----------------------------------------------------------------------------%
 % Evaluation
 
+eval(Strat, !Env, !Scope, !Term) :- 
+	%__before here
+	% memoize the result of before as well?
+	eval_loop(Strat, !Env, !Scope, !Term, memoizing(!.Env), []).
+	%__after here
+
+:- pred eval_loop(eval_strategy::in, 
+	mh_environment::in, mh_environment::out,
+	mh_scope::in, mh_scope::out, 
+	mh_term::in, mh_term::out, 
+	bool::in, list(mh_term)::in) is det.
+
 %TODO: Check for "__before" and "__after" environment variables, and if found
 % execute the contained calls, passing the respective input and output terms
 % through them. Delaying implementation until I have more of the core semantics
 % working.
 
-eval(Strat, !Env, !Scope, !Term) :-
-	(if search(!.Env, !Term)
+eval_loop(Strat, !Env, !Scope, !Term, Memoizing, Intermediate) :-
+	Input = !.Term,
+	(if memo_search(!Env, Memoizing, !Term)
 	then true
 	else
-		Input = !.Term,
 		% If memoization is active, map a floundering failure to the current 
 		% input, ensuring that infinitely recursive calls fail, make such 
 		% a flounder indicate that further evaluation is complete, otherwise
 		% further evaluation is complete when evaluating a term returns itself
-		(if search_env(!.Env, "memo", term_value(no))
+		(if Memoizing = yes
 		then 
 			Flounder = relation(proposition(!.Scope, 
 				proposition_fail(flounder(Input))
@@ -151,46 +163,20 @@ eval(Strat, !Env, !Scope, !Term) :-
 			EvalComplete = Input
 		),
 		
-		%TODO: invoke __before here, 
-		% memoize the result of before as well?
-
 		% Apply nil to the input, performing the actual evaluation
 		apply(Strat, !Env, !Scope, !.Term, term_nil, !:Term),
-		
-		Output = !.Term,
 
-		% Invoke __after here?
+		InputList = [Input | Intermediate],
 		
 		(if  !.Term = EvalComplete
-		then true % No further evaluations
-		else
-			% form conjunction of Input and the result of further evaluating
-			% !.Term (intermediate evaluation), this should form a full 
-			% conjunction of all of the evaluated forms of the input.
-			
-			% How to sort this conjunction? Most recent evaluations to the left
-			% (for now)
-			eval(Strat, !Env, !Scope, Output, EvalutedOutput),
-			% Note: this call can be made tail recurrsive by passing the
-			% Input and EvaluedOutput as additional arguments. 
-			
-			%TODO: Replace this with canonical non-evaluation conjunction
-			% constructor, IF I implement one, I may not
-			ResultConjunction = conjunction(!.Scope, 
-				from_list([EvalutedOutput, Input])
-			),
-			
-			% Flatten/reduce conjunction, if possible?
-			
-			!:Term = relation(ResultConjunction),
-			
-			% Evaluation is finished, memoize the result
-			(if search_env(!.Env, "memo", term_value(no))
+		then
+			%Memoize the input and all of the intermediate results to the
+			%Result
+			(if Memoizing = yes
 			then true
-			else set(Input, !.Term, !Env)
+			else memo_list(InputList, !.Term, !Env)
 			)
-			
-			% Invoke __after here?
+		else eval_loop(Strat, !Env, !Scope, !Term, Memoizing, InputList)
 		)
 	).
 	
