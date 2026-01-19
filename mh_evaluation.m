@@ -146,7 +146,10 @@ eval(Strat, !Env, !Scope, !Term) :-
 eval_loop(Strat, !Env, !Scope, !Term, Memoizing, Intermediate) :-
 	Input = !.Term,
 	(if memo_search(!Env, Memoizing, !Term)
-	then true
+	then true 
+		%TODO: if Strat = validate and Memoizing = yes, evaluate the term
+		% anyway and compare with the memo table result, return an error
+		% if mismatch is found
 	else
 		% If memoization is active, map a floundering failure to the current 
 		% input, ensuring that infinitely recursive calls fail, make such 
@@ -182,20 +185,13 @@ eval_loop(Strat, !Env, !Scope, !Term, Memoizing, Intermediate) :-
 	
 apply(Strat, !Env, !Scope, Functor, Arg, Result) :-
 	require_complete_switch [Functor] (
-		(
-			Functor = atom(symbol(Symbol)),
-			Msg = "Attempted to apply term to atom " ++ Symbol
-		;
-			Functor = var(ID),
-			(if VarName = var_name(!.Scope, var(ID)) 
-			then Msg = "Attempted to apply term to variable named " ++ VarName 
-			else Msg = "Attempted to apply term to unnamed variable."
-			)
-		;
-			Functor = value(Value),
-			Msg = "Attempted to apply term to value of type " ++
-				value_type_name(Value)
-		), Result = apply_simple_term(Functor, Arg, Msg)
+		(Functor = atom(_) ; Functor = var(_)),
+		Result = cons(Functor, from_list([Arg]) )
+	;	
+		Functor = value(Value),
+		Msg = "Attempted to apply term to value of type " ++
+			value_type_name(Value),
+		Result = apply_simple_term(Functor, Arg, Msg)
 	;
 		% The calls to eval call may be tailrecursive if apply is inlined 
 		% into eval
@@ -209,7 +205,7 @@ apply(Strat, !Env, !Scope, Functor, Arg, Result) :-
 			else
 				(if tuple_is_empty(Cdr)
 				then ConsArg = term_nil
-				else tuple_index(Cdr, 1, ConsArg)
+				else tuple_index(Cdr, 1, ConsArg) %Tuple should be a singleton
 				),
 				apply(Strat, !Env, !Scope, Car, ConsArg, Result)
 			)
