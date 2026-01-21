@@ -40,8 +40,9 @@
 
 :- pred tuple_is_empty(mh_tuple::in) is semidet.
 
-:- func tuple_compare(mh_tuple, mh_tuple) = comparison_result.
-:- pred tuple_compare(comparison_result::out, mh_tuple::in, mh_tuple::in)
+:- func tuple_compare(mh_tuple::in, mh_tuple::in) = (comparison_result::uo)
+	is det.
+:- pred tuple_compare(comparison_result::uo, mh_tuple::in, mh_tuple::in)
 	is det.
 
 :- pred tuple_equal(mh_tuple::in, mh_tuple::in) is semidet.
@@ -49,16 +50,16 @@
 %-----------------------------------------------------------------------------%
 % Tuple constructors and conversion
 
-% reverse modes fail on type mismatch
-
-:- func tuple(T) = mh_tuple.
-:- mode tuple(in) = out is semidet.
-:- mode tuple(out) = in is semidet. 
+:- func tuple(T) = mh_tuple is semidet.
 
 % manipulating tuples as if they were s-expressions
 :- func tuple_cons(mh_term, mh_tuple) = mh_tuple.
 :- mode tuple_cons(in, in) = out is det.
 :- mode tuple_cons(out, out) = in is semidet.
+
+:- pred tuple_cons(mh_tuple, mh_term, mh_tuple).
+:- mode tuple_cons(out, in, in) is det.
+:- mode tuple_cons(in, out, out) is semidet.
 
 :- func tuple_car(mh_tuple) = mh_term is semidet.
 :- func tuple_cdr(mh_tuple) = mh_tuple is semidet.
@@ -171,13 +172,47 @@
 :- type mh_tuple
 	--->	list_tuple(list(mh_term))
 	;		array_tuple(array(mh_term))
-	;		slice_tuple(array(mh_term), int).
+	;		slice_tuple(array(mh_term), int)
+	where comparison is tuple_compare.
 	
-tuple_is_empty(list_tuple([])).
-tuple_is_empty(array_tuple(A)) :- size(A) = 0.
+tuple_is_empty(Tuple) :- tuple_size(Tuple) = 0.
 
-tuple_compare(T1, T2) = array_compare(to_array(T1), to_array(T2)).
-tuple_compare(tuple_compare(T1, T2), T1, T2).
+tuple_compare(Tuple1, Tuple2) = Result :- 
+	tuple_compare(Result, Tuple1, Tuple2).
+
+tuple_compare(Result, Tuple1, Tuple2) :-
+    tuple_size(Tuple1, Size1),
+    tuple_size(Tuple2, Size2),
+    compare(SizeResult, Size1, Size2),
+    (
+        SizeResult = (=),
+        compare_elements(Tuple1, Tuple2, Result)
+    ;
+        ( SizeResult = (<)
+        ; SizeResult = (>)
+        ),
+        Result = SizeResult
+    ).
+	
+:- pred compare_elements(mh_tuple::in, mh_tuple::in, comparison_result::uo)
+	is det.
+	
+compare_elements(Tuple1, Tuple2, Result) :-
+	(if 
+		tuple_cons(Tuple1, X, Xs),
+		tuple_cons(Tuple2, Y, Ys)
+	then
+		compare(TermResult, X, Y),
+		(if TermResult = (=)
+		then
+			compare_elements(Xs, Ys, Result)
+		else
+			Result = TermResult
+		)
+	else
+		%If tuple_cons/3 failed, all elements have been compared
+		Result = (=)
+	).
 
 tuple_equal(T1, T2) :- tuple_compare(=, T1, T2).
 
@@ -201,9 +236,8 @@ unslice_array(A, F) = generate(size(A) - F, slice_lookup(A, F)).
 %-----------------------------------------------------------------------------%
 % Tuple constructors and conversion
 
-:- pragma promise_equivalent_clauses(tuple/1).
 
-tuple(T::in) = (Tuple::out) :-
+tuple(T) = (Tuple) :-
 	promise_equivalent_solutions [U] (
 			dynamic_cast(T, U:mh_tuple);
 			dynamic_cast(T, V:list(mh_term)), U = list_tuple(V);
@@ -211,49 +245,48 @@ tuple(T::in) = (Tuple::out) :-
 			dynamic_cast(T, V:mh_term), V = value(mr_value(univ(U)))
 		),
 	Tuple = U.
-		
-tuple(T::out) = (Tuple::in) :-
-	promise_equivalent_solutions [T] (
-		Tuple = list_tuple(U), dynamic_cast(U, T);
-		Tuple = array_tuple(U), dynamic_cast(U, T);
-		Tuple = slice_tuple(Array, First), 
-			dynamic_cast(unslice_array(Array, First), T);
-		dynamic_cast(value(mr_value(univ(Tuple))):mh_term, T)
-	).
 	
-
 :- pragma promise_equivalent_clauses(tuple_cons/2).
 
 tuple_cons(X::in, Xs::in) = (list_tuple([X | to_list(Xs)])::out).
 tuple_cons(tuple_car(T)::out, tuple_cdr(T)::out) = (T::in).
 
-tuple_car(list_tuple([T | _])) = T.
-tuple_car(array_tuple(A)) = T :- semidet_lookup(A, 0, T).
-tuple_car(slice_tuple(A, F)) = T :- semidet_lookup(A, F, T).
+tuple_cons(tuple_cons(X, Xs), X, Xs).
 
-tuple_cdr(list_tuple([_ | Ts])) = list_tuple(Ts).
-tuple_cdr(array_tuple(A)) = Xs :- 
-	(if size(A) > 1
-	then Xs = slice_tuple(A, 1)
-	else size(A) = 1, Xs = array_tuple(make_empty_array)
+tuple_car(Tuple) = Term :- 
+	tuple_size(Tuple) > 0,
+	tuple_index(Tuple, 1, Term).
+
+tuple_cdr(Tuple) = Xs :- 
+	tuple_size(Tuple) > 0,
+	promise_equivalent_solutions [Xs] (
+		Tuple = list_tuple(List),
+		det_tail(List, Ls),
+		Xs = list_tuple(Ls)
+	;
+		Tuple = array_tuple(A),
+		(if size(A) > 1
+		then Xs = slice_tuple(A, 1)
+		else Xs = array_tuple(make_empty_array) 
+		)
+	;
+		Tuple = slice_tuple(A, F),
+		(if (size(A) - F > 1)
+		then Xs = slice_tuple(A, F + 1)
+		else Xs = array_tuple(make_empty_array)
+		)
 	).
-	
-tuple_cdr(slice_tuple(A, F)) = Xs :-
-	(if (size(A) - F > 1)
-	then 
-		Xs = slice_tuple(A, F + 1)
-	else 
-		size(A) - F = 1, 
-		Xs = array_tuple(make_empty_array)
+
+to_list(Tuple) = List :- promise_equivalent_solutions [List]
+	(
+		Tuple = list_tuple(List)
+	;
+		Tuple = array_tuple(Array),
+		List = array.to_list(Array)
+	;
+		Tuple = slice_tuple(Array, First),
+		List = slice_to_list(Array, First)
 	).
-
-
-	
-to_list(list_tuple(List)) = List.
-
-to_list(array_tuple(Array)) = array.to_list(Array).
-
-to_list(slice_tuple(Array, First)) = slice_to_list(Array, First).
 
 :- func slice_to_list(array(mh_term), int) = list(mh_term).
 
@@ -265,24 +298,37 @@ slice_to_list(A, F) =
 
 from_list(List) = list_tuple(List).
 
-to_array(list_tuple(List)) = array.from_list(List).
-
-to_array(array_tuple(Array)) = Array.
-
-to_array(slice_tuple(Array, First)) = unslice_array(Array, First).
+to_array(Tuple) = Array :- promise_equivalent_solutions [Array]
+	(
+		Tuple = list_tuple(List),
+		Array = array.from_list(List)
+	;
+		Tuple = array_tuple(Array)
+	;
+		Tuple = slice_tuple(Slice, First),
+		Array = unslice_array(Slice, First)
+	).
 
 from_array(Array) = array_tuple(Array).
 
 to_set(Tuple) = ordered_set.from_array(mh_tuple.to_array(Tuple)).
 
-from_set(Set) = array_tuple(ordered_set.to_array(Set)).
+from_set(Set) = from_array(ordered_set.to_array(Set)).
 	
 %-----------------------------------------------------------------------------%
 % Tuple properties	
 	
-tuple_size(list_tuple(L), S) :- length(L, S).
-tuple_size(array_tuple(Array), S) :- size(Array, S).
-tuple_size(slice_tuple(A, F), size(A) - F).
+tuple_size(Tuple, S) :- promise_equivalent_solutions [S] 
+	(
+		Tuple = list_tuple(L),
+		length(L, S)
+	;
+		Tuple = array_tuple(Array),
+		size(Array, S)
+	;
+		Tuple = slice_tuple(A, F),
+		S = size(A) - F
+	).
 
 tuple_size(T) = S :- tuple_size(T, S).
 
@@ -305,11 +351,14 @@ ground_tuple(T) = T :- ground_tuple(T).
 
 tuple_contains(Tuple, Index) :- Index > 0, Index =< tuple_size(Tuple).
 
-tuple_index(list_tuple(L), Index, Term) :- list_index(L, Index, Term).
-tuple_index(array_tuple(A), Index, Term) :- array_index(A, Index, Term).
-tuple_index(slice_tuple(A, F), Index, Term) :- 
-	array_index(A, slice_index(F, Index), Term).
-
+tuple_index(Tuple, Index, Term) :- promise_equivalent_solutions [Term]		
+	(
+		Tuple = list_tuple(L), list_index(L, Index, Term)
+	;
+		Tuple = array_tuple(A), array_index(A, Index, Term)
+	;
+		Tuple = slice_tuple(A, F), array_index(A, slice_index(F, Index), Term)
+	).
 
 tuple_search(Tuple, Index, Term) :-
 	tuple_contains(Tuple, Index),
@@ -334,13 +383,38 @@ apply_tuple_substiution(!.T, S) = !:T :- apply_tuple_substiution(S, !T).
 %-----------------------------------------------------------------------------%
 % Higher Order
 
-fold_tuple(Closure, list_tuple(L), !A) :- fold_list_index(Closure, L, !A).
+:- type deconstructed_tuple 
+	--->	decon_list_tuple(list(mh_term))
+	;		decon_array_tuple(array(mh_term))
+	;		decon_slice_tuple(array(mh_term), int).
+	
+:- pred deconstruct_tuple(mh_tuple::in, deconstructed_tuple::out) is det.
 
-fold_tuple(Closure, array_tuple(Array), !Acc) :- 
-	fold_array_index(Closure, Array, !Acc).
+deconstruct_tuple(Tuple, Decon) :- promise_equivalent_solutions [Decon]
+	(
+		Tuple = list_tuple(List),
+		Decon = decon_list_tuple(List)
+	;
+		Tuple = array_tuple(Array),
+		Decon = decon_array_tuple(Array)
 		
-fold_tuple(Closure, slice_tuple(Array, First), !Acc) :-
-	fold_slice_index(Closure, Array, First, !Acc).
+	;
+		Tuple = slice_tuple(Slice, First),
+		Decon = decon_slice_tuple(Slice, First)
+	).
+
+fold_tuple(Closure, Tuple, !A) :- 
+	deconstruct_tuple(Tuple, Decon), 
+	require_complete_switch [Decon] (
+		Decon = decon_list_tuple(List),
+		fold_list_index(Closure, List, !A)
+	;
+		Decon = decon_array_tuple(Array),
+		fold_array_index(Closure, Array, !A)
+	;
+		Decon = decon_slice_tuple(Slice, First),
+		fold_slice_index(Closure, Slice, First, !A)
+	).
 		
 :- pred fold_slice_index(pred(T, A, A), array(T), int, A, A). 
 :- mode fold_slice_index(pred(in, in, out) is det, in, in, in, out) is det.
@@ -368,16 +442,34 @@ semidet_fold_tuple(F, T, A) = fold_tuple(F, T, A).
 
 map_tuple(F, Tuple, map_tuple(F, Tuple)).
 
-map_tuple(F, list_tuple(L)) = list_tuple(map(F, L)).
-map_tuple(F, Tuple@array_tuple(_)) = 
-	array_tuple(generate(tuple_size(Tuple), map_gen(F, Tuple))).
-map_tuple(F, Tuple@slice_tuple(_, _)) = 
-	array_tuple(generate(tuple_size(Tuple), map_gen(F, Tuple))).
+map_tuple(F, !.Tuple) = !:Tuple :- promise_equivalent_solutions [!:Tuple]
+	(
+		!.Tuple = list_tuple(L),
+		!:Tuple = list_tuple(map(F, L))
+	;
+		!.Tuple = array_tuple(_),
+		!:Tuple =
+			array_tuple(generate(tuple_size(!.Tuple), map_gen(F, !.Tuple)))
+	;
+		!.Tuple = slice_tuple(_, _),
+		!:Tuple =
+			array_tuple(generate(tuple_size(!.Tuple), map_gen(F, !.Tuple)))
+	).
 
 :- func map_gen(func(mh_term) = mh_term, mh_tuple, int) = mh_term.
 
 map_gen(F, Tuple, Index) = F(Term) :- tuple_index(Tuple, Index + 1, Term).
 
 
-all_tuple(Pred, list_tuple(L)) :- all_list_index(Pred, L).
-all_tuple(Pred, array_tuple(A)) :- all_array_index(Pred, A).
+all_tuple(Pred, Tuple) :-
+	deconstruct_tuple(Tuple, Decon), 
+	require_complete_switch [Decon] (
+		Decon = decon_list_tuple(List),
+		all_list_index(Pred, List)
+	;
+		Decon = decon_array_tuple(Array),
+		all_array_index(Pred, Array)
+	;
+		Decon = decon_slice_tuple(Slice, First),
+		all_array_index_from(Pred, Slice, First)
+	).
