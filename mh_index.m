@@ -74,6 +74,9 @@
 :- pred all_array_index(pred(T), array(T)).
 :- mode all_array_index(pred(in) is semidet, in) is semidet.
 
+:- pred all_array_index_from(pred(T), array(T), int).
+:- mode all_array_index_from(pred(in) is semidet, in, in) is semidet.
+
 
 	
 %-----------------------------------------------------------------------------%
@@ -83,6 +86,7 @@
 
 
 :- import_module int.
+:- import_module require.
 
 :- import_module mh_arity.
 
@@ -175,3 +179,20 @@ fold_array_index(Closure, Array, !A) :- foldl(Closure, Array, !A).
 map_array_index(Closure, !Array) :- map(Closure, !Array).
 
 all_array_index(Pred, Array) :- all_true(Pred, Array).
+
+all_array_index_from(Pred, Array, Start) :- 
+	require(Start >= 0, "Attempted to access array with negative index."),
+	all_array_index_loop(Pred, Array, Start, max(Array)).
+	
+
+:- pred all_array_index_loop(pred(T), array(T), int, int).
+:- mode all_array_index_loop(pred(in) is semidet, in, in, in) is semidet.
+
+all_array_index_loop(Pred, Array, Current, Last) :-
+	(if Current > Last
+	then true
+	else
+		unsafe_lookup(Array, Current, Element),
+		Pred(Element),
+		all_array_index_loop(Pred, Array, Current + 1, Last)
+	).
