@@ -18,7 +18,7 @@
 :- import_module mh_scope.
 :- import_module mh_term.
 :- import_module mh_environment.
-:- import_module mh_substitution.
+:- import_module mh_proposition.
 
 %-----------------------------------------------------------------------------%
 % Evaluation
@@ -37,16 +37,6 @@
 	mh_environment::in, mh_environment::out,
 	mh_scope::in, mh_scope::out, 
 	mh_term::in, mh_term::in, mh_term::out) is det.	% A(B) -> C
-	
-	% Take the first operand and substitute the variables in them for the
-	% terms they map to in the substitution, if the substitution contains new
-	% variables not already present in the calling scope, extend the scope
-	% to include them, also prune the scope of any variables (and 
-	% extended outside scopes) not present in the resulting term
-:- pred substitute(eval_strategy::in,
-	mh_environment::in, mh_environment::out,
-	mh_scope::in, mh_scope::out,
-	mh_term::in, mh_substitution::in, mh_term::out) is det.
 
 	% Memoizing full operation, evaluates the propositional form of the two
 	% input terms, producing a substitution that will resolve both terms to
@@ -54,7 +44,7 @@
 :- pred unification(eval_strategy::in,
 	mh_environment::in, mh_environment::out,
 	mh_scope::in, mh_scope::out,
-	mh_term::in, mh_term::in, mh_substitution::out) is det.
+	mh_term::in, mh_term::in, mh_proposition::out) is det.
 	
 :- pred unify(eval_strategy::in,
 	mh_environment::in, mh_environment::out,
@@ -117,7 +107,6 @@
 
 :- import_module mh_term_map.
 :- import_module mh_relation.
-:- import_module mh_proposition.
 :- import_module mh_ordered_term_set.
 :- import_module mh_symbol.
 :- import_module mh_value.
@@ -132,7 +121,7 @@ eval(Strat, !Env, !Scope, !Term) :-
 	eval_loop(Strat, !Env, !Scope, !Term, memoizing(!.Env), []).
 	%__after here
 
-:- pred eval_loop(eval_strategy::in, 
+:- pred eval_loop(eval_strategy::in,
 	mh_environment::in, mh_environment::out,
 	mh_scope::in, mh_scope::out, 
 	mh_term::in, mh_term::out, 
@@ -179,7 +168,11 @@ eval_loop(Strat, !Env, !Scope, !Term, Memoizing, Intermediate) :-
 			then true
 			else memo_list(InputList, !.Term, !Env)
 			)
-		else eval_loop(Strat, !Env, !Scope, !Term, Memoizing, InputList)
+		else 
+			%TODO: Check depth limit, flounder or error if exceeded
+			%Add arg for depth limit
+			eval_loop(Strat, !Env, !Scope, !Term, Memoizing,
+				InputList)
 		)
 	).
 	
@@ -201,7 +194,7 @@ apply(Strat, !Env, !Scope, Functor, Arg, Result) :-
 			(if Cdr = tuple_cons(First, Rest) 
 			then
 				apply(Strat, !Env, !Scope, Car, First, Curried),
-				eval(Strat, !Env, !Scope, cons(Curried, Rest), Result)	
+				eval(Strat, !Env, !Scope, cons(Curried, Rest), Result)
 			else
 				(if tuple_is_empty(Cdr)
 				then ConsArg = term_nil
@@ -231,7 +224,7 @@ apply_simple_term(Functor, Arg, Msg) =
 	
 :- pragma inline(apply_simple_term/3).
 
-:- pred apply_relation(eval_strategy::in,
+:- pred apply_relation(eval_strategy::in, 
 	mh_environment::in, mh_environment::out,
 	mh_scope::in, mh_scope::out, 
 	mh_relation::in, mh_term::in, mh_term::out) is det.
@@ -248,12 +241,9 @@ apply_relation(Strat, !Env, !Scope, Relation, Arg, Result) :-
 
 :- pragma no_determinism_warning(apply_relation/8).
 
-substitute(_, !Env, !Scope, !.Term, _, !:Term) :- 
-	sorry($module, $pred, "substitute/8").
 
-:- pragma no_determinism_warning(substitute/8).
 
-unification(_, !Env, !Scope, _, _, init_sub) :- sorry($module, $pred, "unification/8").
+unification(_, !Env, !Scope, _, _, proposition_false) :- sorry($module, $pred, "unification/8").
 
 :- pragma no_determinism_warning(unification/8).
 
