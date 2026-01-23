@@ -110,16 +110,6 @@
 
 :- pred tuple_member(mh_tuple::in, int::out, mh_term::out) is nondet.
 
-
-%-----------------------------------------------------------------------------%
-% Tuple substitutions
-
-
-:- pred apply_tuple_substiution(mh_substitution::in, mh_tuple::in,
-	mh_tuple::out) is det.
-	
-:- func apply_tuple_substiution(mh_tuple, mh_substitution) = mh_tuple.
-
 %-----------------------------------------------------------------------------%
 % Higher Order
 

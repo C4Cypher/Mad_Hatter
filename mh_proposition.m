@@ -63,13 +63,7 @@
 	
 			% if C then T else E 
 			% C , T ; not C , E
-	;		proposition_branch(mh_proposition, mh_proposition, mh_proposition).  
-
-
-	
-	
-:- pred apply_proposition_substitution(mh_substitution::in, mh_proposition::in,
-	mh_proposition::out) is det.
+	;		proposition_branch(mh_proposition, mh_proposition, mh_proposition).
 	
 :- func vars_in_proposition(mh_scope, mh_proposition) = mh_var_set.
 	
@@ -105,12 +99,6 @@
 :- import_module mh_relation.
 
 %-----------------------------------------------------------------------------%
-
-apply_proposition_substitution(_, _, _) :- sorry($module, $pred,
-	"apply_proposition_substitution/3").
-
-:- pragma no_determinism_warning(apply_proposition_substitution/3).
-
 
 vars_in_proposition(_, _) = sorry($module, $pred, "vars_in_proposition/2").
 

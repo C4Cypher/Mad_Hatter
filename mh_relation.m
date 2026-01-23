@@ -142,13 +142,6 @@
 :- pred ground_relation(mh_relation::in) is semidet.
 
 %-----------------------------------------------------------------------------%
-% Relation substitutions
-
-:- pred apply_relation_substitution(mh_substitution::in, mh_relation::in,
-	mh_relation::out) is det.
-
-
-%-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
 :- implementation.
@@ -195,16 +188,3 @@ vars_in_relation(call(Scope, _)) = scope_vars(Scope).
 ground_relation(_) :- sorry($module, $pred, "ground_relation/1").
 
 :- pragma no_determinism_warning(ground_relation/1).
-
-
-
-%-----------------------------------------------------------------------------%
-% Relation substitutions
-
-
-
-
-apply_relation_substitution(_, _, _) :- sorry($module, $pred,
-	"apply_relation_substitution/3").
-	
-:- pragma no_determinism_warning(apply_relation_substitution/3).
