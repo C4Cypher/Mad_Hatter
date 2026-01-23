@@ -360,16 +360,6 @@ tuple_member(Tup, Index, Term) :-
 	Last > 0,
 	nondet_int_in_range(1, Last, Index),
 	tuple_index(Tup, Index, Term).
-
-%-----------------------------------------------------------------------------%
-% Tuple substitutions
-
-apply_tuple_substiution(_, _, _) :- sorry($module, $pred,
-	"apply_tuple_substiution/3").
-	
-:- pragma no_determinism_warning(apply_tuple_substiution/3).
-
-apply_tuple_substiution(!.T, S) = !:T :- apply_tuple_substiution(S, !T).
 	
 %-----------------------------------------------------------------------------%
 % Higher Order
