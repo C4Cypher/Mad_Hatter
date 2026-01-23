@@ -94,18 +94,6 @@
 :- mode ground_term(in) = out is semidet.
 :- mode ground_term(out) = in is semidet.
 
-
-%-----------------------------------------------------------------------------%
-% Substitutions
-
-	% Apply a substitution to a term, if the term is a variable, replace the
-	% variable with the substituted term as appropriate, if not, return the 
-	% term with the substitution applied.
-
-:- pred apply_term_substitution(mh_substitution::in, 
-	mh_term::in, mh_term::out) is det.
-:- func apply_term_substitution(mh_substitution, mh_term) = mh_term.
-
 %-----------------------------------------------------------------------------%
 % Atoms
 
@@ -235,27 +223,6 @@ ground_term(T) :-
 	).
 		
 ground_term(T) = T :- ground_term(T).
-	
-
-%-----------------------------------------------------------------------------%
-% Substitutions
-
-apply_term_substitution(Sub, !Term) :- 	require_complete_switch [!.Term] 
-	(
-		( 	!.Term = atom(_) ; !.Term = value(_) ), !:Term = !.Term 
-
-	;	!.Term = var(ID), sub_id_lookup(Sub, ID, !:Term)
-			
-	;	!.Term = cons(Car0, Cdr0),
-		apply_term_substitution(Sub, Car0, Car),
-		apply_tuple_substiution(Sub, Cdr0, Cdr),
-		!:Term = cons(Car, Cdr)	
-	;	!.Term = relation(Rel0), 
-		apply_relation_substitution(Sub, Rel0, Rel),
-		!:Term = relation(Rel)
-	).
-
-apply_term_substitution(S, !.T) = !:T :- apply_term_substitution(S, !T).
 
 %-----------------------------------------------------------------------------%
 % Atoms	
