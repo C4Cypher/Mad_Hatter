@@ -184,7 +184,7 @@ tuple_compare(Result, Tuple1, Tuple2) :-
     tuple_size(Tuple1, Size1),
     tuple_size(Tuple2, Size2),
     compare(SizeResult, Size1, Size2),
-    (
+    require_complete_switch [SizeResult] (
         SizeResult = (=),
         compare_elements(Tuple1, Tuple2, Result)
     ;
