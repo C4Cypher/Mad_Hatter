@@ -52,11 +52,12 @@
 
 :- func tuple(T) = mh_tuple is semidet.
 
-% manipulating tuples as if they were s-expressions
+% manipulating tuples as if they were s-expressions, fails on empty tuple
 :- func tuple_cons(mh_term, mh_tuple) = mh_tuple.
 :- mode tuple_cons(in, in) = out is det.
 :- mode tuple_cons(out, out) = in is semidet.
 
+% tuple_cons(tuple_cons(Car, Cdr), Car, Cdr).
 :- pred tuple_cons(mh_tuple, mh_term, mh_tuple).
 :- mode tuple_cons(out, in, in) is det.
 :- mode tuple_cons(in, out, out) is semidet.
