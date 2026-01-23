@@ -63,6 +63,9 @@
 
 :- implementation.
 
+:- import_module array.
+:- import_module bool.
+:- import_module int.
 :- import_module require.
 
 %-----------------------------------------------------------------------------%
@@ -103,13 +106,53 @@ substitute_proposition(_, !Env, !Scope, !.Term, _, !:Term) :-
 
 :- pragma no_determinism_warning(substitute_proposition/8).
 
-substitute_tuple(_, !Env, !Scope, !.Term, _, !:Term) :- 
-	sorry($module, $pred, "substitute_tuple/8").
+substitute_tuple(Strat, !Env, !Scope, !.Tuple, Sub, !:Tuple) :- 
+	Size = tuple_size(!.Tuple),
+	(if Size > 0 
+	then
+		init(Size, term_nil, NewArray),
+		substitute_tuple_loop(min(NewArray), !.Tuple, NewArray, Array, 
+			Strat, !Env, !Scope, Sub, no, Changed),
+		(if Changed = yes
+		then
+			!:Tuple = from_array(Array)
+		else true %Don't bother assigning new tuple if it hasn't changed
+		)
+	else true %If tuple was empty, return it
+	).
+	
+:- pred substitute_tuple_loop(int::in, mh_tuple::in,
+	array(mh_term)::array_di, array(mh_term)::array_uo,
+	eval_strategy::in,
+	mh_environment::in, mh_environment::out,
+	mh_scope::in, mh_scope::out,
+	mh_substitution::in,
+	bool::in, bool::out
+	) is det.
+	
+substitute_tuple_loop(Index, CurrentTuple, !Array, Strat, !Env, !Scope, Sub,
+	!Changed) :-
+	% If tuple_cons/3 fails, CurrentTuple is empty, loop is complete
+	(if tuple_cons(CurrentTuple, CurrentTerm, NextTuple)
+	then
+		substitute(Strat, !Env, !Scope, CurrentTerm, Sub, NewTerm),
+		set(Index, NewTerm, !Array), %TODO: Make unsafe_set after testing
+		%If the tuple hasn't changed up to this point, check to see if the
+		%current term has, and if so, flip the Changed flag
+		(if !.Changed = no, CurrentTerm \= NewTerm
+		then !:Changed = yes
+		else true
+		),
+		substitute_tuple_loop(Index + 1, NextTuple, !Array, Strat, !Env,
+			!Scope, Sub, !Changed)
+	else true
+	).
 
-:- pragma no_determinism_warning(substitute_tuple/8).
-
-substitute_ordered_term_set(_, !Env, !Scope, !.Term, _, !:Term) :- 
-	sorry($module, $pred, "substitute/8").
-
-:- pragma no_determinism_warning(substitute_ordered_term_set/8).
+substitute_ordered_term_set(Strat, !Env, !Scope, !.Ots, Sub, !:Ots) :-
+	Tuple = to_tuple(!.Ots),
+	substitute_tuple(Strat, !Env, !Scope, Tuple, Sub, NewTuple),
+	(if Tuple \= NewTuple
+	then !:Ots = from_tuple(NewTuple)
+	else true
+	).
 
