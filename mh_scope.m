@@ -184,6 +184,10 @@
 	% determines if the given scope is a child of another context
 :- pred is_child(mh_scope::in) is semidet.
 
+	% True if the first scope's parent is the second scope or an ancestor
+	% of the second scope.
+:- pred is_ancestor(mh_scope::in, mh_scope::in) is semidet.
+
 	% if a scope has a parent, return it
 :- func parent(mh_scope) = mh_scope is semidet.
 
@@ -571,6 +575,10 @@ create_child_scope(Parent, Ctx, Vars) = Child :-
 
 is_child(child_scope(_, _, _)).
 is_child(extended_scope(Car, _)) :- is_child(Car).
+
+is_ancestor(child_scope(Parent, _, _), Parent).
+is_ancestor(child_scope(Parent, _, _), Ancestor) :- 
+	is_ancestor(Parent, Ancestor).
 
 
 parent(child_scope(Parent, _, _)) = Parent.
