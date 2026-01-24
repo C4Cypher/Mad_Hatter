@@ -76,9 +76,8 @@
 	% they can be considered the same scopes.
 :- pred equivalent_scopes(mh_scope::in, mh_scope::in) is semidet.
 
-	% Succeeds if the first scope is compatable with the second, true if
-	% each variable in the first scope is present in the second scope and
-	% has the same context for it's counterpart in the second scope.
+	% Succeeds if the first scope is equal to the second scope, or is it's 
+	% ancestor
 :- pred compatable_scope(mh_scope::in, mh_scope::in) is semidet.  
 
 	% Succeeds if the first scope shares the same root with the second
@@ -387,8 +386,9 @@ equivalent_scopes(S, S).
 equivalent_scopes(S1, S2) :- 
 	scope_vars(S1, Vars), scope_vars(S2, Vars),
 	all_true(equivalent_var_context(S1, S2), Vars).
-compatable_scope(S1, S2) :- 
-	all_true(equivalent_var_context(S1, S2), scope_vars(S1)).
+	
+compatable_scope(Scope, Scope).
+compatable_scope(Descendant, Ancestor) :- is_ancestor(Descendant, Ancestor).
 
 
 %-----------------------------------------------------------------------------%
