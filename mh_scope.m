@@ -574,7 +574,6 @@ create_child_scope(Parent, Ctx, Vars) = Child :-
 	create_child_scope(Parent, Ctx, Vars, Child).
 
 is_child(child_scope(_, _, _)).
-is_child(extended_scope(Car, _)) :- is_child(Car).
 
 is_ancestor(child_scope(Parent, _, _), Parent).
 is_ancestor(child_scope(Parent, _, _), Ancestor) :- 
