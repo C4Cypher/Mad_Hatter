@@ -89,17 +89,59 @@ substitute(Strat, !Env, !Scope, !.Term, Sub, !:Term) :-
 		)
 	;
 		!.Term = relation(Relation),
-		substitute_relation(Strat, !Env, !Scope, Relation, Sub, NewRelation),
-		(if Relation = NewRelation
-		then true
-		else !:Term = relation(NewRelation)
+		substitute_relation(Strat, !Env, !Scope, Relation, Sub, NewTerm),
+		(if !.Term = NewTerm
+		then !:Term = !.Term
+		else !:Term = NewTerm
 		)
 	).
 
-substitute_relation(_, !Env, !Scope, !.Term, _, !:Term) :- 
-	sorry($module, $pred, "substitute_relation/8").
+substitute_relation(Strat, !Env, !Scope, Relation, Sub, Result) :-
+	RelationScope = relation_scope(Relation),
+	(if compatable_scope(RelationScope, !.Scope)
+	then
+		require_complete_switch [Relation] (
+			Relation = nil,
+			Result = Relation
+		;
+			Relation = conjunction(_, Ots),
+			Result = nil,
+			sorry($module, $pred, "substitute_relation/8")
+		;
+			Relation = disjunction(_, Ots),
+			Result = nil,
+			sorry($module, $pred, "substitute_relation/8")
+		;
+			Relation = not(_, Negation),
+			Result = nil,
+			sorry($module, $pred, "substitute_relation/8")
+		;
+			Relation = lambda_equivalence(_, Lhs, Rhs),
+			Result = nil,
+			sorry($module, $pred, "substitute_relation/8")
+		;
+			Relation = lambda_application(_, Lhs, Rhs),
+			Result = nil,
+			sorry($module, $pred, "substitute_relation/8")
+		;
+			Relation = lambda_unification(_, Lhs, Rhs),
+			Result = nil,
+			sorry($module, $pred, "substitute_relation/8")
+		;
+			Relation = lazy(_, Constraint),
+			Result = nil,
+			sorry($module, $pred, "substitute_relation/8")
+		;
+			Relation = proposition(_, Proposition),
+			Result = nil,
+			sorry($module, $pred, "substitute_relation/8")
+		)
+	else
+		Result = Relation
+	).
 
-:- pragma no_determinism_warning(substitute_relation/8).
+
+
 
 substitute_proposition(_, !Env, !Scope, !.Term, _, !:Term) :- 
 	sorry($module, $pred, "substitute_proposition/8").
