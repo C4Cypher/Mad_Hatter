@@ -41,7 +41,6 @@
 				lambda_unification_rhs_map :: term_relation_map(T),
 				lazy_map :: term_relation_map(T),
 				proposition_map ::	prop_relation_map(T),
-				closure_map :: mh_relation_map(T),
 				function_map :: mh_relation_map(T)
 			).
 
@@ -190,15 +189,6 @@ insert(Rel@proposition(_, Prop), Value, !Map) :-
 	PropMap = !.Map ^ proposition_map,
 	prop_map_insert(Rel, Value, Prop, PropMap, NewPropMap),
 	!:Map = !.Map ^ proposition_map := NewPropMap. 
-	
-insert(Rel@closure(_, _), Value, !Map) :-
-	ClosureMap = !.Map ^ closure_map,
-	(if insert(Rel, Value, ClosureMap, NewClosureMap)
-	then
-		!:Map = !.Map ^ closure_map := NewClosureMap
-	else
-		true
-	).
 	
 insert(Rel@call(_, _), Value, !Map) :-
 	FunctionMap = !.Map ^ function_map,
