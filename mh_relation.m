@@ -106,15 +106,6 @@
 	% 		Succeed or fail based on evaluation of the embedded proposition;
 	%		Should evaluate to either a success or failure as defined in 
 	%		mh_proposition.m
- 
-	;		closure(mh_term, mh_substitution)
-	%		Evaluates to the given term with the applied variable substitution
-	%		Allows for terms from incompatable scope to be grounded into the
-	%		enclosing scope when the raw conjunction of a term and a
-	%		substitution would create an environment conflict. May also serve
-	%		to short cut pattern matching terms passed between environments.
-	%
-	%		closure(Term, Sub) = Term, Sub
 			
 	;		call(mh_scope, mh_foreign_function).
 			% Call a foreign function as if it were an application.
@@ -135,9 +126,9 @@
 	
 
 	% These calls fail if they contained unresolved closures
-:- func relation_scope(mh_relation) = mh_scope is semidet.
+:- func relation_scope(mh_relation) = mh_scope is det.
 	
-:- func vars_in_relation(mh_relation) = mh_var_set is semidet.
+:- func vars_in_relation(mh_relation) = mh_var_set is det.
 
 :- pred ground_relation(mh_relation::in) is semidet.
 
@@ -160,7 +151,6 @@ relation_scope(lambda_application(Scope, _, _)) = Scope.
 relation_scope(lambda_unification(Scope, _, _)) = Scope.
 relation_scope(lazy(Scope, _)) = Scope.
 relation_scope(proposition(Scope, _)) = Scope.
-relation_scope(closure(_, _)) = no_scope :- fail.
 relation_scope(call(Scope, _)) = Scope.
 
 :- func vir_fold(mh_scope, mh_term, mh_var_set) = mh_var_set.
@@ -181,7 +171,6 @@ vars_in_relation(lambda_unification(Scope, L, R)) =
 	var_set_union(vars_in_scope(Scope, L), vars_in_scope(Scope, R)).
 vars_in_relation(lazy(Scope, Term)) = vars_in_scope(Scope, Term).
 vars_in_relation(proposition(Scope, Prop)) = vars_in_proposition(Scope, Prop).
-vars_in_relation(closure(_, _)) = empty_var_set :- fail.
 vars_in_relation(call(Scope, _)) = scope_vars(Scope).
 
 
