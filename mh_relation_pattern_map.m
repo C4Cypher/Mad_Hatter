@@ -89,7 +89,6 @@ init = pattern_map(
 	mh_term_map.init,
 	mh_term_map.init,
 	mh_proposition_map.init,
-	mh_relation_map.init,
 	mh_relation_map.init
 ).
 init(init).
