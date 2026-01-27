@@ -517,9 +517,8 @@ extend_scope(Car, Cdr, NewScope, RenamedVars, Renaming) :-
 		RenamedVars = det_rename_var_set(Renaming, CdrVars)
 	).
 	
-extend_root_scope(Car, Extend, extended_scope(Car, Cdr), Renaming) :-
+extend_root_scope(Car, Cdr, extended_scope(Car, Cdr), Renaming) :-
 	require_root_scope($module, $pred, Car),
-	root_ancestor(Extend, Cdr),
 	extended_renaming(scope_vars(Cdr), root_scope_id_set(Car), Renaming).
 	
 :- pred extended_renaming(mh_var_set::in, var_id_set::in, mh_renaming::out) 
