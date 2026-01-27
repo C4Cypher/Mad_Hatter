@@ -89,10 +89,10 @@ substitute(Strat, !Env, !Scope, !.Term, Sub, !:Term) :-
 		)
 	;
 		!.Term = relation(Relation),
-		substitute_relation(Strat, !Env, !Scope, Relation, Sub, NewTerm),
-		(if !.Term = NewTerm
+		substitute_relation(Strat, !Env, !Scope, Relation, Sub, NewRelation),
+		(if Relation = NewRelation
 		then !:Term = !.Term
-		else !:Term = NewTerm
+		else !:Term = relation(NewRelation)
 		)
 	).
 
@@ -133,6 +133,10 @@ substitute_relation(Strat, !Env, !Scope, Relation, Sub, Result) :-
 			sorry($module, $pred, "substitute_relation/8")
 		;
 			Relation = proposition(_, Proposition),
+			Result = nil,
+			sorry($module, $pred, "substitute_relation/8")
+		;
+			Relation = call(_, Call),
 			Result = nil,
 			sorry($module, $pred, "substitute_relation/8")
 		)
