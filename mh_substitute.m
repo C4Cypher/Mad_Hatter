@@ -32,30 +32,20 @@
 	% variables not already present in the calling scope, extend the scope
 	% to include them, also prune the scope of any variables (and 
 	% extended outside scopes) not present in the resulting term
-:- pred substitute(eval_strategy::in,
-	mh_environment::in, mh_environment::out,
-	mh_scope::in, mh_scope::out,
+:- pred substitute(mh_calling_context::in, mh_calling_context::out,
 	mh_term::in, mh_substitution::in, mh_term::out) is det.
 
-:- pred substitute_relation(eval_strategy::in,
-	mh_environment::in, mh_environment::out,
-	mh_scope::in, mh_scope::out,
+:- pred substitute_relation(mh_calling_context::in, mh_calling_context::out,
 	mh_relation::in, mh_substitution::in, mh_relation::out) is det.
 
-:- pred substitute_proposition(eval_strategy::in,
-	mh_environment::in, mh_environment::out,
-	mh_scope::in, mh_scope::out,
+:- pred substitute_proposition(mh_calling_context::in, mh_calling_context::out,
 	mh_proposition::in, mh_substitution::in, mh_proposition::out) is det.
 
-:- pred substitute_tuple(eval_strategy::in,
-	mh_environment::in, mh_environment::out,
-	mh_scope::in, mh_scope::out,
+:- pred substitute_tuple(mh_calling_context::in, mh_calling_context::out,
 	mh_tuple::in, mh_substitution::in, mh_tuple::out) is det.
 
-:- pred substitute_ordered_term_set(eval_strategy::in,
-	mh_environment::in, mh_environment::out,
-	mh_scope::in, mh_scope::out,
-	mh_ordered_term_set::in, mh_substitution::in, mh_ordered_term_set::out)
+:- pred substitute_ordered_term_set(mh_calling_context::in, 
+	mh_calling_context::out, mh_ordered_term_set::in, mh_substitution::in, mh_ordered_term_set::out)
 	is det.	
 	
 %-----------------------------------------------------------------------------%
@@ -70,7 +60,7 @@
 
 %-----------------------------------------------------------------------------%
 
-substitute(Strat, !Env, !Scope, !.Term, Sub, !:Term) :-
+substitute(!Ctx !.Term, Sub, !:Term) :-
 	require_complete_switch [!.Term] (
 		(!.Term = atom(_) ; !.Term = value(_)), !:Term = !.Term
 	;
@@ -81,22 +71,22 @@ substitute(Strat, !Env, !Scope, !.Term, Sub, !:Term) :-
 		)
 	;
 		!.Term = cons(Car, Cdr),
-		substitute(Strat, !Env, !Scope, Car, Sub, NewCar),
-		substitute_tuple(Strat, !Env, !Scope, Cdr, Sub, NewCdr),
+		substitute(!Ctx Car, Sub, NewCar),
+		substitute_tuple(!Ctx Cdr, Sub, NewCdr),
 		(if Car = NewCar, Cdr = NewCdr
 		then true
 		else !:Term = cons(NewCar, NewCdr)
 		)
 	;
 		!.Term = relation(Relation),
-		substitute_relation(Strat, !Env, !Scope, Relation, Sub, NewRelation),
+		substitute_relation(!Ctx Relation, Sub, NewRelation),
 		(if Relation = NewRelation
 		then !:Term = !.Term
 		else !:Term = relation(NewRelation)
 		)
 	).
 
-substitute_relation(Strat, !Env, !Scope, Relation, Sub, Result) :-
+substitute_relation(!Ctx Relation, Sub, Result) :-
 	RelationScope = relation_scope(Relation),
 	(if compatable_scope(RelationScope, !.Scope)
 	then
@@ -152,13 +142,13 @@ substitute_proposition(_, !Env, !Scope, !.Term, _, !:Term) :-
 
 :- pragma no_determinism_warning(substitute_proposition/8).
 
-substitute_tuple(Strat, !Env, !Scope, !.Tuple, Sub, !:Tuple) :- 
+substitute_tuple(!Ctx !.Tuple, Sub, !:Tuple) :- 
 	Size = tuple_size(!.Tuple),
 	(if Size > 0 
 	then
 		init(Size, term_nil, NewArray),
 		substitute_tuple_loop(min(NewArray), !.Tuple, NewArray, Array, 
-			Strat, !Env, !Scope, Sub, no, Changed),
+			!Ctx Sub, no, Changed),
 		(if Changed = yes
 		then
 			!:Tuple = from_array(Array)
@@ -169,19 +159,17 @@ substitute_tuple(Strat, !Env, !Scope, !.Tuple, Sub, !:Tuple) :-
 	
 :- pred substitute_tuple_loop(int::in, mh_tuple::in,
 	array(mh_term)::array_di, array(mh_term)::array_uo,
-	eval_strategy::in,
-	mh_environment::in, mh_environment::out,
-	mh_scope::in, mh_scope::out,
+	mh_calling_context::in, mh_calling_context::out,
 	mh_substitution::in,
 	bool::in, bool::out
 	) is det.
 	
-substitute_tuple_loop(Index, CurrentTuple, !Array, Strat, !Env, !Scope, Sub,
+substitute_tuple_loop(Index, CurrentTuple, !Array, !Ctx Sub,
 	!Changed) :-
 	% If tuple_cons/3 fails, CurrentTuple is empty, loop is complete
 	(if tuple_cons(CurrentTuple, CurrentTerm, NextTuple)
 	then
-		substitute(Strat, !Env, !Scope, CurrentTerm, Sub, NewTerm),
+		substitute(!Ctx CurrentTerm, Sub, NewTerm),
 		set(Index, NewTerm, !Array), %TODO: Make unsafe_set after testing
 		%If the tuple hasn't changed up to this point, check to see if the
 		%current term has, and if so, flip the Changed flag
@@ -194,9 +182,9 @@ substitute_tuple_loop(Index, CurrentTuple, !Array, Strat, !Env, !Scope, Sub,
 	else true
 	).
 
-substitute_ordered_term_set(Strat, !Env, !Scope, !.Ots, Sub, !:Ots) :-
+substitute_ordered_term_set(!Ctx !.Ots, Sub, !:Ots) :-
 	Tuple = to_tuple(!.Ots),
-	substitute_tuple(Strat, !Env, !Scope, Tuple, Sub, NewTuple),
+	substitute_tuple(!Ctx Tuple, Sub, NewTuple),
 	(if Tuple \= NewTuple
 	then !:Ots = from_tuple(NewTuple)
 	else true

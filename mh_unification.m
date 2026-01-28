@@ -25,17 +25,15 @@
 %-----------------------------------------------------------------------------%
 % Term Unification
 
-:- pred unify_terms(mh_term::in, mh_term::in, mh_substitution::out) is semidet.
-
-:- pred unify_terms(mh_term::in, mh_term::in, mh_substitution::out,
-	event_log::in, event_log::out) is semidet.
-
-:- pred unify_terms(mh_term::in, mh_term::in, mh_substitution::out, 
-	event_log::in, event_log::out, mh_environment::in) is semidet.
+	% Memoizing full operation, evaluates the propositional form of the two
+	% input terms, producing a substitution that will resolve both terms to
+	% the result of unify/5
+:- pred unification(mh_calling_context::in, mh_calling_context::out,
+	mh_term::in, mh_term::in, mh_proposition::out) is det.
 	
-:- pred unify_terms(mh_term::in, mh_term::in, mh_substitution::out,
-	event_log::in, event_log::out,
-	mh_environment::in, mh_environment::out) is semidet.
+	% Return the resulting term resulting from unifying two terms
+:- pred unify(mh_calling_context::in, mh_calling_context::out,
+	mh_term::in, mh_term::in, mh_term::out) is det.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
