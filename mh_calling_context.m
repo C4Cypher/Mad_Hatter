@@ -15,9 +15,13 @@
 
 :- interface.
 
+:- import_module list.
+:- import_module assoc_list.
+
 :- import_module mh_evaluation.
 :- import_module mh_scope.
 :- import_module mh_environment.
+:- import_module mh_term.
 	
 %-----------------------------------------------------------------------------%
 % Calling context
@@ -53,9 +57,6 @@
 	
 :- pred det_insert(mh_term::in, mh_term::in, mh_calling_context::in, 
 	mh_calling_context::out) is det.
-	
-:- pred det_insert(mh_term::in, mh_term_set::in, mh_term_set::out)
-	is det.
 	
 :- pred det_insert_from_corresponding_lists(list(mh_term)::in, 
 	list(mh_term)::in, mh_calling_context::in, mh_calling_context::out) is det.
@@ -153,6 +154,7 @@
 
 :- implementation.
 
+:- import_module mh_term_map.
 
 %-----------------------------------------------------------------------------%
 % Calling context
@@ -178,6 +180,11 @@ insert(Key, Value, !Ctx) :-
 
 det_insert(Key, Value, !Ctx) :-
 	det_insert(Key, Value, !.Ctx ^ environment, Env),
+	!:Ctx = !.Ctx ^ environment := Env.
+	
+det_insert_from_corresponding_lists(Keys, Values, !Ctx) :-
+	det_insert_from_corresponding_lists(Keys, Values, !.Ctx ^ environment,
+		Env),
 	!:Ctx = !.Ctx ^ environment := Env.
 	
 det_insert_from_assoc_list(List, !Ctx) :-
@@ -224,8 +231,11 @@ delete_list(Keys, !Ctx) :-
 % Environment variables
 
 contains_env(Ctx, Key) :- contains_env(Ctx ^ environment, Key).
+contains_env(Ctx, Module, Key) :- contains_env(Ctx ^ environment, Module, Key).
 
 search_env(Ctx, Key, Value) :- search_env(Ctx ^ environment, Key, Value).
+search_env(Ctx, Module, Key, Value) :- 
+	search_env(Ctx ^ environment, Module, Key, Value).
 
 lookup_env(Ctx, Key, Value) :- lookup_env(Ctx ^ environment, Key, Value).
 lookup_env(Ctx, Module, Key, Value) :- 
@@ -264,11 +274,11 @@ update_env(Module, Key, Value, !Ctx) :-
 	!:Ctx = !.Ctx ^ environment := Env.
 
 det_update_env(Key, Value, !Ctx) :-
-	update_env(Key, Value, !.Ctx ^ environment, Env),
+	det_update_env(Key, Value, !.Ctx ^ environment, Env),
 	!:Ctx = !.Ctx ^ environment := Env.
 
 det_update_env(Module, Key, Value, !Ctx) :-
-	update_env(Module, Key, Value, !.Ctx ^ environment, Env),
+	det_update_env(Module, Key, Value, !.Ctx ^ environment, Env),
 	!:Ctx = !.Ctx ^ environment := Env.
 
 remove_env(Key, Value, !Ctx) :-
@@ -290,7 +300,7 @@ delete_env(Module, Key, !Ctx) :-
 %-----------------------------------------------------------------------------%
 % Scope
 
-compatable_scope(Scope, Ctx) :- compatable_scope(Scope, Ctx ^ Scope).
+compatable_scope(Scope, Ctx) :- compatable_scope(Scope, Ctx ^ scope).
 
 
 
