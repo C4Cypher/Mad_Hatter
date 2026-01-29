@@ -389,6 +389,8 @@ equivalent_scopes(S1, S2) :-
 	
 compatable_scope(Scope, Scope).
 compatable_scope(Descendant, Ancestor) :- is_ancestor(Descendant, Ancestor).
+compatable_scope(Scope, extended_scope(Root, _)) :- 
+	compatable_scope(Scope, Root).
 
 
 %-----------------------------------------------------------------------------%
