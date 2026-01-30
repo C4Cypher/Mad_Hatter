@@ -20,7 +20,6 @@
 :- import_module mh_term.
 :- import_module mh_proposition.
 :- import_module mh_foreign_function.
-:- import_module mh_substitution.
 :- import_module mh_var_set.
 :- import_module mh_calling_context.
 
@@ -154,7 +153,7 @@
 
 :- import_module require.
 :- import_module list.
-:- import_module mabye.
+:- import_module maybe.
 
 %-----------------------------------------------------------------------------%
 
@@ -199,15 +198,17 @@ ground_relation(_) :- sorry($module, $pred, "ground_relation/1").
 
 new_conjunction(Ctx, Ots, new_conjunction(Ctx, Ots)).
 new_conjunction(Ctx, Ots) = conjunction(NewScope, Ots) :-
-	vars_in_ordered_term_set(Scope@Ctx^scope, Ots, Vars),
+	Scope = Ctx ^ scope,
+	vars_in_ordered_term_set(Scope, Ots, Vars),
 	create_child_scope(Scope, no, Vars, NewScope).
 	
 
 new_conjunction(Ctx, Existing, Ots, new_conjunction(Ctx, Existing, Ots)).
 new_conjunction(Ctx, ExistingScope, Ots) = conjunction(NewScope, Ots) :-
-	vars_in_ordered_term_set(Scope@Ctx^scope, Ots, Vars),
-	assert_compatable_scope(Existing, Scope), %Check only on validation?
-	scope_context(Existing, ScopeContext),
+	Scope = Ctx ^ scope,
+	vars_in_ordered_term_set(Scope, Ots, Vars),
+	assert_compatable_scope(ExistingScope, Scope), %Check only on validation?
+	scope_context(ExistingScope, ScopeContext),
 	create_child_scope(Scope, yes(ScopeContext), Vars, NewScope).
 	
 

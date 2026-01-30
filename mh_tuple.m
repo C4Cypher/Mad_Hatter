@@ -24,7 +24,7 @@
 :- import_module mh_term.
 :- import_module mh_var_set.
 :- import_module mh_var_id.
-:- import_module mh_substitution.
+% :- import_module mh_substitution.
 
 
 %-----------------------------------------------------------------------------%

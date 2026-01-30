@@ -588,7 +588,8 @@ create_child_scope(Parent, Ctx, Vars, NewScope) :-
 			(	
 				Ctx = no
 			;
-				Ctx = scope_context(Parent)
+				Ctx = yes(ScopeContext),
+				ScopeContext = scope_context(Parent)
 			),
 			scope_vars(Parent) = Vars
 		then

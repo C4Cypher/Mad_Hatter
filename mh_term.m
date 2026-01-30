@@ -22,7 +22,7 @@
 :- import_module mh_relation.
 :- import_module mh_var_set.
 :- import_module mh_scope.
-:- import_module mh_substitution.
+% :- import_module mh_substitution.
 
 %-----------------------------------------------------------------------------%
 % Terms
