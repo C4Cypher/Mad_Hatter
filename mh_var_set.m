@@ -258,24 +258,31 @@
 % Higher order
 
 :- pred fold_id(pred(var_id, A, A), mh_var_set, A, A).
-:- mode fold_id(in(pred(in, in, out) is det), in, in, out) is det.
-:- mode fold_id(in(pred(in, mdi, muo) is det), in, mdi, muo) is det.
-:- mode fold_id(in(pred(in, di, uo) is det), in, di, uo) is det.
-/*:- mode fold_id(in(pred(in, in, array_di, array_uo) is det), in, 
+:- mode fold_id(pred(in, in, out) is det, in, in, out) is det.
+:- mode fold_id(pred(in, mdi, muo) is det, in, mdi, muo) is det.
+:- mode fold_id(pred(in, di, uo) is det, in, di, uo) is det.
+/*:- mode fold_id(pred(in, in, array_di, array_uo) is det, in, 
 	array_di, array_uo) is det. */
-:- mode fold_id(in(pred(in, in, out) is semidet), in, in, out) is semidet.
-:- mode fold_id(in(pred(in, mdi, muo) is semidet), in, mdi, muo) 
+:- mode fold_id(pred(in, in, out) is semidet, in, in, out) is semidet.
+:- mode fold_id(pred(in, mdi, muo) is semidet, in, mdi, muo) 
 	is semidet.
 
 :- pred fold(pred(mh_var, A, A), mh_var_set, A, A).
-:- mode fold(in(pred(in, in, out) is det), in, in, out) is det.
-:- mode fold(in(pred(in, mdi, muo) is det), in, mdi, muo) is det.
-:- mode fold(in(pred(in, di, uo) is det), in, di, uo) is det.
-/*:- mode fold(in(pred(in, in, array_di, array_uo) is det), in, 
+:- mode fold(pred(in, in, out) is det, in, in, out) is det.
+:- mode fold(pred(in, mdi, muo) is det, in, mdi, muo) is det.
+:- mode fold(pred(in, di, uo) is det, in, di, uo) is det.
+/*:- mode fold(pred(in, in, array_di, array_uo) is det, in, 
 	array_di, array_uo) is det.*/
-:- mode fold(in(pred(in, in, out) is semidet), in, in, out) is semidet.
-:- mode fold(in(pred(in, mdi, muo) is semidet), in, mdi, muo) 
+:- mode fold(pred(in, in, out) is semidet, in, in, out) is semidet.
+:- mode fold(pred(in, mdi, muo) is semidet, in, mdi, muo) 
 	is semidet.
+	
+:- pred fold_range(pred(var_id_offset, var_id_set, A, A), mh_var_set, A, A).
+:- mode fold_range(pred(in, in, in, out) is det, in, in, out) is det.
+:- mode fold_range(pred(in, in, mdi, muo) is det, in, mdi, muo) is det.
+:- mode fold_range(pred(in, in, di, uo) is det, in, di, uo) is det.
+:- mode fold_range(pred(in, in, in, out) is semidet, in, in, out) is semidet.
+:- mode fold_range(pred(in, in, mdi, muo) is semidet, in, mdi, muo) is semidet.
 
 :- pred all_true_id(pred(var_id), mh_var_set).
 :- mode all_true_id(in(pred(in) is semidet), in) is semidet.
@@ -866,6 +873,20 @@ curry_fold(P, ID, !A) :- P(var(ID), !A).
 fold(P, Map, !A) :-
 	CurriedP = curry_fold(P),
 	fold_id(CurriedP, Map, !A).
+	
+fold_range(P, Set, !A) :-
+	(if empty_var_set(Set)
+	then true
+	else
+		require_complete_switch [Set] (
+			Set = var_set(O, S),
+			P(O, S, !A)
+		;
+			Set = var_set(O, S, Next),
+			P(O, S, !A),
+			fold_range(P, Next, !A)
+		)
+	).
 
 all_true_id(P, Set) :-
 	(if empty_var_set(Set)
