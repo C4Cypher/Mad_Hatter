@@ -16,12 +16,16 @@
 :- interface.
 
 :- import_module mh_term.
+:- import_module mh_calling_context.
 
 :- type function_call == (func(mh_term) = mh_term).
+:- type meta_function_call == 
+	(func(mh_term, mh_calling_context) = mh_calling_context).
 
 :- type mh_foreign_function
 			% f(X) -> Y :- r(X) = Y.
-	--->	mr_function(string, function_call).
+	--->	mr_function(string, function_call)
+	;		mr_meta_function(string, meta_function_call).
 
 :- func foreign_function_uid(mh_foreign_function) = string.
 
@@ -35,5 +39,6 @@
 % :- import_module require.
 
 foreign_function_uid(mr_function(UID, _)) = UID.
+foreign_function_uid(mr_meta_function(UID, _)) = UID.
 
 %-----------------------------------------------------------------------------%
