@@ -60,7 +60,7 @@
 
 %-----------------------------------------------------------------------------%
 
-substitute(!Ctx !.Term, Sub, !:Term) :-
+substitute(!Ctx, !.Term, Sub, !:Term) :-
 	require_complete_switch [!.Term] (
 		(!.Term = atom(_) ; !.Term = value(_)), !:Term = !.Term
 	;
@@ -71,22 +71,22 @@ substitute(!Ctx !.Term, Sub, !:Term) :-
 		)
 	;
 		!.Term = cons(Car, Cdr),
-		substitute(!Ctx Car, Sub, NewCar),
-		substitute_tuple(!Ctx Cdr, Sub, NewCdr),
+		substitute(!Ctx, Car, Sub, NewCar),
+		substitute_tuple(!Ctx, Cdr, Sub, NewCdr),
 		(if Car = NewCar, Cdr = NewCdr
 		then true
 		else !:Term = cons(NewCar, NewCdr)
 		)
 	;
 		!.Term = relation(Relation),
-		substitute_relation(!Ctx Relation, Sub, NewRelation),
+		substitute_relation(!Ctx, Relation, Sub, NewRelation),
 		(if Relation = NewRelation
 		then !:Term = !.Term
 		else !:Term = relation(NewRelation)
 		)
 	).
 
-substitute_relation(!Ctx Relation, Sub, Result) :-
+substitute_relation(!Ctx, Relation, Sub, Result) :-
 	RelationScope = relation_scope(Relation),
 	(if compatable_scope(RelationScope, !.Scope)
 	then
@@ -95,8 +95,20 @@ substitute_relation(!Ctx Relation, Sub, Result) :-
 			Result = Relation
 		;
 			Relation = conjunction(_, Ots),
-			Result = nil,
-			sorry($module, $pred, "substitute_relation/8")
+			% Possible optimizations:
+			% Custom loop that checks if
+			% 1. a substitution is substituting a conjunction into itself
+			%	if so, skip the substitution for variables, but apply
+			% 	the substiution to compound subterms
+			% 2. a substitution is subtituting a term into a conjunction
+			%	that already exists in the conjunction
+			%	if so, skip the substitution and remove the variable
+			%	from the conjunction, but apply the substitution to compound
+			%	subterms
+			
+			substitute_ordered_term_set(!Ctx, Ots, Sub, NewOts),
+			%TODO: create new scope based off NewOts
+			Result = conjunction(RelationScope, NewOts) 
 		;
 			Relation = disjunction(_, Ots),
 			Result = nil,
@@ -137,7 +149,7 @@ substitute_relation(!Ctx Relation, Sub, Result) :-
 
 
 
-substitute_proposition(_, !Env, !Scope, !.Term, _, !:Term) :- 
+substitute_proposition(!Ctx, !.Term, _, !:Term) :- 
 	sorry($module, $pred, "substitute_proposition/8").
 
 :- pragma no_determinism_warning(substitute_proposition/8).
@@ -148,7 +160,7 @@ substitute_tuple(!Ctx !.Tuple, Sub, !:Tuple) :-
 	then
 		init(Size, term_nil, NewArray),
 		substitute_tuple_loop(min(NewArray), !.Tuple, NewArray, Array, 
-			!Ctx Sub, no, Changed),
+			!Ctx, Sub, no, Changed),
 		(if Changed = yes
 		then
 			!:Tuple = from_array(Array)
@@ -164,12 +176,12 @@ substitute_tuple(!Ctx !.Tuple, Sub, !:Tuple) :-
 	bool::in, bool::out
 	) is det.
 	
-substitute_tuple_loop(Index, CurrentTuple, !Array, !Ctx Sub,
+substitute_tuple_loop(Index, CurrentTuple, !Array, !Ctx, Sub,
 	!Changed) :-
 	% If tuple_cons/3 fails, CurrentTuple is empty, loop is complete
 	(if tuple_cons(CurrentTuple, CurrentTerm, NextTuple)
 	then
-		substitute(!Ctx CurrentTerm, Sub, NewTerm),
+		substitute(!Ctx, CurrentTerm, Sub, NewTerm),
 		set(Index, NewTerm, !Array), %TODO: Make unsafe_set after testing
 		%If the tuple hasn't changed up to this point, check to see if the
 		%current term has, and if so, flip the Changed flag
@@ -184,7 +196,7 @@ substitute_tuple_loop(Index, CurrentTuple, !Array, !Ctx Sub,
 
 substitute_ordered_term_set(!Ctx !.Ots, Sub, !:Ots) :-
 	Tuple = to_tuple(!.Ots),
-	substitute_tuple(!Ctx Tuple, Sub, NewTuple),
+	substitute_tuple(!Ctx, Tuple, Sub, NewTuple),
 	(if Tuple \= NewTuple
 	then !:Ots = from_tuple(NewTuple)
 	else true
