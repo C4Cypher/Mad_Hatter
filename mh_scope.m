@@ -77,8 +77,12 @@
 :- pred equivalent_scopes(mh_scope::in, mh_scope::in) is semidet.
 
 	% Succeeds if the first scope is equal to the second scope, or is it's 
-	% ancestor
+	% ancestor, or in the event that the second scope is extended, if the
+	% first scope is compatable with the extended scope's root
 :- pred compatable_scope(mh_scope::in, mh_scope::in) is semidet.  
+
+	% Throw an exception if the first
+:- pred assert_compatable_scope(mh_scope::in, mh_scope::in) is det.
 
 	% Succeeds if the first scope shares the same root with the second
 % :- pred semi_compatable_scope(mh_scope::in, mh_scope::in) is semidet.
@@ -400,6 +404,10 @@ compatable_scope(Scope, Scope).
 compatable_scope(Descendant, Ancestor) :- is_ancestor(Descendant, Ancestor).
 compatable_scope(Scope, extended_scope(Root, _)) :- 
 	compatable_scope(Scope, Root).
+	
+assert_compatable_scope(Scope1, Scope2) :-
+	(if compatable_scope(Scope1, Scope2) then true
+	else unexpected($module, $pred, "Incompatable scopes.")).
 
 
 %-----------------------------------------------------------------------------%
