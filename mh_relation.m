@@ -22,6 +22,7 @@
 :- import_module mh_foreign_function.
 :- import_module mh_substitution.
 :- import_module mh_var_set.
+:- import_module mh_calling_context.
 
 %-----------------------------------------------------------------------------%
 % Relation type
@@ -124,13 +125,27 @@
 			% refrences that have the same uid
 */
 	
-
-	% These calls fail if they contained unresolved closures
 :- func relation_scope(mh_relation) = mh_scope is det.
 	
 :- func vars_in_relation(mh_relation) = mh_var_set is det.
 
 :- pred ground_relation(mh_relation::in) is semidet.
+
+%-----------------------------------------------------------------------------%
+% Constructors
+
+% Construct a new relation given a calling context, if an existing scope
+% is provided, it's context will be used in the constructed relation's 
+% scope.
+
+:- pred new_conjunction(mh_calling_context::in, mh_ordered_term_set::in, 
+	mh_relation::out) is det.
+:- func new_conjunction(mh_calling_context, mh_ordered_term_set) = mh_relation.
+
+:- pred new_conjunction(mh_calling_context::in, mh_scope::in,
+	mh_ordered_term_set::in, mh_relation::out) is det.
+:- func new_conjunction(mh_calling_context, mh_scope, mh_ordered_term_set) =
+	mh_relation.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -139,6 +154,7 @@
 
 :- import_module require.
 :- import_module list.
+:- import_module mabye.
 
 %-----------------------------------------------------------------------------%
 
@@ -159,9 +175,9 @@ vir_fold(Scope, Term, Set) = var_set_union(vars_in_scope(Scope, Term), Set).
 
 vars_in_relation(nil) = empty_var_set.
 vars_in_relation(conjunction(Scope, OTS)) = 
-	fold(vir_fold(Scope), OTS, empty_var_set).
+	vars_in_ordered_term_set(Scope, OTS).
 vars_in_relation(disjunction(Scope, OTS)) = 
-	fold(vir_fold(Scope), OTS, empty_var_set).
+	vars_in_ordered_term_set(Scope, OTS).
 vars_in_relation(not(Scope, Term)) = vars_in_scope(Scope, Term).
 vars_in_relation(lambda_equivalence(Scope, L, R)) = 
 	var_set_union(vars_in_scope(Scope, L), vars_in_scope(Scope, R)).
@@ -177,3 +193,21 @@ vars_in_relation(call(Scope, _)) = scope_vars(Scope).
 ground_relation(_) :- sorry($module, $pred, "ground_relation/1").
 
 :- pragma no_determinism_warning(ground_relation/1).
+
+%-----------------------------------------------------------------------------%
+% Constructors
+
+new_conjunction(Ctx, Ots, new_conjunction(Ctx, Ots)).
+new_conjunction(Ctx, Ots) = conjunction(NewScope, Ots) :-
+	vars_in_ordered_term_set(Scope@Ctx^scope, Ots, Vars),
+	create_child_scope(Scope, no, Vars, NewScope).
+	
+
+new_conjunction(Ctx, Existing, Ots, new_conjunction(Ctx, Existing, Ots)).
+new_conjunction(Ctx, ExistingScope, Ots) = conjunction(NewScope, Ots) :-
+	vars_in_ordered_term_set(Scope@Ctx^scope, Ots, Vars),
+	assert_compatable_scope(Existing, Scope), %Check only on validation?
+	scope_context(Existing, ScopeContext),
+	create_child_scope(Scope, yes(ScopeContext), Vars, NewScope).
+	
+
