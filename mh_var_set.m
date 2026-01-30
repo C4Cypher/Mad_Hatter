@@ -761,6 +761,7 @@ var_set_difference_pairs(O1, S1, O2, S2) = Diff :-
 
 %-----------------------------------------------------------------------------%
 
+%TODO: Reimplement using fold_range, should be more efficient
 var_set_subset(Sub, Super) :- is_empty(var_set_difference(Sub, Super)).
 
 var_set_superset(Super, Sub) :- var_set_subset(Sub, Super).
