@@ -17,7 +17,6 @@
 
 :- import_module mh_calling_context.
 :- import_module mh_term.
-:- import_module mh_proposition.
 
 %-----------------------------------------------------------------------------%
 % Evaluation
@@ -46,7 +45,7 @@
 	--->	bfs	
 
 	% Depth-first, lazy (thunk disjuncts for backtracking)
-	;		dfs	s
+	;		dfs
 	
 	% Negated context, greedy (no further search on success, no solution)
     ;		negated	
@@ -79,8 +78,10 @@
 :- import_module list.
 :- import_module require.
 
+:- import_module mh_environment.
 :- import_module mh_term_map.
 :- import_module mh_relation.
+:- import_module mh_proposition.
 :- import_module mh_ordered_term_set.
 :- import_module mh_symbol.
 :- import_module mh_value.
@@ -92,12 +93,12 @@
 eval(!Ctx, !Term) :- 
 	%__before here
 	% memoize the result of before as well?
-	eval_loop(!Ctx, !Term, memoizing(!.Env), []).
+	eval_loop(!Ctx, !Term, memoizing(!.Ctx ^ environment), []).
 	%__after here
 
 :- pred eval_loop(mh_calling_context::in,
 	mh_calling_context::out,
-	mh_term::in, mh_term::out
+	mh_term::in, mh_term::out,
 	bool::in, list(mh_term)::in) is det.
 
 %TODO: Check for "__before" and "__after" environment variables, and if found
@@ -106,11 +107,11 @@ eval(!Ctx, !Term) :-
 % working.
 
 eval_loop(!Ctx, !Term, Memoizing, Intermediate) :- some [!Env, !Scope] (
-	!.Ctx = ctx(Strat, !:Env, !:Scope),
+	!.Ctx = ctx(_Strat, !:Scope, !:Env),
 	Input = !.Term,
 	(if memo_search(!Env, Memoizing, !Term)
 	then 
-		!:Ctx = environment(!.Ctx) := !.Env
+		!:Ctx = !.Ctx ^ environment := !.Env
 		%TODO: if Strat = validate and Memoizing = yes, evaluate the term
 		% anyway and compare with the memo table result, return an error
 		% if mismatch is found
@@ -126,7 +127,7 @@ eval_loop(!Ctx, !Term, Memoizing, Intermediate) :- some [!Env, !Scope] (
 			)),
 			set(Input, Flounder, !Env),
 			%Change Environment calls to pass context, not environment
-			!:Ctx = environment(!.Ctx) := !.Env, 
+			!:Ctx = !.Ctx ^ environment := !.Env, 
 			EvalComplete = Flounder
 		else 
 			EvalComplete = Input
@@ -141,7 +142,9 @@ eval_loop(!Ctx, !Term, Memoizing, Intermediate) :- some [!Env, !Scope] (
 			%Result
 			(if Memoizing = yes
 			then true
-			else memo_list(InputList, !.Term, !Env)
+			else 
+				memo_list(InputList, !.Term, !Env),
+				!:Ctx = !.Ctx ^ environment := !.Env 
 			)
 		else 
 			%TODO: Check depth limit, flounder or error if exceeded
@@ -155,12 +158,12 @@ apply(!Ctx, Functor, Arg, Result)
 :-
 	require_complete_switch [Functor] (
 		(Functor = atom(_) ; Functor = var(_)),
-		Result = cons(Functor, from_list([Arg])),
+		Result = cons(Functor, from_list([Arg]))
 	;	
 		Functor = value(Value),
 		Msg = "Attempted to apply term to value of type " ++
 			value_type_name(Value),
-		Result = apply_simple_term(Functor, Arg, Msg),
+		Result = apply_simple_term(Functor, Arg, Msg)
 	;
 		% The calls to eval call may be tailrecursive if apply is inlined 
 		% into eval
@@ -188,7 +191,7 @@ apply(!Ctx, Functor, Arg, Result)
 		apply_relation(!Ctx, Relation, Arg, Result)
 	).
 	
-:- pragma inline(apply/8).
+:- pragma inline(apply/5).
 	
 :- func apply_simple_term(mh_term, mh_term, string) = mh_term.
 
@@ -213,4 +216,4 @@ apply_relation(!Ctx, Relation, Arg, Result) :-
 		Relation = conjunction(InnerScope, ConjOts),
 */
 
-:- pragma no_determinism_warning(apply_relation/8).
+:- pragma no_determinism_warning(apply_relation/5).
