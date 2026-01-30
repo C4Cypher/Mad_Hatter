@@ -285,10 +285,10 @@
 :- mode fold_range(pred(in, in, mdi, muo) is semidet, in, mdi, muo) is semidet.
 
 :- pred all_true_id(pred(var_id), mh_var_set).
-:- mode all_true_id(in(pred(in) is semidet), in) is semidet.
+:- mode all_true_id(pred(in) is semidet, in) is semidet.
 
 :- pred all_true(pred(mh_var), mh_var_set).
-:- mode all_true(in(pred(in) is semidet), in) is semidet.
+:- mode all_true(pred(in) is semidet, in) is semidet.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
