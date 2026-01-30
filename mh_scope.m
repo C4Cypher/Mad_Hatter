@@ -83,7 +83,6 @@
 	% Succeeds if the first scope shares the same root with the second
 % :- pred semi_compatable_scope(mh_scope::in, mh_scope::in) is semidet.
 
-
 %-----------------------------------------------------------------------------%
 % Root Scopes
 
@@ -173,7 +172,11 @@
 	% Construct a child scope by providing a scope and a varset.  Throws an
 	% exception if the provided mh_var_set is not a subset of the parent scope.
 	% If there is no provided context, it will default to the parent's context.
-	% Child scopes may use other child scopes as their parent.
+	% Child scopes may use other child scopes as their parent. 
+	%
+	% In the event that no child context is provided, or if the provided
+	% context is the same as the paren'ts AND the provided varset
+	% is the parent scope's complete varset, the parent is returned
 :- pred create_child_scope(mh_scope::in, maybe(mh_context)::in, mh_var_set::in,
 	mh_scope::out) is det.
 	
@@ -230,18 +233,24 @@
 
 :- func scope_var_count(mh_scope) = int.
 
+	% Succeeds if the scope contains a given variable
 :- pred scope_contains_var(mh_scope, mh_var).
 :- mode scope_contains_var(in, in) is semidet.
 :- mode scope_contains_var(in, out) is nondet.
 
 :- pred semidet_scope_contains_var(mh_scope::in, mh_var::in) is semidet.
 
+	% Throw an exception if var is not in scope.
 :- pred assert_var_in_scope(mh_scope::in, mh_var::in) is det. 
 
+	% Succeeds if the scope contains all of the variables in a given var_set
+:- pred scope_contains_var_set(mh_scope::in, mh_var_set::in) is semidet.
+
+	% Throw an exception if a var in the var set is not in scope.
+:- pred assert_var_set_in_scope(mh_scope::in, mh_var_set::in) is det.
 
 :- func scope_vars(mh_scope) = mh_var_set.
 :- pred scope_vars(mh_scope::in, mh_var_set::out) is det.
-
 
 	% Given that root scopes can be extended, not all variables in a scope may
 	% originate from the same root scope. This call allows us to query a 
@@ -559,17 +568,28 @@ decompose_scope(Child@child_scope(_, _, _)) = [Child].
 extended_scope_subset(Subset, extended_scope(Subset, _)).
 extended_scope_subset(Subset, extended_scope(Car, _)) :- 
 	extended_scope_subset(Subset, Car).
-	
-	
-
 
 %-----------------------------------------------------------------------------%
 % Child Scopes		
 
-create_child_scope(Parent, Ctx, Vars, child_scope(Parent, Ctx, Vars)) :-
-	if all_true_id(semidet_scope_contains_id(Parent), Vars)
-	then true
-	else error($pred, "var_set for child contained variables not in parent.").
+create_child_scope(Parent, Ctx, Vars, NewScope) :-
+	scope_vars(Parent, ParentVars), 
+	(if var_set_subset(Vars, ParentVars)
+	then 
+		(if 
+			(	
+				Ctx = no
+			;
+				Ctx = scope_context(Parent)
+			),
+			scope_vars(Parent) = Vars
+		then
+			NewScope = Parent
+		else
+			NewScope = child_scope(Parent, Ctx, Vars)
+		)
+	else error($pred, "var_set for child contained variables not in parent.")
+	).
 	
 create_child_scope(Parent, Ctx, Vars) = Child :- 
 	create_child_scope(Parent, Ctx, Vars, Child).
@@ -622,8 +642,6 @@ root_ancestor(Scope) =
 	
 root_ancestor(Scope, root_ancestor(Scope)).
 
-	
-	
 %-----------------------------------------------------------------------------%
 % Scope context
 
@@ -655,10 +673,6 @@ scope_contains_var(Scope, var(ID)) :- scope_contains_id(Scope, ID).
 
 semidet_scope_contains_var(Scope, Var) :- 
 	scope_contains_var(Scope, Var).
-	
-assert_var_in_scope(Scope, Var) :-
-	(if scope_contains_var(Scope, Var) then true
-	else unexpected($module, $pred, "Variable not in scope.")).
 	
 :- pred scope_contains_id(mh_scope, var_id).
 :- mode scope_contains_id(in, in) is semidet.
@@ -692,6 +706,18 @@ sparse_scope_id_set(child_scope(_, _, VarSet)) =
 	generate_sparse_id_set_for_var_set(VarSet).
 	
 :- pragma inline(scope_contains_id/2).
+
+assert_var_in_scope(Scope, Var) :-
+	(if scope_contains_var(Scope, Var) then true
+	else unexpected($module, $pred, "Variable not in scope.")).
+
+scope_contains_var_set(Scope, Vars) :-
+	scope_vars(Scope, ScopeVars),
+	var_set_subset(Vars, ScopeVars).
+
+assert_var_set_in_scope(Scope, Vars) :-
+	(if scope_contains_var_set(Scope, Vars) then true
+	else unexpected($module, $pred, "Variable not in scope.")).
 
 scope_vars(root_scope(_, IDSet, _)) = complete_var_set(IDSet).
 scope_vars(child_scope(_, _, VarSet)) = VarSet.
