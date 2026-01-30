@@ -23,6 +23,8 @@
 :- import_module mh_term.
 :- import_module mh_tuple.
 :- import_module mh_term_map.
+:- import_module mh_scope.
+:- import_module mh_var_set.
 
 %-----------------------------------------------------------------------------%
 % Ordered set
@@ -212,6 +214,16 @@
 
 
 %-----------------------------------------------------------------------------%
+% Variables
+
+% Collect the set of variables in an ordered term set in a given scope
+:- func vars_in_ordered_term_set(mh_scope, mh_ordered_term_set) = mh_var_set.
+:- pred vars_in_ordered_term_set(mh_scope::in, mh_ordered_term_set::in,
+	mh_var_set::out) is det.
+
+
+
+%-----------------------------------------------------------------------------%
 % Set operations
 
 % These operations are less efficient than first converting them to 
@@ -265,6 +277,11 @@
 :- mode semidet_fold(func(in, in) = out is semidet, in, in) = out 
 	is semidet.
 
+:- pred fold2(pred(mh_term, A, A, B, B), mh_ordered_term_set, A, A, B, B).
+:- mode fold2(in(pred(in, in, out, in, out) is semidet), in, in, out, 
+	in,	out) is semidet.
+:- mode fold2(in(pred(in, in, out, in, out) is det), in, in, out, in, out)
+	is det.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -531,6 +548,20 @@ to_unit_map(M) = S :-
 		
 to_ordered_term_set(CMP, Map) = 
 	os(samsort(CMP, to_unsorted_array(Map)), to_unit_map(Map)).
+	
+%-----------------------------------------------------------------------------%
+% Variables
+
+vars_in_ordered_term_set(Scope, OTS) =
+	fold(fold_viots(Scope), OTS, empty_var_set).
+
+:- func fold_viots(mh_scope, mh_term, mh_var_set) = mh_var_set.
+
+fold_viots(Scope, Term,  Vars) 
+	= var_set_union(vars_in_scope(Scope, Term), Vars).
+	
+vars_in_ordered_term_set(Scope, OTS, vars_in_ordered_term_set(Scope, OTS)).
+	
  
 %-----------------------------------------------------------------------------%
 % Set operations
@@ -643,5 +674,7 @@ fold(F, OTS, A) = fold(F, to_array(OTS), A).
 det_fold(F, OTS, A) = fold(F, OTS, A).
 
 semidet_fold(F, OTS, A) = fold(F, OTS, A).
+
+fold2(P, OTS, !A, !B) :- foldl2(P, to_array(OTS), !A, !B).
 		
 
