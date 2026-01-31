@@ -145,6 +145,15 @@
 	mh_ordered_term_set::in, mh_relation::out) is det.
 :- func new_conjunction(mh_calling_context, mh_scope, mh_ordered_term_set) =
 	mh_relation.
+	
+:- pred new_disjunction(mh_calling_context::in, mh_ordered_term_set::in, 
+	mh_relation::out) is det.
+:- func new_disjunction(mh_calling_context, mh_ordered_term_set) = mh_relation.
+
+:- pred new_disjunction(mh_calling_context::in, mh_scope::in,
+	mh_ordered_term_set::in, mh_relation::out) is det.
+:- func new_disjunction(mh_calling_context, mh_scope, mh_ordered_term_set) =
+	mh_relation.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -201,10 +210,23 @@ new_conjunction(Ctx, Ots) = conjunction(NewScope, Ots) :-
 	Scope = Ctx ^ scope,
 	vars_in_ordered_term_set(Scope, Ots, Vars),
 	create_child_scope(Scope, no, Vars, NewScope).
-	
 
 new_conjunction(Ctx, Existing, Ots, new_conjunction(Ctx, Existing, Ots)).
 new_conjunction(Ctx, ExistingScope, Ots) = conjunction(NewScope, Ots) :-
+	Scope = Ctx ^ scope,
+	vars_in_ordered_term_set(Scope, Ots, Vars),
+	assert_compatable_scope(ExistingScope, Scope), %Check only on validation?
+	scope_context(ExistingScope, ScopeContext),
+	create_child_scope(Scope, yes(ScopeContext), Vars, NewScope).
+	
+new_disjunction(Ctx, Ots, new_disjunction(Ctx, Ots)).
+new_disjunction(Ctx, Ots) = disjunction(NewScope, Ots) :-
+	Scope = Ctx ^ scope,
+	vars_in_ordered_term_set(Scope, Ots, Vars),
+	create_child_scope(Scope, no, Vars, NewScope).
+
+new_disjunction(Ctx, Existing, Ots, new_disjunction(Ctx, Existing, Ots)).
+new_disjunction(Ctx, ExistingScope, Ots) = disjunction(NewScope, Ots) :-
 	Scope = Ctx ^ scope,
 	vars_in_ordered_term_set(Scope, Ots, Vars),
 	assert_compatable_scope(ExistingScope, Scope), %Check only on validation?
