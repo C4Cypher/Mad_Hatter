@@ -66,6 +66,8 @@
 	;		proposition_branch(mh_proposition, mh_proposition, mh_proposition).
 	
 :- func vars_in_proposition(mh_scope, mh_proposition) = mh_var_set.
+:- pred vars_in_proposition(mh_scope::in, mh_proposition::in, mh_var_set::out)
+	is det.
 	
 :- pred ground_proposition(mh_proposition::in) is semidet.
 
@@ -103,6 +105,8 @@
 vars_in_proposition(_, _) = sorry($module, $pred, "vars_in_proposition/2").
 
 :- pragma no_determinism_warning(vars_in_proposition/2).
+
+vars_in_proposition(Scope, Prop, vars_in_proposition(Scope, Prop)).
 
 ground_proposition(_) :- sorry($module, $pred, "ground_proposition/1").
 
