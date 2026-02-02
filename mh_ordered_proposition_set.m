@@ -270,6 +270,36 @@
 
 
 %-----------------------------------------------------------------------------%
+% Higher Order
+
+:- func fold(func(mh_proposition, A) = A, mh_ordered_proposition_set, A) = A.
+:- mode fold(func(in, in) = out is det, in, in) = out is det.
+:- mode fold(func(in, in) = out is semidet, in, in) = out 
+	is semidet.
+
+:- func det_fold(func(mh_proposition, A) = A, mh_ordered_proposition_set, A)
+	= A.
+
+:- func semidet_fold(func(mh_proposition, A) = A, mh_ordered_proposition_set,
+	A) = A.
+:- mode semidet_fold(func(in, in) = out is semidet, in, in) = out 
+	is semidet.
+
+:- pred fold2(pred(mh_proposition, A, A, B, B), mh_ordered_proposition_set, 
+	A, A, B, B).
+:- mode fold2(in(pred(in, in, out, in, out) is semidet), in, in, out, 
+	in,	out) is semidet.
+:- mode fold2(in(pred(in, in, out, in, out) is det), in, in, out, in, out)
+	is det.
+	
+:- func map(func(mh_proposition) = mh_proposition, mh_ordered_proposition_set) 
+	= mh_ordered_proposition_set.
+ 
+:- pred map(func(mh_proposition) = mh_proposition, mh_ordered_proposition_set,
+	mh_ordered_proposition_set).
+:- mode map(in(func(in) = out is det), in, out) is det.
+
+%-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
 :- implementation.
@@ -641,5 +671,18 @@ difference(os(O1, _)@OS1, os(_, S2)) = OS3 :-
 			OS3 = os(O3, S3)
 		)
 	).
-		
 
+%-----------------------------------------------------------------------------%
+% Higher Order
+
+fold(F, OPS, A) = fold(F, to_array(OPS), A).
+
+det_fold(F, OPS, A) = fold(F, OPS, A).
+
+semidet_fold(F, OPS, A) = fold(F, OPS, A).
+
+fold2(P, OPS, !A, !B) :- foldl2(P, to_array(OPS), !A, !B).
+
+map(F, OPS) = from_array(map(F, to_array(OPS)).
+
+map(F, OPS, map(F, OPS)).
