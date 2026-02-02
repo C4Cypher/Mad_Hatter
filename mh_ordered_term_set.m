@@ -282,6 +282,12 @@
 	in,	out) is semidet.
 :- mode fold2(in(pred(in, in, out, in, out) is det), in, in, out, in, out)
 	is det.
+	
+:- func map(func(mh_term) = mh_term, mh_ordered_term_set) 
+	= mh_ordered_term_set.
+ 
+:- pred map(func(mh_term) = mh_term, mh_ordered_term_set, mh_ordered_term_set).
+:- mode map(in(func(in) = out is det), in, out) is det.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -676,5 +682,10 @@ det_fold(F, OTS, A) = fold(F, OTS, A).
 semidet_fold(F, OTS, A) = fold(F, OTS, A).
 
 fold2(P, OTS, !A, !B) :- foldl2(P, to_array(OTS), !A, !B).
+
+map(F, OTS) = from_array(map(F, to_array(OTS)).
+
+map(F, OTS, map(F, OTS)).
+	
 		
 
