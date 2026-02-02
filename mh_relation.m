@@ -125,6 +125,10 @@
 */
 	
 :- func relation_scope(mh_relation) = mh_scope is det.
+
+:- func update_relation_scope(mh_scope, mh_scope, mh_relation) = mh_relation.
+:- pred update_relation_scope(mh_scope::in, mh_scope::in, mh_relation::in,
+	mh_relation::out) is det.
 	
 :- func vars_in_relation(mh_relation) = mh_var_set is det.
 
@@ -154,6 +158,70 @@
 	mh_ordered_term_set::in, mh_relation::out) is det.
 :- func new_disjunction(mh_calling_context, mh_scope, mh_ordered_term_set) =
 	mh_relation.
+	
+:- pred new_negation(mh_calling_context::in, mh_term::in, mh_relation::out)
+	is det.
+:- func new_negation(mh_calling_context, mh_term) = mh_relation.
+
+:- pred new_negation(mh_calling_context::in, mh_scope::in,
+	mh_term::in, mh_relation::out) is det.
+:- func new_negation(mh_calling_context, mh_scope, mh_term) = mh_relation.
+
+:- pred new_lambda_equivalence(mh_calling_context::in, 
+	mh_term::in, mh_term::in, mh_relation::out) is det.
+:- func new_lambda_equivalence(mh_calling_context, mh_term, mh_term) =
+	mh_relation.
+
+:- pred new_lambda_equivalence(mh_calling_context::in, mh_scope::in,
+	mh_term::in, mh_term::in, mh_relation::out) is det.
+:- func new_lambda_equivalence(mh_calling_context, mh_scope, mh_term, mh_term)
+	= mh_relation.
+	
+:- pred new_lambda_application(mh_calling_context::in, 
+	mh_term::in, mh_term::in, mh_relation::out) is det.
+:- func new_lambda_application(mh_calling_context, mh_term, mh_term) =
+	mh_relation.
+
+:- pred new_lambda_application(mh_calling_context::in, mh_scope::in,
+	mh_term::in, mh_term::in, mh_relation::out) is det.
+:- func new_lambda_application(mh_calling_context, mh_scope, mh_term, mh_term)
+	= mh_relation.
+
+:- pred new_lambda_unification(mh_calling_context::in, 
+	mh_term::in, mh_term::in, mh_relation::out) is det.
+:- func new_lambda_unification(mh_calling_context, mh_term, mh_term) =
+	mh_relation.
+
+:- pred new_lambda_unification(mh_calling_context::in, mh_scope::in,
+	mh_term::in, mh_term::in, mh_relation::out) is det.
+:- func new_lambda_unification(mh_calling_context, mh_scope, mh_term, mh_term)
+	= mh_relation.
+	
+:- pred new_lazy(mh_calling_context::in, mh_term::in, mh_relation::out)
+	is det.
+:- func new_lazy(mh_calling_context, mh_term) = mh_relation.
+
+:- pred new_lazy(mh_calling_context::in, mh_scope::in,
+	mh_term::in, mh_relation::out) is det.
+:- func new_lazy(mh_calling_context, mh_scope, mh_term) = mh_relation.
+	
+:- pred new_proposition(mh_calling_context::in, mh_proposition::in,
+	mh_relation::out) is det.
+:- func new_proposition(mh_calling_context, mh_proposition) = mh_relation.
+
+:- pred new_proposition(mh_calling_context::in, mh_scope::in,
+	mh_proposition::in, mh_relation::out) is det.
+:- func new_proposition(mh_calling_context, mh_scope, mh_proposition)
+	= mh_relation.
+	
+:- pred new_call(mh_calling_context::in, mh_foreign_function::in,
+	mh_relation::out) is det.
+:- func new_call(mh_calling_context, mh_foreign_function) = mh_relation.
+
+:- pred new_call(mh_calling_context::in, mh_scope::in,
+	mh_foreign_function::in, mh_relation::out) is det.
+:- func new_call(mh_calling_context, mh_scope, mh_foreign_function)
+	= mh_relation.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -176,6 +244,78 @@ relation_scope(lambda_unification(Scope, _, _)) = Scope.
 relation_scope(lazy(Scope, _)) = Scope.
 relation_scope(proposition(Scope, _)) = Scope.
 relation_scope(call(Scope, _)) = Scope.
+
+update_relation_scope(OldScope, NewScope, !.Relation) = !:Relation :-
+	InnerScope = relation_scope(!.Relation),
+	(if compatable_scope(InnerScope, OldScope)
+	then 
+		assert_var_set_in_scope(NewScope, Vars@scope_vars(InnerScope)),
+		require_complete_switch [!.Relation] (
+			!.Relation = nil,
+			!:Relation = nil %Unreachable, compatable_scope should fail
+		;
+			!.Relation = conjunction(_, Ots),
+			scope_context(InnerScope, ScopeContext),
+			create_child_scope(NewScope, yes(ScopeContext), Vars, NewInner),
+			map(update_term_scope(InnerScope, NewInner), Ots, NewOts),
+			!:Relation = conjunction(NewInner, NewOts)
+		;
+			!.Relation = disjunction(_, Ots),
+			scope_context(InnerScope, ScopeContext),
+			create_child_scope(NewScope, yes(ScopeContext), Vars, NewInner),
+			map(update_term_scope(InnerScope, NewInner), Ots, NewOts),
+			!:Relation = disjunction(NewInner, NewOts)
+		;
+			!.Relation = not(_, Term),
+			scope_context(InnerScope, ScopeContext),
+			create_child_scope(NewScope, yes(ScopeContext), Vars, NewInner),
+			update_term_scope(InnerScope, NewInner, Term, NewTerm),
+			!:Relation = not(NewInner, NewTerm)
+		;
+			!.Relation = lambda_equivalence(_, Lhs, Rhs),
+			scope_context(InnerScope, ScopeContext),
+			create_child_scope(NewScope, yes(ScopeContext), Vars, NewInner),
+			update_term_scope(InnerScope, NewInner, Lhs, NewLhs),
+			update_term_scope(InnerScope, NewInner, Rhs, NewRhs),
+			!:Relation = lambda_equivalence(NewInner, NewLhs, NewRhs)
+		;
+			!.Relation = lambda_application(_, Lhs, Rhs),
+			scope_context(InnerScope, ScopeContext),
+			create_child_scope(NewScope, yes(ScopeContext), Vars, NewInner),
+			update_term_scope(InnerScope, NewInner, Lhs, NewLhs),
+			update_term_scope(InnerScope, NewInner, Rhs, NewRhs),
+			!:Relation = lambda_application(NewInner, NewLhs, NewRhs)
+		;
+			!.Relation = lambda_unification(_, Lhs, Rhs),
+			scope_context(InnerScope, ScopeContext),
+			create_child_scope(NewScope, yes(ScopeContext), Vars, NewInner),
+			update_term_scope(InnerScope, NewInner, Lhs, NewLhs),
+			update_term_scope(InnerScope, NewInner, Rhs, NewRhs),
+			!:Relation = lambda_unification(NewInner, NewLhs, NewRhs)
+		;
+			!.Relation = lazy(_, Term),
+			scope_context(InnerScope, ScopeContext),
+			create_child_scope(NewScope, yes(ScopeContext), Vars, NewInner),
+			update_term_scope(InnerScope, NewInner, Term, NewTerm),
+			!:Relation = lazy(NewInner, NewTerm)
+		;
+			!.Relation = proposition(_, Prop),
+			scope_context(InnerScope, ScopeContext),
+			create_child_scope(NewScope, yes(ScopeContext), Vars, NewInner),
+			update_proposition_scope(InnerScope, NewInner, Prop, NewProp),
+			!:Relation = proposition(NewInner, NewProp)
+		;
+			!.Relation = call(_, Func),
+			scope_context(InnerScope, ScopeContext),
+			create_child_scope(NewScope, yes(ScopeContext), Vars, NewInner),
+			!:Relation = call(NewInner, Func)
+		)
+	else 
+		!:Relation = !.Relation
+	).
+
+update_relation_scope(OldScope, NewScope, Rel, 
+	update_relation_scope(OldScope, NewScope, Rel)).
 
 :- func vir_fold(mh_scope, mh_term, mh_var_set) = mh_var_set.
 
@@ -206,31 +346,168 @@ ground_relation(_) :- sorry($module, $pred, "ground_relation/1").
 % Constructors
 
 new_conjunction(Ctx, Ots, new_conjunction(Ctx, Ots)).
-new_conjunction(Ctx, Ots) = conjunction(NewScope, Ots) :-
+new_conjunction(Ctx, Ots) = conjunction(NewScope, NewOts) :-
 	Scope = Ctx ^ scope,
 	vars_in_ordered_term_set(Scope, Ots, Vars),
-	create_child_scope(Scope, no, Vars, NewScope).
-
+	create_child_scope(Scope, no, Vars, NewScope),
+	map(update_term_scope(Scope, NewScope), Ots, NewOts).
+ 
 new_conjunction(Ctx, Existing, Ots, new_conjunction(Ctx, Existing, Ots)).
-new_conjunction(Ctx, ExistingScope, Ots) = conjunction(NewScope, Ots) :-
+new_conjunction(Ctx, ExistingScope, Ots) = conjunction(NewScope, NewOts) :-
 	Scope = Ctx ^ scope,
 	vars_in_ordered_term_set(Scope, Ots, Vars),
 	assert_compatable_scope(ExistingScope, Scope), %Check only on validation?
 	scope_context(ExistingScope, ScopeContext),
-	create_child_scope(Scope, yes(ScopeContext), Vars, NewScope).
+	create_child_scope(Scope, yes(ScopeContext), Vars, NewScope),
+	map(update_term_scope(Scope, NewScope), Ots, NewOts).
 	
 new_disjunction(Ctx, Ots, new_disjunction(Ctx, Ots)).
-new_disjunction(Ctx, Ots) = disjunction(NewScope, Ots) :-
+new_disjunction(Ctx, Ots) = disjunction(NewScope, NewOts) :-
 	Scope = Ctx ^ scope,
 	vars_in_ordered_term_set(Scope, Ots, Vars),
-	create_child_scope(Scope, no, Vars, NewScope).
+	create_child_scope(Scope, no, Vars, NewScope),
+	map(update_term_scope(Scope, NewScope), Ots, NewOts).
 
 new_disjunction(Ctx, Existing, Ots, new_disjunction(Ctx, Existing, Ots)).
-new_disjunction(Ctx, ExistingScope, Ots) = disjunction(NewScope, Ots) :-
+new_disjunction(Ctx, ExistingScope, Ots) = disjunction(NewScope, NewOts) :-
 	Scope = Ctx ^ scope,
 	vars_in_ordered_term_set(Scope, Ots, Vars),
-	assert_compatable_scope(ExistingScope, Scope), %Check only on validation?
+	assert_compatable_scope(ExistingScope, Scope), 
 	scope_context(ExistingScope, ScopeContext),
-	create_child_scope(Scope, yes(ScopeContext), Vars, NewScope).
+	create_child_scope(Scope, yes(ScopeContext), Vars, NewScope),
+	map(update_term_scope(Scope, NewScope), Ots, NewOts).
+
+new_negation(Ctx, Term, new_negation(Ctx, Term)).
+new_negation(Ctx, Term) = not(NewScope, NewTerm) :-
+	Scope = Ctx ^ scope,
+	vars_in_scope(Scope, Term, Vars),
+	create_child_scope(Scope, no, Vars, NewScope),
+	update_term_scope(Scope, NewScope, Term, NewTerm).
+
+new_negation(Ctx, Existing, Term, new_negation(Ctx, Existing, Term)).
+new_negation(Ctx, ExistingScope, Term) = not(NewScope, NewTerm) :-
+	Scope = Ctx ^ scope,
+	vars_in_scope(Scope, Term, Vars),
+	assert_compatable_scope(ExistingScope, Scope), 
+	scope_context(ExistingScope, ScopeContext),
+	create_child_scope(Scope, yes(ScopeContext), Vars, NewScope),
+	update_term_scope(Scope, NewScope, Term, NewTerm).
+	
+new_lambda_equivalence(Ctx, Lhs, Rhs, new_lambda_equivalence(Ctx, Lhs, Rhs)).
+new_lambda_equivalence(Ctx, Lhs, Rhs) 
+	= lambda_equivalence(NewScope, NewLhs, NewRhs) :-
+	Scope = Ctx ^ scope,
+	vars_in_scope(Scope, Lhs, Vars1),
+	vars_in_scope(Scope, Rhs, Vars2),
+	var_set_union(Vars1, Vars2, Vars),
+	create_child_scope(Scope, no, Vars, NewScope),
+	update_term_scope(Scope, NewScope, Lhs, NewLhs),
+	update_term_scope(Scope, NewScope, Rhs, NewRhs).
+
+new_lambda_equivalence(Ctx, Existing, Lhs, Rhs, 
+	new_lambda_equivalence(Ctx, Existing, Lhs, Rhs)).
+new_lambda_equivalence(Ctx, ExistingScope, Lhs, Rhs)
+	= lambda_equivalence(NewScope, NewLhs, NewRhs) :-
+	Scope = Ctx ^ scope,
+	vars_in_scope(Scope, Lhs, Vars1),
+	vars_in_scope(Scope, Rhs, Vars2),
+	var_set_union(Vars1, Vars2, Vars),
+	assert_compatable_scope(ExistingScope, Scope), 
+	scope_context(ExistingScope, ScopeContext),
+	create_child_scope(Scope, yes(ScopeContext), Vars, NewScope),
+	update_term_scope(Scope, NewScope, Lhs, NewLhs),
+	update_term_scope(Scope, NewScope, Rhs, NewRhs).
+	
+new_lambda_application(Ctx, Lhs, Rhs, new_lambda_application(Ctx, Lhs, Rhs)).
+new_lambda_application(Ctx, Lhs, Rhs) 
+	= lambda_application(NewScope, NewLhs, NewRhs) :-
+	Scope = Ctx ^ scope,
+	vars_in_scope(Scope, Lhs, Vars1),
+	vars_in_scope(Scope, Rhs, Vars2),
+	var_set_union(Vars1, Vars2, Vars),
+	create_child_scope(Scope, no, Vars, NewScope),
+	update_term_scope(Scope, NewScope, Lhs, NewLhs),
+	update_term_scope(Scope, NewScope, Rhs, NewRhs).
+
+new_lambda_application(Ctx, Existing, Lhs, Rhs, new_lambda_application(Ctx, Existing, Lhs, Rhs)).
+new_lambda_application(Ctx, ExistingScope, Lhs, Rhs)
+	= lambda_application(NewScope, NewLhs, NewRhs) :-
+	Scope = Ctx ^ scope,
+	vars_in_scope(Scope, Lhs, Vars1),
+	vars_in_scope(Scope, Rhs, Vars2),
+	var_set_union(Vars1, Vars2, Vars),
+	assert_compatable_scope(ExistingScope, Scope), 
+	scope_context(ExistingScope, ScopeContext),
+	create_child_scope(Scope, yes(ScopeContext), Vars, NewScope),
+	update_term_scope(Scope, NewScope, Lhs, NewLhs),
+	update_term_scope(Scope, NewScope, Rhs, NewRhs).
+
+new_lambda_unification(Ctx, Lhs, Rhs, new_lambda_unification(Ctx, Lhs, Rhs)).
+new_lambda_unification(Ctx, Lhs, Rhs)
+	= lambda_unification(NewScope, NewLhs, NewRhs) :-
+	Scope = Ctx ^ scope,
+	vars_in_scope(Scope, Lhs, Vars1),
+	vars_in_scope(Scope, Rhs, Vars2),
+	var_set_union(Vars1, Vars2, Vars),
+	create_child_scope(Scope, no, Vars, NewScope),
+	update_term_scope(Scope, NewScope, Lhs, NewLhs),
+	update_term_scope(Scope, NewScope, Rhs, NewRhs).
+
+new_lambda_unification(Ctx, Existing, Lhs, Rhs, new_lambda_unification(Ctx, Existing, Lhs, Rhs)).
+new_lambda_unification(Ctx, ExistingScope, Lhs, Rhs)
+	= lambda_unification(NewScope, NewLhs, NewRhs) :-
+	Scope = Ctx ^ scope,
+	vars_in_scope(Scope, Lhs, Vars1),
+	vars_in_scope(Scope, Rhs, Vars2),
+	var_set_union(Vars1, Vars2, Vars),
+	assert_compatable_scope(ExistingScope, Scope), 
+	scope_context(ExistingScope, ScopeContext),
+	create_child_scope(Scope, yes(ScopeContext), Vars, NewScope),
+	update_term_scope(Scope, NewScope, Lhs, NewLhs),
+	update_term_scope(Scope, NewScope, Rhs, NewRhs).
+
+new_lazy(Ctx, Term, new_lazy(Ctx, Term)).
+new_lazy(Ctx, Term) = lazy(NewScope, NewTerm) :-
+	Scope = Ctx ^ scope,
+	vars_in_scope(Scope, Term, Vars),
+	create_child_scope(Scope, no, Vars, NewScope),
+	update_term_scope(Scope, NewScope, Term, NewTerm).
+
+new_lazy(Ctx, Existing, Term, new_lazy(Ctx, Existing, Term)).
+new_lazy(Ctx, ExistingScope, Term) = lazy(NewScope, NewTerm) :-
+	Scope = Ctx ^ scope,
+	vars_in_scope(Scope, Term, Vars),
+	assert_compatable_scope(ExistingScope, Scope), 
+	scope_context(ExistingScope, ScopeContext),
+	create_child_scope(Scope, yes(ScopeContext), Vars, NewScope),
+	update_term_scope(Scope, NewScope, Term, NewTerm).
+
+new_proposition(Ctx, Prop, new_proposition(Ctx, Prop)).
+new_proposition(Ctx, Prop) = proposition(NewScope, NewProp) :-
+	Scope = Ctx ^ scope,
+	vars_in_proposition(Scope, Prop, Vars),
+	create_child_scope(Scope, no, Vars, NewScope),
+	update_proposition_scope(Scope, NewScope, Prop, NewProp).
+
+new_proposition(Ctx, Existing, Prop, new_proposition(Ctx, Existing, Prop)).
+new_proposition(Ctx, ExistingScope, Prop) = proposition(NewScope, NewProp) :-
+	Scope = Ctx ^ scope,
+	vars_in_proposition(Scope, Prop, Vars),
+	assert_compatable_scope(ExistingScope, Scope), 
+	scope_context(ExistingScope, ScopeContext),
+	create_child_scope(Scope, yes(ScopeContext), Vars, NewScope),
+	update_proposition_scope(Scope, NewScope, Prop, NewProp).
+
+new_call(Ctx, Func, new_call(Ctx, Func)).
+new_call(Ctx, Func) = call(NewScope, Func) :-
+	Scope = Ctx ^ scope,
+	create_child_scope(Scope, no, empty_var_set, NewScope).
+
+new_call(Ctx, Existing, Func, new_call(Ctx, Existing, Func)).
+new_call(Ctx, ExistingScope, Func) = call(NewScope, Func) :-
+	Scope = Ctx ^ scope,
+	assert_compatable_scope(ExistingScope, Scope), 
+	scope_context(ExistingScope, ScopeContext),
+	create_child_scope(Scope, yes(ScopeContext), empty_var_set, NewScope).
 	
 

@@ -124,6 +124,11 @@
 :- func vars_in_scope(mh_scope, mh_term) = mh_var_set.
 :- pred vars_in_scope(mh_scope::in, mh_term::in, mh_var_set::out) is det.
 
+	% update_term_scope(OldScope, NewScope, OldTerm) = NewTerm.
+:- func update_term_scope(mh_scope, mh_scope, mh_term) = mh_term.
+:- pred update_term_scope(mh_scope::in, mh_scope::in, mh_term::in, 
+	mh_term::out) is det.
+
 
 
 %-----------------------------------------------------------------------------%
@@ -266,6 +271,17 @@ vars_in_scope(Scope, relation(R)) =
 	).
 
 vars_in_scope(Scope, Term, vars_in_scope(Scope, Term)).
+
+update_term_scope(OldScope, NewScope, Term) = 
+	(if Term = relation(Relation)
+	then
+		relation(update_relation_scope(OldScope, NewScope, Relation))
+	else
+		Term
+	).
+	
+update_term_scope(OldScope, NewScope, Term, 
+	update_term_scope(OldScope, NewScope, Term)).
 
 
 %-----------------------------------------------------------------------------%

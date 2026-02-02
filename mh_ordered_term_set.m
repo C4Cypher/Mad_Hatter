@@ -683,7 +683,7 @@ semidet_fold(F, OTS, A) = fold(F, OTS, A).
 
 fold2(P, OTS, !A, !B) :- foldl2(P, to_array(OTS), !A, !B).
 
-map(F, OTS) = from_array(map(F, to_array(OTS)).
+map(F, OTS) = from_array(map(F, to_array(OTS))).
 
 map(F, OTS, map(F, OTS)).
 	

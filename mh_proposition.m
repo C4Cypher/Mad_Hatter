@@ -69,6 +69,11 @@
 :- pred vars_in_proposition(mh_scope::in, mh_proposition::in, mh_var_set::out)
 	is det.
 	
+:- func update_proposition_scope(mh_scope, mh_scope, mh_proposition)
+	= mh_proposition.
+:- pred update_proposition_scope(mh_scope::in, mh_scope::in, 
+	mh_proposition::in, mh_proposition::out) is det.
+	
 :- pred ground_proposition(mh_proposition::in) is semidet.
 
 %-----------------------------------------------------------------------------%
@@ -99,6 +104,7 @@
 :- import_module require.
 
 :- import_module mh_relation.
+:- import_module mh_var_map.
 
 %-----------------------------------------------------------------------------%
 
@@ -107,6 +113,56 @@ vars_in_proposition(_, _) = sorry($module, $pred, "vars_in_proposition/2").
 :- pragma no_determinism_warning(vars_in_proposition/2).
 
 vars_in_proposition(Scope, Prop, vars_in_proposition(Scope, Prop)).
+
+update_proposition_scope(OldScope, NewScope, !.Prop) = !:Prop :-
+	require_complete_switch [!.Prop] (
+		( 	!.Prop = proposition_error(_); 
+			!.Prop = proposition_false; 
+			!.Prop = proposition_fail(_); 
+			!.Prop = proposition_true;
+			!.Prop = proposition_successs(ren_map(_))
+		),
+		!:Prop = !.Prop
+	;
+		!.Prop = proposition_successs(sub_map(Map)),
+		mh_var_map.map(update_var_map(OldScope, NewScope), Map, NewMap),
+		!:Prop = proposition_successs(sub_map(NewMap))			
+		
+	;
+		!.Prop = proposition_disj(Ops),
+		mh_ordered_proposition_set.map(
+			update_proposition_scope(OldScope, NewScope), Ops, NewOps),
+		!:Prop = proposition_disj(NewOps)
+	;
+		!.Prop = proposition_conj(Ops),
+		mh_ordered_proposition_set.map(
+			update_proposition_scope(OldScope, NewScope), Ops, NewOps),
+		!:Prop = proposition_conj(NewOps)
+	;
+		!.Prop = proposition_neg(NegProp),
+		update_proposition_scope(OldScope, NewScope, NegProp, NewNegProp),
+		!:Prop = proposition_neg(NewNegProp)
+	;
+		!.Prop = proposition_unification(Ots),
+		mh_ordered_term_set.map(
+			update_term_scope(OldScope, NewScope), Ots, NewOts),
+		!:Prop = proposition_unification(NewOts)
+	;
+		!.Prop = proposition_branch(If, Then, Else),
+		update_proposition_scope(OldScope, NewScope, If, NewIf),
+		update_proposition_scope(OldScope, NewScope, Then, NewThen),
+		update_proposition_scope(OldScope, NewScope, Else, NewElse),
+		!:Prop = proposition_branch(NewIf, NewThen, NewElse)
+	).
+	
+:- pred update_var_map(mh_scope::in, mh_scope::in, mh_var::in, mh_term::in,
+	mh_term::out) is det.
+
+update_var_map(Old, New, _, !.Term, !:Term) :-
+	update_term_scope(Old, New, !Term).
+
+update_proposition_scope(OldScope, NewScope, Prop, 
+	update_proposition_scope(OldScope, NewScope, Prop)).
 
 ground_proposition(_) :- sorry($module, $pred, "ground_proposition/1").
 
