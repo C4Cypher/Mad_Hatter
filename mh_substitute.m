@@ -15,9 +15,7 @@
 
 :- interface.
 
-:- import_module mh_evaluation.
-:- import_module mh_environment.
-:- import_module mh_scope.
+:- import_module mh_calling_context.
 :- import_module mh_term.
 :- import_module mh_substitution.
 :- import_module mh_relation.
@@ -88,7 +86,7 @@ substitute(!Ctx, !.Term, Sub, !:Term) :-
 
 substitute_relation(!Ctx, Relation, Sub, Result) :-
 	RelationScope = relation_scope(Relation),
-	(if compatable_scope(RelationScope, !.Scope)
+	(if compatable_scope(RelationScope, !.Ctx)
 	then
 		require_complete_switch [Relation] (
 			Relation = nil,
@@ -107,40 +105,44 @@ substitute_relation(!Ctx, Relation, Sub, Result) :-
 			%	subterms
 			
 			substitute_ordered_term_set(!Ctx, Ots, Sub, NewOts),
-			%TODO: create new scope based off NewOts
-			Result = conjunction(RelationScope, NewOts) 
+			Result = new_conjunction(!.Ctx, RelationScope, NewOts) 
 		;
 			Relation = disjunction(_, Ots),
-			Result = nil,
-			sorry($module, $pred, "substitute_relation/8")
+			substitute_ordered_term_set(!Ctx, Ots, Sub, NewOts),
+			Result = new_disjunction(!.Ctx, RelationScope, NewOts) 
 		;
 			Relation = not(_, Negation),
-			Result = nil,
-			sorry($module, $pred, "substitute_relation/8")
+			substitute(!Ctx, Negation, Sub, NewNegation),
+			Result = new_negation(!.Ctx, RelationScope, NewNegation)
 		;
 			Relation = lambda_equivalence(_, Lhs, Rhs),
-			Result = nil,
-			sorry($module, $pred, "substitute_relation/8")
+			substitute(!Ctx, Lhs, Sub, NewLhs),
+			substitute(!Ctx, Rhs, Sub, NewRhs),
+			Result = new_lambda_equivalence(!.Ctx, RelationScope, NewLhs,
+				NewRhs)
 		;
 			Relation = lambda_application(_, Lhs, Rhs),
-			Result = nil,
-			sorry($module, $pred, "substitute_relation/8")
+			substitute(!Ctx, Lhs, Sub, NewLhs),
+			substitute(!Ctx, Rhs, Sub, NewRhs),
+			Result = new_lambda_application(!.Ctx, RelationScope, NewLhs,
+				NewRhs)
 		;
 			Relation = lambda_unification(_, Lhs, Rhs),
-			Result = nil,
-			sorry($module, $pred, "substitute_relation/8")
+			substitute(!Ctx, Lhs, Sub, NewLhs),
+			substitute(!Ctx, Rhs, Sub, NewRhs),
+			Result = new_lambda_unification(!.Ctx, RelationScope, NewLhs,
+				NewRhs)
 		;
 			Relation = lazy(_, Constraint),
-			Result = nil,
-			sorry($module, $pred, "substitute_relation/8")
+			substitute(!Ctx, Constraint, Sub, NewConstraint),
+			Result = new_lazy(!.Ctx, RelationScope, NewConstraint)
 		;
 			Relation = proposition(_, Proposition),
-			Result = nil,
-			sorry($module, $pred, "substitute_relation/8")
+			substitute_proposition(!Ctx, Proposition, Sub, NewProposition),
+			Result = new_proposition(!.Ctx, RelationScope, NewProposition)
 		;
-			Relation = call(_, Call),
-			Result = nil,
-			sorry($module, $pred, "substitute_relation/8")
+			Relation = call(_, _),
+			Result = Relation
 		)
 	else
 		Result = Relation
@@ -150,11 +152,11 @@ substitute_relation(!Ctx, Relation, Sub, Result) :-
 
 
 substitute_proposition(!Ctx, !.Term, _, !:Term) :- 
-	sorry($module, $pred, "substitute_proposition/8").
+	sorry($module, $pred, "substitute_proposition/5").
 
-:- pragma no_determinism_warning(substitute_proposition/8).
+:- pragma no_determinism_warning(substitute_proposition/5).
 
-substitute_tuple(!Ctx !.Tuple, Sub, !:Tuple) :- 
+substitute_tuple(!Ctx, !.Tuple, Sub, !:Tuple) :- 
 	Size = tuple_size(!.Tuple),
 	(if Size > 0 
 	then
@@ -189,12 +191,12 @@ substitute_tuple_loop(Index, CurrentTuple, !Array, !Ctx, Sub,
 		then !:Changed = yes
 		else true
 		),
-		substitute_tuple_loop(Index + 1, NextTuple, !Array, Strat, !Env,
-			!Scope, Sub, !Changed)
+		substitute_tuple_loop(Index + 1, NextTuple, !Array, !Ctx, Sub, 
+			!Changed)
 	else true
 	).
 
-substitute_ordered_term_set(!Ctx !.Ots, Sub, !:Ots) :-
+substitute_ordered_term_set(!Ctx, !.Ots, Sub, !:Ots) :-
 	Tuple = to_tuple(!.Ots),
 	substitute_tuple(!Ctx, Tuple, Sub, NewTuple),
 	(if Tuple \= NewTuple
