@@ -22,6 +22,7 @@
 :- import_module mh_proposition.
 :- import_module mh_tuple.
 :- import_module mh_ordered_term_set.
+:- import_module mh_ordered_proposition_set.
 
 %-----------------------------------------------------------------------------%
 
@@ -45,6 +46,10 @@
 :- pred substitute_ordered_term_set(mh_calling_context::in, 
 	mh_calling_context::out, mh_ordered_term_set::in, mh_substitution::in, mh_ordered_term_set::out)
 	is det.	
+
+:- pred substitute_ordered_proposition_set(mh_calling_context::in, 
+	mh_calling_context::out, mh_ordered_proposition_set::in,
+	mh_substitution::in, mh_ordered_proposition_set::out) is det.	
 	
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -55,6 +60,9 @@
 :- import_module bool.
 :- import_module int.
 :- import_module require.
+
+:- import_module mh_var_map.
+:- import_module mh_var_id.
 
 %-----------------------------------------------------------------------------%
 
@@ -105,41 +113,74 @@ substitute_relation(!Ctx, Relation, Sub, Result) :-
 			%	subterms
 			
 			substitute_ordered_term_set(!Ctx, Ots, Sub, NewOts),
-			Result = new_conjunction(!.Ctx, RelationScope, NewOts) 
+			(if private_builtin.pointer_equal(Ots, NewOts)
+			then Result = Relation
+			else Result = new_conjunction(!.Ctx, RelationScope, NewOts)
+			)
 		;
 			Relation = disjunction(_, Ots),
 			substitute_ordered_term_set(!Ctx, Ots, Sub, NewOts),
-			Result = new_disjunction(!.Ctx, RelationScope, NewOts) 
+			(if private_builtin.pointer_equal(Ots, NewOts)
+			then Result = Relation
+			else Result = new_disjunction(!.Ctx, RelationScope, NewOts) 
+			)
 		;
 			Relation = not(_, Negation),
 			substitute(!Ctx, Negation, Sub, NewNegation),
-			Result = new_negation(!.Ctx, RelationScope, NewNegation)
+			(if private_builtin.pointer_equal(Negation, NewNegation)
+			then Result = Relation
+			else Result = new_negation(!.Ctx, RelationScope, NewNegation)
+			)
 		;
 			Relation = lambda_equivalence(_, Lhs, Rhs),
 			substitute(!Ctx, Lhs, Sub, NewLhs),
 			substitute(!Ctx, Rhs, Sub, NewRhs),
-			Result = new_lambda_equivalence(!.Ctx, RelationScope, NewLhs,
+			(if 
+				private_builtin.pointer_equal(Lhs, NewLhs),
+				private_builtin.pointer_equal(Rhs, NewRhs)
+			then Result = Relation
+			else 
+				Result = new_lambda_equivalence(!.Ctx, RelationScope, NewLhs,
 				NewRhs)
+			)
 		;
 			Relation = lambda_application(_, Lhs, Rhs),
 			substitute(!Ctx, Lhs, Sub, NewLhs),
 			substitute(!Ctx, Rhs, Sub, NewRhs),
-			Result = new_lambda_application(!.Ctx, RelationScope, NewLhs,
+			(if 
+				private_builtin.pointer_equal(Lhs, NewLhs),
+				private_builtin.pointer_equal(Rhs, NewRhs)
+			then Result = Relation
+			else 
+				Result = new_lambda_application(!.Ctx, RelationScope, NewLhs,
 				NewRhs)
+			)
 		;
 			Relation = lambda_unification(_, Lhs, Rhs),
 			substitute(!Ctx, Lhs, Sub, NewLhs),
 			substitute(!Ctx, Rhs, Sub, NewRhs),
-			Result = new_lambda_unification(!.Ctx, RelationScope, NewLhs,
+			(if 
+				private_builtin.pointer_equal(Lhs, NewLhs),
+				private_builtin.pointer_equal(Rhs, NewRhs)
+			then Result = Relation
+			else 
+				Result = new_lambda_unification(!.Ctx, RelationScope, NewLhs,
 				NewRhs)
+			)
 		;
 			Relation = lazy(_, Constraint),
 			substitute(!Ctx, Constraint, Sub, NewConstraint),
-			Result = new_lazy(!.Ctx, RelationScope, NewConstraint)
+			(if private_builtin.pointer_equal(Constraint, NewConstraint)
+			then Result = Relation
+			else Result = new_lazy(!.Ctx, RelationScope, NewConstraint)
+			)
 		;
 			Relation = proposition(_, Proposition),
 			substitute_proposition(!Ctx, Proposition, Sub, NewProposition),
-			Result = new_proposition(!.Ctx, RelationScope, NewProposition)
+			(if private_builtin.pointer_equal(Proposition, NewProposition)
+			then Result = Relation
+			else Result = new_proposition(!.Ctx, RelationScope, NewProposition)
+			)
 		;
 			Relation = call(_, _),
 			Result = Relation
@@ -148,13 +189,82 @@ substitute_relation(!Ctx, Relation, Sub, Result) :-
 		Result = Relation
 	).
 
+substitute_proposition(!Ctx, Proposition, Sub, Result) :- 
+	require_complete_switch [Proposition] (
+		(
+			Proposition = proposition_error(_);
+			Proposition = proposition_false;
+			Proposition = proposition_fail(_);
+			Proposition = proposition_flounder(_); %revive floundered on sub?
+			Proposition = proposition_true
+		), Result = Proposition
+	;
+		Proposition = proposition_success(SucSub),
+		ren_to_sub(SucSub, sub_map(SucMap)),
+		fold2_id(fold_sub_over_sub(Sub), SucMap, !Ctx, init, NewSucMap),
+		NewSucSub0 = sub_map(NewSucMap),
+		(if sub_to_ren(NewSucSub0, NewSucSub1)
+		then NewSucSub = NewSucSub1
+		else NewSucSub = NewSucSub0
+		),
+		(if SucSub = NewSucSub 
+		then Result = Proposition
+		else Result = proposition_success(NewSucSub)
+		)
+	;
+		Proposition = proposition_disj(Ops),
+		substitute_ordered_proposition_set(!Ctx, Ops, Sub, NewOps),
+		(if private_builtin.pointer_equal(Ops, NewOps) %cheap test save memory
+		then Result = Proposition
+		else
+			Result = proposition_disj(NewOps)
+		)
+	;
+		Proposition = proposition_conj(Ops),
+		substitute_ordered_proposition_set(!Ctx, Ops, Sub, NewOps),
+		(if private_builtin.pointer_equal(Ops, NewOps)
+		then Result = Proposition
+		else
+			Result = proposition_conj(NewOps)
+		)
+	;
+		Proposition = proposition_neg(Negation),
+		substitute_proposition(!Ctx, Negation, Sub, NewNeg),
+		(if private_builtin.pointer_equal(Negation, NewNeg)
+		then Result = Proposition
+		else
+			Result = proposition_neg(NewNeg)
+		)
+	;
+		Proposition = proposition_unification(Ots),
+		substitute_ordered_term_set(!Ctx, Ots, Sub, NewOts),
+		(if private_builtin.pointer_equal(Ots, NewOts)
+		then Result = Proposition
+		else
+			Result = proposition_unification(NewOts)
+		)
+	;
+		Proposition = proposition_branch(If, Then, Else),
+		substitute_proposition(!Ctx, If, Sub, NewIf),
+		substitute_proposition(!Ctx, Then, Sub, NewThen),
+		substitute_proposition(!Ctx, Else, Sub, NewElse),
+		(if 
+			private_builtin.pointer_equal(If, NewIf),
+			private_builtin.pointer_equal(Then, NewThen),
+			private_builtin.pointer_equal(Else, NewElse)
+		then Result = Proposition
+		else
+			Result = proposition_branch(NewIf, NewThen, NewElse)
+		)
+	).
 
+:- pred fold_sub_over_sub(mh_substitution::in, var_id::in, mh_term::in,
+	mh_calling_context::in, mh_calling_context::out, mh_var_map(mh_term)::in,
+	mh_var_map(mh_term)::out) is det.
 
-
-substitute_proposition(!Ctx, !.Term, _, !:Term) :- 
-	sorry($module, $pred, "substitute_proposition/5").
-
-:- pragma no_determinism_warning(substitute_proposition/5).
+fold_sub_over_sub(Sub, ID, Term, !Ctx, !Map) :-
+	substitute(!Ctx, Term, Sub, NewTerm),
+	det_id_insert(ID, NewTerm, !Map).
 
 substitute_tuple(!Ctx, !.Tuple, Sub, !:Tuple) :- 
 	Size = tuple_size(!.Tuple),
@@ -199,8 +309,26 @@ substitute_tuple_loop(Index, CurrentTuple, !Array, !Ctx, Sub,
 substitute_ordered_term_set(!Ctx, !.Ots, Sub, !:Ots) :-
 	Tuple = to_tuple(!.Ots),
 	substitute_tuple(!Ctx, Tuple, Sub, NewTuple),
-	(if Tuple \= NewTuple
-	then !:Ots = from_tuple(NewTuple)
-	else true
+	(if Tuple = NewTuple
+	then true
+	else !:Ots = from_tuple(NewTuple)
 	).
+	
+substitute_ordered_proposition_set(!Ctx, !.Ops, Sub, !:Ops) :-
+	Array = to_array(!.Ops),
+	generate_foldl(size(Array), substitute_ops_gen(Array, Sub), NewArray, 
+		!Ctx),
+	(if Array = NewArray
+	then true
+	else !:Ops = from_array(NewArray)
+	).
+	
+:- pred substitute_ops_gen(array(mh_proposition)::in,
+	mh_substitution::in, int::in, mh_proposition::out, mh_calling_context::in, 
+	mh_calling_context::out) is det.
+	
+substitute_ops_gen(Array, Sub, Index, Result, !Ctx) :-
+	unsafe_lookup(Array, Index, Prop),
+	substitute_proposition(!Ctx, Prop, Sub, Result).
+	
 
