@@ -142,7 +142,7 @@
 :- pred id_insert(var_id::in, T::in, mh_var_map(T)::in, mh_var_map(T)::out) 
 	is semidet.
 	
-:- pred det_id_insert(var_id::in, T::in, mh_var_map(T)::in, mh_var_map(T)::out) 
+:- pred det_id_insert(var_id::in, T::in, mh_var_map(T)::in, mh_var_map(T)::out)
 	is det.
 
 :- pred insert(mh_var::in, T::in, mh_var_map(T)::in, mh_var_map(T)::out) 
