@@ -51,7 +51,7 @@
 	;		proposition_true
 	
 			% X := Y
-	;		proposition_successs(mh_substitution)
+	;		proposition_success(mh_substitution)
 	
 			% A ; B ; C
 	;		proposition_disj(mh_ordered_proposition_set)
@@ -124,7 +124,7 @@ update_proposition_scope(OldScope, NewScope, !.Prop) = !:Prop :-
 			!.Prop = proposition_false; 
 			!.Prop = proposition_fail(_); 
 			!.Prop = proposition_true;
-			!.Prop = proposition_successs(ren_map(_))
+			!.Prop = proposition_success(ren_map(_))
 		),
 		!:Prop = !.Prop
 	;
@@ -132,9 +132,9 @@ update_proposition_scope(OldScope, NewScope, !.Prop) = !:Prop :-
 		update_term_scope(OldScope, NewScope, Term, NewTerm),
 		!:Prop = proposition_flounder(NewTerm)
 	;
-		!.Prop = proposition_successs(sub_map(Map)),
+		!.Prop = proposition_success(sub_map(Map)),
 		mh_var_map.map(update_var_map(OldScope, NewScope), Map, NewMap),
-		!:Prop = proposition_successs(sub_map(NewMap))			
+		!:Prop = proposition_success(sub_map(NewMap))			
 	;
 		!.Prop = proposition_disj(Ops),
 		mh_ordered_proposition_set.map(

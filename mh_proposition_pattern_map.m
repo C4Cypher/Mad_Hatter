@@ -192,7 +192,7 @@ insert(Prop@proposition_true, Value, !Map) :-
 	spm_insert(Prop, Value, init_sub, SM, NewSM),
 	!:Map = !.Map ^ success_map := NewSM.
 	
-insert(Prop@proposition_successs(Sub), Value, !Map) :-
+insert(Prop@proposition_success(Sub), Value, !Map) :-
 	SM = !.Map ^ success_map,
 	spm_insert(Prop, Value, Sub, SM, NewSM),
 	!:Map = !.Map ^ success_map := NewSM.
