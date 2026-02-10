@@ -122,9 +122,7 @@ eval_loop(!Ctx, !Term, Memoizing, Intermediate) :- some [!Env, !Scope] (
 		% further evaluation is complete when evaluating a term returns itself
 		(if Memoizing = yes
 		then 
-			Flounder = relation(proposition(!.Scope, 
-				proposition_fail(flounder(Input))
-			)),
+			Flounder = term_flounder(!.Scope, Input),
 			set(Input, Flounder, !Env),
 			%Change Environment calls to pass context, not environment
 			!:Ctx = !.Ctx ^ environment := !.Env, 

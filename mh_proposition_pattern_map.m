@@ -35,6 +35,7 @@
 	--->	pattern_map(
 				error_map :: mh_proposition_map(T),
 				failure_map :: mh_proposition_map(T),
+				flounder_map :: term_proposition_map(T),
 				success_map :: substitution_proposition_map(T),
 				disjunction_map :: member_proposition_map(T),
 				conjunction_map :: member_proposition_map(T),
@@ -81,6 +82,7 @@
 init = pattern_map(
 	mh_proposition_map.init,
 	mh_proposition_map.init,
+	mh_term_map.init,
 	mh_substitution_map.init,
 	mh_proposition_map.init,
 	mh_proposition_map.init,
@@ -179,6 +181,11 @@ insert(Prop@proposition_fail(_), Value, !Map) :-
 	FM = !.Map ^ failure_map,
 	pm_insert(Prop, Value, FM, NewFM),
 	!:Map = !.Map ^ failure_map := NewFM.
+	
+insert(Prop@proposition_flounder(Term), Value, !Map) :-
+	FM = !.Map ^ flounder_map,
+	tpm_insert(Prop, Value, Term, FM, NewFM),
+	!:Map = !.Map ^ flounder_map := NewFM.
 	
 insert(Prop@proposition_true, Value, !Map) :-
 	SM = !.Map ^ success_map,

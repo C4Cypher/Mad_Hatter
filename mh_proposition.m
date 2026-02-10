@@ -40,8 +40,12 @@
 			% Atomic false
 	;		proposition_false 	
 	
-			% Propositional reason for failure, evaluates to proposition_false
+			% Propositional reason for failure, unifies with proposition_false
 	;		proposition_fail(reason)
+	
+	;		proposition_flounder(mh_term)
+			% Floundered evaluation, soft failure, succeeds in conjunctions
+			% without other failures?
 	
 			% Atomic true
 	;		proposition_true
@@ -124,10 +128,13 @@ update_proposition_scope(OldScope, NewScope, !.Prop) = !:Prop :-
 		),
 		!:Prop = !.Prop
 	;
+		!.Prop = proposition_flounder(Term),
+		update_term_scope(OldScope, NewScope, Term, NewTerm),
+		!:Prop = proposition_flounder(NewTerm)
+	;
 		!.Prop = proposition_successs(sub_map(Map)),
 		mh_var_map.map(update_var_map(OldScope, NewScope), Map, NewMap),
 		!:Prop = proposition_successs(sub_map(NewMap))			
-		
 	;
 		!.Prop = proposition_disj(Ops),
 		mh_ordered_proposition_set.map(

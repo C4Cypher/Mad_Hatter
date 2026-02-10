@@ -156,6 +156,7 @@
 
 :- func term_nil = mh_term.
 :- func term_true = mh_term.
+:- func term_flounder(mh_scope, mh_term) = mh_term.
 :- func term_false = mh_term.
 :- func term_fail(string) = mh_term.
 :- func term_error(string) = mh_term.
@@ -303,6 +304,8 @@ deconstruct_value_term(value(Value)) = to_some_mr_value(Value).
 
 term_nil = relation(nil).
 term_true = relation(proposition(no_scope, proposition_true)).
+term_flounder(Scope, Term) = relation(
+	proposition(Scope, proposition_flounder(Term))).
 term_false = relation(proposition(no_scope, proposition_false)).
 term_fail(Msg) = relation(proposition(no_scope, proposition_fail(Reason))) :-
 	Reason = message(Msg).
