@@ -32,6 +32,12 @@
 		scope::mh_scope, 
 		environment::mh_environment
 	).
+	
+% Predicate field access
+:- pred strategy(mh_calling_context::in, eval_strategy::out) is det.
+:- pred scope(mh_calling_context::in, mh_scope::out) is det.
+:- pred environment(mh_calling_context::in, mh_environment::out) is det.
+
 
 % Abbreviated constructor
 :- func ctx(eval_strategy, mh_scope, mh_environment) = mh_calling_context.
@@ -158,6 +164,10 @@
 
 %-----------------------------------------------------------------------------%
 % Calling context
+
+strategy(Ctx, strategy(Ctx)).
+scope(Ctx, scope(Ctx)).
+environment(Ctx, environment(Ctx)).
 
 ctx(Strat, Scope, Env) = calling_context(Strat, Scope, Env).
 
