@@ -144,7 +144,6 @@
 	--->	value(ground).
 
 :- mode is_value == ground >> value_term.
-
 :- pred is_value(mh_term::is_value) is semidet.
 
 	% Determenistic deconstructor for term values
@@ -160,6 +159,18 @@
 :- func term_false = mh_term.
 :- func term_fail(string) = mh_term.
 :- func term_error(string) = mh_term.
+
+:- inst relation_term
+	---> relation(ground).
+	
+:- mode is_relation == ground >> relation_term.
+:- pred is_relation(mh_term::is_relation) is semidet.
+
+:- mode proposition_term
+	---> relation(proposition(ground, ground)).
+	
+:- mode is_proposition == ground >> proposition_term.
+:- pred is_propsoition(mh_term::is_proposition) is semidet.
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -297,8 +308,6 @@ is_value(value(_)).
 
 deconstruct_value_term(value(Value)) = to_some_mr_value(Value).
 
-
-
 %-----------------------------------------------------------------------------%
 % Relation terms
 
@@ -311,7 +320,10 @@ term_fail(Msg) = relation(proposition(no_scope, proposition_fail(Reason))) :-
 	Reason = message(Msg).
 term_error(Msg) = relation(proposition(no_scope, proposition_error(Reason))) :-
 	Reason = message(Msg).
+	
+is_relation(relation(_)).
 
+is_proposition(relation(proposition(_, _))).
 
 %-----------------------------------------------------------------------------%
 % Higher Order terms
