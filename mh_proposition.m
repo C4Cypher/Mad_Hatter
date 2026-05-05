@@ -100,6 +100,18 @@
 :- func term_fail_reason(mh_scope, reason) = mh_term.
 
 :- func term_error_reason(mh_scope, reason) = mh_term. 
+
+%-----------------------------------------------------------------------------%
+% Success indicator
+
+:- type success_indicator
+	--->	successful(list(mh_substitution))
+	;		failed(reason)
+	;		error(reason).
+	
+:- func success(mh_proposition) = success_indicator is semidet.
+:- pred success(mh_proposition::in, success_indicator::out) is semidet.
+
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
 
@@ -184,3 +196,5 @@ term_fail_reason(Scope, Reason) =
 term_error_reason(Scope, Reason) = 
 	relation(proposition(Scope, proposition_error(Reason))).
  
+%-----------------------------------------------------------------------------%
+% Success indicator 
